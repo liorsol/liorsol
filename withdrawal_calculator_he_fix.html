@@ -1,0 +1,211 @@
+# Update the interactive calculator to support inflation-indexed withdrawals
+html_content = """
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>מחשבון חיסכון עם משיכות והצמדה</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+  h1 { margin-bottom: 0.2rem; }
+  .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  label { display: block; margin-top: 8px; }
+  input, select { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
+  button { padding: 10px 16px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; }
+  .row { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
+  .results { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 12px; }
+  .result { background: #f7f7f7; border-radius: 10px; padding: 12px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  th { background: #f0f0f0; }
+  .muted { color: #666; font-size: 0.9rem; }
+  .inline { display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+  <h1>מחשבון חיסכון עם משיכות והצמדה</h1>
+  <p class="muted">
+    חישוב יתרה עתידית כשיש משיכה חודשית, תשואה שנתית קבועה והצמדה לאינפלציה (אופציונלי).
+    ברירת המחדל: משיכה בסוף חודש, עדכון אינפלציה שנתי בתחילת כל שנה החל משנה 2.
+  </p>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>סכום התחלתי (₪)</label>
+        <input id="initial" type="number" value="1000000" step="1000" />
+      </div>
+      <div>
+        <label>משיכה חודשית בתחילת השנה הראשונה (₪)</label>
+        <input id="withdraw" type="number" value="5000" step="100" />
+      </div>
+      <div>
+        <label>תשואה שנתית (%)</label>
+        <input id="annual" type="number" value="8" step="0.1" />
+      </div>
+      <div>
+        <label>מספר שנים</label>
+        <input id="years" type="number" value="20" step="1" />
+      </div>
+      <div>
+        <label>עיתוי המשיכה</label>
+        <select id="timing">
+          <option value="end" selected>סוף חודש (רגיל)</option>
+          <option value="begin">תחילת חודש (אנונה מוקדמת)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="inline">
+        <input id="enable_inflation" type="checkbox" checked />
+        <label for="enable_inflation">הצמדת המשיכה לאינפלציה</label>
+      </div>
+      <div>
+        <label>אינפלציה שנתית (%) (קבועה)</label>
+        <input id="inflation" type="number" value="3" step="0.1" />
+      </div>
+      <div>
+        <label>אופן ההצמדה</label>
+        <select id="inflation_mode">
+          <option value="annual" selected>שנתי – עדכון בתחילת כל שנה (מהשנה השנייה)</option>
+          <option value="monthly">חודשי – עדכון חודשי שקול לשנתי</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button onclick="compute()">חשב</button>
+      <button onclick="resetDefaults()">אפס לברירות מחדל</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>תוצאות</h2>
+    <div class="results">
+      <div class="result"><strong>יתרה אחרי התקופה:</strong> <div id="fv">—</div></div>
+      <div class="result"><strong>סה״כ נמשך:</strong> <div id="total_withdrawn">—</div></div>
+      <div class="result"><strong>סה״כ ריבית/רווחים (לפני מס):</strong> <div id="total_interest">—</div></div>
+      <div class="result"><strong>גובה המשיכה בחודש האחרון:</strong> <div id="last_withdrawal">—</div></div>
+    </div>
+    <p class="muted">
+      הנחות: ריבית נומינלית שנתית המחולקת לחודשים (r = שנה/12), ללא דמי ניהול וללא מס.
+      בהצמדה שנתית, המשיכה עולה בתחילת כל שנה (מהשנה השנייה). בהצמדה חודשית – המשיכה עולה מדי חודש בשיעור שקול לאינפלציה שנתית.
+      אם היתרה אינה מספיקה, המשיכה באותו חודש מוגבלת ליתרה הזמינה.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>פירוט שנתי</h2>
+    <div id="yearly_table"></div>
+  </div>
+
+<script>
+  function fmt(n) {
+    return new Intl.NumberFormat('he-IL', { maximumFractionDigits: 2 }).format(n);
+  }
+
+  function compute() {
+    const P0 = parseFloat(document.getElementById('initial').value || '0');
+    const W0  = parseFloat(document.getElementById('withdraw').value || '0');
+    const annual = parseFloat(document.getElementById('annual').value || '0') / 100.0;
+    const years = parseInt(document.getElementById('years').value || '0', 10);
+    const timing = document.getElementById('timing').value; // 'end' or 'begin'
+
+    const enableInflation = document.getElementById('enable_inflation').checked;
+    const infl_annual = parseFloat(document.getElementById('inflation').value || '0') / 100.0;
+    const infl_mode = document.getElementById('inflation_mode').value; // 'annual' or 'monthly'
+
+    const r = annual / 12.0;
+    const n = years * 12;
+
+    let bal = P0;
+    let total_withdrawn = 0;
+    let rows = [];
+
+    // Track withdrawal amount progression
+    let W_current = W0;
+    let monthly_growth = enableInflation && infl_mode === 'monthly' ? Math.pow(1 + infl_annual, 1/12) - 1 : 0;
+
+    // For yearly table: show start/end withdrawal of each year
+    for (let y = 1; y <= years; y++) {
+      // For annual mode, increase at the start of each year from year 2
+      if (enableInflation && infl_mode === 'annual' && y > 1) {
+        W_current *= (1 + infl_annual);
+      }
+      let W_start_of_year = W_current;
+
+      for (let m = 1; m <= 12; m++) {
+        // For monthly mode, increase each month (except very first month overall)
+        if (enableInflation && infl_mode === 'monthly' && !(y === 1 && m === 1)) {
+          W_current *= (1 + monthly_growth);
+        }
+
+        if (timing === 'begin') {
+          const withdraw_now = Math.min(W_current, bal);
+          bal -= withdraw_now;
+          total_withdrawn += withdraw_now;
+        }
+
+        // Apply interest
+        bal *= (1 + r);
+
+        if (timing === 'end') {
+          const withdraw_now = Math.min(W_current, bal);
+          bal -= withdraw_now;
+          total_withdrawn += withdraw_now;
+        }
+
+        // Avoid negative floating-point artifacts
+        if (bal < 1e-8) bal = 0;
+      }
+
+      let W_end_of_year = W_current;
+      rows.push({ year: y, balance: bal, w_start: W_start_of_year, w_end: W_end_of_year });
+    }
+
+    const fv = bal;
+    const total_interest = fv - (P0 - total_withdrawn);
+
+    document.getElementById('fv').textContent = '₪ ' + fmt(fv);
+    document.getElementById('total_withdrawn').textContent = '₪ ' + fmt(total_withdrawn);
+    document.getElementById('total_interest').textContent = '₪ ' + fmt(total_interest);
+    document.getElementById('last_withdrawal').textContent = '₪ ' + fmt(W_current);
+
+    // Build yearly table
+    let html = '<table><thead><tr><th>שנה</th><th>יתרה בסוף שנה (₪)</th><th>משיכה בתחילת שנה (₪)</th><th>משיכה בסוף שנה (₪)</th></tr></thead><tbody>';
+    for (const row of rows) {
+      html += `<tr>
+        <td>${row.year}</td>
+        <td>₪ ${fmt(row.balance)}</td>
+        <td>₪ ${fmt(row.w_start)}</td>
+        <td>₪ ${fmt(row.w_end)}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('yearly_table').innerHTML = html;
+  }
+
+  function resetDefaults() {
+    document.getElementById('initial').value = 1000000;
+    document.getElementById('withdraw').value = 5000;
+    document.getElementById('annual').value = 8;
+    document.getElementById('years').value = 20;
+    document.getElementById('timing').value = 'end';
+    document.getElementById('enable_inflation').checked = true;
+    document.getElementById('inflation').value = 3;
+    document.getElementById('inflation_mode').value = 'annual';
+    compute();
+  }
+
+  // Auto-compute on load
+  window.addEventListener('DOMContentLoaded', compute);
+</script>
+</body>
+</html>
+"""
+path = "/mnt/data/withdrawal_calculator_he.html"
+with open(path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+path

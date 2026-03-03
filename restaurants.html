@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מסעדות HTZone</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>מסעדות HTZone</h1>
+    <div id="controls">
+      <label>
+        מיין:
+        <select id="sort-select">
+          <option value="rating-desc">דירוג גבוה → נמוך</option>
+          <option value="rating-asc">דירוג נמוך → גבוה</option>
+          <option value="reviews-desc">ביקורות רבות → מעטות</option>
+          <option value="reviews-asc">ביקורות מעטות → רבות</option>
+          <option value="price-asc">מחיר נמוך → גבוה</option>
+          <option value="price-desc">מחיר גבוה → נמוך</option>
+        </select>
+      </label>
+      <span id="count"></span>
+    </div>
+  </header>
+  <div class="app-layout">
+    <main id="list">
+      <p class="loading">טוען נתונים...</p>
+    </main>
+    <aside id="detail-panel"></aside>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

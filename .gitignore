@@ -1,0 +1,11 @@
+node_modules/
+.claude/
+debug_maps.png
+debugReview.mjs
+fetchReviews.mjs
+fetchGoogleMapsEnriched.mjs
+fetchEasy.mjs
+rest.json
+package.json
+package-lock.json
+CLAUDE.md

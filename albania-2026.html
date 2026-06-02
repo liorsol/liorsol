@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>טיול משפחתי · אלבניה · אוגוסט 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sea:#0c4b57; --sea-deep:#072f38; --azure:#1b8a9e; --azure-bright:#2bb8c4;
+    --sand:#f7efe0; --sand-2:#fbf6ec; --paper:#fffdf8;
+    --terra:#d96b4f; --terra-deep:#b5482f; --gold:#e3a23a; --olive:#6f8a5b;
+    --ink:#1d2a2e; --ink-soft:#465256; --line:#e3d8c4; --line-soft:#efe6d4;
+    --shadow:0 16px 44px -24px rgba(7,47,56,.55);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--sand); color:var(--ink);
+    font-family:'Assistant',sans-serif; font-size:17px; line-height:1.7; -webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-family:'Suez One',serif; font-weight:400; line-height:1.2; color:var(--sea)}
+  .wrap{max-width:980px; margin:0 auto; padding:0 20px}
+  a{color:var(--terra-deep)}
+
+  /* NAV */
+  nav{position:sticky; top:0; z-index:60; background:rgba(9,58,68,.97); backdrop-filter:blur(8px); border-bottom:2px solid var(--gold)}
+  nav .bar{max-width:980px; margin:0 auto; display:flex; gap:5px; align-items:center; overflow-x:auto; padding:10px 14px; scrollbar-width:none}
+  nav .bar::-webkit-scrollbar{display:none}
+  nav .brand{font-family:'Suez One',serif; color:var(--gold); font-size:15px; white-space:nowrap; margin-inline-end:6px; cursor:pointer}
+  nav a{color:#e9dcc2; text-decoration:none; font-family:'Heebo',sans-serif; font-weight:500; font-size:14px; white-space:nowrap; padding:7px 12px; border-radius:999px; transition:.18s; cursor:pointer}
+  nav a:hover{background:rgba(255,255,255,.12); color:#fff}
+  nav a.on{background:var(--gold); color:#3a2a08; font-weight:700}
+
+  /* VIEWS */
+  .view{display:none; animation:fade .35s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+  .pad{padding:34px 0 60px}
+  .back{display:inline-flex; align-items:center; gap:6px; font-family:'Heebo',sans-serif; font-weight:700; font-size:14px; color:var(--azure); text-decoration:none; cursor:pointer; margin-bottom:6px}
+
+  /* HERO (home) */
+  header.hero{position:relative; overflow:hidden; color:#fff; text-align:center;
+    background:linear-gradient(160deg,#0a3d47,#0c4b57 42%,#1b8a9e); padding:56px 20px 96px}
+  header.hero::before{content:""; position:absolute; inset:0;
+    background:radial-gradient(circle at 80% 16%, rgba(227,162,58,.34), transparent 40%),
+               radial-gradient(circle at 12% 84%, rgba(43,184,196,.3), transparent 44%)}
+  header.hero .sun{position:absolute; top:34px; left:50%; transform:translateX(-50%); width:70px;height:70px;border-radius:50%;
+    background:radial-gradient(circle,#ffe7a8,#e3a23a); box-shadow:0 0 56px 16px rgba(227,162,58,.5); opacity:.92}
+  header.hero .kicker{position:relative; font-family:'Heebo',sans-serif; letter-spacing:.3em; font-weight:700; font-size:12px; color:#ffe1a6; margin-top:54px}
+  header.hero h1{position:relative; color:#fff; font-size:clamp(34px,6.5vw,60px); margin:.16em 0 .12em; text-shadow:0 6px 28px rgba(0,0,0,.25)}
+  header.hero .sub{position:relative; font-size:clamp(16px,2.3vw,20px); color:#dff1f3; max-width:640px; margin:.3em auto 0}
+  .hero-wave{position:absolute; bottom:-1px; left:0; width:100%; display:block}
+
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin:0 0 4px}
+  .sec-head .num{font-family:'Suez One',serif; color:var(--terra); font-size:20px}
+  .sec-head h2{font-size:clamp(24px,4vw,34px); margin:0}
+  .lead{color:var(--ink-soft); max-width:760px; font-size:17.5px; margin-top:4px}
+
+  /* FLOW */
+  .flow{display:flex; flex-wrap:wrap; align-items:stretch; gap:8px; justify-content:center; margin:18px 0}
+  .flow .node{background:var(--paper); border:2px solid var(--azure); border-radius:13px; padding:9px 12px; text-align:center; min-width:118px}
+  .flow .node b{display:block; color:var(--sea); font-family:'Heebo',sans-serif; font-weight:900; font-size:15px}
+  .flow .node span{font-size:12.5px; color:var(--ink-soft)}
+  .flow .node.hl{border-color:var(--terra)}
+  .flow .arrow{align-self:center; color:var(--terra); font-size:22px; font-weight:900}
+
+  /* TILES (home menu) */
+  .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:18px}
+  .tile{display:block; text-decoration:none; color:inherit; background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px 18px; box-shadow:var(--shadow); transition:.18s; cursor:pointer}
+  .tile:hover{transform:translateY(-3px); border-color:var(--azure)}
+  .tile .ic{font-size:26px}
+  .tile h3{margin:6px 0 2px; font-size:20px}
+  .tile p{margin:0; font-size:14.5px; color:var(--ink-soft)}
+  .tile.mine{background:linear-gradient(150deg,#fff,#fdeee8); border-color:#f0c3b3}
+
+  /* CARDS */
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:20px 22px; margin:15px 0; box-shadow:0 12px 32px -28px rgba(7,47,56,.6)}
+  .card h3{font-size:21px; margin:0 0 3px}
+  .card h4{font-size:18px; color:var(--sea); margin:.2em 0}
+  .meta{display:flex; flex-wrap:wrap; gap:7px 15px; font-family:'Heebo',sans-serif; font-size:13px; color:var(--ink-soft); margin:7px 0 9px}
+  .meta b{color:var(--sea); font-weight:700}
+  .meta .pr{background:#eef6f3; border:1px solid #cfe6dd; color:#0c5e5a; border-radius:7px; padding:1px 8px; font-weight:700}
+  .meta .free{background:#eef6f3; color:#0c5e5a}
+  .why{background:var(--sand-2); border-inline-start:4px solid var(--gold); border-radius:10px; padding:8px 13px; margin:9px 0; font-size:15px}
+  .alt{background:#f3f7f3; border-inline-start:4px solid var(--olive); border-radius:10px; padding:8px 13px; margin:8px 0; font-size:15px}
+  .links{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+  .links a{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; text-decoration:none; padding:6px 13px; border-radius:999px; border:1.5px solid var(--azure); color:var(--sea); background:#fff; transition:.15s}
+  .links a:hover{background:var(--azure); color:#fff}
+  .links a.map{border-color:var(--terra); color:var(--terra-deep)}
+  .links a.map:hover{background:var(--terra); color:#fff}
+
+  /* TAGS */
+  .tags{display:flex; flex-wrap:wrap; gap:6px; margin:3px 0}
+  .tag{font-family:'Heebo',sans-serif; font-weight:700; font-size:12px; padding:3px 10px; border-radius:999px; border:1px solid}
+  .t-beach{background:#e7f4f1; color:#0c5e5a; border-color:#bfe3dc}
+  .t-cult {background:#fbeae3; color:#a8401f; border-color:#f1c7b6}
+  .t-adv  {background:#fcf2d8; color:#8a6310; border-color:#eed79a}
+  .t-grand{background:#e9f0f8; color:#2c4a73; border-color:#cad9ed}
+  .t-all  {background:#eef0ee; color:#3a463a; border-color:#d6dcd2}
+
+  /* LEGEND */
+  .legend{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-top:8px}
+  .legend .l{background:var(--paper); border:1px solid var(--line); border-radius:13px; padding:12px 14px}
+  .legend .l .h{font-family:'Heebo',sans-serif; font-weight:900; font-size:15px}
+  .legend .l p{margin:2px 0 0; font-size:14px; color:var(--ink-soft)}
+
+  /* TIMELINE */
+  .day{position:relative; padding-inline-start:28px; margin:12px 0}
+  .day::before{content:""; position:absolute; inset-inline-start:6px; top:6px; bottom:-12px; width:2px; background:var(--line)}
+  .day:last-child::before{display:none}
+  .day .dot{position:absolute; inset-inline-start:0; top:3px; width:15px; height:15px; border-radius:50%; background:var(--terra); border:3px solid var(--paper)}
+  .day .date{font-family:'Heebo',sans-serif; font-weight:900; color:var(--sea); font-size:14.5px}
+  .day .ttl{font-weight:700}
+  .day p{margin:.3em 0 0; font-size:15px; color:var(--ink-soft)}
+
+  /* REGION banner */
+  .region{position:relative; color:#fff; border-radius:20px; overflow:hidden; padding:26px 26px; margin:6px 0 4px; box-shadow:var(--shadow)}
+  .region.north{background:linear-gradient(135deg,#0c4b57,#1b8a9e)}
+  .region.south{background:linear-gradient(135deg,#13738a,#2bb8c4)}
+  .region.drive{background:linear-gradient(135deg,#b5482f,#e3a23a)}
+  .region.city {background:linear-gradient(135deg,#3a4a2f,#6f8a5b)}
+  .region.mine {background:linear-gradient(135deg,#7a2f1c,#d96b4f)}
+  .region h2{color:#fff; margin:0; font-size:clamp(22px,4vw,32px)}
+  .region .when{font-family:'Heebo',sans-serif; font-weight:700; letter-spacing:.06em; color:#ffe9c2}
+  .region p{margin:.45em 0 0; color:#eef7f7; max-width:700px}
+
+  /* NOTE */
+  .note{background:#fff6ee; border:1px solid #f0d8c2; border-radius:15px; padding:15px 20px; margin:14px 0}
+  .note.warn{background:#fdeee9; border-color:#f0c3b3}
+  .note.q{background:#eef4fa; border-color:#cdddef}
+  .note .nh{font-family:'Heebo',sans-serif; font-weight:900; color:var(--terra-deep); margin-bottom:2px}
+  .note.q .nh{color:#2c4a73}
+
+  /* tables / lists */
+  table.h{width:100%; border-collapse:collapse; margin-top:8px; font-size:14.5px}
+  table.h th,table.h td{border:1px solid var(--line); padding:8px 10px; text-align:right; vertical-align:top}
+  table.h th{background:var(--sea); color:#fff; font-family:'Heebo',sans-serif; font-weight:700}
+  table.h tr:nth-child(even){background:var(--sand-2)}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .pill-list{list-style:none; padding:0; margin:5px 0 0}
+  .pill-list li{padding:6px 0; border-bottom:1px dashed var(--line-soft); font-size:15px}
+  .ok{color:#0c5e5a; font-weight:700} .no{color:#a8401f; font-weight:700}
+  .chip{display:inline-block; background:var(--sand-2); border:1px solid var(--line); border-radius:8px; padding:2px 9px; font-size:13px; font-family:'Heebo',sans-serif; margin:3px 4px 0 0}
+
+  footer{background:var(--sea-deep); color:#cfe6e9; text-align:center; padding:24px 20px; font-size:13.5px}
+  footer b{color:#ffe1a6}
+
+  @media (max-width:640px){ body{font-size:16px} .two{grid-template-columns:1fr} }
+  @media print{ nav{display:none} .view{display:block!important} header.hero{padding:24px 0 40px} .card,.region,.note,.tile{box-shadow:none} }
+</style>
+</head>
+<body>
+
+<!--
+============================================================
+תיעוד ובריף להמשך עבודה (HANDOFF) — מסמך מקור, לא מוצג בדפדפן
+לסוכן/מתכנן שימשיך. נאסף ועודכן: יוני 2026.
+============================================================
+
+1) הבריף (מה התבקש)
+- תכנון טיול משפחתי מורחב לאלבניה, 13–22.8.2026 ; תוצר = עמוד HTML בעברית לשיתוף.
+- תחקיר תחילה: לרכז אפשרויות לפני תכנית יומית סופית.
+- גמישות: לאפשר התפצלות לקבוצות כשאין הסכמה באטרקציות.
+- חלק מבני המשפחה רגישים לגלוטן.
+- להמליץ על לינה אחרונה (21.8) שטרם הוזמנה, בנפרד מהתכנית.
+- מבנה אפליקטיבי (בית + סעיפים מתחלפים), לא עמוד גלילה ארוך. מידע ספציפי למשפחת סולומון בסעיף נפרד.
+
+2) נתוני הטיול
+- טיסות: נחיתה טריאנה 13.8 בשעה 22:25 ; המראה טריאנה 22.8 בשעה 10:30.
+- רכב (סולומון): OK Mobility, Compact (Hyundai Venue), 5 מושבים. כ-20 איש => צריך 4–5 רכבים.
+- הרכב המשפחה (כ-20): סולומון (2 הורים + בנות 7,10) ; סבא וסבתא ; משפחה (2+תינוק 1.5) ; משפחה (2+בנות 6,3,1) ; משפחה (2+בנות 8,12,14,17).
+- לינה: וילה בדורס (לכולם), צ׳ק אאוט 19.8 ; מלון בקסאמיל, צ׳ק אאוט 21.8.
+- פער: לילה 21.8 לא מוזמן => המלצה ללון ליד שדה התעופה (Rinas).
+- אירועים: יום הולדת לסבתא (14.8, ארוחת שישי) ; יום הולדת לדניאל (18.8) ; מסיבת ימי נישואין מרוכזת.
+
+3) שלד הימים (מתואם ללוח השנה 2026)
+13.8 חמישי נחיתה | 14.8 שישי טריאנה+קניות+ערב סבתא | 15.8 שבת דאיטי | 16.8 ראשון שקודרה/חלופה | 17.8 שני בראט | 18.8 שלישי בוביליה+ערב דניאל | 19.8 רביעי מסע דרומה | 20.8 חמישי קסאמיל (בוטרינט+חופים+לקורסי) | 21.8 שישי צפונה אל לינה ליד השדה | 22.8 שבת טיסה 10:30.
+
+4) החלטות וניתוח מרכזי
+- תיאום ימי השבוע ללוח 2026 (13.8 = יום חמישי).
+- 21.8 = יום עלייה צפונה ולינה ליד השדה ; לא נסיעה בבוקר הטיסה (כ-4 ש׳ עם 20 איש).
+- דורס אל קסאמיל: כ-4.5 ש׳ (חופי דרך לוגרה) / כ-4 ש׳ (פנימי) ; באוגוסט 6–7 ש׳ עם עצירות.
+- המלצה: לפצל יום בראט מערב הפולקלור (יום טריאנה נפרד).
+- "יום רגוע בוילה" כאופציה לגיטימית לשבירת עומס הנסיעות.
+- בדיקות מציאות: שקודרה רחוקה ; מסלול גאמטי תלול ; חניה בקסאמיל לפני 09:00 ; שחייה בעין הכחולה אסורה (כ-10 מעלות).
+- מודל קבוצות לתיוג: ים/רוגע ; תרבות ; הרפתקה/נוער ; סבא וסבתא.
+- שאלת ערב הפולקלור "למבוגרים בלבד" נותרה פתוחה (מי עם הילדים).
+
+5) מאגר מחירים ושעות (נכון 2025/26, לאמת לפני הטיול)
+- רכבל דאיטי: כ-1,000–1,500 לק הלוך חזור ; 09:00–19:00, סגור שלישי.
+- Bunk'Art: כ-500–900 לק לאתר ; כרטיס משולב 1+2 כ-1,300 לק.
+- בית העלים כ-700 לק ; מוזיאון לאומי (טריאנה) כ-500 לק.
+- מוזיאון סקנדרבג (קרויה) כ-5 יורו ; אזור המצודה חינם ; חניה בתשלום.
+- בוטרינט 10 יורו / עד גיל 12 חינם / 12–18 כ-500 לק ; 08:00–20:00 (כניסה אחרונה 18:00).
+- עין כחולה כ-50 לק + חניה כ-100–300 לק ; מזומן בלבד ; שחייה אסורה.
+- ג׳ירוקסטרה (מצודה) 200 לק ; 09:00–19:00 בקיץ.
+- בראט: מצודה כ-100–300 לק ; מוזיאון אונופרי כ-200–400 לק (לאמת).
+- רוזאפה (שקודרה) כ-200–400 לק (לאמת).
+- דורס: אמפיתאטרון כ-200–300 לק ; מגדל ונציאני 600 לק.
+- פארק מים Blue Magic כ-11,000 לק לארבעה מבוגרים+שלושה ילדים (אסור אוכל מבחוץ) ; Aqua Mania בגולם.
+- איי קסאמיל: שאטל כ-3–5 יורו הלוך חזור ; פדלבוט כ-20 יורו לשעה ; קיאק כ-25 יורו ; סיור סירה קבוצתי מ-16 יורו ; סירה פרטית מ-130 יורו ליום ; סיור צדפות 25–44 יורו.
+
+6) גלוטן
+בטוח: גריל בשר/דג, אורז/ריזוטו, סלטים (בלי קרוטון/בלסמי), ירקות צלויים, גבינות, צדפות.
+להימנע: בורק/פיטה, לחם, קציצות (qofte), צ׳יפס בטיגון משותף.
+מסעדות: טריאנה (Tony's, Era) ; סרנדה (Fishbar, Sophra, Centrali, Salad Farm) ; קסאמיל (Mussel House) + מדריך findmeglutenfree. בסופרים יש מדף ללא גלוטן.
+משפט מועיל באלבנית: "Une nuk mund te ha gluten / pa miell, pa buke".
+
+7) לינה אחרונה (21.8) ליד שדה התעופה
+Airport Garden Hotel (4.7, כ-300 מ׳) ; Hotel Airport Tirana (4.4, מתאים לקבוצה גדולה, שאטל) ; Airport Holiday Hotel (4.3, ידידותי לתינוקות). חלופה עירונית בטריאנה: Colosseo (4.5), New W (4.7). היגיון: לא לנהוג כ-4 ש׳ בבוקר טיסת 10:30.
+
+8) שאלות פתוחות
+- וילה דורס מוזמנת מ-13.8 או מ-14.8? (משפיע על הלילה הראשון.)
+- תקציב ללינה ולמסעדות.
+- תיאבון לנהיגה (לקצר/לוותר על שקודרה?).
+- מספר הרכבים בפועל לכל המשפחה.
+- פתרון ל"ערב פולקלור למבוגרים בלבד" (מי עם הילדים).
+
+9) מבנה הקובץ (טכני, להמשך עריכה)
+- HTML יחיד ; CSS ו-JS מוטמעים ; תלות חיצונית יחידה: גופני Google (Suez One, Assistant, Heebo). RTL: dir="rtl" lang="he".
+- SPA: כל סעיף הוא div בעל class="view" ו-id="view-XXX". ניווט ע"י אלמנטים עם data-view="XXX" (גם בתפריט וגם בכרטיסי הבית). פונקציית show() מציגה view אחד ומסתירה את השאר ; ברירת מחדל = home.
+- באג קונסול שתוקן: עדכון ה-hash עטוף ב-try/catch, כי ב-iframe מסונדבק (about:srcdoc) קריאת history.replaceState עם URL זורקת SecurityError.
+- קישורי מפה בפורמט: https://www.google.com/maps/search/?api=1&query=NAME+LOCATION
+- הוספת אטרקציה: שכפלו אלמנט .card בעמוד הרלוונטי. מבנה: כותרת ; .tags ; .meta (כולל .pr למחיר) ; תיאור ; .why או .alt ; .links (אתר רשמי + מפה).
+- הדפסה: כל ה-views נפתחים תחת @media print.
+- Views קיימים: home, north, tirana, drive, south, food, info, mine.
+
+10) מקורות עיקריים שנסרקו
+Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunkart.al ; aquapark.com.al ; aquamania-waterpark.al ; UNESCO (Butrint) ; findmeglutenfree.com / atly.com ; hungariandreamers.com ; justgoexploring.com / carhirealbania.com ; onmetravel.com ; Google Places (מלונות).
+============================================================
+-->
+
+<nav><div class="bar">
+  <span class="brand" data-view="home">🇦🇱 אלבניה ’26</span>
+  <a data-view="home">בית</a>
+  <a data-view="north">דורס + צפון</a>
+  <a data-view="tirana">טריאנה</a>
+  <a data-view="drive">המסע דרומה</a>
+  <a data-view="south">קסאמיל + דרום</a>
+  <a data-view="food">אוכל &amp; גלוטן</a>
+  <a data-view="info">מידע פרקטי</a>
+  <a data-view="mine">משפחת סולומון</a>
+</div></nav>
+
+<!-- ======================= HOME ======================= -->
+<div class="view" id="view-home">
+  <header class="hero">
+    <div class="sun"></div>
+    <div class="kicker">מדריך טיול · תחקיר אפשרויות</div>
+    <h1>טיול משפחתי לאלבניה</h1>
+    <div class="sub">13–22 באוגוסט 2026 · משפחה מורחבת ~20 נפש · שני בסיסים: דורס בצפון, קסאמיל בדרום · תכנית גמישה שמאפשרת להתפצל לקבוצות</div>
+    <svg class="hero-wave" viewBox="0 0 1440 80" preserveAspectRatio="none"><path fill="#f7efe0" d="M0,36 C240,80 480,80 720,50 C960,20 1200,20 1440,50 L1440,80 L0,80 Z"></path></svg>
+  </header>
+
+  <div class="wrap" style="padding:24px 20px 56px">
+    <h3 style="margin:0 0 2px">מבט-על על המסלול</h3>
+    <div class="flow">
+      <div class="node"><b>חמישי 13.8</b><span>נחיתה 22:25</span></div><span class="arrow">←</span>
+      <div class="node"><b>שישי 14.8 – שלישי 18.8</b><span>בסיס דורס · טיולי כוכב</span></div><span class="arrow">←</span>
+      <div class="node"><b>רביעי 19.8</b><span>מסע דרומה</span></div><span class="arrow">←</span>
+      <div class="node"><b>חמישי 20.8</b><span>קסאמיל · חופים ובוטרינט</span></div><span class="arrow">←</span>
+      <div class="node hl"><b>שישי 21.8</b><span>עולים צפונה → לינה ליד השדה</span></div><span class="arrow">←</span>
+      <div class="node"><b>שבת 22.8</b><span>טיסה 10:30</span></div>
+    </div>
+
+    <h3 style="margin:22px 0 2px">מקרא הקבוצות (להתפצלות)</h3>
+    <p class="lead" style="margin:0 0 8px">בכל סעיף, כל אטרקציה מתויגת לקבוצה שהיא הכי מתאימה — כך ביום שאין הסכמה אפשר לפצל בקלות:</p>
+    <div class="legend">
+      <div class="l"><div class="h" style="color:#0c5e5a">🏖️ ים &amp; רוגע</div><p>פעוטות (1,1.5,3) + הוריהם ומי שרוצה יום עצלן. חופים רדודים, בריכות.</p></div>
+      <div class="l"><div class="h" style="color:#a8401f">🏛️ תרבות &amp; נופים</div><p>מבוגרים והגדולות שאוהבות סיפור. ערים עתיקות, מצודות, שווקים.</p></div>
+      <div class="l"><div class="h" style="color:#8a6310">🧗 הרפתקה &amp; נוער</div><p>הגדולים (8–17) + הורים אקטיביים. הליכות, רפטינג, מצנח, סירות.</p></div>
+      <div class="l"><div class="h" style="color:#2c4a73">👵 סבא־סבתא־פרנדלי</div><p>מעט הליכה, צל ומקום לשבת. רכבל, טיילות, נוף ממסעדה.</p></div>
+    </div>
+
+    <h3 style="margin:24px 0 2px">בחרו סעיף</h3>
+    <div class="tiles">
+      <a class="tile" data-view="north"><div class="ic">🗺️</div><h3>בסיס דורס + צפון</h3><p>שלד השבוע + קטלוג טיולי הכוכב: פארקי מים, קרויה, בראט, שקודרה, בוביליה.</p></a>
+      <a class="tile" data-view="tirana"><div class="ic">🏛️</div><h3>יום בטריאנה</h3><p>הבירה — מה לראות, והמלצה לפצל את בראט ולשלב ערב פולקלור.</p></a>
+      <a class="tile" data-view="drive"><div class="ic">🚗</div><h3>המסע דרומה</h3><p>דורס → קסאמיל: שני מסלולים ותחנות מומלצות בדרך.</p></a>
+      <a class="tile" data-view="south"><div class="ic">🏝️</div><h3>קסאמיל + הדרום</h3><p>חופים ואיים, בוטרינט, העין הכחולה, לקורסי, ג׳ירוקסטרה.</p></a>
+      <a class="tile" data-view="food"><div class="ic">🍽️</div><h3>אוכל &amp; ללא גלוטן</h3><p>מה בטוח לאכול, ממה להימנע, ומסעדות מומלצות עם קישורים.</p></a>
+      <a class="tile" data-view="info"><div class="ic">ℹ️</div><h3>מידע פרקטי</h3><p>כסף, נהיגה, חום, תינוקות, תקשורת ותיאום קבוצתי.</p></a>
+      <a class="tile mine" data-view="mine"><div class="ic">👨‍👩‍👧‍👧</div><h3>משפחת סולומון</h3><p>ספציפי לנו: הרכב, הנסיעה צפונה ב-21.8 והלינה האחרונה.</p></a>
+    </div>
+    <p style="color:var(--ink-soft); font-size:14px; margin-top:18px">💡 טאפ על כרטיס או על התפריט למעלה כדי לעבור בין הסעיפים — כל סעיף נטען בנפרד, בלי לגלול עמוד ארוך.</p>
+  </div>
+</div>
+
+<!-- ======================= NORTH ======================= -->
+<div class="view" id="view-north"><div class="wrap pad">
+  <a class="back" data-view="home">→ חזרה לבית</a>
+  <div class="region north"><div class="when">14–19 באוגוסט</div><h2>בסיס דורס + צפון אלבניה</h2>
+    <p>דורס יושבת על החוף האדריאטי — חול רך וים רדוד, מצוין לפעוטות. מכאן יוצאים לטיולי כוכב וחוזרים ל״בית״ בערב.</p></div>
+
+  <h3 style="margin-top:22px">שלד השבוע (גמיש)</h3>
+  <div class="card">
+    <div class="day"><span class="dot"></span><div class="date">שישי 14.8 · יום ההגעה</div>
+      <div class="ttl">בוקר בטריאנה + קניות לוילה · בערב ארוחת שישי ומסיבת יום הולדת לסבתא ❤️</div>
+      <p>סיבוב קליל בטריאנה וקנייה בסופר גדול לכל השבוע, ואז לוילה לערב נינוח. <a data-view="tirana">לפירוט אטרקציות בטריאנה ←</a></p>
+      <div class="tags"><span class="tag t-all">מתאים לכולם</span></div></div>
+    <div class="day"><span class="dot"></span><div class="date">שבת 15.8</div>
+      <div class="ttl">הר דאיטי — רכבל ופארק הרפתקאות</div>
+      <p>מצוין כי הוא ״מפצל את עצמו״. <a data-view="tirana">ראו כרטיס ״הר דאיטי״ בעמוד טריאנה ←</a></p></div>
+    <div class="day"><span class="dot"></span><div class="date">ראשון 16.8</div>
+      <div class="ttl">אגם שקודרה <span style="color:var(--terra-deep)">— או אלטרנטיבה קרובה</span></div>
+      <p>שקודרה רחוקה (~1.5–2 ש׳ לכל כיוון). חלופות לאותו יום: קרויה (~שעה), פארק מים, או יום חוף בדורס. ראו הכרטיסים למטה.</p></div>
+    <div class="day"><span class="dot"></span><div class="date">שני 17.8</div>
+      <div class="ttl">בראט — ״עיר אלף החלונות״</div>
+      <p>שווה מאוד. שימו לב להמלצה: <a data-view="tirana">לפצל את בראט מהערב-פולקלור ←</a> (בראט→טריאנה הוא עוד ~2 ש׳ אחרי יום מלא).</p></div>
+    <div class="day"><span class="dot"></span><div class="date">שלישי 18.8</div>
+      <div class="ttl">אגם בוביליה — תצפית ופיקניק · בערב יום הולדת לדניאל ❤️</div>
+      <p>התצפית נגישה לכולם; מסלול ההר תלול ומיועד לקבוצת ההרפתקה.</p></div>
+  </div>
+
+  <h3 style="margin-top:26px">קטלוג טיולי הכוכב מדורס</h3>
+
+  <div class="card"><h3>🏡 יום רגוע בוילה</h3>
+    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">סבא-סבתא</span><span class="tag t-beach">פעוטות</span></div>
+    <div class="meta"><span class="pr free">חינם</span><span>⏱️ יום שלם</span></div>
+    <p>המלצה לגיטימית לגמרי: יום שבו רוב החבורה נשארת בוילה — בריכה (אם יש), משחקים, מנוחה, ובישול משותף. שובר את עומס הנסיעות, מצוין לפעוטות ולסבא-סבתא, ומאפשר לחלק האקטיבי לצאת לטיול קצר ולחזור.</p>
+  </div>
+
+  <div class="card"><h3>🚠 הר דאיטי + רכבל Dajti Ekspres</h3>
+    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">סבא-סבתא</span><span class="tag t-adv">נוער</span></div>
+    <div class="meta"><span>📍 ~30–40 ד׳ מדורס</span><span>🕗 09:00–19:00, סגור שלישי</span><span class="pr">רכבל הלוך-חזור ~1,000–1,500 לק (€10–15)</span></div>
+    <p>רכבל ארוך וקליל לכל הגילאים אל פסגת ההר. למעלה: מסעדות עם נוף, מיני-גולף, פארק חבלים, רכיבה על סוסים, באגי ומצנח רחיפה לגדולים. (אפשר לשלב עם Bunk’Art 1 שנמצא ממש לידו.)</p>
+    <div class="links"><a href="https://dajtiekspres.com" target="_blank" rel="noopener">אתר רשמי</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Dajti+Ekspres+Cable+Car" target="_blank" rel="noopener">מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🌊 פארקי מים (קלף מנצח עם כל הילדים)</h3>
+    <div class="tags"><span class="tag t-beach">ים &amp; רוגע</span><span class="tag t-adv">נוער</span></div>
+    <div class="meta"><span>📍 גולם ~15 ד׳ · קשאר על ציר טריאנה–דורס</span><span class="pr">~11,000 לק ל-4 מבוגרים+3 ילדים (Blue Magic)</span></div>
+    <p><b>Aqua Mania (גולם)</b> — הקרוב לדורס. <b>AquaPark “Blue Magic Water” (קשאר)</b> — הגדול במדינה, 4 בריכות, 7+ מגלשות, <b>אזור ייעודי לגילאי 0–5</b>, חניה+מיטות במחיר. שימו לב: ב-Blue Magic אסור אוכל/שתייה מבחוץ.</p>
+    <div class="links"><a href="https://aquapark.com.al" target="_blank" rel="noopener">Blue Magic</a><a href="http://www.aquamania-waterpark.al" target="_blank" rel="noopener">Aqua Mania</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Aquapark+Albania+Blue+Magic+Water+Kashar" target="_blank" rel="noopener">מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🏰 קרויה — מצודה ובזאר עות׳מאני</h3>
+    <div class="tags"><span class="tag t-cult">תרבות</span></div>
+    <div class="meta"><span>📍 ~1 שעה מדורס</span><span>⏱️ חצי יום</span><span class="pr">אזור המצודה חינם · מוזיאון סקנדרבג ~€5 (500 לק)</span><span>🅿️ חניה בתשלום</span></div>
+    <p>עיירה ציורית על מדרון: מצודה, מוזיאון סקנדרבג, ובזאר עתיק מרוצף למזכרות. חלופה נהדרת ל-16.8 (חצי הזמן ברכב). מינוס לסבא-סבתא: ריצוף אבן ומדרגות.</p>
+    <div class="links"><a href="https://muzeumet-kruje.com" target="_blank" rel="noopener">מוזיאון סקנדרבג</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Kruja+Castle" target="_blank" rel="noopener">מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🪟 בראט — ״עיר אלף החלונות״ (אונסק״ו)</h3>
+    <div class="tags"><span class="tag t-cult">תרבות</span><span class="tag t-adv">נוער (קניון אוסום)</span></div>
+    <div class="meta"><span>📍 ~1.5–2 ש׳ מדורס</span><span>⏱️ יום שלם</span><span class="pr">מצודה ~100–300 לק · מוזיאון אונופרי ~200–400 לק (לאמת)</span></div>
+    <p>מצודה מאוכלסת עד היום, מוזיאון האיקונות של אונופרי, השכונות מנגלם וגוריצה משני צדי נהר אוסום והגשר העות׳מאני. בדרך אפשר לעצור באגם בלשי. לנוער: סמוך לבראט יש <b>קניון אוסום</b> עם רפטינג קליל ומדריכים.</p>
+    <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Berat+Castle" target="_blank" rel="noopener">מצודת בראט – מפה ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Osum+Canyon+Albania" target="_blank" rel="noopener">קניון אוסום – מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🛶 אגם שקודרה + מצודת רוזאפה</h3>
+    <div class="tags"><span class="tag t-cult">תרבות</span><span class="tag t-beach">שיט נינוח</span></div>
+    <div class="meta"><span>📍 ~1.5–2 ש׳ מדורס (הנסיעה הארוכה ביותר)</span><span>⏱️ יום מלא</span><span class="pr">רוזאפה ~200–400 לק (לאמת) · שיט לפי סירה</span></div>
+    <p>האגם הגדול בבלקן: שיט נינוח, מצודת רוזאפה ההיסטורית עם נוף, גשר מסי, והכפרים שירוקה/זוגאי (מסעדות דגים, השכרת אופניים).</p>
+    <div class="note warn" style="margin:8px 0 0"><div class="nh">המלצה</div>היום עם הכי הרבה רכב. אם רוצים — צאו מוקדם מאוד, או פצלו: רק חובבי-הנוף נוסעים, השאר ליום חוף/פארק-מים בדורס.</div>
+    <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Rozafa+Castle+Shkoder" target="_blank" rel="noopener">רוזאפה – מפה ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Lake+Shkoder" target="_blank" rel="noopener">האגם – מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>⛰️ אגם בוביליה + הר גאמטי</h3>
+    <div class="tags"><span class="tag t-adv">הרפתקה</span><span class="tag t-grand">תצפית בלבד</span></div>
+    <div class="meta"><span>📍 ~1–1.5 ש׳ מדורס</span><span>⏱️ חצי–יום</span><span class="pr free">תצפית חינם · קוואד בתשלום</span></div>
+    <p>תצפית טורקיז דרמטית — מושלמת לפיקניק. מי שרוצה: הליכה לפסגת גאמטי (2–3 ש׳, תלול) או טיולי קוואד (ATV). פיצול מובנה: תצפית+פיקניק לכולם, המסלול לקבוצת ההרפתקה.</p>
+    <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bovilla+Lake" target="_blank" rel="noopener">מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🏖️ דורס המקומית (יום קל / קבוצת רוגע)</h3>
+    <div class="tags"><span class="tag t-beach">ים &amp; רוגע</span><span class="tag t-grand">סבא-סבתא</span><span class="tag t-cult">תרבות קלה</span></div>
+    <div class="meta"><span>⏱️ גמיש</span><span class="pr">אמפיתאטרון ~200–300 לק · מגדל ונציאני 600 לק</span></div>
+    <p>האמפיתאטרון הרומי (מהגדולים בבלקן), המגדל הוונציאני (כולל חוויית VR), הפורום הביזנטי, הטיילת והחוף הרדוד — אידאלי לימים שבהם הפעוטות וסבא-סבתא נשארים קרוב.</p>
+    <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Durres+Amphitheatre" target="_blank" rel="noopener">אמפיתאטרון – מפה ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Venetian+Tower+Durres" target="_blank" rel="noopener">מגדל ונציאני – מפה ↗</a></div>
+  </div>
+</div></div>
+
+<!-- ======================= TIRANA ======================= -->
+<div class="view" id="view-tirana"><div class="wrap pad">
+  <a class="back" data-view="home">→ חזרה לבית</a>
+  <div class="region city"><div class="when">יום מומלץ נפרד</div><h2>יום בטריאנה — הבירה</h2>
+    <p>טריאנה צבעונית ותוססת, ומגיע לה יום משלה (לא רק עצירת קניות). מכאן גם ה-Bunk’Art והרכבל לדאיטי.</p></div>
+
+  <div class="note"><div class="nh">💡 המלצה: לפצל את בראט מהערב-פולקלור</div>
+    במקום לדחוס יום-בראט מלא ואז עוד ~שעתיים נסיעה לערב פולקלור בטריאנה — עדיף <b>יומיים נפרדים</b>: יום אחד מוקדש לבראט, ויום אחר ל<b>טריאנה + ערב פולקלור</b> בעיר. ככה גם טריאנה מקבלת זמן הוגן וגם הערב יוצא רגוע ולא מאוחר.</div>
+
+  <div class="note q"><div class="nh">❓ שאלה: ״ערב פולקלור למבוגרים בלבד״ — מי עם הילדים?</div>
+    כדאי לסכם מראש. אפשרויות: (א) ארוחת הפולקלור עצמה משפחתית, וה״חידון למבוגרים 🔞״ הוא חלק נפרד ומאוחר בוילה; (ב) ערב שבו סבא-סבתא/שמרטף עם הקטנים והמבוגרים יוצאים; (ג) להפוך לערב משפחתי לגמרי.</div>
+
+  <h3 style="margin-top:22px">מה לראות בטריאנה</h3>
+
+  <div class="card"><h3>🚶 מסלול הליכה במרכז (חינם)</h3>
+    <div class="tags"><span class="tag t-all">כולם</span></div>
+    <div class="meta"><span class="pr free">חינם</span><span>⏱️ 2–3 שעות</span></div>
+    <p>כיכר סקנדרבג (מקום לרוץ לילדים), מסגד את׳הם ביי ומגדל השעון, <b>הפירמידה של טריאנה</b> (אפשר לטפס למעלה), השוק החדש Pazari i Ri (אוכל, ויש גם אופציות ללא גלוטן) ושכונת בלוקו התוססת לקפה.</p>
+    <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Skanderbeg+Square+Tirana" target="_blank" rel="noopener">כיכר סקנדרבג – מפה ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Pyramid+of+Tirana" target="_blank" rel="noopener">הפירמידה – מפה ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Pazari+i+Ri+Tirana" target="_blank" rel="noopener">פאזארי אירי – מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🪖 Bunk’Art 2 ו-Bunk’Art 1 (בונקרים מהמלחמה הקרה)</h3>
+    <div class="tags"><span class="tag t-cult">תרבות</span><span class="tag t-adv">נוער</span></div>
+    <div class="meta"><span>📍 Bunk’Art 2 במרכז · Bunk’Art 1 ליד הרכבל</span><span>🕗 ~09:30–16:00/18:00, סגור שני-שלישי</span><span class="pr">~500–900 לק לאתר · משולב 1+2 ~1,300 לק</span></div>
+    <p>בונקרים ענקיים שהפכו למוזיאונים על התקופה הקומוניסטית. Bunk’Art 1 (ליד הרכבל) גדול ומרשים — נוח לשלב עם דאיטי באותו יום. מתאים יותר לגדולים ולמבוגרים.</p>
+    <div class="links"><a href="https://www.bunkart.al" target="_blank" rel="noopener">אתר רשמי</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bunk+Art+2+Tirana" target="_blank" rel="noopener">Bunk’Art 2 – מפה ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bunk+Art+1+Tirana" target="_blank" rel="noopener">Bunk’Art 1 – מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🍃 בית העלים (מוזיאון המעקב) + המוזיאון הלאומי להיסטוריה</h3>
+    <div class="tags"><span class="tag t-cult">תרבות</span></div>
+    <div class="meta"><span class="pr">בית העלים ~700 לק · מוזיאון לאומי ~500 לק</span><span>⏱️ ~1 שעה כל אחד</span></div>
+    <p>בית העלים — מוזיאון מצמרר על המעקב והמשטרה החשאית בתקופת הוקסהה. המוזיאון הלאומי בכיכר סקנדרבג — סקירה רחבה של ההיסטוריה האלבנית.</p>
+    <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=House+of+Leaves+Museum+Tirana" target="_blank" rel="noopener">בית העלים – מפה ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=National+History+Museum+Tirana" target="_blank" rel="noopener">המוזיאון הלאומי – מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🌳 הפארק הגדול והאגם המלאכותי</h3>
+    <div class="tags"><span class="tag t-beach">רוגע</span><span class="tag t-grand">סבא-סבתא</span><span class="tag t-all">משפחות</span></div>
+    <div class="meta"><span class="pr free">חינם</span><span>⏱️ כמה שעות</span></div>
+    <p>פארק ענק (230 הקטר) עם אגם, שבילי הליכה ובתי קפה על המים — מתקני שעשועים, מקום לפיקניק ולנשום אוויר. אידאלי לשלב עם הילדים אחרי בוקר במרכז.</p>
+    <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Grand+Park+of+Tirana" target="_blank" rel="noopener">מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🚠 רכבל דאיטי</h3>
+    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">סבא-סבתא</span><span class="tag t-adv">נוער</span></div>
+    <div class="meta"><span>📍 מזרח טריאנה</span><span class="pr">הלוך-חזור ~1,000–1,500 לק</span></div>
+    <p>הדרך הכי קלה לתת לכולם נוף ופעילות (פירוט מלא בכרטיס בעמוד ״דורס + צפון״). נוח לשלב עם Bunk’Art 1 הסמוך.</p>
+    <div class="links"><a href="https://dajtiekspres.com" target="_blank" rel="noopener">אתר רשמי</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Dajti+Ekspres+Cable+Car" target="_blank" rel="noopener">מפה ↗</a></div>
+  </div>
+</div></div>
+
+<!-- ======================= DRIVE ======================= -->
+<div class="view" id="view-drive"><div class="wrap pad">
+  <a class="back" data-view="home">→ חזרה לבית</a>
+  <div class="region drive"><div class="when">רביעי 19 באוגוסט</div><h2>המסע דרומה: דורס → קסאמיל</h2>
+    <p>זהו למעשה <b>יום נסיעה שלם</b>, לא ״עצירה בדרך״. צאו מוקדם אחרי שמפנים את הוילה.</p></div>
+
+  <table class="h">
+    <tr><th>מסלול</th><th>זמן (בלי עצירות)</th><th>אופי</th><th>למי מתאים</th></tr>
+    <tr><td><b>חופי-נופי</b> דרך וְלורה ומעבר לוגרה</td><td>~4.5 ש׳ · באוגוסט עם עצירות 6–7 ש׳</td><td>מרהיב: סרפנטינות ונוף לים היוני</td><td>חובבי נוף, נסיעה כחוויה</td></tr>
+    <tr><td><b>פנימי מהיר</b> דרך פייר וטפלנה</td><td>~4 ש׳</td><td>כביש מהיר וישר, פחות מסחרר</td><td>פעוטות שנרדמים ברכב, רכב עמוס</td></tr>
+  </table>
+
+  <div class="card" style="margin-top:16px"><h3>תחנות מומלצות במסלול החופי</h3>
+    <div class="tags"><span class="tag t-cult">תרבות</span><span class="tag t-beach">חופים</span></div>
+    <ul class="pill-list">
+      <li><b>וְלורה</b> — עצירת צהריים וטיילת ים (כאן הוכרזה עצמאות אלבניה ב-1912). חניה בעיר מאתגרת.</li>
+      <li><b>מעבר לוגרה (1,027 מ׳)</b> — נקודת התצפית הדרמטית של אלבניה. נפתחה מנהרה חדשה — אפשר לבחור בין הכביש ההרי (נוף) למנהרה (מהירות).</li>
+      <li><b>חופי הריביירה</b> — דְהֶרְמי, הִימָרָה, מבצר פורטו פלרמו, בורש — לרענון ושחייה.</li>
+    </ul>
+    <div class="why">לולאה חכמה: יורדים דרומה דרך החוף (לוגרה), ובחזרה ב-21.8 עולים דרך הפנים (העין הכחולה + ג׳ירוקסטרה) — ככה רואים את שני הצדדים של המדינה.</div>
+    <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Llogara+Pass" target="_blank" rel="noopener">מעבר לוגרה – מפה ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Vlore+Promenade" target="_blank" rel="noopener">טיילת וְלורה – מפה ↗</a></div>
+  </div>
+</div></div>
+
+<!-- ======================= SOUTH ======================= -->
+<div class="view" id="view-south"><div class="wrap pad">
+  <a class="back" data-view="home">→ חזרה לבית</a>
+  <div class="region south"><div class="when">19–21 באוגוסט</div><h2>בסיס קסאמיל + סרנדה (הדרום)</h2>
+    <p>״המלדיביים של אלבניה״ — מים טורקיז ואיים קטנים. הזמן בדרום קצר, אז שווה לתעדף.</p></div>
+
+  <div class="note warn"><div class="nh">☀️ קסאמיל באוגוסט — טיפ קריטי</div>
+    קסאמיל פופולרית מאוד, ה<b>חניה כמעט בלתי אפשרית אחרי 09:00</b> ומיטות השיזוף נתפסות מוקדם. הגיעו לחוף מוקדם, או הזמינו מראש מיטות ב-beach club. הים היוני חלוקי במקומות — שווה <b>נעלי ים</b> לילדים.</div>
+
+  <h3 style="margin-top:20px">שלד הדרום</h3>
+  <div class="card">
+    <div class="day"><span class="dot"></span><div class="date">רביעי 19.8 · ערב</div>
+      <div class="ttl">הגעה לקסאמיל אחרי המסע — צ׳ק-אין, טבילה וארוחת ערב</div></div>
+    <div class="day"><span class="dot"></span><div class="date">חמישי 20.8 · היום המלא</div>
+      <div class="ttl">בוטרינט בבוקר (לפני החום) → חופים ואיים → שקיעה בלקורסי/סרנדה</div>
+      <p>פיצול קלאסי: קבוצת תרבות לבוטרינט בבוקר, קבוצת רוגע ישר לחוף; מתאחדים על האיים בצהריים.</p></div>
+    <div class="day"><span class="dot"></span><div class="date">שישי 21.8 · יציאה צפונה</div>
+      <div class="ttl">מפנים את המלון → העין הכחולה → ג׳ירוקסטרה → לינה ליד שדה התעופה</div>
+      <p>ככה יום הנסיעה צפונה הופך ליום טיול אמיתי. <a data-view="mine">פרטי הנסיעה צפונה והלינה בעמוד ״משפחת סולומון״ ←</a></p></div>
+  </div>
+
+  <h3 style="margin-top:24px">קטלוג האטרקציות בדרום</h3>
+
+  <div class="card"><h3>🏝️ חופי קסאמיל + האיים</h3>
+    <div class="tags"><span class="tag t-beach">ים &amp; רוגע</span><span class="tag t-adv">SUP/שנורקל</span><span class="tag t-grand">חוף נגיש</span></div>
+    <div class="meta"><span>🚤 סירת שאטל לאיים ~€3–5 הלוך-חזור</span><span class="pr">פדלבוט ~€20/שעה · קיאק ~€25 · סיור סירה קבוצתי מ-~€16 לאדם · סירה פרטית מ-~€130/יום</span></div>
+    <p>חופים: Ksamil, Lori, Pulebardha, חוף המראה (Pasqyrat), חוף המנזר. מול החוף ה<b>איים הטורקיז</b> — מגיעים בסירה קטנה, ב-SUP, או שוחים. בתי קפה ומיטות על האיים.</p>
+    <div class="links"><a href="https://ksamil.al" target="_blank" rel="noopener">סירות ופעילויות</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Ksamil+Islands" target="_blank" rel="noopener">האיים – מפה ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Mirror+Beach+Ksamil" target="_blank" rel="noopener">חוף המראה – מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🏛️ הפארק הלאומי בוטרינט (אונסק״ו)</h3>
+    <div class="tags"><span class="tag t-cult">תרבות</span><span class="tag t-adv">נוער</span></div>
+    <div class="meta"><span>📍 ~10 ד׳ מקסאמיל</span><span>🕗 בקיץ ~08:00–20:00 (כניסה אחרונה 18:00)</span><span class="pr">~€10 מבוגר · עד 12 חינם · 12–18 כ-500 לק</span><span>⏱️ ~2 ש׳</span></div>
+    <p>עיר עתיקה מרהיבה ביער: אמפיתאטרון, בזיליקות, מצודה ופסיפסים. מסלול מעגלי קל ללכת, אבל יש טיפוס לאקרופוליס ומעט צל — מומלץ בבוקר המוקדם. הביאו מים ומזומן.</p>
+    <div class="alt">לסבא-סבתא: אפשר להסתפק בחלק התחתון ולוותר על הטיפוס לאקרופוליס.</div>
+    <div class="links"><a href="https://whc.unesco.org/en/list/570/" target="_blank" rel="noopener">דף אונסק״ו</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Butrint+National+Park" target="_blank" rel="noopener">מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>💧 העין הכחולה (Syri i Kaltër)</h3>
+    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">שביל נגיש לעגלה</span></div>
+    <div class="meta"><span>📍 ~30 ד׳ מקסאמיל (SH99 חלקית לא סלולה)</span><span class="pr">כניסה ~50 לק לאדם · חניה ~100–300 לק · מזומן בלבד</span><span>⏱️ ~1.5–2 ש׳</span></div>
+    <p>מעיין קארסט בצבע כחול-עין מהפנט, ~10°C כל השנה. מהחניה שביל סלול של ~2 ק״מ בעלייה מתונה — <b>ידידותי לעגלת תינוק</b> (או רכבת/קטנוע חשמלי ב-~€3).</p>
+    <div class="note warn" style="margin:8px 0 0"><div class="nh">חשוב</div>ה<b>שחייה אסורה רשמית</b> (שמורת טבע) והמים קפואים. בפלטפורמה אין מחסום מעל המים — <b>השגיחו על הקטנים</b>. הגיעו לפני 09:00. תחנה מושלמת בדרך צפונה אל ג׳ירוקסטרה.</div>
+    <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Blue+Eye+Syri+i+Kalter+Saranda" target="_blank" rel="noopener">מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🌅 מצודת לקורסי + סרנדה</h3>
+    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">נוף ממסעדה</span></div>
+    <div class="meta"><span>📍 מעל סרנדה</span><span class="pr free">כניסה למצודה חינם · ארוחה במסעדה בתשלום</span><span>⏱️ שקיעה + ארוחה</span></div>
+    <p>מצודה על ראש גבעה עם נוף פנורמי מדהים לסרנדה, קסאמיל וקורפו — <b>מסעדה לארוחת שקיעה</b>, חוויה מנצחת לכל הגילאים. למטה: טיילת סרנדה לטיול ערב נינוח. (נוח יותר מבחינת זמן מאשר נסיעה לג׳ירוקסטרה בערב.)</p>
+    <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Lekuresi+Castle+Saranda" target="_blank" rel="noopener">מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🪨 ג׳ירוקסטרה — ״עיר האבן״ (אונסק״ו)</h3>
+    <div class="tags"><span class="tag t-cult">תרבות</span></div>
+    <div class="meta"><span>📍 ~1h15–1h30 מקסאמיל · על ציר היציאה צפונה</span><span>🕗 09:00–19:00 (קיץ)</span><span class="pr">מצודה 200 לק</span><span>⏱️ ~2–3 ש׳</span></div>
+    <p>עיר עות׳מאנית מרשימה מאבן: מצודה ענקית, בזאר עתיק מרוצף, ובתי אבן היסטוריים. הכי הגיוני לשלב ב-21.8 בדרך צפונה יחד עם העין הכחולה.</p>
+    <div class="links"><a href="https://gjirokastra.org/gjirokastra/the-castle/" target="_blank" rel="noopener">אתר רשמי (המצודה)</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Gjirokaster+Castle" target="_blank" rel="noopener">מפה ↗</a></div>
+  </div>
+
+  <div class="card"><h3>🚤 שייט וסירות מסרנדה/קסאמיל</h3>
+    <div class="tags"><span class="tag t-adv">הרפתקה &amp; נוער</span><span class="tag t-cult">חוויה מקומית</span></div>
+    <div class="meta"><span class="pr">סיור צדפות ~€25 (45 ד׳) / ~€44 (2.5 ש׳ עם ארוחה) · סיורי מפרץ קקומה/קרורז משתנים</span></div>
+    <p>שייט לאיי קסאמיל, למפרץ קקומה, למערות נסתרות ולחוף קרורז (עם שנורקלינג). חוויה משפחתית מיוחדת: <b>סיור הצדפות</b> על אגם בוטרינט — שטים בסירה מסורתית, מבקרים בחוות צדפות וטועמים.</p>
+    <div class="links"><a href="https://ksamil.al" target="_blank" rel="noopener">אופרטור מקומי</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Mussel+House+Ksamil" target="_blank" rel="noopener">בית הצדפות – מפה ↗</a></div>
+  </div>
+</div></div>
+
+<!-- ======================= FOOD ======================= -->
+<div class="view" id="view-food"><div class="wrap pad">
+  <a class="back" data-view="home">→ חזרה לבית</a>
+  <div class="sec-head"><span class="num">🍽️</span><h2>אוכל &amp; ללא גלוטן</h2></div>
+  <p class="lead">חדשות טובות: בסיס המטבח האלבני ידידותי — בשר ודג על הגריל, אורז וריזוטו, סלטים וצדפות. המודעות לצליאק גדלה, במיוחד באזורי התיירות.</p>
+
+  <div class="two" style="margin-top:14px">
+    <div class="card"><h4 class="ok">✅ בטוח (מטבעו)</h4>
+      <ul class="pill-list">
+        <li>בשר ודג על הגריל (בלי מרינדת קמח)</li>
+        <li>אורז, ריזוטו (לבדוק רוטב)</li>
+        <li>סלטים — בלי קרוטונים, להיזהר מרוטב/בלסמי</li>
+        <li>ירקות צלויים / אנטיפסטי</li>
+        <li>גבינות מקומיות, יוגורט, ביצים</li>
+        <li>צדפות ופירות ים (מנה מנצחת בדרום)</li>
+      </ul></div>
+    <div class="card"><h4 class="no">⛔ להימנע</h4>
+      <ul class="pill-list">
+        <li><b>בורק / פיטה</b> (byrek / pite) — בצק</li>
+        <li><b>לחם</b> (bukë)</li>
+        <li>קציצות (qofte) — לרוב עם פירורי לחם</li>
+        <li>צ׳יפס בטיגון משותף (זיהום צולב)</li>
+        <li>פסטה ומאפים רגילים</li>
+      </ul></div>
+  </div>
+
+  <div class="card"><h4>מסעדות ידידותיות לצליאק</h4>
+    <div class="meta"><span><b>טריאנה</b></span></div>
+    <div class="links">
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Tonys+American+Restaurant+Tirana" target="_blank" rel="noopener">Tony’s American (פיצה/בורגר GF) – מפה ↗</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Era+Restaurant+Tirana" target="_blank" rel="noopener">Era (סלטים GF) – מפה ↗</a>
+    </div>
+    <div class="meta" style="margin-top:12px"><span><b>סרנדה</b></span></div>
+    <div class="links">
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Fishbar+Saranda" target="_blank" rel="noopener">Fishbar – מפה ↗</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Sophra+Restaurant+Saranda" target="_blank" rel="noopener">Sophra – מפה ↗</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Centrali+Saranda" target="_blank" rel="noopener">Centrali – מפה ↗</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Salad+Farm+Saranda" target="_blank" rel="noopener">Salad Farm – מפה ↗</a>
+    </div>
+    <div class="meta" style="margin-top:12px"><span><b>קסאמיל</b></span></div>
+    <div class="links">
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=The+Mussel+House+Ksamil" target="_blank" rel="noopener">The Mussel House (פירות ים) – מפה ↗</a>
+      <a href="https://www.findmeglutenfree.com/al" target="_blank" rel="noopener">מדריך GF מלא (Find Me Gluten Free)</a>
+    </div>
+    <div class="why" style="margin-top:12px">טיפ: בסופרים הגדולים יש מדף ״ללא גלוטן״ (לחם, חטיפים, פסטה) — שווה למלא מלאי בתחילת השבוע בדורס. ושאלו תמיד לגבי <b>מטגן/משטח משותף</b>.</div>
+  </div>
+
+  <div class="note"><div class="nh">משפט שימושי לשמור בטלפון (אלבנית)</div>
+    <span class="chip">Unë nuk mund të ha gluten</span> אני לא יכול/ה לאכול גלוטן ·
+    <span class="chip">pa miell, pa bukë</span> בלי קמח, בלי לחם ·
+    <span class="chip">A është pa gluten?</span> האם זה ללא גלוטן?</div>
+</div></div>
+
+<!-- ======================= INFO ======================= -->
+<div class="view" id="view-info"><div class="wrap pad">
+  <a class="back" data-view="home">→ חזרה לבית</a>
+  <div class="sec-head"><span class="num">ℹ️</span><h2>מידע פרקטי</h2></div>
+  <div class="two" style="margin-top:14px">
+    <div class="card"><h4>💶 כסף</h4><p>המטבע לק (Lek); כספומטים נפוצים. <b>מזומן מלך</b> — הרבה אטרקציות, חניות וכניסות (בוטרינט, העין הכחולה) מזומן בלבד. חלק מקבל יורו אך בשער גרוע. החזיקו שטרות קטנים.</p></div>
+    <div class="card"><h4>🚗 נהיגה</h4><p>הנהיגה המקומית עשויה להיות אגרסיבית — נסיעה דפנסיבית. כבישי הרים מפותלים. חניה קשה בערים, בוְלורה ובקסאמיל (הגיעו מוקדם). חגורות לכולם, כיסאות בטיחות לפעוטות.</p></div>
+    <div class="card"><h4>☀️ חום אוגוסט</h4><p>חם מאוד בצהריים. הליכות לבוקר המוקדם, צהריים לים/צל, ושוב פעילות לעת ערב. הרבה מים, כובעים וקרם הגנה. נעלי ים לחופי הריביירה.</p></div>
+    <div class="card"><h4>👶 עם הקטנטנים</h4><p>עגלה שמישה לעין הכחולה ולטיילות; פחות לבוטרינט/קרויה (אבן). שמרו על שגרת שינה ברכב בימי הנסיעה הארוכים. חלק מהמלונות עוזרים עם צרכי תינוק.</p></div>
+    <div class="card"><h4>📶 תקשורת</h4><p>כיסוי טוב באזורים מיושבים. שווה eSIM/סים מקומי לניווט. הורידו מפות אופליין — בחלק מהדרכים בדרום הקליטה חלשה.</p></div>
+    <div class="card"><h4>🗓️ תיאום קבוצתי</h4><p>עם ~20 איש וכמה רכבים: קבעו מראש נקודות מפגש וזמן יעד יומי, ושמרו קבוצת וואטסאפ אחת. ״תכנית מרכזית + פיצול לפי תגיות״ מוריד הרבה חיכוך.</p></div>
+  </div>
+</div></div>
+
+<!-- ======================= MINE (our family) ======================= -->
+<div class="view" id="view-mine"><div class="wrap pad">
+  <a class="back" data-view="home">→ חזרה לבית</a>
+  <div class="region mine"><div class="when">ספציפי למשפחת סולומון</div><h2>משפחת סולומון</h2>
+    <p>הסעיף הזה נוגע ספציפית למשפחת סולומון (4 נפשות) — שאר המשפחה יכולה לדלג.</p></div>
+
+  <div class="card"><h3>🚗 הרכב שלנו</h3>
+    <div class="meta"><span>OK Mobility · Compact</span><span><b>Hyundai Venue</b> (או דומה)</span><span>5 מושבים</span></div>
+    <p>ל-4 שלנו זה מספיק בנוחות. הערה כללית למשפחה המורחבת: כדי להתפצל בין משפחות צריך שלכל משפחה יהיה רכב — Venue מתאים ל-5 נוסעים, ול-~20 איש צריך <b>4–5 רכבים</b>. שווה לוודא שחלק אוטומטיים (ידני נפוץ באלבניה, אוטומט אוזל בעונה).</p>
+  </div>
+
+  <div class="card"><h3>🧭 הנסיעה צפונה ב-21.8 — שתי אפשרויות</h3>
+    <div class="meta"><span>📍 קסאמיל → אזור שדה התעופה</span><span>⏱️ ~4 ש׳ נטו</span></div>
+    <p>ביום הזה כל המשפחה מפנה את המלון בקסאמיל. אנחנו צריכים להחליט איך עולים צפונה ללינה ליד השדה:</p>
+    <div class="alt"><b>אפשרות א׳ — טיול בדרך:</b> יוצאים מוקדם ועוצרים ב<b>עין הכחולה</b> וב<b>ג׳ירוקסטרה</b> (שתיהן על הציר צפונה), ומגיעים למלון ליד השדה לקראת הערב. יותר תוכן בדרך, פחות זמן עם כולם בבוקר.</div>
+    <div class="why"><b>אפשרות ב׳ — עוד חצי יום עם כולם:</b> נשארים את הבוקר בדרום עם כל המשפחה (חוף/טבילה אחרונה), ואז נוסעים צפונה <b>ללא עצירות</b> ומגיעים למלון ליד השדה בערב. יותר זמן משפחתי, מוותרים על העצירות בדרך.</div>
+    <p style="font-size:14.5px; color:var(--ink-soft)">בשתי האפשרויות ישנים ליד שדה התעופה (ראו למטה), כדי שבוקר הטיסה יהיה רגוע.</p>
+  </div>
+
+  <div class="card"><h3>🛏️ הלינה האחרונה (לילה 21.8) — עדיין לא הזמנּו</h3>
+    <div class="note warn" style="margin:4px 0 12px"><div class="nh">למה לא לישון בקסאמיל עד בוקר הטיסה</div>
+      קסאמיל→שדה התעופה ~4 שעות (ובאוגוסט יותר). לטיסה ב-10:30 זה אומר יציאה ב-~04:30–05:00 עם 4 אנשים אחרי שבוע — מלחיץ. הפתרון: ב-21.8 לעלות צפונה ולישון <b>ליד שדה התעופה של טריאנה</b>, ובוקר הטיסה רגוע.</div>
+
+    <h4 style="color:var(--terra-deep)">⭐ צמוד לשדה (מומלץ)</h4>
+    <table class="h">
+      <tr><th>מלון</th><th>דירוג</th><th>מרחק</th><th>למה</th></tr>
+      <tr><td><b>Airport Garden Hotel</b></td><td>4.7</td><td>~300 מ׳ הליכה</td><td>קבלה 24/7, גינה, מסעדות בהליכה.</td></tr>
+      <tr><td><b>Hotel Airport Tirana</b></td><td>4.4</td><td>מול השדה</td><td>מסעדה, בריכה, חדרים מרווחים, שאטל כלול.</td></tr>
+      <tr><td><b>Airport Holiday Hotel</b></td><td>4.3</td><td>~2 ד׳</td><td>שאטל חינם, בוקר טוב, עוזרים עם תינוקות.</td></tr>
+    </table>
+    <div class="links">
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Airport+Garden+Hotel+Rinas+Tirana" target="_blank" rel="noopener">Airport Garden – מפה ↗</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Hotel+Airport+Tirana+Rinas" target="_blank" rel="noopener">Hotel Airport Tirana – מפה ↗</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Airport+Holiday+Hotel+Rinas+Tirana" target="_blank" rel="noopener">Airport Holiday – מפה ↗</a>
+    </div>
+
+    <h4 style="margin-top:14px">חלופה — לילה ״עירוני״ בטריאנה</h4>
+    <p>אם בא לנו ערב אחרון תוסס (מסעדות, בלוקו): <b>Hotel Colosseo</b> (4.5, ספא+בריכה) או <b>New W</b> (4.7, צמוד לפארק והאגם). המחיר: נסיעת בוקר ~30 ד׳ לשדה (יציאה ~07:30 לטיסה 10:30).</p>
+    <div class="links">
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Hotel+Colosseo+Tirana" target="_blank" rel="noopener">Colosseo – מפה ↗</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=New+W+Hotel+Tirana" target="_blank" rel="noopener">New W – מפה ↗</a>
+    </div>
+  </div>
+
+  <div class="card"><h3>❓ שאלות שלנו להחלטה</h3>
+    <ul class="pill-list">
+      <li><b>הוילה בדורס</b> — מוזמנת כבר מ-13.8 (נוסעים ישר לדורס בלילה) או מ-14.8 (לינה ראשונה ליד השדה)?</li>
+      <li><b>תקציב</b> ללינה האחרונה ולמסעדות.</li>
+      <li><b>תיאבון לנהיגה</b> — להעדיף פחות ימי-רכב ארוכים (לקצר/לוותר על שקודרה)?</li>
+      <li>כמה רכבים בפועל יש לכל המשפחה המורחבת?</li>
+    </ul>
+    <p style="margin-top:4px">כשנחליט — אפשר לבנות מזה תכנית יומית סופית עם שעות וחלוקת קבוצות.</p>
+  </div>
+</div></div>
+
+<footer>
+  הוכן עבור הטיול המשפחתי לאלבניה · <b>13–22 באוגוסט 2026</b><br>
+  מחירים, שעות וזמני נסיעה הם הערכות נכון ל-2025/2026 ועשויים להשתנות — מומלץ לאמת קרוב לתאריך.
+</footer>
+
+<script>
+  (function(){
+    function show(id){
+      document.querySelectorAll('.view').forEach(function(v){ v.classList.toggle('active', v.id === 'view-'+id); });
+      document.querySelectorAll('nav a[data-view]').forEach(function(a){ a.classList.toggle('on', a.dataset.view===id); });
+      window.scrollTo({top:0, behavior:'smooth'});
+      try{ if(location.hash !== '#'+id){ history.replaceState(null, '', '#'+id); } }catch(e){ /* sandboxed iframe (about:srcdoc) blocks history with URL — ignore */ }
+    }
+    document.querySelectorAll('[data-view]').forEach(function(el){
+      el.addEventListener('click', function(e){ e.preventDefault(); show(el.dataset.view); });
+    });
+    window.addEventListener('hashchange', function(){ show((location.hash.slice(1))||'home'); });
+    show((location.hash.slice(1))||'home');
+  })();
+</script>
+</body>
+</html>

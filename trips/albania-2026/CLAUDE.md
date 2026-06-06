@@ -28,12 +28,17 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
 └── trips/albania-2026/        ← everything trip-related lives here
     ├── CLAUDE.md              ← this file (canonical project context)
     ├── index.html             ← ★ source of truth — the trip page. Edit here!
-    └── albania-2026.csv       ← original raw planning draft (day table)
+    ├── albania-2026.csv       ← original raw planning draft (day table)
+    └── presentation/          ← family slide deck (reveal.js, Hebrew RTL)
+        ├── index.html         ← ★ source of truth for the deck. Edit here!
+        ├── styles.css
+        └── assets/            ← location photos (Wikimedia Commons CC) + YouTube thumbnail
 ```
 
 ## Publishing (GitHub Pages)
 
 - **Trip page URL:** `https://liorsol.github.io/liorsol/trips/albania-2026/`
+- **Presentation URL:** `https://liorsol.github.io/liorsol/trips/albania-2026/presentation/`
 - Old URL `.../albania-2026.html` at repo root is a redirect stub — keep it.
 - After editing `trips/albania-2026/index.html`: commit + push (ask the user before pushing unless they explicitly requested it).
 
@@ -85,6 +90,20 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 
 - Durrës villa is booked **from 13.8** → first night straight to the villa, no airport hotel.
 - Last-night budget: **low, not city center** (Tirana urban option dropped); up to ~30 min from airport OK if mountain view.
+
+## Media resources — top picks (found June 2026)
+
+The family presentation (`presentation/` — reveal.js, Hebrew RTL, photos + music) is published on GitHub Pages. Background music is "Zjerm" (Shkodra Elektronike, Albania's Eurovision 2025 entry) via the official YouTube embed looping 0:05–3:03 — embedded, not bundled, because the track is copyrighted; it requires internet. Useful sources found while building it:
+
+**Hebrew YouTube videos on Albania** (for the family, verified June 2026):
+- טיול מאורגן לאלבניה ומקדוניה (ערוץ מסעות) — best general intro: https://www.youtube.com/watch?v=9v9QZthrdes
+- המדריך הראשוני לאלבניה — חופשה וקולינריה (Short): https://www.youtube.com/shorts/aRGPtXcT_gE
+- אגם קומאן ונהר שאלה — צפון אלבניה: https://www.youtube.com/watch?v=eBJuYbuCTS0
+- אלבניה במבט מרחפן (מסע אחר): https://www.masa.co.il/video/אלבניה-חופשה-בדרך-שלך/
+
+**Free-to-use location photos:** Wikimedia Commons has good CC photos of every destination on the itinerary (Ksamil, Berat, Gjirokastër, Blue Eye, Skanderbeg Sq., Durrës amphitheatre, Kruja, Llogara, Dajti, Butrint, Bovilla, Himarë, Vlora). Note: Commons rate-limits bulk downloads — space requests a few seconds apart and use a descriptive User-Agent.
+
+**Albanian music (free/legal):** Internet Archive's George Blood 78rpm collection (search `collection:georgeblood AND albanian`, ~25 records) — historic recordings incl. Tefta Tashko-Koço (Albania's most famous classic singer; "Për një ditë kur del goca në pazar" is an upbeat crowd-pleaser) and traditional *valle* dance tunes. Wikimedia Commons also has "Kido Na Ballkone" (traditional song, CC BY-SA).
 
 ## Content principles (from the research)
 

@@ -1,0 +1,575 @@
+/* Base reveal.js styles
+ *
+ * Copy this file as styles.css for each new presentation.
+ * Customize the CSS variables (especially colors) for your theme.
+ *
+ * IMPORTANT: All font sizes use pt (points) for predictable sizing.
+ * Base text is intentionally small (16pt) to fit content-heavy slides.
+ * Use .text-lg, .text-xl, etc. classes when slides have less content.
+ */
+
+/* ===========================================
+   CSS VARIABLES - Customize these for each presentation
+   =========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@400;500;700;900&display=swap');
+
+:root {
+  /* Albanian Riviera palette — matches the family trip page */
+  --background-color: #fbf6ec;              /* Main slide background (paper sand) */
+  --section-divider-bg: #0c4b57;            /* Section divider background (deep sea teal) */
+
+  /* Typography - ALWAYS use pt for font sizes */
+  --heading-font: "Suez One", Georgia, serif;
+  --body-font: "Assistant", Helvetica, sans-serif;
+  --label-font: "Heebo", Helvetica, sans-serif;
+  --base-font-size: 32px;   /* Only px value - sets reveal.js base */
+  --text-size: 16pt;        /* Base body text - intentionally small */
+  --h1-size: 48pt;
+  --h2-size: 36pt;
+  --h3-size: 24pt;
+  --footnote-size: 11pt;
+
+  /* Colors */
+  --primary-color: #1b8a9e;    /* azure */
+  --secondary-color: #d96b4f;  /* terracotta */
+  --sea: #0c4b57;
+  --gold: #e3a23a;
+  --olive: #6f8a5b;
+  --text-color: #1d2a2e;
+  --muted-color: #465256;
+  --line-color: #e3d8c4;
+
+  /* Layout */
+  --slide-padding: 60px;
+  --slide-padding-top: 40px;
+  --content-gap: 30px;
+
+  /* Border radius for custom components */
+  --box-radius: 8px;           /* Set to 0 for sharp corners */
+}
+
+/* ===========================================
+   BASE STYLES - Override reveal.js defaults
+   =========================================== */
+
+.reveal {
+  font-family: var(--body-font);
+  font-size: var(--base-font-size);
+}
+
+/* Restore bold after reset.css strips it with font: inherit */
+.reveal strong,
+.reveal b {
+  font-weight: bold;
+}
+
+/* Apply background colors */
+.reveal-viewport {
+  background-color: var(--background-color);
+}
+
+/* Section divider background via data-state */
+.reveal-viewport.is-section-divider .slide-background.present {
+  background-color: var(--section-divider-bg) !important;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+  font-family: var(--heading-font);
+  text-transform: none;
+  color: var(--sea);
+  font-weight: 400; /* Suez One ships only in 400 */
+  line-height: 1.2;
+}
+
+.reveal h1 { font-size: var(--h1-size); }
+.reveal h2 { font-size: var(--h2-size); margin-bottom: 0; }
+.reveal h3 { font-size: var(--h3-size); }
+
+.reveal p,
+.reveal li,
+.reveal td,
+.reveal th,
+.reveal blockquote {
+  font-size: var(--text-size);
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+/* ===========================================
+   LISTS
+   =========================================== */
+
+.reveal ul {
+  list-style: none;
+  padding-inline-start: 0;
+  margin: 15px 0;
+}
+
+.reveal ul li {
+  position: relative;
+  padding-inline-start: 25px;
+  margin-bottom: 10px;
+}
+
+.reveal ul li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.6em;
+  width: 8px;
+  height: 8px;
+  background: var(--text-color);
+  border-radius: 50%;
+}
+
+.reveal ul ul li::before {
+  background: var(--muted-color);
+  width: 6px;
+  height: 6px;
+}
+
+/* Prevent double-sizing for nested elements */
+.reveal blockquote p {
+  font-size: inherit;
+}
+
+/* ===========================================
+   SLIDE LAYOUT
+   =========================================== */
+
+.reveal .slides section {
+  height: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: var(--slide-padding-top) var(--slide-padding) var(--slide-padding) var(--slide-padding) !important;
+  box-sizing: border-box;
+  text-align: right;
+}
+
+/* Vertical stack wrapper - no padding, just pass through */
+.reveal .slides section.stack {
+  padding: 0 !important;
+}
+
+/* Content area - fills remaining space */
+.reveal .slides section > .content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: var(--content-gap);
+  text-align: right;
+}
+
+/* Footnotes at bottom */
+.reveal .slides section > .footnote {
+  position: absolute;
+  bottom: 15px;
+  left: var(--slide-padding);
+  right: var(--slide-padding);
+  font-size: var(--footnote-size);
+  color: var(--muted-color);
+}
+
+/* ===========================================
+   SECTION DIVIDERS - Centered title slides
+   =========================================== */
+
+.reveal .slides section.section-divider {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center;
+}
+
+.reveal .slides section.section-divider h1 {
+  font-size: 56pt;
+  text-align: center;
+  color: #ffffff;
+  text-shadow: 0 6px 28px rgba(0,0,0,.25);
+}
+
+.reveal .slides section.section-divider h2 {
+  color: #ffe1a6;
+  text-align: center;
+}
+
+.reveal .slides section.section-divider p {
+  font-size: 20pt;
+  color: #dff1f3;
+  text-align: center;
+}
+
+.reveal .slides section.section-divider .kicker {
+  font-family: var(--label-font);
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  font-size: 13pt;
+  color: #ffe1a6;
+}
+
+/* ===========================================
+   TEXT SIZE UTILITIES
+
+   Base text is 16pt - use these to scale UP when
+   slides have less content and you want to fill space.
+   =========================================== */
+
+.text-lg { font-size: 18pt !important; }   /* Slightly larger */
+.text-xl { font-size: 20pt !important; }   /* Medium emphasis */
+.text-2xl { font-size: 24pt !important; }  /* Strong emphasis */
+.text-3xl { font-size: 28pt !important; }  /* Very large */
+.text-4xl { font-size: 32pt !important; }  /* Maximum body text */
+
+/* Other text utilities */
+.text-muted { color: var(--muted-color) !important; }
+.text-center { text-align: center !important; }
+.text-uppercase { text-transform: uppercase; letter-spacing: 0.1em; }
+.font-light { font-weight: 300; }
+.font-bold { font-weight: 600; }
+
+/* ===========================================
+   BLOCKQUOTES
+   =========================================== */
+
+.reveal blockquote {
+  border-inline-start: 4px solid var(--primary-color);
+  padding-inline-start: 20px;
+  margin: 20px 0;
+  font-style: normal;
+  background: none;
+  box-shadow: none;
+  width: 100%;
+  max-width: none;
+}
+
+.reveal blockquote cite {
+  display: block;
+  margin-top: 10px;
+  font-style: normal;
+  color: var(--muted-color);
+}
+
+/* ===========================================
+   OPTIONAL: TITLE WITH UNDERLINE
+
+   Add this to presentations where you want
+   a line under the slide title.
+   =========================================== */
+
+/*
+.reveal .slides section > h1,
+.reveal .slides section > h2 {
+  flex-shrink: 0;
+  margin: 0;
+  padding-bottom: 15px;
+  border-bottom: 2px solid var(--line-color);
+}
+*/
+
+/* ===========================================
+   OPTIONAL: DECORATIVE ELEMENTS
+   =========================================== */
+
+/* Top decorative line on all slides */
+/*
+.reveal .slides section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--primary-color);
+}
+*/
+
+/* Bottom decorative line */
+/*
+.reveal .slides section::after {
+  content: '';
+  position: absolute;
+  bottom: 40px;
+  left: var(--slide-padding);
+  right: var(--slide-padding);
+  height: 2px;
+  background: var(--line-color);
+}
+*/
+
+/* ===========================================
+   TRIP-DECK COMPONENTS (Albania 2026)
+   =========================================== */
+
+/* Card — light panel on the sand background */
+.tcard {
+  background: #fffdf8;
+  border: 1px solid var(--line-color);
+  border-radius: 14px;
+  padding: 18px 22px;
+  box-shadow: 0 12px 32px -28px rgba(7,47,56,.6);
+}
+.tcard h3 { margin: 0 0 6px; font-size: 17pt; }
+.tcard p { margin: 4px 0; }
+
+/* Stat box — big number + label */
+.stat {
+  background: #fffdf8;
+  border: 2px solid var(--primary-color);
+  border-radius: 14px;
+  padding: 14px 10px;
+  text-align: center;
+}
+.stat .num {
+  font-family: var(--label-font);
+  font-weight: 900;
+  font-size: 30pt;
+  color: var(--sea);
+  margin: 0;
+  line-height: 1.1;
+}
+.stat .lbl {
+  font-family: var(--label-font);
+  font-size: 12pt;
+  color: var(--muted-color);
+  margin: 2px 0 0;
+}
+
+/* Group tag pills */
+.pill {
+  display: inline-block;
+  font-family: var(--label-font);
+  font-weight: 700;
+  font-size: 11pt;
+  padding: 2px 14px;
+  border-radius: 999px;
+  border: 1px solid;
+  margin-inline-end: 6px;
+}
+.pill.beach { background:#e7f4f1; color:#0c5e5a; border-color:#bfe3dc; }
+.pill.cult  { background:#fbeae3; color:#a8401f; border-color:#f1c7b6; }
+.pill.adv   { background:#fcf2d8; color:#8a6310; border-color:#eed79a; }
+.pill.grand { background:#e9f0f8; color:#2c4a73; border-color:#cad9ed; }
+.pill.all   { background:#eef0ee; color:#3a463a; border-color:#d6dcd2; }
+
+/* Schedule table */
+.reveal table.sched {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.reveal table.sched th,
+.reveal table.sched td {
+  border: 1px solid var(--line-color);
+  padding: 7px 14px;
+  text-align: right;
+  font-size: 14pt;
+  line-height: 1.35;
+}
+.reveal table.sched th {
+  background: var(--sea);
+  color: #fff;
+  font-family: var(--label-font);
+  font-weight: 700;
+}
+.reveal table.sched tr:nth-child(even) td { background: #f7efe0; }
+.reveal table.sched td.date {
+  font-family: var(--label-font);
+  font-weight: 700;
+  color: var(--sea);
+  white-space: nowrap;
+}
+
+/* Highlight / warning notes */
+.note-gold {
+  background: #fdf6e7;
+  border-inline-start: 5px solid var(--gold);
+  border-radius: 10px;
+  padding: 10px 16px;
+}
+.note-warn {
+  background: #fdeee9;
+  border-inline-start: 5px solid var(--secondary-color);
+  border-radius: 10px;
+  padding: 10px 16px;
+}
+.note-gold p, .note-warn p { margin: 2px 0; }
+
+/* Price chip */
+.pr {
+  display: inline-block;
+  background: #eef6f3;
+  border: 1px solid #cfe6dd;
+  color: #0c5e5a;
+  border-radius: 7px;
+  padding: 0 10px;
+  font-family: var(--label-font);
+  font-weight: 700;
+  font-size: 12pt;
+}
+
+/* Accent text helpers */
+.accent { color: var(--secondary-color); }
+.sea-text { color: var(--sea); }
+.gold-text { color: #8a6310; }
+
+/* ===========================================
+   V2 — VIBRANT PHOTO LOOK
+   =========================================== */
+
+/* Punchier accents */
+:root {
+  --primary-color: #14a8bf;
+  --secondary-color: #ff6b4a;
+  --gold: #f4a93c;
+}
+
+/* Colorful accent bar under slide titles */
+.reveal .slides section > h2::after {
+  content: '';
+  display: block;
+  width: 110px;
+  height: 6px;
+  border-radius: 3px;
+  margin-top: 10px;
+  background: linear-gradient(90deg, var(--secondary-color), var(--gold), var(--primary-color));
+}
+.reveal .slides section.section-divider h2::after { display: none; }
+
+/* Photo-background slides: dark gradient overlay for readable text */
+.photo-overlay .slide-background.present::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(165deg, rgba(7,47,56,.78) 0%, rgba(7,47,56,.45) 55%, rgba(7,47,56,.65) 100%);
+}
+
+/* Polaroid photo */
+.polaroid {
+  background: #fff;
+  padding: 10px 10px 30px;
+  border-radius: 4px;
+  box-shadow: 0 14px 34px -16px rgba(7,47,56,.55);
+  display: inline-block;
+}
+.polaroid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+}
+.polaroid .cap {
+  font-family: var(--label-font);
+  font-weight: 700;
+  font-size: 11pt;
+  text-align: center;
+  margin: 8px 0 -22px;
+  color: var(--muted-color);
+}
+.tilt-l { transform: rotate(-3deg); }
+.tilt-r { transform: rotate(2.5deg); }
+
+/* Card with photo header */
+.img-card {
+  background: #fffdf8;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 14px 30px -20px rgba(7,47,56,.55);
+  border: 1px solid var(--line-color);
+  display: flex;
+  flex-direction: column;
+}
+.img-card img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+}
+.img-card .body { padding: 10px 14px 12px; }
+.img-card h3 { margin: 0 0 4px; font-size: 15pt; }
+.img-card p { margin: 3px 0; font-size: 12.5pt; line-height: 1.4; }
+
+/* Side photo (rounded, fills its grid cell) */
+.side-photo {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow: 0 16px 36px -18px rgba(7,47,56,.6);
+  margin: 0;
+  display: block;
+}
+
+/* YouTube card */
+.yt-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #fffdf8;
+  border: 1px solid var(--line-color);
+  border-radius: 14px;
+  padding: 12px 16px;
+  box-shadow: 0 12px 28px -20px rgba(7,47,56,.5);
+}
+.yt-card img {
+  width: 150px;
+  border-radius: 10px;
+  margin: 0;
+  display: block;
+}
+
+/* Floating music toggle */
+#music-toggle {
+  position: fixed;
+  z-index: 50;
+  bottom: 16px;
+  right: 150px; /* clear of reveal's navigation arrows in the corner */
+  left: auto;
+  font-family: var(--label-font);
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  background: rgba(7,47,56,.85);
+  border: 2px solid var(--gold);
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: .2s;
+}
+#music-toggle:hover { background: var(--sea); transform: scale(1.05); }
+#music-toggle.on {
+  background: linear-gradient(135deg, var(--secondary-color), var(--gold));
+  border-color: #fff;
+}
+
+/* Mini YouTube player (visible while music is on) */
+#yt-music-box {
+  display: none;
+  position: fixed;
+  z-index: 49;
+  bottom: 64px;
+  right: 150px;
+  width: 256px;
+  height: 144px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 36px -14px rgba(7,47,56,.7);
+  border: 2px solid var(--gold);
+  background: #000;
+}
+#yt-music-box iframe { width: 100%; height: 100%; display: block; }
+
+/* Tiny credit line */
+.credit {
+  font-size: 9pt !important;
+  color: var(--muted-color) !important;
+}

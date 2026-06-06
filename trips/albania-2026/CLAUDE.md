@@ -42,7 +42,7 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
 Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Suez One, Assistant, Heebo).
 
 - Each section = `div.view` with `id="view-XXX"`. Navigation via elements with `data-view="XXX"`.
-- Existing views: `home, north, tirana, drive, south, food, info, mine`.
+- Existing views: `home, north, tirana, drive, south, food, info, checklist, mine`.
 - **Adding an attraction:** duplicate a `.card` in the relevant view. Structure: title → `.tags` (group tags) → `.meta` (incl. `.pr` for price) → description → `.why` (recommendation) or `.alt` (alternative) → `.links` (official site + map).
 - Map links: `https://www.google.com/maps/search/?api=1&query=NAME+LOCATION`
 - Group tags (for splitting up): `t-beach` sea & chill · `t-cult` culture · `t-adv` adventure & teens · `t-grand` grandparents-friendly · `t-all` everyone.
@@ -54,7 +54,7 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 
 - **Flights:** land Tirana 13.8 at 22:25 · depart 22.8 at 10:30.
 - **Extended family ~20 people**, 5 families: Solomon (2 parents + girls 7, 10) · grandparents · family (2 + baby 1.5) · family (2 + girls 6, 3, 1) · family (2 + girls 8, 12, 14, 17).
-- **Lodging:** villa in Durrës (everyone), checkout 19.8 · hotel in Ksamil, checkout 21.8 · **night of 21.8 not yet booked** — recommendation: near the airport (Rinas).
+- **Lodging:** villa in Durrës (everyone), **booked from 13.8** (first night: straight from airport to villa, ~40 min), checkout 19.8 — [Booking link](https://www.booking.com/hotel/al/luxury-villa-with-big-swimming-pool.en-gb.html) · Asters hotel in Ksamil, checkout 21.8 — [Booking link](https://www.booking.com/hotel/al/asters.en-gb.html) · **night of 21.8 not yet booked** — decided: low budget, not city center; near airport (Rinas) or up to ~30 min away if morning mountain view (Krujë candidates: Hotel Panorama Kruje, Rooms Emiliano, Vila Taga). Must be at the airport at 08:00 (2.5h before the 10:30 flight).
 - **Car (Solomon):** OK Mobility, Hyundai Venue (Compact, 5 seats). Whole family needs 4–5 cars.
 - **Events:** grandma's birthday (14.8, Friday dinner) · Daniel's birthday (18.8) · combined anniversaries party + adults-only quiz 🔞.
 - **Gluten:** some family members are sensitive — every restaurant recommendation must address gluten (dedicated `food` view).
@@ -63,7 +63,7 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 
 | Date | Day | Plan |
 |---|---|---|
-| 13.8 | Thu | Landing 22:25 |
+| 13.8 | Thu | Landing 22:25 → straight to the Durrës villa |
 | 14.8 | Fri | Tirana + shopping · grandma's birthday dinner |
 | 15.8 | Sat | Mt. Dajti (cable car) |
 | 16.8 | Sun | Lake Shkodra / nearer alternative (Kruja, water park) |
@@ -76,12 +76,15 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 
 ## Open questions (as of June 2026)
 
-1. Is the Durrës villa booked from 13.8 or 14.8? (affects the first night)
-2. Budget for the last night's lodging and restaurants.
-3. Driving appetite — shorten/drop Shkodra?
-4. How many cars does the whole family actually have?
-5. "Adults-only" folklore evening — who stays with the kids?
-6. Night of 21.8 — not booked (candidates: Airport Garden 4.7 / Hotel Airport Tirana 4.4 / Airport Holiday 4.3).
+1. Driving appetite — shorten/drop Shkodra?
+2. How many cars does the whole family actually have?
+3. "Adults-only" folklore evening — who stays with the kids?
+4. Night of 21.8 — choose near-airport (Airport Garden 4.7 / Hotel Airport Tirana 4.4 / Airport Holiday 4.3) vs. Krujë mountain-view budget option, then book.
+
+### Resolved (June 2026)
+
+- Durrës villa is booked **from 13.8** → first night straight to the villa, no airport hotel.
+- Last-night budget: **low, not city center** (Tirana urban option dropped); up to ~30 min from airport OK if mountain view.
 
 ## Content principles (from the research)
 

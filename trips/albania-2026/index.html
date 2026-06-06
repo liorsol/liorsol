@@ -22,6 +22,7 @@
   h1,h2,h3,h4{font-family:'Suez One',serif; font-weight:400; line-height:1.2; color:var(--sea)}
   .wrap{max-width:980px; margin:0 auto; padding:0 20px}
   a{color:var(--terra-deep)}
+  [data-view]{cursor:pointer} /* internal SPA links have no href — force hand cursor */
 
   /* NAV */
   nav{position:sticky; top:0; z-index:60; background:rgba(9,58,68,.97); backdrop-filter:blur(8px); border-bottom:2px solid var(--gold)}
@@ -184,7 +185,7 @@
 - המלצה: לפצל יום בראט מערב הפולקלור (יום טריאנה נפרד).
 - "יום רגוע בוילה" כאופציה לגיטימית לשבירת עומס הנסיעות.
 - בדיקות מציאות: שקודרה רחוקה ; מסלול גאמטי תלול ; חניה בקסאמיל לפני 09:00 ; שחייה בעין הכחולה אסורה (כ-10 מעלות).
-- מודל קבוצות לתיוג: ים/רוגע ; תרבות ; הרפתקה/נוער ; סבא וסבתא.
+- מודל קבוצות לתיוג: ים/רוגע ; תרבות ; הרפתקה/נוער ; נגיש-ונינוח (לשעבר "סבא-סבתא" — שונה כי התווית מתאימה גם לעגלות ופחות פוגענית).
 - שאלת ערב הפולקלור "למבוגרים בלבד" נותרה פתוחה (מי עם הילדים).
 
 5) מאגר מחירים ושעות (נכון 2025/26, לאמת לפני הטיול)
@@ -276,7 +277,7 @@ Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunka
       <div class="l"><div class="h" style="color:#0c5e5a">🏖️ ים &amp; רוגע</div><p>פעוטות (1,1.5,3) + הוריהם ומי שרוצה יום עצלן. חופים רדודים, בריכות.</p></div>
       <div class="l"><div class="h" style="color:#a8401f">🏛️ תרבות &amp; נופים</div><p>מבוגרים והגדולות שאוהבות סיפור. ערים עתיקות, מצודות, שווקים.</p></div>
       <div class="l"><div class="h" style="color:#8a6310">🧗 הרפתקה &amp; נוער</div><p>הגדולים (8–17) + הורים אקטיביים. הליכות, רפטינג, מצנח, סירות.</p></div>
-      <div class="l"><div class="h" style="color:#2c4a73">👵 סבא־סבתא־פרנדלי</div><p>מעט הליכה, צל ומקום לשבת. רכבל, טיילות, נוף ממסעדה.</p></div>
+      <div class="l"><div class="h" style="color:#2c4a73">🧘 נגיש ונינוח</div><p>מעט הליכה, צל ומקום לשבת — נוח גם לעגלות תינוק. רכבל, טיילות, נוף ממסעדה.</p></div>
     </div>
 
     <h3 style="margin:24px 0 2px">בחרו סעיף</h3>
@@ -302,7 +303,7 @@ Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunka
 
   <div class="card"><h3>🏡 הוילה שלנו בדורס</h3>
     <div class="meta"><span>📍 דורס</span><span><b>צ׳ק-אין 13.8 (כבר מהלילה הראשון!) · צ׳ק-אאוט 19.8</b></span><span>🏊 בריכה גדולה</span></div>
-    <div class="links"><a href="https://www.booking.com/hotel/al/luxury-villa-with-big-swimming-pool.en-gb.html" target="_blank" rel="noopener">ההזמנה ב-Booking ↗</a></div>
+    <div class="links"><a href="https://www.booking.com/hotel/al/luxury-villa-with-big-swimming-pool.en-gb.html" target="_blank" rel="noopener">ההזמנה ב-Booking ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Luxury+Villa+with+big+swimming+pool+Durres" target="_blank" rel="noopener">מפה ↗</a></div>
   </div>
 
   <h3 style="margin-top:22px">שלד השבוע (גמיש)</h3>
@@ -332,13 +333,13 @@ Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunka
   <h3 style="margin-top:26px">קטלוג טיולי הכוכב מדורס</h3>
 
   <div class="card"><h3>🏡 יום רגוע בוילה</h3>
-    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">סבא-סבתא</span><span class="tag t-beach">פעוטות</span></div>
+    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">נגיש</span><span class="tag t-beach">פעוטות</span></div>
     <div class="meta"><span class="pr free">חינם</span><span>⏱️ יום שלם</span></div>
     <p>המלצה לגיטימית לגמרי: יום שבו רוב החבורה נשארת בוילה — בריכה (אם יש), משחקים, מנוחה, ובישול משותף. שובר את עומס הנסיעות, מצוין לפעוטות ולסבא-סבתא, ומאפשר לחלק האקטיבי לצאת לטיול קצר ולחזור.</p>
   </div>
 
   <div class="card"><h3>🚠 הר דאיטי + רכבל Dajti Ekspres</h3>
-    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">סבא-סבתא</span><span class="tag t-adv">נוער</span></div>
+    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">נגיש</span><span class="tag t-adv">נוער</span></div>
     <div class="meta"><span>📍 ~30–40 ד׳ מדורס</span><span>🕗 09:00–19:00, סגור שלישי</span><span class="pr">רכבל הלוך-חזור ~1,000–1,500 לק (€10–15)</span></div>
     <p>רכבל ארוך וקליל לכל הגילאים אל פסגת ההר. למעלה: מסעדות עם נוף, מיני-גולף, פארק חבלים, רכיבה על סוסים, באגי ומצנח רחיפה לגדולים. (אפשר לשלב עם Bunk’Art 1 שנמצא ממש לידו.)</p>
     <div class="links"><a href="https://dajtiekspres.com" target="_blank" rel="noopener">אתר רשמי</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Dajti+Ekspres+Cable+Car" target="_blank" rel="noopener">מפה ↗</a></div>
@@ -354,7 +355,7 @@ Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunka
   <div class="card"><h3>🏰 קרויה — מצודה ובזאר עות׳מאני</h3>
     <div class="tags"><span class="tag t-cult">תרבות</span></div>
     <div class="meta"><span>📍 ~1 שעה מדורס</span><span>⏱️ חצי יום</span><span class="pr">אזור המצודה חינם · מוזיאון סקנדרבג ~€5 (500 לק)</span><span>🅿️ חניה בתשלום</span></div>
-    <p>עיירה ציורית על מדרון: מצודה, מוזיאון סקנדרבג, ובזאר עתיק מרוצף למזכרות. חלופה נהדרת ל-16.8 (חצי הזמן ברכב). מינוס לסבא-סבתא: ריצוף אבן ומדרגות.</p>
+    <p>עיירה ציורית על מדרון: מצודה, מוזיאון סקנדרבג, ובזאר עתיק מרוצף למזכרות. חלופה נהדרת ל-16.8 (חצי הזמן ברכב). מינוס נגישות: ריצוף אבן ומדרגות — פחות נוח לעגלות ולמי שקשה לו בהליכה.</p>
     <div class="links"><a href="https://muzeumet-kruje.com" target="_blank" rel="noopener">מוזיאון סקנדרבג</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Kruja+Castle" target="_blank" rel="noopener">מפה ↗</a></div>
   </div>
 
@@ -381,7 +382,7 @@ Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunka
   </div>
 
   <div class="card"><h3>🏖️ דורס המקומית (יום קל / קבוצת רוגע)</h3>
-    <div class="tags"><span class="tag t-beach">ים &amp; רוגע</span><span class="tag t-grand">סבא-סבתא</span><span class="tag t-cult">תרבות קלה</span></div>
+    <div class="tags"><span class="tag t-beach">ים &amp; רוגע</span><span class="tag t-grand">נגיש</span><span class="tag t-cult">תרבות קלה</span></div>
     <div class="meta"><span>⏱️ גמיש</span><span class="pr">אמפיתאטרון ~200–300 לק · מגדל ונציאני 600 לק</span></div>
     <p>האמפיתאטרון הרומי (מהגדולים בבלקן), המגדל הוונציאני (כולל חוויית VR), הפורום הביזנטי, הטיילת והחוף הרדוד — אידאלי לימים שבהם הפעוטות וסבא-סבתא נשארים קרוב.</p>
     <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Durres+Amphitheatre" target="_blank" rel="noopener">אמפיתאטרון – מפה ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Venetian+Tower+Durres" target="_blank" rel="noopener">מגדל ונציאני – מפה ↗</a></div>
@@ -424,14 +425,14 @@ Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunka
   </div>
 
   <div class="card"><h3>🌳 הפארק הגדול והאגם המלאכותי</h3>
-    <div class="tags"><span class="tag t-beach">רוגע</span><span class="tag t-grand">סבא-סבתא</span><span class="tag t-all">משפחות</span></div>
+    <div class="tags"><span class="tag t-beach">רוגע</span><span class="tag t-grand">נגיש</span><span class="tag t-all">משפחות</span></div>
     <div class="meta"><span class="pr free">חינם</span><span>⏱️ כמה שעות</span></div>
     <p>פארק ענק (230 הקטר) עם אגם, שבילי הליכה ובתי קפה על המים — מתקני שעשועים, מקום לפיקניק ולנשום אוויר. אידאלי לשלב עם הילדים אחרי בוקר במרכז.</p>
     <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Grand+Park+of+Tirana" target="_blank" rel="noopener">מפה ↗</a></div>
   </div>
 
   <div class="card"><h3>🚠 רכבל דאיטי</h3>
-    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">סבא-סבתא</span><span class="tag t-adv">נוער</span></div>
+    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">נגיש</span><span class="tag t-adv">נוער</span></div>
     <div class="meta"><span>📍 מזרח טריאנה</span><span class="pr">הלוך-חזור ~1,000–1,500 לק</span></div>
     <p>הדרך הכי קלה לתת לכולם נוף ופעילות (פירוט מלא בכרטיס בעמוד ״דורס + צפון״). נוח לשלב עם Bunk’Art 1 הסמוך.</p>
     <div class="links"><a href="https://dajtiekspres.com" target="_blank" rel="noopener">אתר רשמי</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Dajti+Ekspres+Cable+Car" target="_blank" rel="noopener">מפה ↗</a></div>
@@ -473,7 +474,7 @@ Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunka
 
   <div class="card" style="margin-top:18px"><h3>🏨 המלון שלנו בקסאמיל — Asters</h3>
     <div class="meta"><span>📍 קסאמיל</span><span><b>צ׳ק-אין 19.8 · צ׳ק-אאוט 21.8</b></span></div>
-    <div class="links"><a href="https://www.booking.com/hotel/al/asters.en-gb.html" target="_blank" rel="noopener">ההזמנה ב-Booking ↗</a></div>
+    <div class="links"><a href="https://www.booking.com/hotel/al/asters.en-gb.html" target="_blank" rel="noopener">ההזמנה ב-Booking ↗</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Asters+Hotel+Ksamil" target="_blank" rel="noopener">מפה ↗</a></div>
   </div>
 
   <h3 style="margin-top:20px">שלד הדרום</h3>
@@ -501,7 +502,7 @@ Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunka
     <div class="tags"><span class="tag t-cult">תרבות</span><span class="tag t-adv">נוער</span></div>
     <div class="meta"><span>📍 ~10 ד׳ מקסאמיל</span><span>🕗 בקיץ ~08:00–20:00 (כניסה אחרונה 18:00)</span><span class="pr">~€10 מבוגר · עד 12 חינם · 12–18 כ-500 לק</span><span>⏱️ ~2 ש׳</span></div>
     <p>עיר עתיקה מרהיבה ביער: אמפיתאטרון, בזיליקות, מצודה ופסיפסים. מסלול מעגלי קל ללכת, אבל יש טיפוס לאקרופוליס ומעט צל — מומלץ בבוקר המוקדם. הביאו מים ומזומן.</p>
-    <div class="alt">לסבא-סבתא: אפשר להסתפק בחלק התחתון ולוותר על הטיפוס לאקרופוליס.</div>
+    <div class="alt">למי שמעדיף בלי טיפוס: אפשר להסתפק בחלק התחתון ולוותר על העלייה לאקרופוליס.</div>
     <div class="links"><a href="https://whc.unesco.org/en/list/570/" target="_blank" rel="noopener">דף אונסק״ו</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Butrint+National+Park" target="_blank" rel="noopener">מפה ↗</a></div>
   </div>
 
@@ -597,7 +598,7 @@ Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunka
     <div class="card"><h4>🚗 נהיגה</h4><p>הנהיגה המקומית עשויה להיות אגרסיבית — נסיעה דפנסיבית. כבישי הרים מפותלים. חניה קשה בערים, בוְלורה ובקסאמיל (הגיעו מוקדם). חגורות לכולם, כיסאות בטיחות לפעוטות.</p></div>
     <div class="card"><h4>☀️ חום אוגוסט</h4><p>חם מאוד בצהריים. הליכות לבוקר המוקדם, צהריים לים/צל, ושוב פעילות לעת ערב. הרבה מים, כובעים וקרם הגנה. נעלי ים לחופי הריביירה.</p></div>
     <div class="card"><h4>👶 עם הקטנטנים</h4><p>עגלה שמישה לעין הכחולה ולטיילות; פחות לבוטרינט/קרויה (אבן). שמרו על שגרת שינה ברכב בימי הנסיעה הארוכים. חלק מהמלונות עוזרים עם צרכי תינוק.</p></div>
-    <div class="card"><h4>📶 תקשורת</h4><p>כיסוי טוב באזורים מיושבים. שווה eSIM/סים מקומי לניווט. הורידו מפות אופליין — בחלק מהדרכים בדרום הקליטה חלשה.</p></div>
+    <div class="card"><h4>📶 תקשורת</h4><p>כיסוי טוב באזורים מיושבים. שווה <a href="https://esimdb.com/albania" target="_blank" rel="noopener">eSIM</a>/סים מקומי לניווט. הורידו מפות אופליין — בחלק מהדרכים בדרום הקליטה חלשה.</p></div>
     <div class="card"><h4>🗓️ תיאום קבוצתי</h4><p>עם ~20 איש וכמה רכבים: קבעו מראש נקודות מפגש וזמן יעד יומי, ושמרו קבוצת וואטסאפ אחת. ״תכנית מרכזית + פיצול לפי תגיות״ מוריד הרבה חיכוך.</p></div>
   </div>
 </div></div>
@@ -627,7 +628,7 @@ Tripadvisor ; Viator / GetYourGuide ; gjirokastra.org ; dajtiekspres.com ; bunka
       <ul class="pill-list">
         <li><b>כיסאות בטיחות / בוסטרים לפעוטות</b> — להזמין מראש מחברת ההשכרה או להביא מהארץ</li>
         <li>להוריד <b>מפות אופליין</b> (Google Maps) — קליטה חלשה בחלק מדרכי הדרום</li>
-        <li>eSIM / סים מקומי לניווט ולקבוצת הוואטסאפ</li>
+        <li>eSIM / סים מקומי לניווט ולקבוצת הוואטסאפ — <a href="https://esimdb.com/albania" target="_blank" rel="noopener">השוואת חבילות eSIM לאלבניה ↗</a></li>
         <li>מטען לרכב + כבלים</li>
         <li>משחקים/אוזניות לילדים לנסיעות הארוכות (19.8 ו-21.8 — ~4 שעות)</li>
       </ul></div>

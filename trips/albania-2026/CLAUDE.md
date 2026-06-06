@@ -45,7 +45,7 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 - Existing views: `home, north, tirana, drive, south, food, info, checklist, mine`.
 - **Adding an attraction:** duplicate a `.card` in the relevant view. Structure: title → `.tags` (group tags) → `.meta` (incl. `.pr` for price) → description → `.why` (recommendation) or `.alt` (alternative) → `.links` (official site + map).
 - Map links: `https://www.google.com/maps/search/?api=1&query=NAME+LOCATION`
-- Group tags (for splitting up): `t-beach` sea & chill · `t-cult` culture · `t-adv` adventure & teens · `t-grand` grandparents-friendly · `t-all` everyone.
+- Group tags (for splitting up): `t-beach` sea & chill · `t-cult` culture · `t-adv` adventure & teens · `t-grand` "נגיש" accessible & relaxed (CSS class kept as `t-grand`; label renamed from "סבא-סבתא" — covers strollers too, less offensive) · `t-all` everyone.
 - The hash update is wrapped in try/catch (sandboxed-iframe fix) — do not remove.
 - Print: all views open under `@media print`.
 - Top of the file has a large HANDOFF comment with the full research — **update it when material decisions change**.

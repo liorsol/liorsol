@@ -399,7 +399,7 @@
             </a>
           </div>
           <p class="text-center text-2xl" style="margin-top:18px;">נתראה באלבניה! 🇦🇱✈️</p>
-          <p class="credit text-center">תמונות: Wikimedia Commons (CC) · מוזיקה: ״Zjerm״ — Shkodra Elektronike, נציגת אלבניה באירוויזיון 2025 (מתנגן מיוטיוב)</p>
+          <p class="credit text-center">תמונות: Wikimedia Commons (CC) · מוזיקה: ״Zjerm״ — Shkodra Elektronike, נציגת אלבניה באירוויזיון 2025</p>
         </div>
       </section>
 
@@ -407,7 +407,6 @@
   </div>
 
   <button id="music-toggle" title="מוזיקת רקע אלבנית">🔇 מוזיקה</button>
-  <div id="yt-music-box"><div id="yt-music"></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/reveal.js-plugins@latest/chart/plugin.js"></script>
@@ -434,56 +433,27 @@
     });
 
     // --- Albanian background music + slide-change sounds ---
-    // Music: "Zjerm" — Shkodra Elektronike (Albania, Eurovision 2025), looping 0:05–3:03.
-    // Played via the official YouTube embed (copyrighted track — not bundled locally), so it
-    // needs internet. Browsers block audio until a user gesture, so it starts from the 🎵 button.
+    // Music: "Zjerm" — Shkodra Elektronike (Albania, Eurovision 2025).
+    // assets/zjerm.m4a is pre-trimmed to the 0:05–3:03 segment with fade in/out,
+    // so a native loop restarts cleanly. Browsers block audio until a user
+    // gesture, so it starts from the 🎵 button.
     (function () {
-      var YT_ID = 'Sfvb761EEcM', START = 5, END = 183;
+      var music = new Audio('assets/zjerm.m4a');
+      music.loop = true;
+      music.volume = 0.4;
       var ctx = null;
       var audioOn = false;
-      var player = null;
-      var apiRequested = false;
       var btn = document.getElementById('music-toggle');
-      var box = document.getElementById('yt-music-box');
-
-      window.onYouTubeIframeAPIReady = function () {
-        player = new YT.Player('yt-music', {
-          width: '100%', height: '100%', videoId: YT_ID,
-          playerVars: { start: START, controls: 1, rel: 0, playsinline: 1 },
-          events: {
-            onReady: function () {
-              player.setVolume(45);
-              if (audioOn) player.playVideo();
-            }
-          }
-        });
-      };
-
-      // Loop guard: jump back to START when we pass END (more reliable than the `end` param,
-      // which stops applying after a seek).
-      setInterval(function () {
-        if (audioOn && player && player.getCurrentTime && player.getCurrentTime() >= END) {
-          player.seekTo(START);
-        }
-      }, 500);
 
       btn.addEventListener('click', function () {
         audioOn = !audioOn;
         btn.classList.toggle('on', audioOn);
         btn.textContent = audioOn ? '🔊 מוזיקה' : '🔇 מוזיקה';
-        box.style.display = audioOn ? 'block' : 'none';
         if (audioOn) {
+          music.play();
           if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-          if (player && player.playVideo) {
-            player.playVideo();
-          } else if (!apiRequested) {
-            apiRequested = true;
-            var tag = document.createElement('script');
-            tag.src = 'https://www.youtube.com/iframe_api';
-            document.head.appendChild(tag);
-          }
-        } else if (player && player.pauseVideo) {
-          player.pauseVideo();
+        } else {
+          music.pause();
         }
       });
 

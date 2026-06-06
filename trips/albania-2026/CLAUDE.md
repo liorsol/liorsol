@@ -93,7 +93,7 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 
 ## Media resources — top picks (found June 2026)
 
-The family presentation (`presentation/` — reveal.js, Hebrew RTL, photos + music) is published on GitHub Pages. Background music is "Zjerm" (Shkodra Elektronike, Albania's Eurovision 2025 entry) via the official YouTube embed looping 0:05–3:03 — embedded, not bundled, because the track is copyrighted; it requires internet. Useful sources found while building it:
+The family presentation (`presentation/` — reveal.js, Hebrew RTL, photos + music) is published on GitHub Pages. Background music is "Zjerm" (Shkodra Elektronike, Albania's Eurovision 2025 entry), bundled as `presentation/assets/zjerm.m4a` — pre-trimmed to the 0:05–3:03 segment with fade in/out so the native `loop` restarts cleanly (user's decision to bundle; commercial track, so if a takedown ever arrives just swap the file). Useful sources found while building it:
 
 **Hebrew YouTube videos on Albania** (for the family, verified June 2026):
 - טיול מאורגן לאלבניה ומקדוניה (ערוץ מסעות) — best general intro: https://www.youtube.com/watch?v=9v9QZthrdes

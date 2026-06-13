@@ -2,7 +2,7 @@
 
 **Fri 19 June – Sat 20 June 2026** · 2 families, 9 people · Camping at יער השלום (Peace Forest), City of David · **Travelling by car**
 
-> This plan is in English; the family-facing version is the **interactive Hebrew page (`index.html`)** — that page is the most up-to-date source (latest Friday scheduling: **guided tour vs. self-guided + קבלת שבת**; the Montefiore Windmill option; restaurant updates incl. **Adom relocated to the city centre** and the First-Station Abu Shukri being closed; live links and map). Use it for anything that conflicts with the notes below. Hebrew terms that should **not** be translated are kept in Hebrew and collected in the **Glossary** at the end.
+> This plan is in English; the family-facing version is the **interactive Hebrew page (`index.html`)** — that page is the most up-to-date source (latest Friday scheduling: **guided tour vs. self-guided + קבלת שבת**; the Montefiore Windmill option; restaurant updates incl. **Adom permanently closed**, the First-Station Abu Shukri closed (use the Old City original), Tziga/בן עמי notes, and Nanosh; live links and map). Use it for anything that conflicts with the notes below. Hebrew terms that should **not** be translated are kept in Hebrew and collected in the **Glossary** at the end.
 >
 > 🔒 **Public-repo note:** booking order #, personal coupon codes and the campsite phone were intentionally removed — they live only in your booking email.
 >

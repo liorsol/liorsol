@@ -30,7 +30,7 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
     ├── JERUSALEM-TRIP-PLAN.md  ← the full English plan (scrubbed of private data)
     ├── KIDS-TRIVIA-AND-STORIES-HE.md   ← Hebrew kids' trivia + stories (source for the טריוויה view)
     ├── KIDS-MEDIA-PODCASTS-VIDEOS-HE.md ← Hebrew car podcasts + pre-trip videos (source for the מדיה view)
-    └── assets/                 ← CC-licensed location photos (Wikimedia Commons) + credits.json
+    └── assets/                 ← CC-licensed location photos (Wikimedia Commons) + bg-music.m4a (CC-BY klezmer loop)
 ```
 
 ## Publishing (GitHub Pages)
@@ -49,7 +49,10 @@ Single self-contained HTML file, SPA, inline CSS+JS. External deps: Google Fonts
 - **Interactive bits:** countdown to 2026-06-19 08:00 IDT; live Asia/Jerusalem clock; playable trivia game (6 rounds, per-team scoring, confetti) that **persists to localStorage `jlm-trivia`** (score + per-question answered map + team names) with a Clear/reset button and an "already answered" badge; Leaflet map (`PLACES` array, color-coded by day, scroll-wheel zoom on); Saturday tag filters; localStorage checklists (`jlm-pre`, `jlm-pack`); image lightbox; an embedded YouTube short (נקבת השילוח) in the Friday view; scroll-reveal.
 - **Friday view = a fork:** מסלול א' guided 3h tour (~09:30, clashes with קבלת שבת) **vs.** מסלול ב' self-guided early entry + קבלת שבת (the schedule-friendly one). Plus the free Montefiore Windmill (Friday-only). Afternoon/evening (check-in, promenade, BBQ) is shared.
 - **Sound:** bundled cheerful klezmer loop `assets/bg-music.m4a` ("Lachaim" — Kevin MacLeod, **CC BY 3.0**, credit in footer) for background, plus Web-Audio FX for the trivia (ding/buzz/fanfare). Default muted; one 🔊 toggle in nav controls both.
-- **Images:** local CC files in `assets/` (all landscape/wide — cards crop wide). Credits hardcoded in the `CREDITS` array in JS and shown in the footer; **every credited image is shown on the page** (and vice-versa). `kiftzuba.jpg` is an illustrative ferris-wheel photo, captioned as such (Commons has no real Kif Tzuba photo).
+- **Images:** local CC files in `assets/` (all landscape/wide — cards crop wide). Credits hardcoded in the `CREDITS` array in JS and shown in the footer (inside a collapsed `<details>`); **every credited image is shown on the page** (and vice-versa). `kiftzuba.jpg` is an illustrative ferris-wheel photo, captioned as such (Commons has no real Kif Tzuba photo).
+- Home has two tile groups: **תכנון הטיול** (friday, saturday) and **מידע וכיף** (info, food, map, trivia, media). The מדיה view embeds a **Spreaker** player for the City-of-David kids podcast episode.
+- **⚠️ Gotcha — `.reveal` class collision:** the scroll-fade animation uses `.reveal{opacity:0}` + an IntersectionObserver that adds `.in` only to elements present at load. **Never give a dynamically-created element the class `reveal`** — it stays at opacity:0 forever (invisible). The trivia "show answer" button hit exactly this; it now uses class **`gbtn showans`** (bright `#f0b53e`, full-width) and is rendered on the **dark game panel** after the white `.qcard` (a button with white text *inside* the white card was also invisible — keep it on the dark panel).
+- **Dev tip:** headless Chrome enforces a **500px-minimum** window width, so a true ≤390px screenshot isn't possible locally — but 500px is inside the `max-width:760px` mobile breakpoint, so mobile CSS is still exercised. To debug invisible elements, dump computed style (`getComputedStyle`) via `--dump-dom` + a `setTimeout` that writes results into `document.title`.
 
 ## Trip facts (the constraints that drive everything)
 
@@ -69,9 +72,11 @@ Single self-contained HTML file, SPA, inline CSS+JS. External deps: Google Fonts
 - Kosher GF spots (בן עמי etc.) close Fri ~15:00 → Sat ~20:30; the reliably Shabbat-open options are First Station, German Colony cafés, and Old City (Arab) restaurants.
 - Old City works on Shabbat because the Arab market is open (Jaffa Gate → Tower of David → souk → Western Wall → lunch at First Station).
 - **CoD guided tour = 3h** and the Friday Hebrew slot (~09:30) clashes with קבלת שבת (12:00–14:00) → offer **self-guided entry** (~1.5h incl. tunnel, ₪28/₪14) as the schedule-friendly alternative; guided is ₪58/₪42.
-- **Restaurant corrections (June 2026 research):** **Adom moved** off First Station to the city centre (Brown Hotel, ~Hillel 41), open Shabbat, **not kosher**. The **First-Station Abu Shukri is closed** — use the **Old City** original (Sat lunch only). **Caffit / Grand Café do NOT reliably do safe GF** — Ben Ami (closed Shabbat) is the GF winner; **Tziga** (Derech Beit Lehem 31) is celiac/vegan gelato. Lina is in the Christian Quarter.
-- **Parking:** **Karta (כרתא) is open 24/7 incl. Shabbat** (centralpark.co.il) — the reliable Old-City-on-Saturday lot. Givati is unconfirmed; CoD steers to Mount Zion/Karta. First Station lot reportedly free on Shabbat.
+- **Restaurant facts (June 2026 research + user):** **Adom is permanently closed** (removed from the page). **First-Station Abu Shukri is closed** — use the **Old City** original (Sat lunch only; map `maps.app.goo.gl/P6vD9yiEMgmgmZiF7`). **Ben Ami is a GF *bakery/shop*, not a restaurant** — listed under GF supplies; closed Shabbat. **גלידה ציגה** (Tziga, Derech Beit Lehem 31) = celiac/vegan gelato but **closed Shabbat**; **וניליה** (First Station) is the Shabbat-open gelato. **Nanosh** (First Station) is open Shabbat (GF unverified). **Caffit / Grand Café do NOT reliably do safe GF.** Lina is in the Christian Quarter. The page may also list non-GF restaurants (e.g., First Station directory) with a celiac caveat.
+- **Parking:** every parking row has a map link. **Karta (כרתא) is open 24/7 incl. Shabbat** — the reliable Old-City-on-Saturday lot. Givati is unconfirmed; CoD steers to Mount Zion/Karta. First Station lot reportedly free on Shabbat.
 - **Montefiore Windmill** (תחנת הרוח, Mishkenot Sha'ananim): free, no booking, ~20–40 min, **closed Shabbat** → Friday-only add-on.
+- **Saturday extras:** "**שבת בבוקר — יום יפה**" at First Station is **~30₪/person** (08:00–18:00; live show + workshops + wooden games; **20/6 is a listed date**) — NOT free. Motzaei-Shabbat option: **High Light JLM**, a **free** laser+music show **on the Armon HaNatziv promenade (next to camp)**, Sat **20:30 & 21:30**. Event boards: itraveljerusalem.com events list + jerusalem.muni.il highlights.
+- **Coupons are shown on the page** (per user): `camp20` (~20% guided tours), `camp10` (~10% zipline).
 
 ## Open items (verify closer to the trip)
 
@@ -79,4 +84,4 @@ Single self-contained HTML file, SPA, inline CSS+JS. External deps: Google Fonts
 2. Exact Friday guided-tour clock times (aggregators show ~09:30; no 10:00 found) — confirm with CoD when booking.
 3. Bloomfield Science Museum summer Saturday hours.
 4. Kif Tzuba (קיפצובה): confirm the specific Saturday is open to the public + book online.
-5. Tziga gelato Shabbat hours; Adom's exact new address.
+5. Nanosh GF/kashrut; confirm the First-Station "שבת בבוקר — יום יפה" actually runs on Sat 20/6.

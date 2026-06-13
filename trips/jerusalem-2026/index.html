@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ירושלים '26 · סוף שבוע משפחתי</title>
 <meta name="description" content="טיול משפחתי לירושלים — עיר דוד, נקבת חזקיהו, שבת בירושלים, אוכל ללא גלוטן, טריוויה לילדים ומפה אינטראקטיבית.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2310203b'/><rect x='10' y='42' width='44' height='13' rx='2' fill='%23d99a2b'/><path d='M19 42c0-10 6-17 13-17s13 7 13 17z' fill='%23eab64f'/><rect x='31' y='13' width='2.4' height='9' fill='%23eab64f'/><circle cx='32.2' cy='11' r='3' fill='%23eab64f'/></svg>">
 
 <!-- ===== Fonts ===== -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -253,6 +254,7 @@ header.hero{position:relative; overflow:hidden; color:#fff; text-align:center}
 .opt.correct{background:#dff3e3; border-color:#7cc48f; font-weight:700}
 .opt.wrong{background:#fbe2da; border-color:#e0987f}
 .reveal-ans{background:#dff3e3; border:2px solid #7cc48f; border-radius:12px; padding:12px 14px; font-size:16px; font-weight:700; color:#2f6b46; animation:fade .3s}
+.abadge{display:inline-block; background:#fbe7d0; color:#8a5d12; border:1px solid #ecc99b; border-radius:999px; padding:3px 11px; font-size:12.5px; font-weight:700; font-family:'Heebo',sans-serif; margin-bottom:8px}
 .gbtns{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px}
 .gbtn{cursor:pointer; font-family:'Heebo',sans-serif; font-weight:700; font-size:14px; padding:10px 16px; border-radius:12px; border:none; color:#fff; transition:.15s; flex:1; min-width:120px}
 .gbtn:hover{filter:brightness(1.08)}
@@ -279,6 +281,11 @@ header.hero{position:relative; overflow:hidden; color:#fff; text-align:center}
 .mcard h4{font-family:'Heebo',sans-serif; font-weight:900; font-size:17px; margin:0 0 4px; color:var(--sky-deep)}
 .mcard .src{font-size:13px; color:var(--ink-soft)}
 .badge{display:inline-block; font-family:'Heebo',sans-serif; font-weight:700; font-size:11px; padding:2px 9px; border-radius:999px; background:var(--gold); color:var(--night); margin-inline-start:6px}
+
+/* two-up grid + video embed */
+.two{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px}
+.videowrap{position:relative; max-width:330px; margin:14px auto; aspect-ratio:9/16; border-radius:14px; overflow:hidden; box-shadow:var(--shadow)}
+.videowrap iframe{position:absolute; inset:0; width:100%; height:100%; border:0}
 
 /* map */
 #jmap{height:60vh; min-height:380px; border-radius:18px; border:1px solid var(--line); box-shadow:var(--shadow-soft)}
@@ -316,6 +323,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
   .shb{margin-top:-70px}
   footer .creds{columns:1}
   .gbtn{min-width:100%}
+  .two{grid-template-columns:1fr}
 }
 
 /* print */
@@ -431,39 +439,70 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     <h2>🌅 שישי 19/6 — יום ההרפתקה</h2>
     <p class="muted">הכול קורה <b>לפני כניסת השבת (19:07)</b>. הגיאוגרפיה לטובתכם — עיר דוד, חוות קבלת השבת, הקמפינג והטיילת במרחק ~10 דקות זה מזה בדרום־מזרח ירושלים.</p>
 
-    <div class="tl">
-      <div class="step card reveal">
-        <img class="photo" src="assets/city-of-david.jpg" alt="עיר דוד" data-cap="עיר דוד · צילום: Matson Collection (נחלת הכלל)">
+    <!-- ⏰ morning fork -->
+    <div class="warn reveal" style="margin-bottom:10px">⏰ <b>חשוב — התנגשות בלו״ז:</b> הסיור <b>המודרך</b> בעיר דוד אורך כ-<b>3 שעות</b> ובשישי יוצא בבוקר (סבב עברית סביב 09:30) — כך שהוא נגמר ~12:30 ו<b>מתנגש עם קבלת שבת</b> (12:00–14:00). לכן בוחרים אחד משני המסלולים: 👇</div>
+
+    <div class="two">
+      <div class="card reveal">
+        <img class="photo" src="assets/city-of-david-wide.jpg" alt="עיר דוד" data-cap="הפארק הארכאולוגי / מרכז דוידסון, עיר דוד · Deror avi, CC BY-SA 3.0">
         <div class="body">
-          <span class="time">08:00 · פתיחה</span>
-          <h3>🏛️ עיר דוד + נקבת חזקיהו — הסיור המודרך</h3>
+          <span class="time">~09:30 · כ-3 שעות</span>
+          <h3>🧭 מסלול א' — סיור מודרך מעמיק</h3>
           <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-fun">כיף לילדים</span></div>
-          <div class="meta"><span>📍 עיר דוד / שער האשפות</span><span>🕗 שישי 08:00–14:00</span><span>🎟️ כניסה אחרונה לנקבה ~12:30</span></div>
-          <p>חופרים את סיפור העיר העתיקה, ואז <b>צועדים בתוך מנהרת מים בת 2,700 שנה</b> לאור פנס — שיא היום לילדים.</p>
-          <div class="why">💧 <b>נקבה רטובה:</b> ~40 דק', מים בגובה ברך–ירך, חשוך וצר — מצוין מגיל 6+, כנראה יותר מדי לקטנטן/ת. 🪨 <b>נקבה יבשה (כנענית):</b> מקבילה, בלי מים — הורה אחד לוקח את הקטנים בדרך הזו ונפגשים ביציאה ב<b>בריכת השילוח</b>.</div>
-          <div class="warn">🎟️ <b>חובה להזמין מראש</b> שובץ ל~08:30–09:00 לתשעה אנשים. יש לכם קודי הנחה במייל ההזמנה — הזינו אותם בקופה. 🩴 ארזו <b>נעלי מים + פנס/פנס ראש</b>.</div>
+          <div class="meta"><span>📍 עיר דוד / שער האשפות</span><span>⏱️ ~3 שעות</span><span class="pr">~58₪ מבוגר · ~42₪ ילד</span></div>
+          <p>הסיור "<b>עיר דוד המקראית</b>" עם מדריך — החוויה הכי מעמיקה, כולל מעבר ב<b>נקבת חזקיהו</b>. יוצא בבוקר שישי (לוודא שעה מדויקת בהזמנה) ומסתיים סביב 12:30.</p>
+          <div class="warn">⛔ <b>מתנגש עם קבלת שבת</b> — במסלול הזה מוותרים עליה (או תופסים רק את סופה). יש לכם קודי הנחה במייל ההזמנה.</div>
           <div class="links">
-            <a href="https://cityofdavid.org.il/product/biblical-city-of-david/" target="_blank" rel="noopener">הזמנת הסיור ↗</a>
-            <a class="map" href="https://www.google.com/maps/search/?api=1&query=City+of+David+Jerusalem" target="_blank" rel="noopener">מפה / Waze ↗</a>
+            <a href="https://cityofdavid.org.il/product/biblical-city-of-david/" target="_blank" rel="noopener">הזמנת סיור מודרך ↗</a>
+            <a class="map" href="https://www.google.com/maps/search/?api=1&query=City+of+David+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
           </div>
         </div>
       </div>
 
-      <div class="step card reveal">
-        <img class="photo" src="assets/first-station.jpg" alt="התחנה הראשונה" data-cap="התחנה הראשונה · צילום: Danny Gershoni, CC BY-SA 4.0">
+      <div class="card reveal">
+        <img class="photo" src="assets/first-station-wide.jpg" alt="התחנה הראשונה" data-cap="התחנה הראשונה (התחנה הישנה) · Jorge Láscar, CC BY 2.0">
         <div class="body">
-          <span class="time">12:00–14:00</span>
-          <h3>🎶 קבלת שבת בחווה בגיא</h3>
-          <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-chill">רגוע ונגיש</span></div>
-          <div class="meta"><span>📍 חווה בגיא · ליד התחנה הראשונה</span><span>💰 ~20₪ מגיל 5</span></div>
-          <p>הרכב חי, שירים מסורתיים וישראליים, שולחנות פיקניק ופוד־טראק (לבדוק ללא גלוטן). חוויה משותפת ונעימה לכל החבורה לקראת שבת.</p>
-          <div class="warn">🎟️ <b>חובה הרשמה מראש.</b></div>
+          <span class="time">~08:00 · גמיש · ⭐ מומלץ ללו״ז</span>
+          <h3>🎒 מסלול ב' — עצמאי + קבלת שבת</h3>
+          <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-all">כולם</span></div>
+          <div class="meta"><span>📍 עיר דוד → חווה בגיא</span><span>⏱️ ~1.5 שעות</span><span class="pr">~28₪ מבוגר · ~14₪ ילד</span></div>
+          <p>נכנסים <b>עצמאית</b> מוקדם (~08:00–09:00), מסיירים ועוברים את <b>נקבת חזקיהו</b> בקצב שלכם (~שעה וחצי), ומסיימים לפני 12:00 — <b>ואז קבלת שבת בחווה בגיא 12:00–14:00</b> (הרכב חי, שירים, פוד־טראק; ~20₪ מגיל 5). המסלול היחיד שמאפשר גם נקבה וגם קבלת שבת.</p>
+          <div class="why">⭐ <b>כניסה אחרונה לנקבה ~11:30–12:30</b> — הגיעו עם פתיחת השער (08:00) כדי להספיק בנחת. קבלת שבת מצריכה <b>הרשמה מראש</b>.</div>
           <div class="links">
-            <a href="https://cityofdavid.org.il/product/musical-reception/" target="_blank" rel="noopener">הרשמה ↗</a>
+            <a href="https://cityofdavid.org.il/product/entrance-to-the-national-garden/" target="_blank" rel="noopener">כרטיס כניסה עצמאי ↗</a>
+            <a href="https://cityofdavid.org.il/product/musical-reception/" target="_blank" rel="noopener">הרשמה לקבלת שבת ↗</a>
             <a class="map" href="https://www.google.com/maps/search/?api=1&query=First+Station+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="card reveal">
+      <div class="body">
+        <h3>💧 נקבת חזקיהו — רטוב או יבש? (בשני המסלולים)</h3>
+        <p>💧 <b>נקבה רטובה:</b> ~40 דק', מים בגובה ברך–ירך, חשוך וצר — מצוין מגיל 6+, כנראה יותר מדי לקטנטן/ת. 🪨 <b>נקבה יבשה (כנענית):</b> מקבילה, בלי מים — הורה אחד לוקח את הקטנים ונפגשים ב<b>בריכת השילוח</b>. 🩴 ארזו <b>נעלי מים + פנס/פנס ראש</b> ושקית אטומה לטלפון.</p>
+        <div class="videowrap"><iframe src="https://www.youtube.com/embed/IEaA24CIs7I" title="טיול בנקבת השילוח" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+        <p class="muted center" style="font-size:13px">📺 תצוגה מקדימה: ההליכה בתוך הנקבה עם המים — מצוין כדי להחליט מי הולך רטוב ומי יבש.</p>
+      </div>
+    </div>
+
+    <div class="card reveal">
+      <div class="body">
+        <span class="time">תוספת קצרה · חינם</span>
+        <h3>🌬️ תוספת לשישי: טחנת הרוח של מונטיפיורי (משכנות שאננים)</h3>
+        <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-chill">רגוע ונגיש</span></div>
+        <div class="meta"><span>📍 ימין משה / משכנות שאננים</span><span class="pr">חינם</span><span>🕗 שישי בבוקר–צהריים</span></div>
+        <p>עצירה קצרה ומשתלמת (~20–40 דק'): סרטון על תולדות הטחנה (1858), טיפוס לראות את מנגנון הטחינה, מוזיאון קטן על משה מונטיפיורי והכרכרה שלו, ומרפסת תצפית יפהפייה על חומות העיר העתיקה ומגדל דוד. הכנפיים מסתובבות בד״כ ~10:00–12:00. כניסה חינם, בלי הרשמה.</p>
+        <div class="warn">⛔ פנים הטחנה <b>סגור בשבת</b> — מתאים רק לשישי (המרפסת פתוחה תמיד).</div>
+        <div class="links">
+          <a href="https://www.tahanatruah.co.il/" target="_blank" rel="noopener">טחנת הרוח ↗</a>
+          <a class="map" href="https://www.google.com/maps/search/?api=1&query=Montefiore+Windmill+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:28px">🌆 אחר הצהריים והערב (משותף לשני המסלולים)</h3>
+    <div class="tl">
 
       <div class="step card reveal">
         <div class="body">
@@ -476,7 +515,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       </div>
 
       <div class="step card reveal">
-        <img class="photo" src="assets/promenade.jpg" alt="טיילת ארמון הנציב" data-cap="טיילת האז (ארמון הנציב) · צילום: Djampa, CC BY-SA 4.0">
+        <img class="photo" src="assets/promenade-wide.jpg" alt="טיילת ארמון הנציב" data-cap="תצפית מטיילת ארמון הנציב על העיר העתיקה · Godot13, CC BY-SA 4.0">
         <div class="body">
           <span class="time">18:45–19:15 · שקיעה</span>
           <h3>🌇 טיילת ארמון הנציב</h3>
@@ -493,7 +532,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
           <h3>🔥 מנגל ליד הקרוואנים</h3>
           <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-fun">כיף לילדים</span></div>
           <p>חגיגי, רגוע, והכי קל לשליטה בצליאק (ראו <a data-view="food">מדריך האוכל</a>). אחר כך מקלות זוהרים, משחקי קלפים והסתכלות בכוכבים. <b>✅ מנגל מותר</b> — יש עמדות ייעודיות.</p>
-          <div class="alt">רוצים לאכול בחוץ? <b>אדום</b> ו<b>אבו שוקרי</b> בתחנה הראשונה פתוחים בערב שישי.</div>
+          <div class="alt">רוצים לאכול בחוץ בערב שישי? רוב המקומות הכשרים סגורים מ~15:00; <b>אדום</b> (עבר למרכז העיר, פתוח בשבת, לא כשר) הוא אופציה לארוחת ערב יושבת. ראו <a data-view="food">מדריך האוכל</a> ↗.</div>
         </div>
       </div>
     </div>
@@ -528,15 +567,16 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
 
     <div id="satcards">
       <div class="card filterable t-hist t-fun reveal">
-        <img class="photo" src="assets/old-city-market.jpg" alt="שוק העיר העתיקה" data-cap="שוק העיר העתיקה · צילום: Willem van de Poll (CC0)">
+        <img class="photo" src="assets/old-city-wide.jpg" alt="רחוב בעיר העתיקה" data-cap="רחוב הבד, העיר העתיקה · joiseyshowaa, CC BY-SA 2.0">
         <div class="body">
           <h3>🏛️ אפשרות א' — בוקר בעיר העתיקה ✅</h3>
           <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-fun">כיף לילדים</span></div>
           <p>העיר העתיקה תוססת בשבת כי <b>השוק הערבי פתוח</b>. נכנסים ב<b>שער יפו</b> → <b>מגדל דוד</b> (מוזיאון, ✅ שבת 10:00–14:00) → יורדים דרך <b>השוק</b> → <b>הכותל המערבי</b> (תמיד פתוח וחינם).</p>
           <div class="why">לכו <b>בבוקר</b> (קריר יותר), קצר יותר עבור הקטנטן/ת, כובעים ומים. <b>צהריים בתחנה הראשונה</b> (5–10 דק', ידידותי לצליאק ופתוח בשבת).</div>
-          <div class="warn">🅿️ <b>חניון קרתא</b> בשער יפו (הקרוב למגדל דוד/שוק). לוודא שפועל בשבת.</div>
+          <div class="why">🅿️ <b>חניון כרתא (קרתא)</b> בשער יפו — ✅ <b>פתוח 24/7 כולל שבת</b> (יצחק קריב 1, ~800 חניות), הקרוב למגדל דוד ולשוק. צהריים: <b>חומוס אבו שוקרי / לינא</b> בעיר העתיקה (פתוחים בשבת) או חזרה לתחנה הראשונה.</div>
           <div class="links">
             <a href="https://www.tod.org.il/" target="_blank" rel="noopener">מגדל דוד ↗</a>
+            <a href="https://centralpark.co.il/parking/קרתא" target="_blank" rel="noopener">חניון כרתא ↗</a>
             <a class="map" href="https://www.google.com/maps/search/?api=1&query=Jaffa+Gate+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
           </div>
         </div>
@@ -555,7 +595,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       </div>
 
       <div class="card filterable t-hist t-chill reveal">
-        <img class="photo" src="assets/temple-model.jpg" alt="דגם ירושלים בבית שני" data-cap="דגם ירושלים בימי בית שני, מוזיאון ישראל · צילום: Berthold Werner (נחלת הכלל)">
+        <img class="photo" src="assets/israel-museum.jpg" alt="מוזיאון ישראל" data-cap="מוזיאון ישראל, ירושלים · Xavier Gillet, CC BY-SA 2.0">
         <div class="body">
           <h3>🖼️ אפשרות ג' — מוזיאון ישראל ✅</h3>
           <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-chill">רגוע ונגיש</span></div>
@@ -610,14 +650,15 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       </div>
 
       <div class="card filterable t-route t-fun reveal">
+        <img class="photo" src="assets/kiftzuba.jpg" alt="קיפצובה — פארק שעשועים" data-cap="אילוסטרציה: גלגל ענק בלונה־פארק · PattayaPatrol, CC BY-SA 4.0">
         <div class="body">
-          <h3>🎢 קיף צובא ✅</h3>
+          <h3>🎢 קיפצובה ✅</h3>
           <div class="tags"><span class="tag t-route">בדרך הביתה</span><span class="tag t-fun">כיף לילדים</span></div>
           <div class="meta"><span>📍 קיבוץ צובא</span><span>🕗 ~09:00–16:00</span><span class="pr">~105₪ אונליין</span></div>
           <p>פארק שעשועים לגילאי 1–14: רכבות הרים, מסלול נינג'ה, קרוסלות, גלגל ענק, מכוניות מתנגשות, מתקני קפיצה וזון לפעוטות. <b>הכי כיפי אם הילדים רוצים כיף טהור.</b></p>
           <div class="warn">⚠️ להזמין אונליין מראש ולאמת שהשבת פתוחה לקהל. לשאול אם מתקני המים פועלים בקיץ.</div>
           <div class="links">
-            <a href="https://kiftzuba.co.il/" target="_blank" rel="noopener">קיף צובא ↗</a>
+            <a href="https://kiftzuba.co.il/" target="_blank" rel="noopener">קיפצובה ↗</a>
             <a class="map" href="https://www.google.com/maps/search/?api=1&query=Kif+Tzuba" target="_blank" rel="noopener">מפה ↗</a>
           </div>
         </div>
@@ -640,7 +681,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     <div class="alt reveal" style="margin-top:22px">
       <b>🌙 מוצ"ש (אם מתמהמהים אחרי ~20:30):</b> <b>התחנה הראשונה</b> תוססת (אוכל ואווירה), או ארוחת ערב הגונה לפני הנסיעה. לאירועים מתוזמנים בדקו את לוח האירועים העירוני (מתחלף — לוודא שזה ב־20/6): <a href="https://www.jerusalem.muni.il/he/experience/allevents/highlight/" target="_blank" rel="noopener">לוח האירועים ↗</a></div>
 
-    <div class="why reveal"><b>זרימה מומלצת לשבת:</b> בוקר רגוע + טיילת → עיר עתיקה + צהריים בתחנה הראשונה → נסיעה מערבה ועצירה ב<b>עין חמד</b> (או קיף צובא / איילון–קנדה) → הביתה.</div>
+    <div class="why reveal"><b>זרימה מומלצת לשבת:</b> בוקר רגוע + טיילת → עיר עתיקה + צהריים בתחנה הראשונה → נסיעה מערבה ועצירה ב<b>עין חמד</b> (או קיפצובה / איילון–קנדה) → הביתה.</div>
   </div>
 </div>
 
@@ -662,22 +703,26 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     <h3 style="margin-top:24px">⭐ מקומות ללא גלוטן ליד הקמפינג (בקעה / תחנה ראשונה / מושבה גרמנית)</h3>
     <table class="tbl">
       <tr><th>מקום</th><th>אזור</th><th>ללא גלוטן</th><th>פתוח בשבת?</th></tr>
-      <tr><td><b>בן עמי</b></td><td>בקעה</td><td>"גביע הקדוש" של הצליאק — תפריט GF נפרד + מאפייה</td><td><span class="no">כנראה סגור ביום</span> — ליל/מוצ"ש</td></tr>
-      <tr><td><b>גרנד קפה</b></td><td>דרך בית לחם</td><td>לחם GF, קערת בוקר, עוגת שוקולד GF</td><td>⚠️ לאמת</td></tr>
-      <tr><td><b>אדום</b></td><td>תחנה ראשונה</td><td>עוגת "נמסיס" GF; לבקש מנות עיקריות GF</td><td><span class="ok">✅ כן + ליל שישי</span></td></tr>
-      <tr><td><b>אבו שוקרי (חומוס)</b></td><td>תחנה ראשונה</td><td>כמעט הכול GF חוץ מהפיתה</td><td><span class="ok">✅ סביר</span></td></tr>
-      <tr><td><b>קפית</b></td><td>עמק רפאים</td><td>בית קפה משפחתי עם אופציות GF</td><td><span class="ok">✅ כן</span></td></tr>
-      <tr><td><b>וניליה / קרמה</b></td><td>תחנה / עמק רפאים</td><td>גלידה צליאק/טבעונית — ביטוח לילד שמח</td><td><span class="ok">✅ כן</span></td></tr>
+      <tr><td><a href="https://benami-jlm.co.il" target="_blank" rel="noopener"><b>בן עמי</b> ↗</a></td><td>עמק רפאים 38</td><td>⭐ "גביע הקדוש" — תפריט GF נפרד + מאפייה GF</td><td><span class="no">סגור בשבת</span> · מצוין למוצ"ש</td></tr>
+      <tr><td><a href="https://www.adom.rest" target="_blank" rel="noopener"><b>אדום</b> ↗</a></td><td>מרכז העיר (מלון בראון)*</td><td>מנות GF לפי בקשה (לא ייעודי לצליאק)</td><td><span class="ok">✅ כן + ליל שישי</span> · לא כשר</td></tr>
+      <tr><td><a href="https://www.google.com/maps/search/?api=1&query=Abu+Shukri+hummus+Old+City+Jerusalem" target="_blank" rel="noopener"><b>אבו שוקרי</b> ↗</a></td><td>עיר עתיקה (רובע מוסלמי)</td><td>חומוס/סלטים — טבעית GF חוץ מהפיתה</td><td><span class="ok">✅ שבת ביום</span> (צהריים, נסגר ~17:00)</td></tr>
+      <tr><td><a href="https://www.google.com/maps/search/?api=1&query=Hummus+Lina+Old+City+Jerusalem" target="_blank" rel="noopener"><b>חומוס לינא</b> ↗</a></td><td>עיר עתיקה (רובע נוצרי)</td><td>חומוס — טבעית GF חוץ מהפיתה</td><td><span class="ok">✅ שבת ביום</span> (צהריים)</td></tr>
+      <tr><td><a href="https://vaniglia.co.il" target="_blank" rel="noopener"><b>וניליה</b> ↗</a></td><td>תחנה ראשונה</td><td>גלידה/סורבה טבעוני (לשאול על זיהום צולב)</td><td><span class="ok">✅ כן</span></td></tr>
+      <tr><td><a href="https://tziga.co.il" target="_blank" rel="noopener"><b>טסיגה</b> ↗</a></td><td>דרך בית לחם 31</td><td>⭐ גלידה צליאק/טבעוני/ללא ביצה</td><td>⚠️ לאמת שעות שבת</td></tr>
+      <tr><td><a href="https://caffit.co.il" target="_blank" rel="noopener"><b>קפית</b> ↗</a></td><td>עמק רפאים</td><td>אופציות מוגבלות — <b>לא</b> מענה צליאק בטוח</td><td><span class="no">סגור בשבת ביום</span></td></tr>
+      <tr><td><a href="https://grand-cafe.co.il" target="_blank" rel="noopener"><b>גרנד קפה</b> ↗</a></td><td>דרך בית לחם 70</td><td>אופציות מוגבלות — לא ייעודי לצליאק</td><td><span class="no">סגור בשבת</span></td></tr>
+      <tr><td><a href="https://rebar.co.il" target="_blank" rel="noopener"><b>רי־בר</b> ↗</a></td><td>תחנה ראשונה</td><td>שייקים/מיצים (בד"כ GF)</td><td><span class="no">סגור בשבת ביום</span></td></tr>
     </table>
-    <div class="warn">⚠️ שעות משתנות — <b>התקשרו בבוקר</b> לכל מקום לפני שמסתמכים עליו. <b>התחנה הראשונה</b> היא ברירת המחדל האמינה לשבת (כמה מסעדות פתוחות + "שבת בתחנה" עם פעילויות חינם לילדים).</div>
+    <p class="muted" style="font-size:12.5px">* <b>אדום עבר</b> מהתחנה הראשונה למרכז העיר (~הלל 41, מלון בראון) — לאמת מיקום. <b>בן עמי</b> הוא הבחירה הבטוחה ביותר לצליאק (אך סגור בשבת). <b>קפית/גרנד קפה אינם מספקים מענה צליאק ודאי</b> — לצליאק עדיף בן עמי/טסיגה או אוכל שהבאתם.</p>
+    <div class="warn">⚠️ שעות משתנות — <b>התקשרו בבוקר</b> לכל מקום לפני שמסתמכים עליו. <b>התחנה הראשונה</b> היא ברירת המחדל האמינה לשבת ביום (כמה מקומות פתוחים + "שבת בתחנה" עם פעילויות חינם לילדים): <a href="https://www.firststation.co.il/events/saturday/" target="_blank" rel="noopener">שבת בתחנה ↗</a></div>
 
     <h3 style="margin-top:24px">עוד אפשרויות, לפי מצב</h3>
     <div class="card"><div class="body">
-      <p>🥗 <b>צהריים בעיר העתיקה (אם בחרתם אפשרות א'):</b> <b>חומוס אבו שוקרי</b> ו<b>חומוס לינא</b> ברובע המוסלמי פתוחים בשבת — חומוס/סלטים (טבעית GF חוץ מהפיתה — הביאו פיתה GF מגלולס).</p>
-      <p>🍳 <b>בוקר/בראנץ' (מושבה גרמנית–עמק רפאים, פתוח בשבת):</b> <b>קפית</b>, <b>גרנד קפה</b> ובתי הקפה בעמק רפאים — ארוחות בוקר משפחתיות עם לחם GF לפי בקשה.</p>
-      <p>🥤 <b>חטיף מהיר לילדים (בד"כ בטוח GF):</b> בארי שייקים כמו <b>רי־בר</b>, פרוזן יוגורט, וגלידה (<b>וניליה/קרמה</b>).</p>
-      <p>🧺 <b>פיקניק לפארקים (דרך הביתה בשבת):</b> עין חמד / איילון–קנדה / קיף צובא — קררו מבעוד מועד: לחמניות GF + נקניק/גבינה, ירקות, פירות, חטיפים GF, יוגורט.</p>
-      <p>🌙 <b>ארוחת מוצ"ש (אחרי ~20:30 הכול נפתח):</b> רגע מצוין ל"גביע הקדוש" <b>בן עמי (בקעה)</b> או ארוחה מלאה לפני הנסיעה.</p>
+      <p>🥗 <b>צהריים בעיר העתיקה (אם בחרתם אפשרות א'):</b> <b>חומוס אבו שוקרי</b> (רובע מוסלמי) ו<b>חומוס לינא</b> (רובע נוצרי) פתוחים בשבת ביום — חומוס/סלטים (טבעית GF חוץ מהפיתה — הביאו פיתה GF מגלולס). נסגרים אחה"צ, אז זה לצהריים בלבד.</p>
+      <p>🍳 <b>בוקר/בראנץ':</b> לבוקר GF <b>בטוח</b> עדיף <b>בן עמי</b> (שישי/מוצ"ש) או פשוט בוקר מהמצרכים שקניתם בקמפינג. <b>קפית/גרנד קפה אינם מבטיחים GF נקי</b>, ובשבת ביום הם בלאו הכי סגורים.</p>
+      <p>🥤 <b>חטיף מהיר לילדים (בד"כ בטוח GF):</b> שייקים ב<a href="https://rebar.co.il" target="_blank" rel="noopener"><b>רי־בר</b></a>, ופרוזן יוגורט/גלידה ב<a href="https://vaniglia.co.il" target="_blank" rel="noopener"><b>וניליה</b></a> או <a href="https://tziga.co.il" target="_blank" rel="noopener"><b>טסיגה</b></a> (צליאק).</p>
+      <p>🧺 <b>פיקניק לפארקים (דרך הביתה בשבת):</b> עין חמד / איילון–קנדה / קיפצובה — קררו מבעוד מועד: לחמניות GF + נקניק/גבינה, ירקות, פירות, חטיפים GF, יוגורט.</p>
+      <p>🌙 <b>ארוחת מוצ"ש (אחרי ~20:30 הכול נפתח):</b> רגע מצוין ל"גביע הקדוש" <a href="https://benami-jlm.co.il" target="_blank" rel="noopener"><b>בן עמי</b></a> או ארוחה מלאה לפני הנסיעה.</p>
     </div></div>
 
     <div class="warn"><b>כשר מול פתוח־בשבת — הכלל המעשי:</b> מקומות הצליאק הייעודיים הטובים (בן עמי, מוזס, אגס ותפוח) <b>כשרים וסגורים</b> מליל שישי עד מוצ"ש. הפתוחים בשבת הם <b>התחנה הראשונה, בתי קפה במושבה הגרמנית, ומסעדות העיר העתיקה</b>. תכננו בהתאם, והתקשרו באותו יום.</div>
@@ -741,10 +786,10 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     <table class="tbl">
       <tr><th>תחנה</th><th>Waze / כתובת</th><th>חניה</th></tr>
       <tr><td><b>קמפינג</b></td><td>קמפינג יער השלום</td><td><span class="ok">✅ חינם במקום</span></td></tr>
-      <tr><td><b>עיר דוד (שישי)</b></td><td>עיר דוד / שער האשפות</td><td>חניון גבעתי (בתשלום, מוגבל) — מוקדם; עודף: חניון הר ציון (~9 דק' הליכה)</td></tr>
-      <tr><td><b>קבלת שבת – חווה בגיא</b></td><td>ליד התחנה הראשונה</td><td>ליד התחנה הראשונה (~17₪/יום) או רחוב</td></tr>
+      <tr><td><b>עיר דוד (שישי)</b></td><td>עיר דוד / שער האשפות</td><td>חניון גבעתי (בתשלום, מוגבל) — מוקדם; עיר דוד ממליצים גם על <b>חניון הר ציון</b> (~9 דק' הליכה, מוגבל). <a href="https://cityofdavid.org.il/sites/national-park-city-of-david/" target="_blank" rel="noopener">הגעה ↗</a></td></tr>
+      <tr><td><b>קבלת שבת / תחנה ראשונה</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=First+Station+Jerusalem" target="_blank" rel="noopener">התחנה הראשונה ↗</a></td><td>חניון התחנה (24/7; ~15₪ שעה ראשונה בחול). <b>בשבת — חינם</b> (לאמת). או חניית רחוב.</td></tr>
       <tr><td><b>טיילת</b></td><td>טיילת ארמון הנציב</td><td><span class="ok">✅ חינם</span> (לא ברחוב דניאל ינובסקי)</td></tr>
-      <tr><td><b>עיר עתיקה (שבת)</b></td><td>שער יפו</td><td>חניון קרתא — ⚠️ לאמת פעילות בשבת</td></tr>
+      <tr><td><b>עיר עתיקה (שבת)</b></td><td>שער יפו</td><td><a href="https://centralpark.co.il/parking/קרתא" target="_blank" rel="noopener"><b>חניון כרתא</b> ↗</a> — ✅ פתוח 24/7 כולל שבת (~₪70–100/יום, זול יותר באפליקציה)</td></tr>
       <tr><td><b>עמק הצבאים</b></td><td>עמק הצבאים</td><td>חניון כניסה (מוגבל) — מוקדם</td></tr>
       <tr><td><b>מוזיאון ישראל / בלומפילד</b></td><td>דרך רופין 11 / שד' המוזיאונים 3</td><td>חניוני המקום (גבעת רם)</td></tr>
       <tr><td><b>עין חמד (כביש 1)</b></td><td>גן לאומי עין חמד</td><td>חניון הגן הלאומי</td></tr>
@@ -775,10 +820,11 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
         <div class="roundbar" id="roundbar"></div>
         <div id="gameArea"></div>
         <div class="gnav">
-          <button id="prevQ">◀ הקודמת</button>
+          <button id="prevQ">▶ הקודמת</button>
           <span id="qpos"></span>
-          <button id="nextQ">הבאה ▶</button>
+          <button id="nextQ">הבאה ◀</button>
         </div>
+        <div style="text-align:center; margin-top:10px"><button id="clearGame" class="editteam">🗑️ אפס ניקוד והתחל מחדש</button></div>
       </div>
       <div class="tip">💡 טיפ להוגנות: תנו לקטנטנים (3–4) לענות בעיקר על 🟢 ועל סבב הציור, ולגדולים את 💎 ואת סבב הברק. ככה כולם אלופים! 💛</div>
     </div>
@@ -801,16 +847,24 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     <p class="muted">פודקאסטים לנסיעה 🚗 וסרטונים לצפייה לפני — כדי שהילדים יגיעו לעיר דוד עם רקע ויתחברו הרבה יותר. ⚠️ שמות עשויים להשתנות — חפשו את השם ב־Spotify / Apple / YouTube.</p>
 
     <h3>🎧 פודקאסטים לנסיעה</h3>
-    <div class="mcard"><h4>"הסודות של עיר דוד" <span class="badge">הכי רלוונטי</span></h4><div class="src">עיר דוד · Spotify / Apple · באתר עיר דוד</div><p>סדרת פודקאסט למשפחה (~7 פרקים) על דוד המלך, בית המקדש הראשון, המצור של אשור ובבל, וגילוי העיר מחדש. הקרינו פרק בנסיעה — והילדים ייכנסו לנקבה כשהם כבר "מכירים" את הסיפור.</p></div>
-    <div class="mcard"><h4>"סיפורי תנ״ך לילדים" — עקיבא צוקרמן</h4><div class="src">Apple Podcasts / Podbean</div><p>סיפורי התנ״ך מותאמים לילדים — כולל ספר מלכים (דוד, שלמה, חזקיהו) שמתחבר ישירות לעיר דוד.</p></div>
-    <div class="mcard"><h4>"היסטוריה לילדים" (כאן)</h4><div class="src">kan.org.il</div><p>ממציאים, מנהיגים ומתקני עולם — היסטוריה בגובה העיניים. מצוין לנסיעה כללית.</p></div>
-    <div class="mcard"><h4>"עושים היסטוריה" (לגדולים/הורים)</h4><div class="src">osimhistoria.com</div><p>פרקים על היסטוריה יהודית וירושלים — מתאים מגיל 10+ ולהורים שרוצים רקע מעמיק.</p></div>
+    <div class="mcard"><h4>"הסודות של עיר דוד" <span class="badge">הכי רלוונטי</span></h4><div class="src">עיר דוד · יובל מלחי</div><p>סדרת פודקאסט למשפחה על דוד המלך, בית המקדש הראשון, המצור של אשור ובבל, וגילוי העיר מחדש. הקרינו פרק בנסיעה — והילדים ייכנסו לנקבה כשהם כבר "מכירים" את הסיפור.</p>
+      <div class="links"><a href="https://cityofdavid.org.il/podcast-part7/" target="_blank" rel="noopener">⭐ פרק הילדים — "העיר האבודה" ↗</a><a href="https://cityofdavid.org.il/podcast/" target="_blank" rel="noopener">כל הפרקים ↗</a><a href="https://www.youtube.com/playlist?list=PL_mVs-DUYQ7So58J3X4FM2Kq3NFTk4mwK" target="_blank" rel="noopener">פלייליסט יוטיוב ↗</a></div></div>
+    <div class="mcard"><h4>"סיפורי תנ״ך לילדים" — עקיבא צוקרמן</h4><div class="src">פודקאסט לילדים</div><p>סיפורי התנ״ך מותאמים לילדים — כולל ספר מלכים (דוד, שלמה, חזקיהו) שמתחבר ישירות לעיר דוד.</p>
+      <div class="links"><a href="https://open.spotify.com/show/2ch7uLyiRLRVXMzis2RbZP" target="_blank" rel="noopener">Spotify ↗</a><a href="https://podcasts.apple.com/us/podcast/id1548550002" target="_blank" rel="noopener">Apple ↗</a><a href="https://www.akivazuk.com/" target="_blank" rel="noopener">האתר ↗</a></div></div>
+    <div class="mcard"><h4>"היסטוריה לילדים" (כאן)</h4><div class="src">תאגיד כאן · יובל מלחי</div><p>ממציאים, מנהיגים ומתקני עולם — היסטוריה בגובה העיניים. מצוין לנסיעה כללית.</p>
+      <div class="links"><a href="https://open.spotify.com/show/0cHdRNk24adWawuZQyyn3b" target="_blank" rel="noopener">Spotify ↗</a><a href="https://podcasts.apple.com/us/podcast/id1248230651" target="_blank" rel="noopener">Apple ↗</a><a href="https://www.kan.org.il/content/kan/podcasts/p-8183/" target="_blank" rel="noopener">כאן ↗</a></div></div>
+    <div class="mcard"><h4>"עושים היסטוריה" (לגדולים/הורים)</h4><div class="src">רן לוי</div><p>פרקים על היסטוריה יהודית וירושלים — מתאים מגיל 10+ ולהורים. (מאותו בית גם <b>"עושים תנ״ך"</b> לזווית מקראית.)</p>
+      <div class="links"><a href="https://open.spotify.com/show/5lEruNWWFJ0XCKuGy2Ekr7" target="_blank" rel="noopener">Spotify ↗</a><a href="https://www.osimhistoria.com/osimhistoria" target="_blank" rel="noopener">האתר ↗</a><a href="https://www.osimhistoria.com/osim-tanach" target="_blank" rel="noopener">עושים תנ״ך ↗</a></div></div>
 
     <h3 style="margin-top:24px">📺 סרטונים לראות לפני (5–15 דק')</h3>
-    <div class="mcard"><h4>הסרטונים של עיר דוד <span class="badge">מומלץ</span></h4><div class="src">cityofdavid.org.il/videos/ · גלריית וידאו · יוטיוב עיר דוד</div><p>אוסף מרתק — כולל איך הילד יעקב אליהו גילה את כתובת השילוח, ולמה הנקבה פלא הנדסי.</p></div>
-    <div class="mcard"><h4>"טיול בנקבת השילוח" — תצוגה מקדימה</h4><div class="src">YouTube — חפשו "נקבת השילוח" / "נקבת חזקיהו טיול"</div><p>איך נראית ההליכה בתוך הנקבה עם המים — מצוין כדי להחליט מי הולך רטוב ומי יבש.</p></div>
-    <div class="mcard"><h4>מכון מגלי״ם (Megalim)</h4><div class="src">megalim.org.il</div><p>סרטונים שמסבירים את הממצאים הארכיאולוגיים בעיר דוד בצורה נגישה.</p></div>
-    <div class="mcard"><h4>"בית המקדש" — סדרת אנימציה לילדים</h4><div class="src">YouTube — @beit_hamikdas · "עולם הילדים" הידברות</div><p>אנימציה שממחישה איך נראה בית המקדש — מתחבר לשלמה המלך ולכותל.</p></div>
+    <div class="mcard"><h4>הסרטונים של עיר דוד <span class="badge">מומלץ</span></h4><div class="src">עיר דוד</div><p>אוסף מרתק — כולל איך הילד יעקב אליהו גילה את כתובת השילוח, ולמה הנקבה פלא הנדסי.</p>
+      <div class="links"><a href="https://www.cityofdavid.org.il/en/videos" target="_blank" rel="noopener">גלריית הווידאו ↗</a><a href="https://www.youtube.com/channel/UCDHwHzMRrTsns_FAEWYlbSA" target="_blank" rel="noopener">יוטיוב עיר דוד ↗</a></div></div>
+    <div class="mcard"><h4>"טיול בנקבת השילוח" — תצוגה מקדימה</h4><div class="src">YouTube Short</div><p>איך נראית ההליכה בתוך הנקבה עם המים — מצוין כדי להחליט מי הולך רטוב ומי יבש. (מוטמע גם בדף <a data-view="friday">שישי</a>.)</p>
+      <div class="links"><a href="https://www.youtube.com/shorts/IEaA24CIs7I" target="_blank" rel="noopener">צפו בסרטון ↗</a></div></div>
+    <div class="mcard"><h4>מכון מגלי״ם (Megalim)</h4><div class="src">YouTube</div><p>סרטונים שמסבירים את הממצאים הארכיאולוגיים בעיר דוד ובהר הבית בצורה נגישה.</p>
+      <div class="links"><a href="https://www.youtube.com/@megaliminstitute3759" target="_blank" rel="noopener">יוטיוב מגלי״ם ↗</a></div></div>
+    <div class="mcard"><h4>"בית המקדש" — אנימציה לילדים</h4><div class="src">YouTube · @beit_hamikdas</div><p>אנימציה שממחישה איך נראה בית המקדש — מתחבר לשלמה המלך ולכותל.</p>
+      <div class="links"><a href="https://www.youtube.com/@beit_hamikdas" target="_blank" rel="noopener">הערוץ ↗</a></div></div>
 
     <div class="why" style="margin-top:18px"><b>הצעה לסדר:</b> שבוע לפני — 1–2 סרטונים קצרים. בנסיעה (בוקר שישי) — פרק מ"הסודות של עיר דוד" + טריוויה. בדרך חזרה — פרק רגוע לסיכום. 💡 הורידו לאופליין — קליטה בהרי ירושלים לא תמיד יציבה.</div>
   </div>
@@ -862,23 +916,18 @@ document.querySelectorAll('[data-view]').forEach(el=>{
 });
 window.addEventListener('hashchange',()=>show((location.hash.slice(1))||'home'));
 
-/* ================= SOUND (Web Audio) ================= */
-let AC=null, soundOn=false, ambGain=null, ambNodes=[];
+/* ================= SOUND (bundled music + Web-Audio FX) ================= */
+let AC=null, soundOn=false;
 function ac(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return AC; }
 function tone(freq,dur,type,vol,when){ const c=ac(); if(!c||!soundOn) return; const t=(when||c.currentTime); const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq; o.connect(g); g.connect(c.destination); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol||0.18,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.25)); o.start(t); o.stop(t+(dur||0.25)+0.02); }
 function ding(){ const c=ac(); if(!c) return; tone(659,0.16,'sine',0.2); tone(988,0.28,'sine',0.18,c.currentTime+0.09); }
 function buzz(){ tone(150,0.28,'square',0.13); }
 function blip(){ tone(520,0.06,'triangle',0.07); }
 function fanfare(){ const c=ac(); if(!c) return; const n=[523,659,784,1047]; n.forEach((f,i)=>tone(f,0.3,'triangle',0.16,c.currentTime+i*0.12)); }
-function startAmbient(){ const c=ac(); if(!c) return; ambGain=c.createGain(); ambGain.gain.value=0.0; ambGain.connect(c.destination);
-  [110,164.8,220].forEach((f,i)=>{ const o=c.createOscillator(); o.type='sine'; o.frequency.value=f; const g=c.createGain(); g.gain.value=i===0?0.05:0.025; o.connect(g); g.connect(ambGain); o.start(); ambNodes.push(o);
-    const l=c.createOscillator(); l.frequency.value=0.06+i*0.02; const lg=c.createGain(); lg.gain.value=0.015; l.connect(lg); lg.connect(g.gain); l.start(); ambNodes.push(l); });
-  ambGain.gain.linearRampToValueAtTime(0.5,c.currentTime+2);
-}
-function stopAmbient(){ const c=ac(); if(ambGain&&c){ ambGain.gain.linearRampToValueAtTime(0,c.currentTime+0.6);} ambNodes.forEach(o=>{try{o.stop(c.currentTime+0.7);}catch(e){}}); ambNodes=[]; ambGain=null; }
+const bgAudio=new Audio('assets/bg-music.m4a'); bgAudio.loop=true; bgAudio.volume=0.32; bgAudio.preload='none';
 document.getElementById('sndToggle').addEventListener('click',function(){
   soundOn=!soundOn; this.textContent=soundOn?'🔊':'🔇'; const c=ac(); if(c&&c.state==='suspended')c.resume();
-  if(soundOn){ ding(); startAmbient(); } else { stopAmbient(); }
+  if(soundOn){ bgAudio.play().catch(()=>{}); ding(); } else { bgAudio.pause(); }
 });
 
 /* ================= COUNTDOWN + CLOCK ================= */
@@ -953,7 +1002,7 @@ const PLACES=[
   {n:'מוזיאון המדע בלומפילד',c:[31.7770,35.1980],k:'sat',d:'מדע התנסותי'},
   {n:'פארק המסילה',c:[31.7585,35.2185],k:'sat',d:'טיילת עץ'},
   {n:'גן לאומי עין חמד',c:[31.8050,35.1330],k:'west',d:'מים + מצודה צלבנית'},
-  {n:'קיף צובא',c:[31.7905,35.1080],k:'west',d:'פארק שעשועים'},
+  {n:'קיפצובה',c:[31.7905,35.1080],k:'west',d:'פארק שעשועים'},
   {n:'פארק איילון–קנדה',c:[31.8390,35.0150],k:'west',d:'שביל אמת המים'},
 ];
 const KCOL={camp:'#c25b35',fri:'#d99a2b',sat:'#2f7fb3',west:'#7a8b3c'};
@@ -961,7 +1010,7 @@ function initMap(){
   if(mapInited){ if(jmap)setTimeout(()=>jmap.invalidateSize(),100); return; }
   if(typeof L==='undefined'){ if(mapTries++<25){ setTimeout(initMap,300);} else { document.getElementById('jmap').innerHTML='<p style="padding:20px;text-align:center" class="muted">לא ניתן לטעון את המפה (נדרש אינטרנט). השתמשו בקישורי ה־Waze בכרטיסים.</p>'; } return; }
   mapInited=true;
-  jmap=L.map('jmap',{scrollWheelZoom:false}).setView([31.775,35.18],12);
+  jmap=L.map('jmap',{scrollWheelZoom:true}).setView([31.775,35.18],12);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(jmap);
   const grp=[];
   PLACES.forEach(p=>{
@@ -979,22 +1028,24 @@ function initMap(){
 const CREDITS=[
  ['פנורמת העיר העתיקה וכיפת הסלע','Adam Jones','CC BY-SA 2.0','https://commons.wikimedia.org/wiki/File:Panorama_with_Dome_of_the_Rock_-_Temple_Mount_-_Old_City_-_East_Jerusalem_(5684536532).jpg'],
  ['הכותל המערבי','יהודה גרינברג (PikiWiki)','CC BY 2.5','https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_47231_Revealing_of_the_Western_Wall_.jpg'],
- ['עיר דוד','Matson Collection','נחלת הכלל','https://commons.wikimedia.org/wiki/File:City_of_David,_Southern_Wall_Temple_Mount_Kidron_Valley_Ophel_and_Siloam.jpg'],
+ ['עיר דוד / הפארק הארכאולוגי','Deror avi','CC BY-SA 3.0','https://commons.wikimedia.org/wiki/File:Davidson_Center_-_Jerusalem_Archaeological_Park_IMG_6075.JPG'],
  ['בתוך נקבת חזקיהו','Ian Scott','CC BY-SA 2.0','https://commons.wikimedia.org/wiki/File:Inside_Hezekiah%27s_Tunnel-A_(3782613123).jpg'],
  ['מגדל דוד','Bukvoed','CC BY 4.0','https://commons.wikimedia.org/wiki/File:Jerusalem-Tower-of-David-V2-348.jpg'],
- ['התחנה הראשונה','Danny Gershoni','CC BY-SA 4.0','https://commons.wikimedia.org/wiki/File:First_power_station_-_Jerusalem_1.jpg'],
- ['טיילת האז','Djampa','CC BY-SA 4.0','https://commons.wikimedia.org/wiki/File:Jerusalem_Haas_Promenade_Belvedere_Hanoucca.jpg'],
+ ['התחנה הראשונה','Jorge Láscar','CC BY 2.0','https://commons.wikimedia.org/wiki/File:The_Old_Train_Station_%E2%80%93_Hatachana_(9869926683).jpg'],
+ ['תצפית מטיילת ארמון הנציב','Godot13','CC BY-SA 4.0','https://commons.wikimedia.org/wiki/File:2013-Jerusalem-View_from_Armon_Hanatziv.jpg'],
  ['עין חמד','Bukvoed','CC BY 3.0','https://commons.wikimedia.org/wiki/File:Ein-Chemed-143.jpg'],
- ['דגם בית שני, מוזיאון ישראל','Berthold Werner','נחלת הכלל','https://commons.wikimedia.org/wiki/File:Jerusalem_Modell_BW_2.JPG'],
+ ['מוזיאון ישראל','Xavier Gillet','CC BY-SA 2.0','https://commons.wikimedia.org/wiki/File:Mus%C3%A9e_de_J%C3%A9rusalem_-_Isra%C3%ABl_(7556059626).jpg'],
  ['עמק הצבאים','Yuvalr','CC BY-SA 3.0','https://commons.wikimedia.org/wiki/File:Gazelle_Valley_in_Jerusalem,_as_seen_from_the_south.jpg'],
- ['שוק העיר העתיקה','Willem van de Poll','CC0','https://commons.wikimedia.org/wiki/File:Souk_van_boven_gezien,_Bestanddeelnr_255-5299.jpg'],
+ ['רחוב בעיר העתיקה (רחוב הבד)','joiseyshowaa','CC BY-SA 2.0','https://commons.wikimedia.org/wiki/File:1_Habad_Road_-_Jerusalem.jpg'],
  ['הר הזיתים','Godot13','CC BY-SA 4.0','https://commons.wikimedia.org/wiki/File:2013-Aerial-Mount_of_Olives.jpg'],
+ ['אילוסטרציית לונה־פארק (קיפצובה)','PattayaPatrol','CC BY-SA 4.0','https://commons.wikimedia.org/wiki/File:DFC_4677_Nighttime_ferris_wheel_gondolas_glow_against_the_dark_sky_at_a_Pattaya_fairground_in_Nong_Pla_Lai_Bang_Lamung_District.jpg'],
+ ['🎵 מוזיקת רקע: "Lachaim"','Kevin MacLeod (incompetech.com)','CC BY 3.0','https://incompetech.com/music/royalty-free/'],
 ];
 document.getElementById('creds').innerHTML=CREDITS.map(c=>`<div>${c[0]} — <a href="${c[3]}" target="_blank" rel="noopener">${c[1]}</a> · ${c[2]}</div>`).join('');
 
 /* ================= STORIES + FIND-IT DATA ================= */
 const STORIES=[
- {img:'assets/city-of-david.jpg',cap:'עיר דוד · Matson Collection (נחלת הכלל)',title:'דוד והעיר הנסתרת',
+ {img:'assets/city-of-david-wide.jpg',cap:'עיר דוד / הפארק הארכאולוגי · Deror avi, CC BY-SA 3.0',title:'דוד והעיר הנסתרת',
   tale:[`לפני שלושת אלפים שנה עמד על הגבעה הזאת מבצר חזק של עם בשם <b>היבוסים</b>. החומות שלהם היו כל כך גבוהות, שהיבוסים עמדו עליהן, צחקו על דוד וצעקו: "אפילו עיוורים ופיסחים יספיקו לשמור על העיר — אתה לעולם לא תיכנס!" 😏`,
    `אבל לדוד היה ראש חכם. הוא גילה <b>סוד</b>: לעיר היה <b>צינור מים נסתר</b> שהוביל מהמעיין שבתחתית הגבעה אל תוך החומות. בזמן שכולם שמרו על השערים, לוחם אמיץ בשם <b>יואב</b> טיפס בשקט דרך פיר המים הצר והחשוך — ועלה מבפנים! 😲 לפני שהיבוסים הבינו מה קרה, העיר כבר הייתה של דוד.`,
    `דוד הפך אותה לבירה שלו, הביא אליה את ארון הברית, וקרא לה בשמו: <b>עיר דוד</b>. 👑 (ואולי הצינור הנסתר הוא בדיוק "פיר וורן" שרואים שם היום!)`],
@@ -1005,7 +1056,7 @@ const STORIES=[
    `שתי קבוצות חופרים חצבו — אחת מכל צד — לאור עששיות, במכושים, בחושך ובלחות. ואז יום אחד מישהו קפא והרים יד: "ששש… אתם שומעים? יש קולות מהצד השני!" 👂 הם חצבו מהר יותר עד ש… <b>בּוּם!</b> המכושים נפגשו, והמים זרמו פנימה. 💦`,
    `וכשהצבא הענק של סנחריב הגיע — לעיר היו מים, ולחיילים שבחוץ לא היה כלום. הצבא נסוג, וירושלים ניצלה. ניצחון ענק — בזכות <b>תכנון חכם, מהירות וקצת אומץ</b>. 💪`],
   qs:[['🟢','מה הכי חשוב שעיר צריכה כדי לחיות?','מים! בעיר דוד — ממעיין הגיחון.'],['🔵','באורך כמה מטרים הנקבה?','בערך 533 מטר — יותר מ-5 מגרשי כדורגל! 😲'],['🔵','מה קרה כששתי קבוצות החופרים נפגשו?','נפגשו בדיוק באמצע ההר — בלי GPS, רק אוזניים טובות! 👷']]},
- {img:'assets/city-of-david.jpg',cap:'עיר דוד · Matson Collection (נחלת הכלל)',title:'הילד שגילה מסר בן 2,700 שנה',
+ {img:'assets/city-of-david-wide.jpg',cap:'עיר דוד / הפארק הארכאולוגי · Deror avi, CC BY-SA 3.0',title:'הילד שגילה מסר בן 2,700 שנה',
   tale:[`יום קיץ חם לפני בערך 150 שנה. ילד בשם <b>יעקב אליהו</b> אהב לשכשך במים הקרירים בתוך הנקבה החשוכה. הוא צעד פנימה עם נר קטן, המים עד הברכיים, הקירות מטפטפים.`,
    `פתאום אצבעותיו נתקלו במשהו <b>לא חלק</b> — שקעים, קווים, צורות. הוא קירב את הנר הרועד… <b>אותיות!</b> ✍️ מישהו חקק מילים עמוק בתוך ההר.`,
    `החוקרים נדהמו: זאת הייתה <b>כתובת השילוח</b> — הודעה שכתבו <b>החופרים של חזקיהו עצמם</b> ברגע שסיימו! הם סיפרו איך שמעו זה את קול חברו דרך הסלע. <b>מכתב מהפועלים מלפני 2,700 שנה — ישר אלינו.</b> 🤯`],
@@ -1020,7 +1071,7 @@ const STORIES=[
    `הם היו <b>מעטים</b> מול <b>צבא ענק</b>, אבל נלחמו בחוכמה ובאומץ — והפתיעו את כולם בניצחון. 🦁 כשחזרו לבית המקדש לטהר אותו, מצאו רק כד שמן זעיר — שמספיק ליום אחד.`,
    `ואז קרה <b>נס</b>: השמן דלק <b>שמונה ימים</b>! 🔥 לכן בחנוכה מדליקים נרות שמונה לילות, אוכלים סופגניות, ומסובבים סביבון. הכול התחיל כאן, ביהודה.`],
   qs:[['🔵','איך קראו לממלכה שירושלים הייתה בירתה?','ממלכת יהודה.'],['🟢','איזה חג קשור למכבים?','חנוכה! 🕎'],['🔵','מהו "הקארדו" בעיר העתיקה?','רחוב מסחר עתיק ומקורה עם עמודים.']]},
- {img:'assets/promenade.jpg',cap:'טיילת האז · Djampa, CC BY-SA 4.0',title:'טיילת עם שלושה שמות טובים',
+ {img:'assets/promenade-wide.jpg',cap:'תצפית מטיילת ארמון הנציב · Godot13, CC BY-SA 4.0',title:'טיילת עם שלושה שמות טובים',
   tale:[`כשהבריטים שלטו בארץ, לפני קום מדינת ישראל, גר באזור הזה ה<b>נציב העליון</b> — האדם הכי חשוב מטעם הבריטים — בארמון יפהפה עם נוף לכל ירושלים. 🏛️ עד היום קוראים לאזור "ארמון הנציב".`,
    `שנים אחר כך, אנשים טובים מכל העולם <b>תרמו כסף</b> כדי לבנות כאן טיילת מטופחת, שכל אחד — עשיר או עני, מקומי או תייר — יוכל ליהנות מהנוף בחינם. 💛 לכן יש לה שלושה חלקים על שם התורמים: <b>האז</b>, <b>שרובר</b> ו<b>גולדמן</b>.`,
    `בפעם הבאה שאתם עומדים שם ורואים את העיר העתיקה נצבעת בזהב בשקיעה — תגידו תודה בלב לאנשים האלה. 🌅`],
@@ -1100,10 +1151,19 @@ const ROUNDS=[
    ['ציירו/הציגו: מנורת חנוכה 🕎'],['ציירו/הציגו: מעיין שפורץ מים 💦'],['ציירו/הציגו: השקיעה על העיר העתיקה 🌅'],
  ]},
 ];
-let gR=0, gQ=0, score={A:0,B:0}, revealed=false;
+const TKEY='jlm-trivia';
+let gR=0, gQ=0, revealed=false;
+let score={A:0,B:0}, answered={};
 const names={A:'משפחת סולומון',B:'משפחת צמרת־איגר'};
+(function loadState(){ try{ const s=JSON.parse(localStorage.getItem(TKEY)||'{}');
+  if(s.score){ score.A=s.score.A||0; score.B=s.score.B||0; }
+  if(s.answered) answered=s.answered;
+  if(s.names){ if(s.names.A)names.A=s.names.A; if(s.names.B)names.B=s.names.B; }
+}catch(e){} })();
+function saveState(){ try{ localStorage.setItem(TKEY,JSON.stringify({score,answered,names})); }catch(e){} }
+function ansCount(ri){ let n=0; for(let i=0;i<ROUNDS[ri].qs.length;i++) if(answered[ri+'-'+i]!==undefined)n++; return n; }
 function renderRoundbar(){
-  document.getElementById('roundbar').innerHTML=ROUNDS.map((r,i)=>`<span class="rb ${i===gR?'on':''}" data-r="${i}">${i+1}. ${r.name}</span>`).join('');
+  document.getElementById('roundbar').innerHTML=ROUNDS.map((r,i)=>{ const c=ansCount(i); return `<span class="rb ${i===gR?'on':''}" data-r="${i}">${i+1}. ${r.name}${c?` · ${c}/${r.qs.length}✓`:''}</span>`; }).join('');
   document.querySelectorAll('.rb').forEach(b=>b.addEventListener('click',()=>{ gR=+b.dataset.r; gQ=0; renderRoundbar(); renderQ(); }));
 }
 function updScore(){
@@ -1113,8 +1173,11 @@ function updScore(){
 }
 function renderQ(){
   const r=ROUNDS[gR], q=r.qs[gQ], area=document.getElementById('gameArea'); revealed=false;
+  const key=gR+'-'+gQ, done=answered[key];
   document.getElementById('qpos').textContent=`שאלה ${gQ+1}/${r.qs.length}`;
-  let inner=`<div class="qcard"><div class="rnd">סבב ${gR+1}: ${r.name}</div><div class="qtext">${q[0]}</div>`;
+  let inner=`<div class="qcard"><div class="rnd">סבב ${gR+1}: ${r.name}</div>`;
+  if(done!==undefined){ const lbl = done==='skip' ? 'דילגנו ⏭️' : ('נקודה ל'+names[done]+' ✓'); inner+=`<div class="abadge">כבר ענינו · ${lbl}</div>`; }
+  inner+=`<div class="qtext">${q[0]}</div>`;
   if(r.type==='mc'){
     inner+=`<div class="opts">`+q[1].map((o,i)=>`<div class="opt" data-i="${i}" data-correct="${i===q[2]}">${o}</div>`).join('')+`</div>`;
   } else if(r.type==='tf'){
@@ -1126,21 +1189,25 @@ function renderQ(){
   if(r.type==='reveal'||r.type==='tf'||r.type==='mc') inner+=`<button class="gbtn reveal" id="btnReveal">גלה תשובה 👀</button>`;
   inner+=`<button class="gbtn a" data-pt="A">+ ${names.A}</button><button class="gbtn b" data-pt="B">+ ${names.B}</button><button class="gbtn skip" data-pt="skip">דלג</button></div>`;
   area.innerHTML=inner;
-  // option clicks (mc/tf): reveal correctness
-  area.querySelectorAll('.opt').forEach(op=>op.addEventListener('click',()=>{ doReveal(); }));
+  area.querySelectorAll('.opt').forEach(op=>op.addEventListener('click',doReveal));
   const br=document.getElementById('btnReveal'); if(br)br.addEventListener('click',doReveal);
-  area.querySelectorAll('.gbtn[data-pt]').forEach(b=>b.addEventListener('click',()=>{
-    const t=b.dataset.pt;
-    if(t==='skip'){ buzz(); } else { score[t]++; updScore(); ding(); }
-    nextQ();
-  }));
+  area.querySelectorAll('.gbtn[data-pt]').forEach(b=>b.addEventListener('click',()=>award(b.dataset.pt)));
+  if(done!==undefined) doReveal();
+}
+function award(t){
+  const key=gR+'-'+gQ, prev=answered[key];
+  if(prev==='A')score.A--; else if(prev==='B')score.B--;
+  if(t==='A')score.A++; else if(t==='B')score.B++;
+  answered[key]=t; updScore(); renderRoundbar(); saveState();
+  if(t==='skip')buzz(); else ding();
+  nextQ();
 }
 function doReveal(){
   if(revealed)return; revealed=true; const r=ROUNDS[gR], q=r.qs[gQ], area=document.getElementById('gameArea');
   if(r.type==='mc'||r.type==='tf'){
     area.querySelectorAll('.opt').forEach(op=>{ if(op.dataset.correct==='true')op.classList.add('correct'); else op.classList.add('wrong'); });
     const note=(r.type==='tf'&&q[2])?`<div class="reveal-ans" style="margin-top:10px">${q[2]}</div>`:'';
-    if(note)area.querySelector('.opts').insertAdjacentHTML('afterend',note);
+    if(note){ const o=area.querySelector('.opts'); if(o)o.insertAdjacentHTML('afterend',note); }
   } else {
     const slot=document.getElementById('ansSlot'); if(slot)slot.innerHTML=`<div class="reveal-ans">✅ ${q[1]}</div>`;
   }
@@ -1153,6 +1220,8 @@ function nextQ(){
   else { endGame(); }
 }
 function prevQ(){ if(gQ>0){gQ--;renderQ();} else if(gR>0){gR--;gQ=ROUNDS[gR].qs.length-1;renderRoundbar();renderQ();} }
+function resetGame(){ score={A:0,B:0}; answered={}; gR=0; gQ=0; saveState(); updScore(); renderRoundbar(); renderQ(); }
+function clearGame(){ if(confirm('לאפס את כל הניקוד והתשובות?')) resetGame(); }
 function endGame(){
   fanfare(); confettiBurst();
   const win = score.A>score.B?names.A : score.B>score.A?names.B : null;
@@ -1163,13 +1232,14 @@ function endGame(){
     <p>${win?'המנצחת בוחרת את הקינוח! 🍫':'כולם בוחרים קינוח! 🍦'}</p>
     <div class="gbtns"><button class="gbtn next" id="again">משחק חדש 🔄</button></div>
   </div>`;
-  document.getElementById('again').addEventListener('click',()=>{ score={A:0,B:0}; gR=0;gQ=0; updScore(); renderRoundbar(); renderQ(); });
+  document.getElementById('again').addEventListener('click',resetGame);
 }
 document.getElementById('nextQ').addEventListener('click',nextQ);
 document.getElementById('prevQ').addEventListener('click',prevQ);
-document.querySelectorAll('.editteam').forEach(b=>b.addEventListener('click',()=>{
-  const t=b.dataset.team; const v=prompt('שם הקבוצה:',names[t]); if(v&&v.trim()){ names[t]=v.trim(); document.getElementById('name'+t).textContent=names[t]; renderQ(); }
+document.querySelectorAll('.editteam[data-team]').forEach(b=>b.addEventListener('click',()=>{
+  const t=b.dataset.team; const v=prompt('שם הקבוצה:',names[t]); if(v&&v.trim()){ names[t]=v.trim(); document.getElementById('name'+t).textContent=names[t]; saveState(); renderQ(); }
 }));
+document.getElementById('clearGame').addEventListener('click',clearGame);
 // subtab switching
 document.querySelectorAll('#view-trivia .subtab').forEach(st=>st.addEventListener('click',()=>{
   document.querySelectorAll('#view-trivia .subtab').forEach(s=>s.classList.remove('on'));
@@ -1187,6 +1257,7 @@ function confettiBurst(){
 }
 
 /* ================= INIT ================= */
+document.getElementById('nameA').textContent=names.A; document.getElementById('nameB').textContent=names.B;
 renderStories(); renderFindit(); renderRoundbar(); renderQ(); updScore();
 show((location.hash.slice(1))||'home');
 </script>

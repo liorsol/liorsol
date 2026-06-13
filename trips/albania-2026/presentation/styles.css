@@ -68,6 +68,16 @@
   background-color: var(--background-color);
 }
 
+/* Bottom progress bar — Albanian flag red */
+.reveal .progress {
+  color: #E41E20;          /* reveal colors the fill via currentColor */
+  height: 6px;
+  background: rgba(228, 30, 32, 0.18);
+}
+.reveal .progress span {
+  background: #E41E20;
+}
+
 /* Section divider background via data-state */
 .reveal-viewport.is-section-divider .slide-background.present {
   background-color: var(--section-divider-bg) !important;

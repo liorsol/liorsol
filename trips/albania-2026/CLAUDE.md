@@ -59,7 +59,9 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 
 - **Flights:** land Tirana 13.8 at 22:25 · depart 22.8 at 10:30.
 - **Extended family ~20 people**, 5 families: Solomon (2 parents + girls 7, 10) · grandparents · family (2 + baby 1.5) · family (2 + girls 6, 3, 1) · family (2 + girls 8, 12, 14, 17).
-- **Lodging:** villa in Durrës (everyone), **booked from 13.8** (first night: straight from airport to villa, ~40 min), checkout 19.8 — [Booking link](https://www.booking.com/hotel/al/luxury-villa-with-big-swimming-pool.en-gb.html) · Asters hotel in Ksamil, checkout 21.8 — [Booking link](https://www.booking.com/hotel/al/asters.en-gb.html) · **night of 21.8 not yet booked** — decided: low budget, not city center; near airport (Rinas) or up to ~30 min away if morning mountain view (Krujë candidates: Hotel Panorama Kruje, Rooms Emiliano, Vila Taga). Must be at the airport at 08:00 (2.5h before the 10:30 flight).
+- **Lodging:**
+  - **Night of 13.8 (arrival) — near the airport (Rinas), NOT the villa.** Correction (June 2026, from the user): the Durrës villa starts only on **14.8** (second night), so the landing night everyone sleeps near Tirana airport. Each of the 5 families books its own — must have **free parking + 24h shuttle** because landing is 22:25 and some car-hire desks close 23:00–24:00. Candidates: **Airport Garden Hotel** (~50 m / 5-min walk, Booking 8.7) · **Hotel Airport Tirana** (4★, in front of terminal, free 24h shuttle, pool) · **Best Western Premier Ark** (4★ premium) · **Nerium Garden Inn** (Booking 9.6, shuttle by arrangement) · **Airport Holiday Hotel** (budget). Solomon-family August nightly ranges (verify on Booking): Airport Holiday ~€45–65 · Hotel Airport Tirana ~€60–90 · BW Ark ~€70–120 · Airport Garden ~€80–110 · Nerium ~€90–130.
+  - Villa in Durrës (everyone), **check-in 14.8**, checkout 19.8 (**5 nights**, confirmed by user) — [Booking link](https://www.booking.com/hotel/al/luxury-villa-with-big-swimming-pool.en-gb.html) · Asters hotel in Ksamil, checkout 21.8 — [Booking link](https://www.booking.com/hotel/al/asters.en-gb.html) · **night of 21.8 not yet booked** — decided: low budget, not city center; near airport (Rinas) or up to ~30 min away if morning mountain view (Krujë candidates: Hotel Panorama Kruje, Rooms Emiliano, Vila Taga). Must be at the airport at 08:00 (2.5h before the 10:30 flight).
 - **Car (Solomon):** OK Mobility, Hyundai Venue (Compact, 5 seats). Whole family needs 4–5 cars.
 - **Events:** grandma's birthday (14.8, Friday dinner) · Daniel's birthday (18.8) · combined anniversaries party + adults-only quiz 🔞.
 - **Gluten:** some family members are sensitive — every restaurant recommendation must address gluten (dedicated `food` view).
@@ -68,8 +70,8 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 
 | Date | Day | Plan |
 |---|---|---|
-| 13.8 | Thu | Landing 22:25 → straight to the Durrës villa |
-| 14.8 | Fri | Tirana + shopping · grandma's birthday dinner |
+| 13.8 | Thu | Landing 22:25 → sleep near airport (Rinas) — villa only from 14.8 |
+| 14.8 | Fri | Collect cars → Tirana + shopping → check in to Durrës villa · grandma's birthday dinner |
 | 15.8 | Sat | Mt. Dajti (cable car) |
 | 16.8 | Sun | Lake Shkodra / nearer alternative (Kruja, water park) |
 | 17.8 | Mon | Berat |
@@ -85,10 +87,11 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 2. How many cars does the whole family actually have?
 3. "Adults-only" folklore evening — who stays with the kids?
 4. Night of 21.8 — choose near-airport (Airport Garden 4.7 / Hotel Airport Tirana 4.4 / Airport Holiday 4.3) vs. Krujë mountain-view budget option, then book.
+5. Night of 13.8 (arrival) — each family picks an airport hotel and books (see Lodging). Note (June 2026): Airport Garden showed **no availability** for 13→14.8 — likely the booking calendar isn't open ~14 months out, not sold out; recheck closer or contact directly. Strong backup: **Side Airport Hotel** (steps from terminal, family rooms, family-run shuttle, 9.4).
 
 ### Resolved (June 2026)
 
-- Durrës villa is booked **from 13.8** → first night straight to the villa, no airport hotel.
+- **Villa starts 14.8, not 13.8** (user correction) → landing night (13.8) is near the airport; each family books its own (parking + 24h shuttle, since landing 22:25 and car desks may close 23:00–24:00).
 - Last-night budget: **low, not city center** (Tirana urban option dropped); up to ~30 min from airport OK if mountain view.
 
 ## Media resources — top picks (found June 2026)

@@ -262,7 +262,8 @@ header.hero{position:relative; overflow:hidden; color:#fff; text-align:center}
 .opt.wrong{background:#fbe2da; border-color:#e0987f}
 .reveal-ans{background:#dff3e3; border:2px solid #7cc48f; border-radius:12px; padding:12px 14px; font-size:16px; font-weight:700; color:#2f6b46; animation:fade .3s}
 .abadge{display:inline-block; background:#fbe7d0; color:#8a5d12; border:1px solid #ecc99b; border-radius:999px; padding:3px 11px; font-size:12.5px; font-weight:700; font-family:'Heebo',sans-serif; margin-bottom:8px}
-.gbtns{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px}
+.gbtns{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px}
+.awardlbl{flex-basis:100%; font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; color:#cfe0ff; opacity:.85}
 .gbtn{cursor:pointer; font-family:'Heebo',sans-serif; font-weight:700; font-size:14px; padding:10px 16px; border-radius:12px; border:none; color:#fff; transition:.15s; flex:1; min-width:120px}
 .gbtn:hover{filter:brightness(1.08)}
 .gbtn.reveal{background:var(--gold-deep)}
@@ -1219,9 +1220,9 @@ function renderQ(){
   } else {
     inner+=`<div id="ansSlot"></div>`;
   }
-  inner+=`</div><div class="gbtns">`;
-  if(r.type==='reveal'||r.type==='tf'||r.type==='mc') inner+=`<button class="gbtn reveal" id="btnReveal">גלה תשובה 👀</button>`;
-  inner+=`<button class="gbtn a" data-pt="A">+ ${names.A}</button><button class="gbtn b" data-pt="B">+ ${names.B}</button><button class="gbtn skip" data-pt="skip">דלג</button></div>`;
+  inner+=`</div>`;
+  if(r.type==='reveal'||r.type==='tf'||r.type==='mc') inner+=`<button class="gbtn reveal" id="btnReveal" style="width:100%; margin-top:14px; font-size:16px">👀 גלה תשובה</button>`;
+  inner+=`<div class="gbtns"><div class="awardlbl">מי צדק? תנו נקודה:</div><button class="gbtn a" data-pt="A">+ ${names.A}</button><button class="gbtn b" data-pt="B">+ ${names.B}</button><button class="gbtn skip" data-pt="skip">דלג</button></div>`;
   area.innerHTML=inner;
   area.querySelectorAll('.opt').forEach(op=>op.addEventListener('click',doReveal));
   const br=document.getElementById('btnReveal'); if(br)br.addEventListener('click',doReveal);

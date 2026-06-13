@@ -11,12 +11,11 @@
 Served publicly via GitHub Pages. **Never add personal/private data to this repo**, even if asked casually — stop and warn instead. This includes:
 
 - Booking references / confirmation/order numbers
-- Personal discount/coupon codes tied to a booking
 - Passport/ID numbers, full birth dates
 - Phone numbers, home addresses, email addresses
 - Payment details, invoices, prices paid for specific bookings
 
-The source booking emails contained an order number, personal coupon codes (for the City of David tours/zipline) and a campsite phone — these were **deliberately stripped** from `index.html` and from the scrubbed `JERUSALEM-TRIP-PLAN.md`. The page tells families to "use the discount codes from your booking email at checkout." The raw, unscrubbed `.md` files stay on the user's local machine only.
+The source booking emails contained an order number and a campsite phone — these are **deliberately kept out** of `index.html` and the scrubbed `JERUSALEM-TRIP-PLAN.md`. **Exception (per the user, June 2026): the City of David discount codes `camp20` (≈20% off guided tours) and `camp10` (≈10% off the zipline) ARE shown** — the user confirmed they're generic camp promo codes, not private. The raw, unscrubbed `.md` files stay on the user's local machine only.
 
 If a private detail is ever needed on the page, link to a **login-protected location** (e.g., restricted Google Drive) and verify it isn't "anyone with the link" before adding.
 

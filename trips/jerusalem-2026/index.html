@@ -44,6 +44,7 @@ h2{font-size:clamp(26px,5vw,40px); color:var(--sky-deep)}
 h3{font-size:clamp(19px,3.2vw,25px); color:var(--terra-deep)}
 a{color:var(--sky); text-decoration:none; cursor:pointer}
 [data-view]{cursor:pointer}
+code{background:#fbf0d8; color:#8a5d12; padding:1px 7px; border-radius:6px; font-family:monospace; font-weight:700; direction:ltr; display:inline-block}
 a:hover{color:var(--sky-deep)}
 p{margin:.5em 0}
 img{max-width:100%; display:block}
@@ -430,7 +431,6 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       <div class="tiles">
         <div class="tile" data-view="friday"><div class="ico">🌅</div><h3>יום שישי</h3><p>עיר דוד, הנקבה, קבלת שבת, מנגל ושקיעה מהטיילת.</p></div>
         <div class="tile" data-view="saturday"><div class="ico">🌳</div><h3>יום שבת</h3><p>בחירה חופשית: עיר עתיקה, מוזיאונים, טבע — ועצירה בדרך הביתה.</p></div>
-        <div class="tile" data-view="food"><div class="ico">🍽️</div><h3>אוכל ללא גלוטן</h3><p>איפה אוכלים בשבת, חנויות צליאק והמנגל.</p></div>
       </div>
     </section>
 
@@ -438,6 +438,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       <h2>🧭 מידע וכיף</h2>
       <div class="tiles">
         <div class="tile" data-view="info"><div class="ico">🧭</div><h3>מידע ולוגיסטיקה</h3><p>אילוצי שבת, חניות, צ'ק־ליסטים ורשימת ציוד.</p></div>
+        <div class="tile" data-view="food"><div class="ico">🍽️</div><h3>אוכל ללא גלוטן</h3><p>איפה אוכלים בשבת, חנויות צליאק והמנגל.</p></div>
         <div class="tile" data-view="map"><div class="ico">🗺️</div><h3>מפה</h3><p>כל התחנות על מפה אחת, צבועות לפי יום.</p></div>
         <div class="tile" data-view="trivia"><div class="ico">🏆</div><h3>טריוויה וסיפורים</h3><p>תחרות משפחות אינטראקטיבית + סיפורים לילדים.</p></div>
         <div class="tile" data-view="media"><div class="ico">🎧</div><h3>מדיה לדרך</h3><p>פודקאסטים לרכב וסרטונים לראות לפני.</p></div>
@@ -464,7 +465,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
           <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-fun">כיף לילדים</span></div>
           <div class="meta"><span>📍 עיר דוד / שער האשפות</span><span>⏱️ ~3 שעות</span><span class="pr">~58₪ מבוגר · ~42₪ ילד</span></div>
           <p>הסיור "<b>עיר דוד המקראית</b>" עם מדריך — החוויה הכי מעמיקה, כולל מעבר ב<b>נקבת חזקיהו</b>. יוצא בבוקר שישי (לוודא שעה מדויקת בהזמנה) ומסתיים סביב 12:30.</p>
-          <div class="warn">⛔ <b>מתנגש עם קבלת שבת</b> — במסלול הזה מוותרים עליה (או תופסים רק את סופה). יש לכם קודי הנחה במייל ההזמנה.</div>
+          <div class="warn">⛔ <b>מתנגש עם קבלת שבת</b> — במסלול הזה מוותרים עליה (או תופסים רק את סופה). 🎟️ קוד הנחה <code>camp20</code> (~20%) בקופה.</div>
           <div class="links">
             <a href="https://cityofdavid.org.il/product/biblical-city-of-david/" target="_blank" rel="noopener">הזמנת סיור מודרך ↗</a>
             <a class="map" href="https://www.google.com/maps/search/?api=1&query=City+of+David+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
@@ -647,7 +648,8 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
         <div class="body">
           <h3>🚂 אפשרות ה' — שבת בבוקר בתחנה הראשונה</h3>
           <div class="tags"><span class="tag t-chill">רגוע ונגיש</span><span class="tag t-fun">כיף לילדים</span><span class="tag t-all">כולם</span></div>
-          <p>"שבת בבוקר בתחנה" — פעילויות חינם למשפחות (מוזיקה, ריקודי עם, פינות לילדים), אווירה נעימה, ומקומות אוכל פתוחים כמו <b>ננוש</b> וגלידת <b>וניליה</b>. קרוב מאוד לקמפינג ולטיילת — אופציה רגועה ונחמדה לבוקר שבת.</p>
+          <div class="meta"><span class="pr">~30₪ לאדם</span><span>🕗 08:00–18:00</span><span>📅 20/6 ברשימת התאריכים</span></div>
+          <p>"שבת בבוקר — יום יפה": <b>מופע חי, סדנאות יצירה ומשחקי עץ נוסטלגיים</b> לכל המשפחה (כל שבת מוקדש ליוצר אחר). בתחנה גם מסעדות פתוחות (<b>ננוש</b>, גלידת <b>וניליה</b>) וחניה חינם. קרוב מאוד לקמפינג ולטיילת.</p>
           <div class="links">
             <a href="https://www.firststation.co.il/events/saturday-morning/" target="_blank" rel="noopener">שבת בבוקר בתחנה ↗</a>
             <a href="https://www.firststation.co.il/restaurants-shops/nanosh/" target="_blank" rel="noopener">ננוש ↗</a>
@@ -704,7 +706,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     </div>
 
     <div class="alt reveal" style="margin-top:22px">
-      <b>🌙 מוצ"ש (אם מתמהמהים אחרי ~20:30):</b> <b>התחנה הראשונה</b> תוססת (אוכל ואווירה), או ארוחת ערב הגונה לפני הנסיעה. לאירועים מתוזמנים בדקו את לוח האירועים העירוני (מתחלף — לוודא שזה ב־20/6): <a href="https://www.jerusalem.muni.il/he/experience/allevents/highlight/" target="_blank" rel="noopener">לוח האירועים ↗</a></div>
+      <b>🌙 מוצ"ש (אם נשארים אחרי ~20:30):</b> ⭐ <b>High Light JLM</b> — מופע לייזר ומוזיקה <b>חינם</b> על <b>טיילת ארמון הנציב</b> (צמוד לקמפינג!), בשבת ב־<b>20:30</b> וב־<b>21:30</b> (~20 דק'). אחרת — <b>התחנה הראשונה</b> תוססת, או ארוחה לפני הנסיעה. לאירועים: <a href="https://www.itraveljerusalem.com/he/event/high-light-jlm" target="_blank" rel="noopener">High Light JLM ↗</a> · <a href="https://www.itraveljerusalem.com/he/list/events?availability=19%2F06%2F2026-20%2F06%2F2026" target="_blank" rel="noopener">לוח אירועים 19–20/6 ↗</a> · <a href="https://www.jerusalem.muni.il/he/experience/allevents/highlight/" target="_blank" rel="noopener">לוח עירוני ↗</a></div>
 
     <div class="why reveal"><b>זרימה מומלצת לשבת:</b> בוקר רגוע + טיילת → עיר עתיקה + צהריים בתחנה הראשונה → נסיעה מערבה ועצירה ב<b>עין חמד</b> (או קיפצובה / איילון–קנדה) → הביתה.</div>
   </div>
@@ -751,6 +753,11 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
 
     <div class="warn"><b>כשר מול פתוח־בשבת — הכלל המעשי:</b> מקומות הצליאק הייעודיים הטובים (בן עמי, מוזס, אגס ותפוח) <b>כשרים וסגורים</b> מליל שישי עד מוצ"ש. הפתוחים בשבת הם <b>התחנה הראשונה, בתי קפה במושבה הגרמנית, ומסעדות העיר העתיקה</b>. תכננו בהתאם, והתקשרו באותו יום.</div>
 
+    <h3 style="margin-top:24px">🍴 עוד מסעדות באזור (לא ייעודי GF)</h3>
+    <div class="card"><div class="body">
+      <p>מעבר למקומות ה־GF, באזור יש שפע מסעדות (חלקן פתוחות בשבת): <b>התחנה הראשונה</b> (מגוון רחב, חניה חינם, פתוחה בשבת) — <a href="https://www.firststation.co.il/restaurants-shops/" target="_blank" rel="noopener">רשימת המסעדות ↗</a>; <b>המושבה הגרמנית / עמק רפאים</b> (בתי קפה ומסעדות, רבות נפתחות במוצ"ש); ו<b>ממילא</b> ליד שער יפו. ⚠️ לילד/ה הצליאק — לוודא תמיד מנה GF בטוחה בלי זיהום צולב, או להביא מהאוכל שלכם.</p>
+    </div></div>
+
     <h3 style="margin-top:24px">🛒 קניות ללא גלוטן (לפני שבת — סגור בשבת)</h3>
     <div class="card"><div class="body">
       <p>🥖 <b>גלולס (Gluless)</b> — חנות GF ייעודית, מאות מוצרים. סניפים בצומת אורנים ובמחנה יהודה. לחמניות/פיתות GF, חטיפים, פריטי בוקר ועוגיות למנגל ולדרך.</p>
@@ -779,7 +786,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       <p>🕯️ <b>שבת בירושלים 19–20/6:</b> כניסת שבת <b>שישי 19:07</b> · צאת שבת <b>שבת ~20:30</b> · פרשת <b>חוקת</b>.</p>
       <p>🏕️ <b>צ'ק־אין:</b> שישי 13:00 עד שעתיים לפני שבת (~17:00). <b>אין צ'ק־אין בשבת.</b> <b>צ'ק־אאוט:</b> מוצ"ש עד שעה אחרי צאת השבת (~21:30). ללא כלבים, ללא עישון. ✅ מנגל מותר.</p>
       <p>🏛️ <b>עיר דוד:</b> שישי 08:00–14:00 (כניסה אחרונה לנקבה ~12:30) · <b>שבת סגור</b>. 👉 כל פעילות עיר דוד חייבת להיות בבוקר שישי.</p>
-      <p>🎟️ <b>קודי הנחה (במייל ההזמנה):</b> ~<b>20% הנחה</b> על הסיורים המודרכים (עיר דוד המקראית / עיר דוד פינת הכותל) ו~<b>10% הנחה</b> על ה<b>אומגה</b> (זיפליין) — הזינו את הקודים בקופה באתר עיר דוד.</p>
+      <p>🎟️ <b>קודי הנחה:</b> <code>camp20</code> → ~<b>20% הנחה</b> על הסיורים המודרכים (עיר דוד המקראית / עיר דוד פינת הכותל) · <code>camp10</code> → ~<b>10% הנחה</b> על ה<b>אומגה</b> (זיפליין). הזינו בקופה באתר עיר דוד.</p>
     </div></div>
 
     <h3 style="margin-top:24px">📋 צ'ק־ליסט לפני הטיול</h3>
@@ -810,15 +817,15 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     <h3 style="margin-top:24px">🗺️ חניות — דף עזר</h3>
     <table class="tbl">
       <tr><th>תחנה</th><th>Waze / כתובת</th><th>חניה</th></tr>
-      <tr><td><b>קמפינג</b></td><td>קמפינג יער השלום</td><td><span class="ok">✅ חינם במקום</span></td></tr>
-      <tr><td><b>עיר דוד (שישי)</b></td><td>עיר דוד / שער האשפות</td><td>חניון גבעתי (בתשלום, מוגבל) — מוקדם; עיר דוד ממליצים גם על <b>חניון הר ציון</b> (~9 דק' הליכה, מוגבל).</td></tr>
-      <tr><td><b>קבלת שבת / תחנה ראשונה</b></td><td>התחנה הראשונה</td><td>חניון התחנה (24/7; ~15₪ שעה ראשונה בחול). <b>בשבת — חינם</b> (לאמת). או חניית רחוב.</td></tr>
-      <tr><td><b>טיילת</b></td><td>טיילת ארמון הנציב</td><td><span class="ok">✅ חינם</span> (לא ברחוב דניאל ינובסקי)</td></tr>
-      <tr><td><b>עיר עתיקה (שבת)</b></td><td>שער יפו</td><td><b>חניון כרתא</b> — ✅ פתוח 24/7 כולל שבת (~₪70–100/יום, זול יותר באפליקציה)</td></tr>
-      <tr><td><b>עמק הצבאים</b></td><td>עמק הצבאים</td><td>חניון כניסה (מוגבל) — מוקדם</td></tr>
-      <tr><td><b>מוזיאון ישראל / בלומפילד</b></td><td>דרך רופין 11 / שד' המוזיאונים 3</td><td>חניוני המקום (גבעת רם)</td></tr>
-      <tr><td><b>עין חמד (כביש 1)</b></td><td>גן לאומי עין חמד</td><td>חניון הגן הלאומי</td></tr>
-      <tr><td><b>פארק איילון–קנדה</b></td><td>פארק קנדה / עין איילון</td><td><span class="ok">✅ חניון חינם</span></td></tr>
+      <tr><td><b>קמפינג</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=31.76114,35.22838" target="_blank" rel="noopener">קמפינג יער השלום ↗</a></td><td><span class="ok">✅ חינם במקום</span></td></tr>
+      <tr><td><b>עיר דוד (שישי)</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=City+of+David+Jerusalem" target="_blank" rel="noopener">עיר דוד / שער האשפות ↗</a></td><td>חניון גבעתי (בתשלום, מוגבל) — מוקדם; עיר דוד ממליצים גם על <b>חניון הר ציון</b> (~9 דק' הליכה, מוגבל).</td></tr>
+      <tr><td><b>קבלת שבת / תחנה ראשונה</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=First+Station+Jerusalem" target="_blank" rel="noopener">התחנה הראשונה ↗</a></td><td>חניון התחנה (24/7; ~15₪ שעה ראשונה בחול). <b>בשבת — חינם</b> (לאמת). או חניית רחוב.</td></tr>
+      <tr><td><b>טיילת</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=Haas+Promenade+Jerusalem" target="_blank" rel="noopener">טיילת ארמון הנציב ↗</a></td><td><span class="ok">✅ חינם</span> (לא ברחוב דניאל ינובסקי)</td></tr>
+      <tr><td><b>עיר עתיקה (שבת)</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=Karta+parking+Jaffa+Gate+Jerusalem" target="_blank" rel="noopener">שער יפו / חניון כרתא ↗</a></td><td><b>חניון כרתא</b> — ✅ פתוח 24/7 כולל שבת (~₪70–100/יום, זול יותר באפליקציה)</td></tr>
+      <tr><td><b>עמק הצבאים</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=Gazelle+Valley+Jerusalem" target="_blank" rel="noopener">עמק הצבאים ↗</a></td><td>חניון כניסה (מוגבל) — מוקדם</td></tr>
+      <tr><td><b>מוזיאון ישראל / בלומפילד</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=Israel+Museum+Jerusalem" target="_blank" rel="noopener">דרך רופין 11 / גבעת רם ↗</a></td><td>חניוני המקום (גבעת רם)</td></tr>
+      <tr><td><b>עין חמד (כביש 1)</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=Ein+Hemed+National+Park" target="_blank" rel="noopener">גן לאומי עין חמד ↗</a></td><td>חניון הגן הלאומי</td></tr>
+      <tr><td><b>פארק איילון–קנדה</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=Canada+Park+Ayalon" target="_blank" rel="noopener">פארק קנדה / עין איילון ↗</a></td><td><span class="ok">✅ חניון חינם</span></td></tr>
     </table>
     <div class="warn">❗ ה<b>שאטל החינמי</b> מהתחנה הראשונה לעיר העתיקה <b>הופסק</b> ("השירות הופסק עד להודעה חדשה") — אל תסמכו עליו; תיסעו ברכב.</div>
   </div>
@@ -873,13 +880,15 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
 
     <h3>🎧 פודקאסטים לנסיעה</h3>
     <div class="mcard"><h4>"הסודות של עיר דוד" <span class="badge">הכי רלוונטי</span></h4><div class="src">עיר דוד · יובל מלחי</div><p>סדרת פודקאסט למשפחה על דוד המלך, בית המקדש הראשון, המצור של אשור ובבל, וגילוי העיר מחדש. הקרינו פרק בנסיעה — והילדים ייכנסו לנקבה כשהם כבר "מכירים" את הסיפור.</p>
+      <p style="font-size:13.5px; font-weight:700; color:var(--terra-deep); margin:6px 0 4px">▶️ פרק הילדים — "העיר האבודה" (להאזנה ישירה):</p>
+      <iframe src="https://widget.spreaker.com/player?episode_id=44923914&theme=dark&chapters-image=true" width="100%" height="200px" title="פרק 339 - העיר האבודה - הסודות של עיר דוד" frameborder="0" style="border-radius:12px; margin-bottom:10px"></iframe>
       <div class="links"><a href="https://cityofdavid.org.il/podcast-part7/" target="_blank" rel="noopener">⭐ פרק הילדים — "העיר האבודה" ↗</a><a href="https://cityofdavid.org.il/podcast/" target="_blank" rel="noopener">כל הפרקים ↗</a><a href="https://www.youtube.com/playlist?list=PL_mVs-DUYQ7So58J3X4FM2Kq3NFTk4mwK" target="_blank" rel="noopener">פלייליסט יוטיוב ↗</a></div></div>
-    <div class="mcard"><h4>"סיפורי תנ״ך לילדים" — עקיבא צוקרמן</h4><div class="src">פודקאסט לילדים</div><p>סיפורי התנ״ך מותאמים לילדים — כולל ספר מלכים (דוד, שלמה, חזקיהו) שמתחבר ישירות לעיר דוד.</p>
-      <div class="links"><a href="https://open.spotify.com/show/2ch7uLyiRLRVXMzis2RbZP" target="_blank" rel="noopener">Spotify ↗</a><a href="https://podcasts.apple.com/us/podcast/id1548550002" target="_blank" rel="noopener">Apple ↗</a><a href="https://www.akivazuk.com/" target="_blank" rel="noopener">האתר ↗</a></div></div>
     <div class="mcard"><h4>"היסטוריה לילדים" (כאן)</h4><div class="src">תאגיד כאן · יובל מלחי</div><p>ממציאים, מנהיגים ומתקני עולם — היסטוריה בגובה העיניים. מצוין לנסיעה כללית.</p>
       <div class="links"><a href="https://open.spotify.com/show/0cHdRNk24adWawuZQyyn3b" target="_blank" rel="noopener">Spotify ↗</a><a href="https://podcasts.apple.com/us/podcast/id1248230651" target="_blank" rel="noopener">Apple ↗</a><a href="https://www.kan.org.il/content/kan/podcasts/p-8183/" target="_blank" rel="noopener">כאן ↗</a></div></div>
     <div class="mcard"><h4>"עושים היסטוריה" (לגדולים/הורים)</h4><div class="src">רן לוי</div><p>פרקים על היסטוריה יהודית וירושלים — מתאים מגיל 10+ ולהורים. (מאותו בית גם <b>"עושים תנ״ך"</b> לזווית מקראית.)</p>
       <div class="links"><a href="https://open.spotify.com/show/5lEruNWWFJ0XCKuGy2Ekr7" target="_blank" rel="noopener">Spotify ↗</a><a href="https://www.osimhistoria.com/osimhistoria" target="_blank" rel="noopener">האתר ↗</a><a href="https://www.osimhistoria.com/osim-tanach" target="_blank" rel="noopener">עושים תנ״ך ↗</a></div></div>
+    <div class="mcard"><h4>"סיפורי תנ״ך לילדים" — עקיבא צוקרמן</h4><div class="src">פודקאסט לילדים</div><p>סיפורי התנ״ך מותאמים לילדים — כולל ספר מלכים (דוד, שלמה, חזקיהו) שמתחבר ישירות לעיר דוד.</p>
+      <div class="links"><a href="https://open.spotify.com/show/2ch7uLyiRLRVXMzis2RbZP" target="_blank" rel="noopener">Spotify ↗</a><a href="https://podcasts.apple.com/us/podcast/id1548550002" target="_blank" rel="noopener">Apple ↗</a><a href="https://www.akivazuk.com/" target="_blank" rel="noopener">האתר ↗</a></div></div>
 
     <h3 style="margin-top:24px">📺 סרטונים לראות לפני (5–15 דק')</h3>
     <div class="mcard"><h4>הסרטונים של עיר דוד <span class="badge">מומלץ</span></h4><div class="src">עיר דוד</div><p>אוסף מרתק — כולל איך הילד יעקב אליהו גילה את כתובת השילוח, ולמה הנקבה פלא הנדסי.</p>
@@ -916,7 +925,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
   <div class="wrap">
     <h4>🏛️ ירושלים '26 — סוף שבוע משפחתי</h4>
     <p>נבנה באהבה למשפחות סולומון וצמרת־איגר. מחירים, שעות וזמינות הם הערכות ל־2026 — <b>אמתו קרוב לתאריך</b>, והתקשרו למסעדות בבוקר אותו יום.</p>
-    <p style="font-size:12px; color:#9aa6c2">🔒 דף ציבורי — ללא מספרי הזמנה, קודי הנחה אישיים, טלפונים פרטיים או פרטי תשלום.</p>
+    <p style="font-size:12px; color:#9aa6c2">🔒 דף ציבורי — ללא מספרי הזמנה, טלפונים פרטיים או פרטי תשלום.</p>
     <h4 style="margin-top:18px; font-size:14px">📷 קרדיט תמונות (Wikimedia Commons)</h4>
     <div class="creds" id="creds"></div>
   </div>

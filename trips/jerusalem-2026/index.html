@@ -42,7 +42,8 @@ h1,h2,h3,h4{font-family:'Suez One',serif; font-weight:400; line-height:1.18; mar
 h1{font-size:clamp(40px,9vw,78px)}
 h2{font-size:clamp(26px,5vw,40px); color:var(--sky-deep)}
 h3{font-size:clamp(19px,3.2vw,25px); color:var(--terra-deep)}
-a{color:var(--sky); text-decoration:none}
+a{color:var(--sky); text-decoration:none; cursor:pointer}
+[data-view]{cursor:pointer}
 a:hover{color:var(--sky-deep)}
 p{margin:.5em 0}
 img{max-width:100%; display:block}
@@ -177,6 +178,11 @@ header.hero{position:relative; overflow:hidden; color:#fff; text-align:center}
 .filters .lbl{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; color:var(--ink-soft)}
 .chip{cursor:pointer; font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; padding:6px 13px; border-radius:999px; border:1px solid var(--line); background:#fff; transition:.16s; user-select:none}
 .chip.on{background:var(--sky-deep); color:#fff; border-color:var(--sky-deep)}
+.chip.f-hist{border-color:#ecd49b; color:#8a5d12} .chip.f-hist.on{background:#d99a2b; border-color:#d99a2b; color:#fff}
+.chip.f-nature{border-color:#cfe0a3; color:#566b1f} .chip.f-nature.on{background:#7a8b3c; border-color:#7a8b3c; color:#fff}
+.chip.f-fun{border-color:#f0c4b4; color:#9c4527} .chip.f-fun.on{background:#c25b35; border-color:#c25b35; color:#fff}
+.chip.f-chill{border-color:#c2dcf0; color:#235a82} .chip.f-chill.on{background:#2f7fb3; border-color:#2f7fb3; color:#fff}
+.chip.f-route{border-color:#cdd9de; color:#3a5560} .chip.f-route.on{background:#5a6b73; border-color:#5a6b73; color:#fff}
 
 /* timeline */
 .tl{position:relative; margin-top:14px; padding-inline-start:26px}
@@ -410,7 +416,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
 
     <section class="block reveal">
       <h2>על קצה המזלג</h2>
-      <p>סוף שבוע קצר וגדוש בירושלים: <b>בוקר שישי</b> הוא יום ההרפתקה — סיור בעיר דוד והליכה במים בתוך <b>נקבת חזקיהו</b> בת 2,700 השנה, ואז <b>קבלת שבת</b> מוזיקלית. נכנסים לקרוואנים, צופים בשקיעה מהטיילת, ועושים <b>מנגל</b> בערב. <b>שבת</b> רגועה עם בחירה חופשית — העיר העתיקה, מוזיאונים או טבע — וחוזרים מערבה בכביש 1 עם עצירה בדרך. אחד הילדים <b>צליאק</b>, ולכן יש מדריך אוכל ללא גלוטן ייעודי. 💛</p>
+      <p>סוף שבוע קצר וגדוש בירושלים: <b>בוקר שישי</b> הוא יום ההרפתקה — סיור בעיר דוד והליכה במים בתוך <b>נקבת חזקיהו</b> בת 2,700 השנה, ואז <b>קבלת שבת</b> מוזיקלית. נכנסים לקרוואנים, צופים בשקיעה מהטיילת, ועושים <b>מנגל</b> בערב. <b>שבת</b> רגועה עם בחירה חופשית — העיר העתיקה, מוזיאונים או טבע — וחוזרים מערבה בכביש 1 עם עצירה בדרך.</p>
       <div class="legend">
         <div>🟡 <b>היסטוריה ועתיקות</b></div>
         <div>🟢 <b>טבע ומים</b></div>
@@ -420,14 +426,21 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     </section>
 
     <section class="block reveal">
-      <h2>לאן ממשיכים?</h2>
+      <h2>📋 תכנון הטיול</h2>
       <div class="tiles">
         <div class="tile" data-view="friday"><div class="ico">🌅</div><h3>יום שישי</h3><p>עיר דוד, הנקבה, קבלת שבת, מנגל ושקיעה מהטיילת.</p></div>
         <div class="tile" data-view="saturday"><div class="ico">🌳</div><h3>יום שבת</h3><p>בחירה חופשית: עיר עתיקה, מוזיאונים, טבע — ועצירה בדרך הביתה.</p></div>
-        <div class="tile" data-view="food"><div class="ico">🍽️</div><h3>אוכל ללא גלוטן</h3><p>איפה אוכלים בשבת, חנויות צליאק והמנגל הבטוח.</p></div>
+        <div class="tile" data-view="food"><div class="ico">🍽️</div><h3>אוכל ללא גלוטן</h3><p>איפה אוכלים בשבת, חנויות צליאק והמנגל.</p></div>
+      </div>
+    </section>
+
+    <section class="block reveal">
+      <h2>🧭 מידע וכיף</h2>
+      <div class="tiles">
+        <div class="tile" data-view="info"><div class="ico">🧭</div><h3>מידע ולוגיסטיקה</h3><p>אילוצי שבת, חניות, צ'ק־ליסטים ורשימת ציוד.</p></div>
+        <div class="tile" data-view="map"><div class="ico">🗺️</div><h3>מפה</h3><p>כל התחנות על מפה אחת, צבועות לפי יום.</p></div>
         <div class="tile" data-view="trivia"><div class="ico">🏆</div><h3>טריוויה וסיפורים</h3><p>תחרות משפחות אינטראקטיבית + סיפורים לילדים.</p></div>
         <div class="tile" data-view="media"><div class="ico">🎧</div><h3>מדיה לדרך</h3><p>פודקאסטים לרכב וסרטונים לראות לפני.</p></div>
-        <div class="tile" data-view="map"><div class="ico">🗺️</div><h3>מפה</h3><p>כל התחנות על מפה אחת, צבועות לפי יום.</p></div>
       </div>
     </section>
   </div>
@@ -532,7 +545,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
           <h3>🔥 מנגל ליד הקרוואנים</h3>
           <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-fun">כיף לילדים</span></div>
           <p>חגיגי, רגוע, והכי קל לשליטה בצליאק (ראו <a data-view="food">מדריך האוכל</a>). אחר כך מקלות זוהרים, משחקי קלפים והסתכלות בכוכבים. <b>✅ מנגל מותר</b> — יש עמדות ייעודיות.</p>
-          <div class="alt">רוצים לאכול בחוץ בערב שישי? רוב המקומות הכשרים סגורים מ~15:00; <b>אדום</b> (עבר למרכז העיר, פתוח בשבת, לא כשר) הוא אופציה לארוחת ערב יושבת. ראו <a data-view="food">מדריך האוכל</a> ↗.</div>
+          <div class="alt">רוצים לאכול בחוץ בערב שישי? רוב המקומות הכשרים סגורים מ~15:00 — אז <b>המנגל הוא הכי פשוט</b>. בתחנה הראשונה חלק מהמקומות עדיין פתוחים בערב (לבדוק שעות). ראו <a data-view="food">מדריך האוכל</a> ↗.</div>
         </div>
       </div>
     </div>
@@ -557,26 +570,25 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     <h3 style="margin-top:26px">ואז בוחרים (הכול נבדק כפתוח בשבת):</h3>
     <div class="filters">
       <span class="lbl">סינון:</span>
-      <span class="chip on" data-filter="all">הכול</span>
-      <span class="chip" data-filter="t-hist">🟡 היסטוריה</span>
-      <span class="chip" data-filter="t-nature">🟢 טבע</span>
-      <span class="chip" data-filter="t-fun">🔴 כיף</span>
-      <span class="chip" data-filter="t-chill">🔵 רגוע</span>
-      <span class="chip" data-filter="t-route">🏁 בדרך הביתה</span>
+      <span class="chip f-all on" data-filter="all">הכול</span>
+      <span class="chip f-hist" data-filter="t-hist">היסטוריה ועתיקות</span>
+      <span class="chip f-nature" data-filter="t-nature">טבע ומים</span>
+      <span class="chip f-fun" data-filter="t-fun">כיף לילדים</span>
+      <span class="chip f-chill" data-filter="t-chill">רגוע ונגיש</span>
+      <span class="chip f-route" data-filter="t-route">בדרך הביתה</span>
     </div>
 
     <div id="satcards">
       <div class="card filterable t-hist t-fun reveal">
         <img class="photo" src="assets/old-city-wide.jpg" alt="רחוב בעיר העתיקה" data-cap="רחוב הבד, העיר העתיקה · joiseyshowaa, CC BY-SA 2.0">
         <div class="body">
-          <h3>🏛️ אפשרות א' — בוקר בעיר העתיקה ✅</h3>
+          <h3>🏛️ אפשרות א' — בוקר בעיר העתיקה</h3>
           <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-fun">כיף לילדים</span></div>
           <p>העיר העתיקה תוססת בשבת כי <b>השוק הערבי פתוח</b>. נכנסים ב<b>שער יפו</b> → <b>מגדל דוד</b> (מוזיאון, ✅ שבת 10:00–14:00) → יורדים דרך <b>השוק</b> → <b>הכותל המערבי</b> (תמיד פתוח וחינם).</p>
           <div class="why">לכו <b>בבוקר</b> (קריר יותר), קצר יותר עבור הקטנטן/ת, כובעים ומים. <b>צהריים בתחנה הראשונה</b> (5–10 דק', ידידותי לצליאק ופתוח בשבת).</div>
           <div class="why">🅿️ <b>חניון כרתא (קרתא)</b> בשער יפו — ✅ <b>פתוח 24/7 כולל שבת</b> (יצחק קריב 1, ~800 חניות), הקרוב למגדל דוד ולשוק. צהריים: <b>חומוס אבו שוקרי / לינא</b> בעיר העתיקה (פתוחים בשבת) או חזרה לתחנה הראשונה.</div>
           <div class="links">
             <a href="https://www.tod.org.il/" target="_blank" rel="noopener">מגדל דוד ↗</a>
-            <a href="https://centralpark.co.il/parking/קרתא" target="_blank" rel="noopener">חניון כרתא ↗</a>
             <a class="map" href="https://www.google.com/maps/search/?api=1&query=Jaffa+Gate+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
           </div>
         </div>
@@ -585,7 +597,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       <div class="card filterable t-nature t-chill reveal">
         <img class="photo" src="assets/gazelle-valley.jpg" alt="עמק הצבאים" data-cap="עמק הצבאים · צילום: Yuvalr, CC BY-SA 3.0">
         <div class="body">
-          <h3>🦌 אפשרות ב' — עמק הצבאים ✅</h3>
+          <h3>🦌 אפשרות ב' — עמק הצבאים</h3>
           <div class="tags"><span class="tag t-nature">טבע ומים</span><span class="tag t-chill">רגוע ונגיש</span></div>
           <div class="meta"><span>📍 גבעת מרדכי · ~15 דק'</span><span>💰 כניסה חינם</span><span>🕗 כל שעות האור</span></div>
           <p>שמורת הטבע העירונית הגדולה בישראל — עדר צבאים חופשי, שבילים קלים, מסתורי תצפית ואגמים. טבע מרגיע ומשמח ללא נסיעה גדולה.</p>
@@ -597,7 +609,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       <div class="card filterable t-hist t-chill reveal">
         <img class="photo" src="assets/israel-museum.jpg" alt="מוזיאון ישראל" data-cap="מוזיאון ישראל, ירושלים · Xavier Gillet, CC BY-SA 2.0">
         <div class="body">
-          <h3>🖼️ אפשרות ג' — מוזיאון ישראל ✅</h3>
+          <h3>🖼️ אפשרות ג' — מוזיאון ישראל</h3>
           <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-chill">רגוע ונגיש</span></div>
           <div class="meta"><span>📍 דרך רופין 11 · ~15 דק'</span><span>🕗 שבת 10:00–17:00</span></div>
           <p>ברמה עולמית. <b>דגם ירושלים בימי בית שני</b>, <b>היכל הספר</b> (מגילות מדבר יהודה), ו<b>אגף הנוער</b> ההתנסותי — כולם להיטים אצל ילדים. חניה במקום. (מצוין למזגן ביום חם.)</p>
@@ -610,7 +622,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
 
       <div class="card filterable t-fun t-chill reveal">
         <div class="body">
-          <h3>🔬 אפשרות ג2 — מוזיאון המדע בלומפילד ✅</h3>
+          <h3>🔬 אפשרות ג2 — מוזיאון המדע בלומפילד</h3>
           <div class="tags"><span class="tag t-fun">כיף לילדים</span><span class="tag t-chill">רגוע ונגיש</span></div>
           <div class="meta"><span>📍 גבעת רם · שדרות המוזיאונים 3</span><span>🕗 שבת 10:00–16:00</span></div>
           <p>מוזיאון מדע התנסותי "ללחוץ על כל כפתור" — מושלם ליום חם/גשום מגיל ~5. צמוד למוזיאון ישראל, אפשר לשלב.</p>
@@ -630,6 +642,19 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
           <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=HaMesila+Park+Jerusalem" target="_blank" rel="noopener">מפה ↗</a></div>
         </div>
       </div>
+
+      <div class="card filterable t-chill t-fun t-all reveal">
+        <div class="body">
+          <h3>🚂 אפשרות ה' — שבת בבוקר בתחנה הראשונה</h3>
+          <div class="tags"><span class="tag t-chill">רגוע ונגיש</span><span class="tag t-fun">כיף לילדים</span><span class="tag t-all">כולם</span></div>
+          <p>"שבת בבוקר בתחנה" — פעילויות חינם למשפחות (מוזיקה, ריקודי עם, פינות לילדים), אווירה נעימה, ומקומות אוכל פתוחים כמו <b>ננוש</b> וגלידת <b>וניליה</b>. קרוב מאוד לקמפינג ולטיילת — אופציה רגועה ונחמדה לבוקר שבת.</p>
+          <div class="links">
+            <a href="https://www.firststation.co.il/events/saturday-morning/" target="_blank" rel="noopener">שבת בבוקר בתחנה ↗</a>
+            <a href="https://www.firststation.co.il/restaurants-shops/nanosh/" target="_blank" rel="noopener">ננוש ↗</a>
+            <a class="map" href="https://www.google.com/maps/search/?api=1&query=First+Station+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
+          </div>
+        </div>
+      </div>
     </div>
 
     <h3 style="margin-top:30px">🏁 בדרך הביתה (כביש 1 מערבה) — בוחרים אחת</h3>
@@ -638,7 +663,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       <div class="card filterable t-route t-nature t-hist reveal">
         <img class="photo" src="assets/ein-hemed.jpg" alt="גן לאומי עין חמד" data-cap="גן לאומי עין חמד (אקווה בלה) · צילום: Bukvoed, CC BY 3.0">
         <div class="body">
-          <h3>🏰💦 גן לאומי עין חמד (אקווה בלה) ✅</h3>
+          <h3>🏰💦 גן לאומי עין חמד (אקווה בלה)</h3>
           <div class="tags"><span class="tag t-route">בדרך הביתה</span><span class="tag t-nature">טבע ומים</span><span class="tag t-hist">היסטוריה</span></div>
           <div class="meta"><span>📍 דקות מכביש 1</span><span>🕗 שבת 08:00–17:00 (קיץ)</span><span class="pr">כניסת גן לאומי</span></div>
           <p>פנינה מוצלת על <b>נחל כסלון</b>: תעלות ובריכות שבהן <b>ילדים משכשכים במים נקיים</b>, מדשאות, שולחנות פיקניק ו<b>מצודה צלבנית</b>. <b>הבחירה המומלצת ליום חם — מים + צל + היסטוריה.</b></p>
@@ -652,9 +677,9 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       <div class="card filterable t-route t-fun reveal">
         <img class="photo" src="assets/kiftzuba.jpg" alt="קיפצובה — פארק שעשועים" data-cap="אילוסטרציה: גלגל ענק בלונה־פארק · PattayaPatrol, CC BY-SA 4.0">
         <div class="body">
-          <h3>🎢 קיפצובה ✅</h3>
+          <h3>🎢 קיפצובה</h3>
           <div class="tags"><span class="tag t-route">בדרך הביתה</span><span class="tag t-fun">כיף לילדים</span></div>
-          <div class="meta"><span>📍 קיבוץ צובא</span><span>🕗 ~09:00–16:00</span><span class="pr">~105₪ אונליין</span></div>
+          <div class="meta"><span>📍 קיבוץ צובא</span><span>🕗 ~09:00–18:00</span><span class="pr">~105₪ אונליין</span></div>
           <p>פארק שעשועים לגילאי 1–14: רכבות הרים, מסלול נינג'ה, קרוסלות, גלגל ענק, מכוניות מתנגשות, מתקני קפיצה וזון לפעוטות. <b>הכי כיפי אם הילדים רוצים כיף טהור.</b></p>
           <div class="warn">⚠️ להזמין אונליין מראש ולאמת שהשבת פתוחה לקהל. לשאול אם מתקני המים פועלים בקיץ.</div>
           <div class="links">
@@ -666,7 +691,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
 
       <div class="card filterable t-route t-nature t-chill reveal">
         <div class="body">
-          <h3>🌳 פארק איילון–קנדה ✅</h3>
+          <h3>🌳 פארק איילון–קנדה</h3>
           <div class="tags"><span class="tag t-route">בדרך הביתה</span><span class="tag t-nature">טבע ומים</span><span class="tag t-chill">רגוע ונגיש</span></div>
           <div class="meta"><span>📍 ליד לטרון</span><span>🕗 שבת 08:30–17:30</span><span class="pr">חינם</span></div>
           <p>שביל משפחתי <b>"שביל אמת המים"</b> (1.5/2.6 ק"מ), מעיין <b>עין איילון</b>, עתיקות ומדשאות פיקניק מוצלות. <b>חינם וקליל.</b> (מיני ישראל הסמוך <b>סגור בשבת</b> — לדלג.)</p>
@@ -703,26 +728,25 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     <h3 style="margin-top:24px">⭐ מקומות ללא גלוטן ליד הקמפינג (בקעה / תחנה ראשונה / מושבה גרמנית)</h3>
     <table class="tbl">
       <tr><th>מקום</th><th>אזור</th><th>ללא גלוטן</th><th>פתוח בשבת?</th></tr>
-      <tr><td><a href="https://benami-jlm.co.il" target="_blank" rel="noopener"><b>בן עמי</b> ↗</a></td><td>עמק רפאים 38</td><td>⭐ "גביע הקדוש" — תפריט GF נפרד + מאפייה GF</td><td><span class="no">סגור בשבת</span> · מצוין למוצ"ש</td></tr>
-      <tr><td><a href="https://www.adom.rest" target="_blank" rel="noopener"><b>אדום</b> ↗</a></td><td>מרכז העיר (מלון בראון)*</td><td>מנות GF לפי בקשה (לא ייעודי לצליאק)</td><td><span class="ok">✅ כן + ליל שישי</span> · לא כשר</td></tr>
-      <tr><td><a href="https://www.google.com/maps/search/?api=1&query=Abu+Shukri+hummus+Old+City+Jerusalem" target="_blank" rel="noopener"><b>אבו שוקרי</b> ↗</a></td><td>עיר עתיקה (רובע מוסלמי)</td><td>חומוס/סלטים — טבעית GF חוץ מהפיתה</td><td><span class="ok">✅ שבת ביום</span> (צהריים, נסגר ~17:00)</td></tr>
+      <tr><td><a href="https://maps.app.goo.gl/P6vD9yiEMgmgmZiF7" target="_blank" rel="noopener"><b>אבו שוקרי</b> ↗</a></td><td>עיר עתיקה (רובע מוסלמי)</td><td>חומוס/סלטים — טבעית GF חוץ מהפיתה</td><td><span class="ok">✅ שבת ביום</span> (צהריים, נסגר ~17:00)</td></tr>
       <tr><td><a href="https://www.google.com/maps/search/?api=1&query=Hummus+Lina+Old+City+Jerusalem" target="_blank" rel="noopener"><b>חומוס לינא</b> ↗</a></td><td>עיר עתיקה (רובע נוצרי)</td><td>חומוס — טבעית GF חוץ מהפיתה</td><td><span class="ok">✅ שבת ביום</span> (צהריים)</td></tr>
+      <tr><td><a href="https://www.firststation.co.il/restaurants-shops/nanosh/" target="_blank" rel="noopener"><b>ננוש (Nanosh)</b> ↗</a></td><td>תחנה ראשונה</td><td>לבדוק GF מול הצוות</td><td><span class="ok">✅ פתוח בשבת</span></td></tr>
       <tr><td><a href="https://vaniglia.co.il" target="_blank" rel="noopener"><b>וניליה</b> ↗</a></td><td>תחנה ראשונה</td><td>גלידה/סורבה טבעוני (לשאול על זיהום צולב)</td><td><span class="ok">✅ כן</span></td></tr>
-      <tr><td><a href="https://tziga.co.il" target="_blank" rel="noopener"><b>טסיגה</b> ↗</a></td><td>דרך בית לחם 31</td><td>⭐ גלידה צליאק/טבעוני/ללא ביצה</td><td>⚠️ לאמת שעות שבת</td></tr>
+      <tr><td><a href="https://tziga.co.il" target="_blank" rel="noopener"><b>גלידה ציגה</b> ↗</a></td><td>דרך בית לחם 31</td><td>⭐ גלידה צליאק/טבעוני/ללא ביצה</td><td><span class="no">סגור בשבת</span></td></tr>
       <tr><td><a href="https://caffit.co.il" target="_blank" rel="noopener"><b>קפית</b> ↗</a></td><td>עמק רפאים</td><td>אופציות מוגבלות — <b>לא</b> מענה צליאק בטוח</td><td><span class="no">סגור בשבת ביום</span></td></tr>
       <tr><td><a href="https://grand-cafe.co.il" target="_blank" rel="noopener"><b>גרנד קפה</b> ↗</a></td><td>דרך בית לחם 70</td><td>אופציות מוגבלות — לא ייעודי לצליאק</td><td><span class="no">סגור בשבת</span></td></tr>
       <tr><td><a href="https://rebar.co.il" target="_blank" rel="noopener"><b>רי־בר</b> ↗</a></td><td>תחנה ראשונה</td><td>שייקים/מיצים (בד"כ GF)</td><td><span class="no">סגור בשבת ביום</span></td></tr>
     </table>
-    <p class="muted" style="font-size:12.5px">* <b>אדום עבר</b> מהתחנה הראשונה למרכז העיר (~הלל 41, מלון בראון) — לאמת מיקום. <b>בן עמי</b> הוא הבחירה הבטוחה ביותר לצליאק (אך סגור בשבת). <b>קפית/גרנד קפה אינם מספקים מענה צליאק ודאי</b> — לצליאק עדיף בן עמי/טסיגה או אוכל שהבאתם.</p>
+    <p class="muted" style="font-size:12.5px">⚠️ <b>קפית/גרנד קפה אינם מספקים מענה צליאק ודאי.</b> לצליאק — האוכל הבטוח הוא מ<b>גלולס</b> או ממאפיית <b>בן עמי</b> (ראו "קניות ללא גלוטן" למטה), או אוכל שהבאתם. רוב מקומות הצליאק והגלידה כשרים וסגורים בשבת.</p>
     <div class="warn">⚠️ שעות משתנות — <b>התקשרו בבוקר</b> לכל מקום לפני שמסתמכים עליו. <b>התחנה הראשונה</b> היא ברירת המחדל האמינה לשבת ביום (כמה מקומות פתוחים + "שבת בתחנה" עם פעילויות חינם לילדים): <a href="https://www.firststation.co.il/events/saturday/" target="_blank" rel="noopener">שבת בתחנה ↗</a></div>
 
     <h3 style="margin-top:24px">עוד אפשרויות, לפי מצב</h3>
     <div class="card"><div class="body">
       <p>🥗 <b>צהריים בעיר העתיקה (אם בחרתם אפשרות א'):</b> <b>חומוס אבו שוקרי</b> (רובע מוסלמי) ו<b>חומוס לינא</b> (רובע נוצרי) פתוחים בשבת ביום — חומוס/סלטים (טבעית GF חוץ מהפיתה — הביאו פיתה GF מגלולס). נסגרים אחה"צ, אז זה לצהריים בלבד.</p>
-      <p>🍳 <b>בוקר/בראנץ':</b> לבוקר GF <b>בטוח</b> עדיף <b>בן עמי</b> (שישי/מוצ"ש) או פשוט בוקר מהמצרכים שקניתם בקמפינג. <b>קפית/גרנד קפה אינם מבטיחים GF נקי</b>, ובשבת ביום הם בלאו הכי סגורים.</p>
-      <p>🥤 <b>חטיף מהיר לילדים (בד"כ בטוח GF):</b> שייקים ב<a href="https://rebar.co.il" target="_blank" rel="noopener"><b>רי־בר</b></a>, ופרוזן יוגורט/גלידה ב<a href="https://vaniglia.co.il" target="_blank" rel="noopener"><b>וניליה</b></a> או <a href="https://tziga.co.il" target="_blank" rel="noopener"><b>טסיגה</b></a> (צליאק).</p>
+      <p>🚂 <b>שבת ביום בתחנה הראשונה:</b> <a href="https://www.firststation.co.il/restaurants-shops/nanosh/" target="_blank" rel="noopener"><b>ננוש</b></a> פתוחה, גלידת <a href="https://vaniglia.co.il" target="_blank" rel="noopener"><b>וניליה</b></a>, ופעילויות "שבת בתחנה" לילדים.</p>
+      <p>🍳 <b>בוקר GF בטוח:</b> מאפיית <b>בן עמי</b> (לקנייה, ביום שישי) או בוקר מהמצרכים שקניתם בקמפינג. <b>קפית/גרנד קפה אינם מבטיחים GF נקי</b>, ובשבת ביום ממילא סגורים.</p>
+      <p>🥤 <b>חטיף מהיר לילדים (בד"כ בטוח GF):</b> שייקים ב<a href="https://rebar.co.il" target="_blank" rel="noopener"><b>רי־בר</b></a>, ופרוזן יוגורט/גלידה ב<a href="https://vaniglia.co.il" target="_blank" rel="noopener"><b>וניליה</b></a> (פתוח בשבת) או <a href="https://tziga.co.il" target="_blank" rel="noopener"><b>גלידה ציגה</b></a> (צליאק, סגור בשבת).</p>
       <p>🧺 <b>פיקניק לפארקים (דרך הביתה בשבת):</b> עין חמד / איילון–קנדה / קיפצובה — קררו מבעוד מועד: לחמניות GF + נקניק/גבינה, ירקות, פירות, חטיפים GF, יוגורט.</p>
-      <p>🌙 <b>ארוחת מוצ"ש (אחרי ~20:30 הכול נפתח):</b> רגע מצוין ל"גביע הקדוש" <a href="https://benami-jlm.co.il" target="_blank" rel="noopener"><b>בן עמי</b></a> או ארוחה מלאה לפני הנסיעה.</p>
     </div></div>
 
     <div class="warn"><b>כשר מול פתוח־בשבת — הכלל המעשי:</b> מקומות הצליאק הייעודיים הטובים (בן עמי, מוזס, אגס ותפוח) <b>כשרים וסגורים</b> מליל שישי עד מוצ"ש. הפתוחים בשבת הם <b>התחנה הראשונה, בתי קפה במושבה הגרמנית, ומסעדות העיר העתיקה</b>. תכננו בהתאם, והתקשרו באותו יום.</div>
@@ -731,9 +755,10 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     <div class="card"><div class="body">
       <p>🥖 <b>גלולס (Gluless)</b> — חנות GF ייעודית, מאות מוצרים. סניפים בצומת אורנים ובמחנה יהודה. לחמניות/פיתות GF, חטיפים, פריטי בוקר ועוגיות למנגל ולדרך.</p>
       <p>🧁 <b>ברקת</b> — קונדיטוריית GF, יד חרוצים 14 — לחם/מאפים ללא גלוטן.</p>
+      <p>🥐 <b>בן עמי (עמק רפאים 38)</b> — מאפייה/חנות GF (לא מסעדה): לחם, מאפים ומוצרי צליאק לקנייה. סגור בשבת. <a href="https://benami-jlm.co.il" target="_blank" rel="noopener">בן עמי ↗</a></p>
     </div></div>
 
-    <h3 style="margin-top:24px">🔥 מנגל ליל שישי בקמפינג — ✅ מותר ובטוח לצליאק</h3>
+    <h3 style="margin-top:24px">🔥 מנגל ליל שישי בקמפינג</h3>
     <div class="card"><div class="body">
       <p>בקמפינג יש <b>עמדות מנגל ייעודיות</b>, מטבח שדה משותף, שולחנות מוצלים, שקעי חשמל ומטבחון.</p>
       <p>✅ <b>טבעית ללא גלוטן:</b> בשר/עוף טרי או במרינדה (לוודא שאין סויה/קמח), קבב בלי פירורי לחם, ירקות, תירס, תפו"א בנייר כסף, סלטים (בלי קרוטונים), אורז.</p>
@@ -754,7 +779,7 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
       <p>🕯️ <b>שבת בירושלים 19–20/6:</b> כניסת שבת <b>שישי 19:07</b> · צאת שבת <b>שבת ~20:30</b> · פרשת <b>חוקת</b>.</p>
       <p>🏕️ <b>צ'ק־אין:</b> שישי 13:00 עד שעתיים לפני שבת (~17:00). <b>אין צ'ק־אין בשבת.</b> <b>צ'ק־אאוט:</b> מוצ"ש עד שעה אחרי צאת השבת (~21:30). ללא כלבים, ללא עישון. ✅ מנגל מותר.</p>
       <p>🏛️ <b>עיר דוד:</b> שישי 08:00–14:00 (כניסה אחרונה לנקבה ~12:30) · <b>שבת סגור</b>. 👉 כל פעילות עיר דוד חייבת להיות בבוקר שישי.</p>
-      <p>🎟️ <b>קודי הנחה:</b> יש לכם קופונים במייל ההזמנה לסיורים המודרכים ולאומגה — הזינו אותם בקופה באתר עיר דוד.</p>
+      <p>🎟️ <b>קודי הנחה (במייל ההזמנה):</b> ~<b>20% הנחה</b> על הסיורים המודרכים (עיר דוד המקראית / עיר דוד פינת הכותל) ו~<b>10% הנחה</b> על ה<b>אומגה</b> (זיפליין) — הזינו את הקודים בקופה באתר עיר דוד.</p>
     </div></div>
 
     <h3 style="margin-top:24px">📋 צ'ק־ליסט לפני הטיול</h3>
@@ -786,10 +811,10 @@ footer .creds div{break-inside:avoid; margin-bottom:5px}
     <table class="tbl">
       <tr><th>תחנה</th><th>Waze / כתובת</th><th>חניה</th></tr>
       <tr><td><b>קמפינג</b></td><td>קמפינג יער השלום</td><td><span class="ok">✅ חינם במקום</span></td></tr>
-      <tr><td><b>עיר דוד (שישי)</b></td><td>עיר דוד / שער האשפות</td><td>חניון גבעתי (בתשלום, מוגבל) — מוקדם; עיר דוד ממליצים גם על <b>חניון הר ציון</b> (~9 דק' הליכה, מוגבל). <a href="https://cityofdavid.org.il/sites/national-park-city-of-david/" target="_blank" rel="noopener">הגעה ↗</a></td></tr>
-      <tr><td><b>קבלת שבת / תחנה ראשונה</b></td><td><a href="https://www.google.com/maps/search/?api=1&query=First+Station+Jerusalem" target="_blank" rel="noopener">התחנה הראשונה ↗</a></td><td>חניון התחנה (24/7; ~15₪ שעה ראשונה בחול). <b>בשבת — חינם</b> (לאמת). או חניית רחוב.</td></tr>
+      <tr><td><b>עיר דוד (שישי)</b></td><td>עיר דוד / שער האשפות</td><td>חניון גבעתי (בתשלום, מוגבל) — מוקדם; עיר דוד ממליצים גם על <b>חניון הר ציון</b> (~9 דק' הליכה, מוגבל).</td></tr>
+      <tr><td><b>קבלת שבת / תחנה ראשונה</b></td><td>התחנה הראשונה</td><td>חניון התחנה (24/7; ~15₪ שעה ראשונה בחול). <b>בשבת — חינם</b> (לאמת). או חניית רחוב.</td></tr>
       <tr><td><b>טיילת</b></td><td>טיילת ארמון הנציב</td><td><span class="ok">✅ חינם</span> (לא ברחוב דניאל ינובסקי)</td></tr>
-      <tr><td><b>עיר עתיקה (שבת)</b></td><td>שער יפו</td><td><a href="https://centralpark.co.il/parking/קרתא" target="_blank" rel="noopener"><b>חניון כרתא</b> ↗</a> — ✅ פתוח 24/7 כולל שבת (~₪70–100/יום, זול יותר באפליקציה)</td></tr>
+      <tr><td><b>עיר עתיקה (שבת)</b></td><td>שער יפו</td><td><b>חניון כרתא</b> — ✅ פתוח 24/7 כולל שבת (~₪70–100/יום, זול יותר באפליקציה)</td></tr>
       <tr><td><b>עמק הצבאים</b></td><td>עמק הצבאים</td><td>חניון כניסה (מוגבל) — מוקדם</td></tr>
       <tr><td><b>מוזיאון ישראל / בלומפילד</b></td><td>דרך רופין 11 / שד' המוזיאונים 3</td><td>חניוני המקום (גבעת רם)</td></tr>
       <tr><td><b>עין חמד (כביש 1)</b></td><td>גן לאומי עין חמד</td><td>חניון הגן הלאומי</td></tr>
@@ -990,20 +1015,20 @@ setupCheck('ck-pre','pg-pre'); setupCheck('ck-pack','pg-pack');
 /* ================= MAP ================= */
 let mapInited=false, jmap=null, mapTries=0;
 const PLACES=[
-  {n:'קמפינג יער השלום',c:[31.7549,35.2375],k:'camp',d:'הלינה · חניה חינם'},
-  {n:'עיר דוד + נקבת חזקיהו',c:[31.7740,35.2356],k:'fri',d:'שישי בוקר · הסיור והנקבה'},
-  {n:'בריכת השילוח',c:[31.7706,35.2353],k:'fri',d:'יציאת הנקבה'},
-  {n:'התחנה הראשונה / קבלת שבת',c:[31.7659,35.2233],k:'fri',d:'קבלת שבת בחווה בגיא + צהריים'},
-  {n:'טיילת ארמון הנציב',c:[31.7530,35.2300],k:'fri',d:'שקיעה · חניה חינם'},
-  {n:'שער יפו + מגדל דוד',c:[31.7766,35.2278],k:'sat',d:'שבת בוקר · עיר עתיקה'},
-  {n:'הכותל המערבי',c:[31.7767,35.2345],k:'sat',d:'תמיד פתוח'},
-  {n:'עמק הצבאים',c:[31.7626,35.1935],k:'sat',d:'שמורת טבע עירונית'},
-  {n:'מוזיאון ישראל',c:[31.7720,35.2040],k:'sat',d:'דגם בית שני + היכל הספר'},
-  {n:'מוזיאון המדע בלומפילד',c:[31.7770,35.1980],k:'sat',d:'מדע התנסותי'},
-  {n:'פארק המסילה',c:[31.7585,35.2185],k:'sat',d:'טיילת עץ'},
-  {n:'גן לאומי עין חמד',c:[31.8050,35.1330],k:'west',d:'מים + מצודה צלבנית'},
-  {n:'קיפצובה',c:[31.7905,35.1080],k:'west',d:'פארק שעשועים'},
-  {n:'פארק איילון–קנדה',c:[31.8390,35.0150],k:'west',d:'שביל אמת המים'},
+  {n:'קמפינג יער השלום',c:[31.76114,35.22838],k:'camp',d:'הלינה · חניה חינם'},
+  {n:'עיר דוד + נקבת חזקיהו',c:[31.77426,35.23568],k:'fri',d:'שישי בוקר · הסיור והנקבה'},
+  {n:'בריכת השילוח',c:[31.77056,35.23500],k:'fri',d:'יציאת הנקבה'},
+  {n:'התחנה הראשונה / קבלת שבת',c:[31.76685,35.22471],k:'fri',d:'קבלת שבת בגיא בן הינום + צהריים'},
+  {n:'טיילת ארמון הנציב',c:[31.75474,35.23125],k:'fri',d:'שקיעה · חניה חינם'},
+  {n:'שער יפו + מגדל דוד',c:[31.77611,35.22778],k:'sat',d:'שבת בוקר · עיר עתיקה'},
+  {n:'הכותל המערבי',c:[31.77670,35.23450],k:'sat',d:'תמיד פתוח'},
+  {n:'עמק הצבאים',c:[31.75944,35.19500],k:'sat',d:'שמורת טבע עירונית'},
+  {n:'מוזיאון ישראל',c:[31.77250,35.20420],k:'sat',d:'דגם בית שני + היכל הספר'},
+  {n:'מוזיאון המדע בלומפילד',c:[31.77831,35.20050],k:'sat',d:'מדע התנסותי'},
+  {n:'פארק המסילה',c:[31.76116,35.21818],k:'sat',d:'טיילת עץ'},
+  {n:'גן לאומי עין חמד',c:[31.79736,35.12602],k:'west',d:'מים + מצודה צלבנית'},
+  {n:'קיפצובה',c:[31.78542,35.11485],k:'west',d:'פארק שעשועים'},
+  {n:'פארק איילון–קנדה',c:[31.83861,34.99778],k:'west',d:'שביל אמת המים'},
 ];
 const KCOL={camp:'#c25b35',fri:'#d99a2b',sat:'#2f7fb3',west:'#7a8b3c'};
 function initMap(){

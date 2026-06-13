@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ירושלים '26 · סוף שבוע משפחתי</title>
+<meta name="description" content="טיול משפחתי לירושלים — עיר דוד, נקבת חזקיהו, שבת בירושלים, אוכל ללא גלוטן, טריוויה לילדים ומפה אינטראקטיבית.">
+
+<!-- ===== Fonts ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Heebo:wght@400;500;700;900&family=Assistant:wght@300;400;500;600;700&family=Frank+Ruhl+Libre:wght@500;700;900&display=swap" rel="stylesheet">
+
+<!-- ===== Leaflet (interactive map) ===== -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+/* ============================================================
+   JERUSALEM '26 — single-file trip page (SPA, inline CSS+JS)
+   Theme: Jerusalem golden hour (stone gold → desert night)
+   ============================================================ */
+:root{
+  --stone:#e9dcbf; --stone-2:#f3e9d2; --paper:#fffdf6; --bg:#faf4e6;
+  --gold:#d99a2b; --gold-deep:#b97d18; --amber:#eab64f;
+  --sky:#2f7fb3; --sky-deep:#15486e; --night:#10203b; --night-2:#1d3357;
+  --olive:#7a8b3c; --olive-deep:#5f6e2b; --terra:#c25b35; --terra-deep:#9c4527;
+  --rose:#d98a6a;
+  --ink:#23262b; --ink-soft:#5a5f66; --line:#e4d6b8; --line-soft:#efe6cf;
+  --shadow:0 18px 46px -26px rgba(20,32,59,.55);
+  --shadow-soft:0 10px 28px -22px rgba(20,32,59,.6);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font-size:17px;
+  font-family:'Assistant',sans-serif; line-height:1.65; -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:'Suez One',serif; font-weight:400; line-height:1.18; margin:0 0 .4em}
+h1{font-size:clamp(40px,9vw,78px)}
+h2{font-size:clamp(26px,5vw,40px); color:var(--sky-deep)}
+h3{font-size:clamp(19px,3.2vw,25px); color:var(--terra-deep)}
+a{color:var(--sky); text-decoration:none}
+a:hover{color:var(--sky-deep)}
+p{margin:.5em 0}
+img{max-width:100%; display:block}
+.wrap{max-width:1020px; margin:0 auto; padding:0 18px}
+.muted{color:var(--ink-soft)}
+.center{text-align:center}
+
+/* ===== top nav ===== */
+nav{
+  position:sticky; top:0; z-index:600;
+  background:rgba(16,32,59,.96); backdrop-filter:blur(9px);
+  border-bottom:3px solid var(--gold);
+  box-shadow:0 6px 22px -14px rgba(0,0,0,.6);
+}
+nav .bar{
+  max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:4px;
+  padding:8px 12px; overflow-x:auto; scrollbar-width:none;
+}
+nav .bar::-webkit-scrollbar{display:none}
+nav .brand{
+  font-family:'Suez One',serif; color:var(--amber); font-size:19px;
+  white-space:nowrap; margin-inline-end:8px; flex:0 0 auto;
+}
+nav a.tab{
+  flex:0 0 auto; cursor:pointer; color:#e9eefb; font-family:'Heebo',sans-serif;
+  font-weight:700; font-size:14.5px; padding:7px 12px; border-radius:999px;
+  white-space:nowrap; transition:.18s; border:1px solid transparent;
+}
+nav a.tab:hover{background:rgba(255,255,255,.12)}
+nav a.tab.on{background:var(--gold); color:var(--night); border-color:var(--amber)}
+nav .snd{
+  flex:0 0 auto; margin-inline-start:auto; cursor:pointer; background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.25); color:#fff; border-radius:999px;
+  font-size:16px; padding:6px 11px; transition:.18s;
+}
+nav .snd:hover{background:rgba(255,255,255,.22)}
+
+/* ===== views ===== */
+.view{display:none}
+.view.active{display:block; animation:fade .4s ease}
+@keyframes fade{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+.pad{padding:36px 0 64px}
+section.block{margin:30px 0}
+
+/* ===== HERO ===== */
+header.hero{position:relative; overflow:hidden; color:#fff; text-align:center}
+.sky{
+  position:absolute; inset:0;
+  background:linear-gradient(180deg,#0f1d3a 0%,#243a63 22%,#5b6fa0 40%,#c98a5f 64%,#e9a85a 80%,#f3c878 100%);
+  background-size:100% 220%; animation:skyshift 22s ease-in-out infinite alternate;
+}
+@keyframes skyshift{from{background-position:50% 0%} to{background-position:50% 60%}}
+.sun{
+  position:absolute; inset-inline-start:50%; top:46%; width:120px; height:120px; margin-inline-start:-60px;
+  border-radius:50%; background:radial-gradient(circle,#fff6da,#f6c25a 55%,rgba(246,194,90,0) 72%);
+  filter:blur(2px); animation:sunpulse 6s ease-in-out infinite;
+}
+@keyframes sunpulse{0%,100%{transform:scale(1); opacity:.95} 50%{transform:scale(1.08); opacity:1}}
+.stars{position:absolute; inset:0; pointer-events:none}
+.stars i{position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; opacity:.0; animation:tw 4s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:0} 50%{opacity:.9}}
+.skyline{position:absolute; inset-inline:0; bottom:-1px; width:100%; height:auto; display:block}
+.hero-inner{position:relative; z-index:3; padding:70px 18px 150px}
+.hero h1{color:#fff; text-shadow:0 4px 26px rgba(0,0,0,.35); letter-spacing:.5px}
+.hero .sub{font-family:'Heebo',sans-serif; font-weight:700; font-size:clamp(15px,3vw,20px); text-shadow:0 2px 14px rgba(0,0,0,.4)}
+.hero .fams{font-size:15px; opacity:.95; margin-top:4px; text-shadow:0 2px 10px rgba(0,0,0,.4)}
+
+/* countdown */
+.countdown{display:flex; gap:10px; justify-content:center; margin:22px auto 0; flex-wrap:wrap}
+.cd{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3); border-radius:14px; padding:10px 14px; min-width:74px; backdrop-filter:blur(4px)}
+.cd b{display:block; font-family:'Heebo',sans-serif; font-weight:900; font-size:30px; line-height:1}
+.cd span{font-size:12px; font-family:'Heebo',sans-serif; opacity:.92}
+
+/* shabbat banner */
+.shb{
+  position:relative; z-index:3; margin:-90px auto 0; max-width:880px;
+  background:linear-gradient(135deg,#fff,#fdf6e6); border:1px solid var(--line);
+  border-radius:18px; box-shadow:var(--shadow); padding:16px 18px;
+  display:flex; gap:14px; flex-wrap:wrap; justify-content:center; align-items:center;
+}
+.shb .pill{display:flex; align-items:center; gap:8px; font-family:'Heebo',sans-serif; font-weight:700; font-size:14.5px; color:var(--ink)}
+.shb .pill b{color:var(--terra-deep)}
+.clock{font-family:'Heebo',sans-serif; font-weight:900; color:var(--sky-deep)}
+
+/* stats */
+.stats{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:26px}
+.stat{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:16px 10px; text-align:center; box-shadow:var(--shadow-soft)}
+.stat b{display:block; font-family:'Heebo',sans-serif; font-weight:900; font-size:26px; color:var(--gold-deep)}
+.stat span{font-size:13px; color:var(--ink-soft)}
+
+/* legend */
+.legend{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:8px}
+.legend div{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:9px 12px; font-size:14px; font-family:'Heebo',sans-serif; font-weight:500}
+
+/* tiles */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:18px}
+.tile{cursor:pointer; background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:18px 16px; box-shadow:var(--shadow-soft); transition:.2s; position:relative; overflow:hidden}
+.tile:hover{transform:translateY(-4px); border-color:var(--gold)}
+.tile .ico{font-size:30px}
+.tile h3{margin:8px 0 4px; color:var(--sky-deep)}
+.tile p{font-size:14px; color:var(--ink-soft); margin:0}
+
+/* ===== cards ===== */
+.card{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:0; box-shadow:var(--shadow-soft); margin:16px 0; overflow:hidden}
+.card .body{padding:18px 20px}
+.card h3{margin-top:0}
+.card .photo{width:100%; height:190px; object-fit:cover; cursor:zoom-in; transition:.4s}
+.card .photo:hover{filter:brightness(1.05) saturate(1.06)}
+.meta{display:flex; flex-wrap:wrap; gap:8px 14px; font-size:13.5px; font-family:'Heebo',sans-serif; color:var(--ink-soft); margin:6px 0 10px}
+.meta .pr{background:#eef6f0; color:#2f6b46; border-radius:999px; padding:2px 10px; font-weight:700}
+.why{background:linear-gradient(90deg,#fbf3df,#fff9ec); border-inline-start:4px solid var(--gold); border-radius:10px; padding:9px 12px; font-size:14.5px; margin:10px 0}
+.alt{background:#f1f6fb; border-inline-start:4px solid var(--sky); border-radius:10px; padding:9px 12px; font-size:14.5px; margin:10px 0}
+.warn{background:#fdf0e9; border-inline-start:4px solid var(--terra); border-radius:10px; padding:9px 12px; font-size:14px; margin:10px 0}
+.links{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+.links a{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; padding:6px 13px; border-radius:999px; border:1px solid var(--line); background:#fff; transition:.18s}
+.links a:hover{border-color:var(--sky); background:#f1f8fd}
+.links a.map{background:#eef6f0; border-color:#cfe6d6; color:#2f6b46}
+.links a.map:hover{background:#e0f0e6}
+
+/* tags */
+.tags{display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 8px}
+.tag{font-family:'Heebo',sans-serif; font-weight:700; font-size:11.5px; padding:3px 10px; border-radius:999px; border:1px solid}
+.t-hist{background:#fbf0d8; color:#8a5d12; border-color:#ecd49b}
+.t-nature{background:#eef4dd; color:#566b1f; border-color:#cfe0a3}
+.t-fun{background:#fbe7e0; color:#9c4527; border-color:#f0c4b4}
+.t-chill{background:#e7f1f9; color:#235a82; border-color:#c2dcf0}
+.t-route{background:#e9eef0; color:#3a5560; border-color:#cdd9de}
+.t-all{background:#eef0ec; color:#3a463a; border-color:#d6dcd2}
+
+/* filter chips */
+.filters{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 4px; align-items:center}
+.filters .lbl{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; color:var(--ink-soft)}
+.chip{cursor:pointer; font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; padding:6px 13px; border-radius:999px; border:1px solid var(--line); background:#fff; transition:.16s; user-select:none}
+.chip.on{background:var(--sky-deep); color:#fff; border-color:var(--sky-deep)}
+
+/* timeline */
+.tl{position:relative; margin-top:14px; padding-inline-start:26px}
+.tl::before{content:""; position:absolute; inset-inline-start:8px; top:6px; bottom:6px; width:3px; background:linear-gradient(var(--gold),var(--terra))}
+.tl .step{position:relative; margin-bottom:6px}
+.tl .step::before{content:""; position:absolute; inset-inline-start:-22px; top:24px; width:14px; height:14px; border-radius:50%; background:var(--gold); border:3px solid #fff; box-shadow:0 0 0 2px var(--gold)}
+.time{display:inline-block; font-family:'Heebo',sans-serif; font-weight:900; color:var(--terra-deep); background:#fbe7e0; border-radius:8px; padding:1px 9px; font-size:13px; margin-bottom:4px}
+
+/* tables */
+.tbl{width:100%; border-collapse:collapse; margin:10px 0; font-size:14px; background:var(--paper); border-radius:14px; overflow:hidden; box-shadow:var(--shadow-soft)}
+.tbl th{background:var(--sky-deep); color:#fff; font-family:'Heebo',sans-serif; font-weight:700; padding:10px; text-align:start}
+.tbl td{padding:9px 10px; border-top:1px solid var(--line-soft); vertical-align:top}
+.tbl tr:nth-child(even) td{background:#fcf7ec}
+.ok{color:#2f6b46; font-weight:700}
+.no{color:var(--terra-deep); font-weight:700}
+
+/* shabbat windows infographic */
+.windows{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin:12px 0}
+.win{border-radius:14px; padding:12px; color:#fff; font-family:'Heebo',sans-serif}
+.win b{display:block; font-size:15px; margin-bottom:3px}
+.win span{font-size:12.5px; opacity:.95}
+.win.w1{background:linear-gradient(135deg,#7a8b3c,#5f6e2b)}
+.win.w2{background:linear-gradient(135deg,#c25b35,#9c4527)}
+.win.w3{background:linear-gradient(135deg,#2f7fb3,#15486e)}
+.win.w4{background:linear-gradient(135deg,#7a5cae,#4d3b86)}
+
+/* checklists */
+.check{list-style:none; padding:0; margin:8px 0}
+.check li{display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border:1px solid var(--line); border-radius:11px; margin-bottom:7px; background:var(--paper); cursor:pointer; transition:.15s; font-size:14.5px}
+.check li:hover{border-color:var(--gold)}
+.check li.done{background:#f1f7ee; border-color:#cfe0a3}
+.check li.done .txt{text-decoration:line-through; color:var(--ink-soft)}
+.check .box{flex:0 0 auto; width:22px; height:22px; border-radius:6px; border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-weight:900; color:#fff; transition:.15s}
+.check li.done .box{background:var(--olive); border-color:var(--olive)}
+.progress{height:11px; border-radius:999px; background:#e9dcbf; overflow:hidden; margin:4px 0 12px}
+.progress i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--gold),var(--olive)); transition:width .4s}
+
+/* ===== TRIVIA ===== */
+.subtabs{display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 16px}
+.subtab{cursor:pointer; font-family:'Heebo',sans-serif; font-weight:700; font-size:14px; padding:9px 16px; border-radius:12px; border:1px solid var(--line); background:#fff; transition:.16s}
+.subtab.on{background:var(--gold); color:var(--night); border-color:var(--gold-deep)}
+.pane{display:none}
+.pane.on{display:block; animation:fade .35s ease}
+
+/* story cards */
+.story{background:var(--paper); border:1px solid var(--line); border-radius:20px; overflow:hidden; box-shadow:var(--shadow-soft); margin:18px 0}
+.story .photo{width:100%; height:210px; object-fit:cover; cursor:zoom-in}
+.story .body{padding:18px 20px}
+.story h3{font-family:'Frank Ruhl Libre',serif; font-weight:900; color:var(--terra-deep); font-size:24px}
+.story .tale{font-family:'Frank Ruhl Libre',serif; font-size:17.5px; line-height:1.85}
+.qchips{display:flex; flex-direction:column; gap:8px; margin-top:14px; border-top:1px dashed var(--line); padding-top:14px}
+.qchip{background:#fbf6e8; border:1px solid var(--line); border-radius:12px; padding:10px 12px; cursor:pointer; font-size:14.5px; transition:.15s}
+.qchip:hover{border-color:var(--gold)}
+.qchip .q{font-family:'Heebo',sans-serif; font-weight:700}
+.qchip .a{display:none; margin-top:7px; color:var(--olive-deep); font-weight:600}
+.qchip.open .a{display:block; animation:fade .25s}
+.diff{font-size:12px; margin-inline-start:6px}
+
+/* game engine */
+.gamewrap{background:linear-gradient(160deg,#16294a,#27406e); border-radius:22px; padding:18px; color:#fff; box-shadow:var(--shadow); position:relative; overflow:hidden}
+.score{display:flex; gap:10px; margin-bottom:14px}
+.team{flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.22); border-radius:14px; padding:10px 12px; text-align:center}
+.team.lead{box-shadow:0 0 0 2px var(--amber); background:rgba(234,182,79,.18)}
+.team .nm{font-family:'Heebo',sans-serif; font-weight:700; font-size:14px}
+.team .sc{font-family:'Heebo',sans-serif; font-weight:900; font-size:34px; line-height:1; color:var(--amber)}
+.roundbar{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; justify-content:center}
+.rb{cursor:pointer; font-family:'Heebo',sans-serif; font-weight:700; font-size:12.5px; padding:5px 10px; border-radius:999px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:#fff; transition:.15s}
+.rb.on{background:var(--amber); color:var(--night); border-color:var(--amber)}
+.qcard{background:rgba(255,255,255,.96); color:var(--ink); border-radius:16px; padding:20px; min-height:150px}
+.qcard .rnd{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; color:var(--sky-deep)}
+.qcard .qtext{font-family:'Frank Ruhl Libre',serif; font-weight:700; font-size:21px; margin:8px 0 14px; line-height:1.5}
+.opts{display:flex; flex-direction:column; gap:9px}
+.opt{cursor:pointer; background:#f6f0e0; border:2px solid var(--line); border-radius:12px; padding:11px 14px; font-size:15.5px; font-family:'Heebo',sans-serif; font-weight:500; transition:.15s; text-align:start}
+.opt:hover{border-color:var(--gold)}
+.opt.correct{background:#dff3e3; border-color:#7cc48f; font-weight:700}
+.opt.wrong{background:#fbe2da; border-color:#e0987f}
+.reveal-ans{background:#dff3e3; border:2px solid #7cc48f; border-radius:12px; padding:12px 14px; font-size:16px; font-weight:700; color:#2f6b46; animation:fade .3s}
+.gbtns{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px}
+.gbtn{cursor:pointer; font-family:'Heebo',sans-serif; font-weight:700; font-size:14px; padding:10px 16px; border-radius:12px; border:none; color:#fff; transition:.15s; flex:1; min-width:120px}
+.gbtn:hover{filter:brightness(1.08)}
+.gbtn.reveal{background:var(--gold-deep)}
+.gbtn.a{background:var(--olive)}
+.gbtn.b{background:var(--sky)}
+.gbtn.skip{background:#7a8290}
+.gbtn.next{background:var(--terra)}
+.gnav{display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-family:'Heebo',sans-serif; font-size:13px; opacity:.9}
+.gnav button{cursor:pointer; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25); color:#fff; border-radius:10px; padding:6px 12px; font-weight:700}
+.endscreen{text-align:center; padding:24px 10px}
+.endscreen .winner{font-family:'Suez One',serif; font-size:30px; color:var(--amber); margin:10px 0}
+.tip{font-size:13.5px; opacity:.92; margin-top:14px; font-family:'Heebo',sans-serif; text-align:center}
+.editteam{background:none; border:none; color:#cfe0ff; font-size:12px; cursor:pointer; text-decoration:underline; font-family:'Heebo',sans-serif}
+
+/* find-it */
+.findit{list-style:none; padding:0}
+.findit li{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin-bottom:8px; font-size:15px; cursor:pointer; transition:.15s}
+.findit li:hover{border-color:var(--gold)}
+.findit li.got{background:#f1f7ee; text-decoration:line-through; color:var(--ink-soft)}
+
+/* media cards */
+.mcard{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:16px 18px; margin:12px 0; box-shadow:var(--shadow-soft)}
+.mcard h4{font-family:'Heebo',sans-serif; font-weight:900; font-size:17px; margin:0 0 4px; color:var(--sky-deep)}
+.mcard .src{font-size:13px; color:var(--ink-soft)}
+.badge{display:inline-block; font-family:'Heebo',sans-serif; font-weight:700; font-size:11px; padding:2px 9px; border-radius:999px; background:var(--gold); color:var(--night); margin-inline-start:6px}
+
+/* map */
+#jmap{height:60vh; min-height:380px; border-radius:18px; border:1px solid var(--line); box-shadow:var(--shadow-soft)}
+.maplegend{display:flex; gap:14px; flex-wrap:wrap; margin:10px 0; font-family:'Heebo',sans-serif; font-size:13.5px; font-weight:600}
+.maplegend span{display:inline-flex; align-items:center; gap:6px}
+.dotm{width:13px; height:13px; border-radius:50%; display:inline-block; border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.2)}
+
+/* lightbox */
+.lb{position:fixed; inset:0; z-index:2000; background:rgba(8,14,28,.92); display:none; align-items:center; justify-content:center; padding:20px; cursor:zoom-out}
+.lb.on{display:flex; animation:fade .25s}
+.lb img{max-width:96%; max-height:82%; border-radius:12px; box-shadow:0 30px 80px -20px #000}
+.lb .cap{position:absolute; bottom:18px; inset-inline:0; text-align:center; color:#fff; font-size:13px; font-family:'Heebo',sans-serif; padding:0 20px}
+.lb .x{position:absolute; top:16px; inset-inline-end:20px; color:#fff; font-size:34px; cursor:pointer; line-height:1}
+
+/* footer */
+footer{background:var(--night); color:#cdd6ea; padding:34px 18px 50px; margin-top:30px; font-size:13.5px}
+footer .wrap{max-width:900px}
+footer h4{font-family:'Heebo',sans-serif; color:#fff; font-weight:900}
+footer a{color:var(--amber)}
+footer .creds{columns:2; column-gap:26px; font-size:11.5px; color:#9aa6c2; margin-top:8px}
+footer .creds div{break-inside:avoid; margin-bottom:5px}
+
+/* scroll reveal */
+.reveal{opacity:0; transform:translateY(16px); transition:opacity .6s, transform .6s}
+.reveal.in{opacity:1; transform:none}
+
+/* confetti canvas */
+#confetti{position:fixed; inset:0; pointer-events:none; z-index:1800; display:none}
+
+/* ===== responsive ===== */
+@media (max-width:760px){
+  body{font-size:16px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .hero-inner{padding:54px 16px 120px}
+  .shb{margin-top:-70px}
+  footer .creds{columns:1}
+  .gbtn{min-width:100%}
+}
+
+/* print */
+@media print{
+  nav,.snd,.gamewrap,#jmap,.lb,#confetti{display:none!important}
+  .view{display:block!important}
+  .card,.story{break-inside:avoid; box-shadow:none}
+  .sky,.sun,.stars{display:none}
+  header.hero{color:#000; background:#fff}
+  .hero h1{color:#000; text-shadow:none}
+}
+</style>
+</head>
+<body>
+
+<!-- =========================== NAV =========================== -->
+<nav>
+  <div class="bar">
+    <span class="brand">🏛️ ירושלים '26</span>
+    <a class="tab" data-view="home">בית</a>
+    <a class="tab" data-view="friday">🌅 שישי</a>
+    <a class="tab" data-view="saturday">🌳 שבת</a>
+    <a class="tab" data-view="food">🍽️ אוכל</a>
+    <a class="tab" data-view="info">🧭 מידע</a>
+    <a class="tab" data-view="trivia">🏆 טריוויה</a>
+    <a class="tab" data-view="media">🎧 מדיה</a>
+    <a class="tab" data-view="map">🗺️ מפה</a>
+    <button class="snd" id="sndToggle" title="צליל">🔇</button>
+  </div>
+</nav>
+
+<!-- =========================== HOME =========================== -->
+<div class="view active" id="view-home">
+  <header class="hero">
+    <div class="sky"></div>
+    <div class="sun"></div>
+    <div class="stars" id="stars"></div>
+    <div class="hero-inner">
+      <h1>ירושלים</h1>
+      <div class="sub">סוף שבוע משפחתי · שישי 19–שבת 20 ביוני 2026</div>
+      <div class="fams">משפחת סולומון · משפחת צמרת־איגר · 9 אנשים · קמפינג יער השלום, עיר דוד 🏕️</div>
+      <div class="countdown" id="countdown" aria-label="ספירה לאחור">
+        <div class="cd"><b id="cd-d">–</b><span>ימים</span></div>
+        <div class="cd"><b id="cd-h">–</b><span>שעות</span></div>
+        <div class="cd"><b id="cd-m">–</b><span>דקות</span></div>
+        <div class="cd"><b id="cd-s">–</b><span>שניות</span></div>
+      </div>
+    </div>
+    <!-- Old City skyline silhouette -->
+    <svg class="skyline" viewBox="0 0 1440 210" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#16243f"/><stop offset="1" stop-color="#0c1730"/></linearGradient></defs>
+      <path fill="url(#sg)" d="M0,210 L0,150 Q60,140 90,150 L110,150 L110,120 L125,120 L125,150
+        L210,150 L210,110 L222,98 L234,110 L234,150 L300,150 L300,128
+        Q330,86 360,128 L360,150 L430,150 L430,118 L445,118 L445,100 L452,100 L452,118 L467,118 L467,150
+        L560,150 L560,96 Q610,40 660,96 L660,150 L690,150 L690,70 L700,58 L710,70 L710,150
+        L820,150 L820,120 L900,120 L900,150 L980,150 L980,108 L995,96 L1010,108 L1010,150
+        L1110,150 L1110,126 Q1150,92 1190,126 L1190,150 L1270,150 L1270,116 L1284,116 L1284,98 L1291,98 L1291,116 L1305,116 L1305,150
+        L1380,150 Q1410,142 1440,150 L1440,210 Z"/>
+      <!-- cypress trees -->
+      <g fill="#0c1730"><ellipse cx="150" cy="138" rx="11" ry="30"/><ellipse cx="510" cy="140" rx="10" ry="26"/>
+        <ellipse cx="760" cy="138" rx="11" ry="30"/><ellipse cx="1060" cy="140" rx="10" ry="26"/><ellipse cx="1350" cy="138" rx="11" ry="28"/></g>
+      <!-- dome finial -->
+      <g fill="#16243f"><rect x="606" y="30" width="3" height="14"/></g>
+    </svg>
+  </header>
+
+  <!-- shabbat banner -->
+  <div class="shb">
+    <span class="pill">🕯️ <span>כניסת שבת:</span> <b>שישי 19:07</b></span>
+    <span class="pill">✨ <span>צאת שבת:</span> <b>שבת ~20:30</b></span>
+    <span class="pill">📖 <span>פרשת</span> <b>חוקת</b></span>
+    <span class="pill">🕐 <span>שעה בירושלים:</span> <b class="clock" id="ilclock">--:--</b></span>
+  </div>
+
+  <div class="wrap pad">
+    <img class="photo" src="assets/oldcity-skyline.jpg" alt="פנורמת ירושלים" data-cap="פנורמת העיר העתיקה וכיפת הסלע · Adam Jones, CC BY-SA 2.0" style="width:100%; height:200px; object-fit:cover; border-radius:18px; cursor:zoom-in; box-shadow:var(--shadow-soft); margin-bottom:24px">
+    <div class="stats reveal">
+      <div class="stat"><b>2</b><span>משפחות</span></div>
+      <div class="stat"><b>9</b><span>אנשים</span></div>
+      <div class="stat"><b>1.5</b><span>ימים</span></div>
+      <div class="stat"><b>🚗×2</b><span>מגיעים ברכב</span></div>
+    </div>
+
+    <section class="block reveal">
+      <h2>על קצה המזלג</h2>
+      <p>סוף שבוע קצר וגדוש בירושלים: <b>בוקר שישי</b> הוא יום ההרפתקה — סיור בעיר דוד והליכה במים בתוך <b>נקבת חזקיהו</b> בת 2,700 השנה, ואז <b>קבלת שבת</b> מוזיקלית. נכנסים לקרוואנים, צופים בשקיעה מהטיילת, ועושים <b>מנגל</b> בערב. <b>שבת</b> רגועה עם בחירה חופשית — העיר העתיקה, מוזיאונים או טבע — וחוזרים מערבה בכביש 1 עם עצירה בדרך. אחד הילדים <b>צליאק</b>, ולכן יש מדריך אוכל ללא גלוטן ייעודי. 💛</p>
+      <div class="legend">
+        <div>🟡 <b>היסטוריה ועתיקות</b></div>
+        <div>🟢 <b>טבע ומים</b></div>
+        <div>🔴 <b>כיף לילדים</b></div>
+        <div>🔵 <b>רגוע ונגיש</b></div>
+      </div>
+    </section>
+
+    <section class="block reveal">
+      <h2>לאן ממשיכים?</h2>
+      <div class="tiles">
+        <div class="tile" data-view="friday"><div class="ico">🌅</div><h3>יום שישי</h3><p>עיר דוד, הנקבה, קבלת שבת, מנגל ושקיעה מהטיילת.</p></div>
+        <div class="tile" data-view="saturday"><div class="ico">🌳</div><h3>יום שבת</h3><p>בחירה חופשית: עיר עתיקה, מוזיאונים, טבע — ועצירה בדרך הביתה.</p></div>
+        <div class="tile" data-view="food"><div class="ico">🍽️</div><h3>אוכל ללא גלוטן</h3><p>איפה אוכלים בשבת, חנויות צליאק והמנגל הבטוח.</p></div>
+        <div class="tile" data-view="trivia"><div class="ico">🏆</div><h3>טריוויה וסיפורים</h3><p>תחרות משפחות אינטראקטיבית + סיפורים לילדים.</p></div>
+        <div class="tile" data-view="media"><div class="ico">🎧</div><h3>מדיה לדרך</h3><p>פודקאסטים לרכב וסרטונים לראות לפני.</p></div>
+        <div class="tile" data-view="map"><div class="ico">🗺️</div><h3>מפה</h3><p>כל התחנות על מפה אחת, צבועות לפי יום.</p></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- =========================== FRIDAY =========================== -->
+<div class="view" id="view-friday">
+  <div class="wrap pad">
+    <h2>🌅 שישי 19/6 — יום ההרפתקה</h2>
+    <p class="muted">הכול קורה <b>לפני כניסת השבת (19:07)</b>. הגיאוגרפיה לטובתכם — עיר דוד, חוות קבלת השבת, הקמפינג והטיילת במרחק ~10 דקות זה מזה בדרום־מזרח ירושלים.</p>
+
+    <div class="tl">
+      <div class="step card reveal">
+        <img class="photo" src="assets/city-of-david.jpg" alt="עיר דוד" data-cap="עיר דוד · צילום: Matson Collection (נחלת הכלל)">
+        <div class="body">
+          <span class="time">08:00 · פתיחה</span>
+          <h3>🏛️ עיר דוד + נקבת חזקיהו — הסיור המודרך</h3>
+          <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-fun">כיף לילדים</span></div>
+          <div class="meta"><span>📍 עיר דוד / שער האשפות</span><span>🕗 שישי 08:00–14:00</span><span>🎟️ כניסה אחרונה לנקבה ~12:30</span></div>
+          <p>חופרים את סיפור העיר העתיקה, ואז <b>צועדים בתוך מנהרת מים בת 2,700 שנה</b> לאור פנס — שיא היום לילדים.</p>
+          <div class="why">💧 <b>נקבה רטובה:</b> ~40 דק', מים בגובה ברך–ירך, חשוך וצר — מצוין מגיל 6+, כנראה יותר מדי לקטנטן/ת. 🪨 <b>נקבה יבשה (כנענית):</b> מקבילה, בלי מים — הורה אחד לוקח את הקטנים בדרך הזו ונפגשים ביציאה ב<b>בריכת השילוח</b>.</div>
+          <div class="warn">🎟️ <b>חובה להזמין מראש</b> שובץ ל~08:30–09:00 לתשעה אנשים. יש לכם קודי הנחה במייל ההזמנה — הזינו אותם בקופה. 🩴 ארזו <b>נעלי מים + פנס/פנס ראש</b>.</div>
+          <div class="links">
+            <a href="https://cityofdavid.org.il/product/biblical-city-of-david/" target="_blank" rel="noopener">הזמנת הסיור ↗</a>
+            <a class="map" href="https://www.google.com/maps/search/?api=1&query=City+of+David+Jerusalem" target="_blank" rel="noopener">מפה / Waze ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="step card reveal">
+        <img class="photo" src="assets/first-station.jpg" alt="התחנה הראשונה" data-cap="התחנה הראשונה · צילום: Danny Gershoni, CC BY-SA 4.0">
+        <div class="body">
+          <span class="time">12:00–14:00</span>
+          <h3>🎶 קבלת שבת בחווה בגיא</h3>
+          <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-chill">רגוע ונגיש</span></div>
+          <div class="meta"><span>📍 חווה בגיא · ליד התחנה הראשונה</span><span>💰 ~20₪ מגיל 5</span></div>
+          <p>הרכב חי, שירים מסורתיים וישראליים, שולחנות פיקניק ופוד־טראק (לבדוק ללא גלוטן). חוויה משותפת ונעימה לכל החבורה לקראת שבת.</p>
+          <div class="warn">🎟️ <b>חובה הרשמה מראש.</b></div>
+          <div class="links">
+            <a href="https://cityofdavid.org.il/product/musical-reception/" target="_blank" rel="noopener">הרשמה ↗</a>
+            <a class="map" href="https://www.google.com/maps/search/?api=1&query=First+Station+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="step card reveal">
+        <div class="body">
+          <span class="time">~14:30 · צ'ק־אין</span>
+          <h3>🏕️ כניסה לקרוואנים</h3>
+          <div class="tags"><span class="tag t-chill">רגוע ונגיש</span></div>
+          <div class="meta"><span>📍 קמפינג יער השלום</span><span>🅿️ חניה חינם במקום</span><span>🕐 חלון 13:00–~17:00</span></div>
+          <p>פורקים, תופסים מיטות, ונרגעים. <b>אין צ'ק־אין בשבת</b>; צ'ק־אאוט עד ~21:30 במוצ"ש — אין לחץ.</p>
+        </div>
+      </div>
+
+      <div class="step card reveal">
+        <img class="photo" src="assets/promenade.jpg" alt="טיילת ארמון הנציב" data-cap="טיילת האז (ארמון הנציב) · צילום: Djampa, CC BY-SA 4.0">
+        <div class="body">
+          <span class="time">18:45–19:15 · שקיעה</span>
+          <h3>🌇 טיילת ארמון הנציב</h3>
+          <div class="tags"><span class="tag t-chill">רגוע ונגיש</span><span class="tag t-nature">טבע ונוף</span></div>
+          <div class="meta"><span>📍 צמוד לקמפינג</span><span>🅿️ חניה חינם</span></div>
+          <p>צעידה קצרה לטיילת הסמוכה לשעת הזהב — נוף עוצר נשימה על העיר העתיקה, הר הזיתים ומדבר יהודה. שטוח וידידותי לקטנטנים.</p>
+          <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Haas+Promenade+Jerusalem" target="_blank" rel="noopener">מפה ↗</a></div>
+        </div>
+      </div>
+
+      <div class="step card reveal">
+        <div class="body">
+          <span class="time">ערב · מנגל</span>
+          <h3>🔥 מנגל ליד הקרוואנים</h3>
+          <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-fun">כיף לילדים</span></div>
+          <p>חגיגי, רגוע, והכי קל לשליטה בצליאק (ראו <a data-view="food">מדריך האוכל</a>). אחר כך מקלות זוהרים, משחקי קלפים והסתכלות בכוכבים. <b>✅ מנגל מותר</b> — יש עמדות ייעודיות.</p>
+          <div class="alt">רוצים לאכול בחוץ? <b>אדום</b> ו<b>אבו שוקרי</b> בתחנה הראשונה פתוחים בערב שישי.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================== SATURDAY =========================== -->
+<div class="view" id="view-saturday">
+  <div class="wrap pad">
+    <h2>🌳 שבת 20/6 — יום רגוע (עיר דוד סגורה)</h2>
+    <p class="muted">לישון, קפה ובוקר נינוח בקרוואנים, וילדים משחקים. ואז בוחרים מהתפריט — <b>אין לחץ, צ'ק־אאוט עד ~21:30</b>, ובסוף נוסעים <b>מערבה בכביש 1</b>, אז עצירה בדרך היא קלה.</p>
+
+    <div class="card reveal">
+      <img class="photo" src="assets/olives-mount.jpg" alt="הר הזיתים" data-cap="הר הזיתים מהאוויר · צילום: Godot13, CC BY-SA 4.0">
+      <div class="body">
+        <h3>⚓ עוגן לכולם: טיילת ארמון הנציב</h3>
+        <div class="tags"><span class="tag t-chill">רגוע ונגיש</span><span class="tag t-all">כולם</span></div>
+        <p>צמוד לקמפינג, <b>חניה חינם</b>, שטוח וידידותי לקטנטנים. שלושה מקטעים מחוברים — <b>טיילת האז</b> (אמצע קלאסי), <b>טיילת שרובר</b> (מערב), <b>טיילת גולדמן</b> (מזרח). נוף, מדשאות וצל — מושלם למשחק חיפוש אוצר. תמיד פתוח וחינם.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:26px">ואז בוחרים (הכול נבדק כפתוח בשבת):</h3>
+    <div class="filters">
+      <span class="lbl">סינון:</span>
+      <span class="chip on" data-filter="all">הכול</span>
+      <span class="chip" data-filter="t-hist">🟡 היסטוריה</span>
+      <span class="chip" data-filter="t-nature">🟢 טבע</span>
+      <span class="chip" data-filter="t-fun">🔴 כיף</span>
+      <span class="chip" data-filter="t-chill">🔵 רגוע</span>
+      <span class="chip" data-filter="t-route">🏁 בדרך הביתה</span>
+    </div>
+
+    <div id="satcards">
+      <div class="card filterable t-hist t-fun reveal">
+        <img class="photo" src="assets/old-city-market.jpg" alt="שוק העיר העתיקה" data-cap="שוק העיר העתיקה · צילום: Willem van de Poll (CC0)">
+        <div class="body">
+          <h3>🏛️ אפשרות א' — בוקר בעיר העתיקה ✅</h3>
+          <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-fun">כיף לילדים</span></div>
+          <p>העיר העתיקה תוססת בשבת כי <b>השוק הערבי פתוח</b>. נכנסים ב<b>שער יפו</b> → <b>מגדל דוד</b> (מוזיאון, ✅ שבת 10:00–14:00) → יורדים דרך <b>השוק</b> → <b>הכותל המערבי</b> (תמיד פתוח וחינם).</p>
+          <div class="why">לכו <b>בבוקר</b> (קריר יותר), קצר יותר עבור הקטנטן/ת, כובעים ומים. <b>צהריים בתחנה הראשונה</b> (5–10 דק', ידידותי לצליאק ופתוח בשבת).</div>
+          <div class="warn">🅿️ <b>חניון קרתא</b> בשער יפו (הקרוב למגדל דוד/שוק). לוודא שפועל בשבת.</div>
+          <div class="links">
+            <a href="https://www.tod.org.il/" target="_blank" rel="noopener">מגדל דוד ↗</a>
+            <a class="map" href="https://www.google.com/maps/search/?api=1&query=Jaffa+Gate+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card filterable t-nature t-chill reveal">
+        <img class="photo" src="assets/gazelle-valley.jpg" alt="עמק הצבאים" data-cap="עמק הצבאים · צילום: Yuvalr, CC BY-SA 3.0">
+        <div class="body">
+          <h3>🦌 אפשרות ב' — עמק הצבאים ✅</h3>
+          <div class="tags"><span class="tag t-nature">טבע ומים</span><span class="tag t-chill">רגוע ונגיש</span></div>
+          <div class="meta"><span>📍 גבעת מרדכי · ~15 דק'</span><span>💰 כניסה חינם</span><span>🕗 כל שעות האור</span></div>
+          <p>שמורת הטבע העירונית הגדולה בישראל — עדר צבאים חופשי, שבילים קלים, מסתורי תצפית ואגמים. טבע מרגיע ומשמח ללא נסיעה גדולה.</p>
+          <div class="warn">🅿️ חניה מוגבלת בכניסה — הגיעו מוקדם יותר.</div>
+          <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Gazelle+Valley+Jerusalem" target="_blank" rel="noopener">מפה ↗</a></div>
+        </div>
+      </div>
+
+      <div class="card filterable t-hist t-chill reveal">
+        <img class="photo" src="assets/temple-model.jpg" alt="דגם ירושלים בבית שני" data-cap="דגם ירושלים בימי בית שני, מוזיאון ישראל · צילום: Berthold Werner (נחלת הכלל)">
+        <div class="body">
+          <h3>🖼️ אפשרות ג' — מוזיאון ישראל ✅</h3>
+          <div class="tags"><span class="tag t-hist">היסטוריה ועתיקות</span><span class="tag t-chill">רגוע ונגיש</span></div>
+          <div class="meta"><span>📍 דרך רופין 11 · ~15 דק'</span><span>🕗 שבת 10:00–17:00</span></div>
+          <p>ברמה עולמית. <b>דגם ירושלים בימי בית שני</b>, <b>היכל הספר</b> (מגילות מדבר יהודה), ו<b>אגף הנוער</b> ההתנסותי — כולם להיטים אצל ילדים. חניה במקום. (מצוין למזגן ביום חם.)</p>
+          <div class="links">
+            <a href="https://www.imj.org.il/he" target="_blank" rel="noopener">מוזיאון ישראל ↗</a>
+            <a class="map" href="https://www.google.com/maps/search/?api=1&query=Israel+Museum+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card filterable t-fun t-chill reveal">
+        <div class="body">
+          <h3>🔬 אפשרות ג2 — מוזיאון המדע בלומפילד ✅</h3>
+          <div class="tags"><span class="tag t-fun">כיף לילדים</span><span class="tag t-chill">רגוע ונגיש</span></div>
+          <div class="meta"><span>📍 גבעת רם · שדרות המוזיאונים 3</span><span>🕗 שבת 10:00–16:00</span></div>
+          <p>מוזיאון מדע התנסותי "ללחוץ על כל כפתור" — מושלם ליום חם/גשום מגיל ~5. צמוד למוזיאון ישראל, אפשר לשלב.</p>
+          <div class="warn">⚠️ לאמת שעות שבת בקיץ.</div>
+          <div class="links">
+            <a href="https://www.mada.org.il/" target="_blank" rel="noopener">מוזיאון המדע ↗</a>
+            <a class="map" href="https://www.google.com/maps/search/?api=1&query=Bloomfield+Science+Museum+Jerusalem" target="_blank" rel="noopener">מפה ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card filterable t-chill t-nature reveal">
+        <div class="body">
+          <h3>🌿 אפשרות ד' — נשארים מקומי ורגוע</h3>
+          <div class="tags"><span class="tag t-chill">רגוע ונגיש</span><span class="tag t-nature">טבע ומים</span></div>
+          <p>פיקניק ומשחקים על מדשאות הטיילת או ביער השלום, וטיול ב<b>פארק המסילה</b> — מסילת הרכבת הישנה שהפכה לטיילת עץ מהתחנה הראשונה דרך בקעה/המושבה הגרמנית. שטוח, מוצל, מצוין לילדים. תמיד פתוח וחינם. לסיים בגלידה ב<b>עמק רפאים</b>.</p>
+          <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=HaMesila+Park+Jerusalem" target="_blank" rel="noopener">מפה ↗</a></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:30px">🏁 בדרך הביתה (כביש 1 מערבה) — בוחרים אחת</h3>
+    <p class="muted">יוצאים מהקמפינג בצהריים, ושוברים את הנסיעה עם עצירה מעולה בכיוון הנכון.</p>
+    <div id="routecards">
+      <div class="card filterable t-route t-nature t-hist reveal">
+        <img class="photo" src="assets/ein-hemed.jpg" alt="גן לאומי עין חמד" data-cap="גן לאומי עין חמד (אקווה בלה) · צילום: Bukvoed, CC BY 3.0">
+        <div class="body">
+          <h3>🏰💦 גן לאומי עין חמד (אקווה בלה) ✅</h3>
+          <div class="tags"><span class="tag t-route">בדרך הביתה</span><span class="tag t-nature">טבע ומים</span><span class="tag t-hist">היסטוריה</span></div>
+          <div class="meta"><span>📍 דקות מכביש 1</span><span>🕗 שבת 08:00–17:00 (קיץ)</span><span class="pr">כניסת גן לאומי</span></div>
+          <p>פנינה מוצלת על <b>נחל כסלון</b>: תעלות ובריכות שבהן <b>ילדים משכשכים במים נקיים</b>, מדשאות, שולחנות פיקניק ו<b>מצודה צלבנית</b>. <b>הבחירה המומלצת ליום חם — מים + צל + היסטוריה.</b></p>
+          <div class="links">
+            <a href="https://www.parks.org.il/reserve-park/%D7%92%D7%9F-%D7%9C%D7%90%D7%95%D7%9E%D7%99-%D7%A2%D7%99%D7%9F-%D7%97%D7%9E%D7%93/" target="_blank" rel="noopener">רשות הטבע והגנים ↗</a>
+            <a class="map" href="https://www.google.com/maps/search/?api=1&query=Ein+Hemed+National+Park" target="_blank" rel="noopener">מפה ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card filterable t-route t-fun reveal">
+        <div class="body">
+          <h3>🎢 קיף צובא ✅</h3>
+          <div class="tags"><span class="tag t-route">בדרך הביתה</span><span class="tag t-fun">כיף לילדים</span></div>
+          <div class="meta"><span>📍 קיבוץ צובא</span><span>🕗 ~09:00–16:00</span><span class="pr">~105₪ אונליין</span></div>
+          <p>פארק שעשועים לגילאי 1–14: רכבות הרים, מסלול נינג'ה, קרוסלות, גלגל ענק, מכוניות מתנגשות, מתקני קפיצה וזון לפעוטות. <b>הכי כיפי אם הילדים רוצים כיף טהור.</b></p>
+          <div class="warn">⚠️ להזמין אונליין מראש ולאמת שהשבת פתוחה לקהל. לשאול אם מתקני המים פועלים בקיץ.</div>
+          <div class="links">
+            <a href="https://kiftzuba.co.il/" target="_blank" rel="noopener">קיף צובא ↗</a>
+            <a class="map" href="https://www.google.com/maps/search/?api=1&query=Kif+Tzuba" target="_blank" rel="noopener">מפה ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card filterable t-route t-nature t-chill reveal">
+        <div class="body">
+          <h3>🌳 פארק איילון–קנדה ✅</h3>
+          <div class="tags"><span class="tag t-route">בדרך הביתה</span><span class="tag t-nature">טבע ומים</span><span class="tag t-chill">רגוע ונגיש</span></div>
+          <div class="meta"><span>📍 ליד לטרון</span><span>🕗 שבת 08:30–17:30</span><span class="pr">חינם</span></div>
+          <p>שביל משפחתי <b>"שביל אמת המים"</b> (1.5/2.6 ק"מ), מעיין <b>עין איילון</b>, עתיקות ומדשאות פיקניק מוצלות. <b>חינם וקליל.</b> (מיני ישראל הסמוך <b>סגור בשבת</b> — לדלג.)</p>
+          <div class="links">
+            <a href="https://www.kkl.org.il/" target="_blank" rel="noopener">קק"ל ↗</a>
+            <a class="map" href="https://www.google.com/maps/search/?api=1&query=Canada+Park+Ayalon" target="_blank" rel="noopener">מפה ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alt reveal" style="margin-top:22px">
+      <b>🌙 מוצ"ש (אם מתמהמהים אחרי ~20:30):</b> <b>התחנה הראשונה</b> תוססת (אוכל ואווירה), או ארוחת ערב הגונה לפני הנסיעה. לאירועים מתוזמנים בדקו את לוח האירועים העירוני (מתחלף — לוודא שזה ב־20/6): <a href="https://www.jerusalem.muni.il/he/experience/allevents/highlight/" target="_blank" rel="noopener">לוח האירועים ↗</a></div>
+
+    <div class="why reveal"><b>זרימה מומלצת לשבת:</b> בוקר רגוע + טיילת → עיר עתיקה + צהריים בתחנה הראשונה → נסיעה מערבה ועצירה ב<b>עין חמד</b> (או קיף צובא / איילון–קנדה) → הביתה.</div>
+  </div>
+</div>
+
+<!-- =========================== FOOD =========================== -->
+<div class="view" id="view-food">
+  <div class="wrap pad">
+    <h2>🍽️ מדריך אוכל — קודם כול ללא גלוטן</h2>
+    <div class="why"><b>אומרים לכל מלצר ברור:</b> <span dir="rtl">"יש לנו ילד/ה עם צליאק — אנחנו צריכים מנה ללא גלוטן, בלי חשש לזיהום צולב."</span> ישראל מודעת מאוד לצליאק; המקומות כאן נותנים מענה אמיתי.</div>
+
+    <h3>מציאות השבת — תכננו את הארוחות לחלונות האלה</h3>
+    <p class="muted">רוב המקומות ה<b>כשרים</b> סגורים משישי ~15:00 עד שבת ~20:30. חלונות אכילה ריאליים:</p>
+    <div class="windows">
+      <div class="win w1"><b>צהרי שישי</b><span>הכול פתוח</span></div>
+      <div class="win w2"><b>ליל שישי</b><span>רק מקומות פתוחי־שבת</span></div>
+      <div class="win w3"><b>שבת ביום</b><span>רק מקומות פתוחי־שבת</span></div>
+      <div class="win w4"><b>מוצ"ש (~20:30)</b><span>הכול נפתח מחדש</span></div>
+    </div>
+
+    <h3 style="margin-top:24px">⭐ מקומות ללא גלוטן ליד הקמפינג (בקעה / תחנה ראשונה / מושבה גרמנית)</h3>
+    <table class="tbl">
+      <tr><th>מקום</th><th>אזור</th><th>ללא גלוטן</th><th>פתוח בשבת?</th></tr>
+      <tr><td><b>בן עמי</b></td><td>בקעה</td><td>"גביע הקדוש" של הצליאק — תפריט GF נפרד + מאפייה</td><td><span class="no">כנראה סגור ביום</span> — ליל/מוצ"ש</td></tr>
+      <tr><td><b>גרנד קפה</b></td><td>דרך בית לחם</td><td>לחם GF, קערת בוקר, עוגת שוקולד GF</td><td>⚠️ לאמת</td></tr>
+      <tr><td><b>אדום</b></td><td>תחנה ראשונה</td><td>עוגת "נמסיס" GF; לבקש מנות עיקריות GF</td><td><span class="ok">✅ כן + ליל שישי</span></td></tr>
+      <tr><td><b>אבו שוקרי (חומוס)</b></td><td>תחנה ראשונה</td><td>כמעט הכול GF חוץ מהפיתה</td><td><span class="ok">✅ סביר</span></td></tr>
+      <tr><td><b>קפית</b></td><td>עמק רפאים</td><td>בית קפה משפחתי עם אופציות GF</td><td><span class="ok">✅ כן</span></td></tr>
+      <tr><td><b>וניליה / קרמה</b></td><td>תחנה / עמק רפאים</td><td>גלידה צליאק/טבעונית — ביטוח לילד שמח</td><td><span class="ok">✅ כן</span></td></tr>
+    </table>
+    <div class="warn">⚠️ שעות משתנות — <b>התקשרו בבוקר</b> לכל מקום לפני שמסתמכים עליו. <b>התחנה הראשונה</b> היא ברירת המחדל האמינה לשבת (כמה מסעדות פתוחות + "שבת בתחנה" עם פעילויות חינם לילדים).</div>
+
+    <h3 style="margin-top:24px">עוד אפשרויות, לפי מצב</h3>
+    <div class="card"><div class="body">
+      <p>🥗 <b>צהריים בעיר העתיקה (אם בחרתם אפשרות א'):</b> <b>חומוס אבו שוקרי</b> ו<b>חומוס לינא</b> ברובע המוסלמי פתוחים בשבת — חומוס/סלטים (טבעית GF חוץ מהפיתה — הביאו פיתה GF מגלולס).</p>
+      <p>🍳 <b>בוקר/בראנץ' (מושבה גרמנית–עמק רפאים, פתוח בשבת):</b> <b>קפית</b>, <b>גרנד קפה</b> ובתי הקפה בעמק רפאים — ארוחות בוקר משפחתיות עם לחם GF לפי בקשה.</p>
+      <p>🥤 <b>חטיף מהיר לילדים (בד"כ בטוח GF):</b> בארי שייקים כמו <b>רי־בר</b>, פרוזן יוגורט, וגלידה (<b>וניליה/קרמה</b>).</p>
+      <p>🧺 <b>פיקניק לפארקים (דרך הביתה בשבת):</b> עין חמד / איילון–קנדה / קיף צובא — קררו מבעוד מועד: לחמניות GF + נקניק/גבינה, ירקות, פירות, חטיפים GF, יוגורט.</p>
+      <p>🌙 <b>ארוחת מוצ"ש (אחרי ~20:30 הכול נפתח):</b> רגע מצוין ל"גביע הקדוש" <b>בן עמי (בקעה)</b> או ארוחה מלאה לפני הנסיעה.</p>
+    </div></div>
+
+    <div class="warn"><b>כשר מול פתוח־בשבת — הכלל המעשי:</b> מקומות הצליאק הייעודיים הטובים (בן עמי, מוזס, אגס ותפוח) <b>כשרים וסגורים</b> מליל שישי עד מוצ"ש. הפתוחים בשבת הם <b>התחנה הראשונה, בתי קפה במושבה הגרמנית, ומסעדות העיר העתיקה</b>. תכננו בהתאם, והתקשרו באותו יום.</div>
+
+    <h3 style="margin-top:24px">🛒 קניות ללא גלוטן (לפני שבת — סגור בשבת)</h3>
+    <div class="card"><div class="body">
+      <p>🥖 <b>גלולס (Gluless)</b> — חנות GF ייעודית, מאות מוצרים. סניפים בצומת אורנים ובמחנה יהודה. לחמניות/פיתות GF, חטיפים, פריטי בוקר ועוגיות למנגל ולדרך.</p>
+      <p>🧁 <b>ברקת</b> — קונדיטוריית GF, יד חרוצים 14 — לחם/מאפים ללא גלוטן.</p>
+    </div></div>
+
+    <h3 style="margin-top:24px">🔥 מנגל ליל שישי בקמפינג — ✅ מותר ובטוח לצליאק</h3>
+    <div class="card"><div class="body">
+      <p>בקמפינג יש <b>עמדות מנגל ייעודיות</b>, מטבח שדה משותף, שולחנות מוצלים, שקעי חשמל ומטבחון.</p>
+      <p>✅ <b>טבעית ללא גלוטן:</b> בשר/עוף טרי או במרינדה (לוודא שאין סויה/קמח), קבב בלי פירורי לחם, ירקות, תירס, תפו"א בנייר כסף, סלטים (בלי קרוטונים), אורז.</p>
+      <p>🥖 <b>הביאו לחמניות/פיתות GF</b> (גלולס) לילד/ה והקפידו על הפרדה פיזית.</p>
+      <p>🛡️ <b>מניעת זיהום צולב:</b> צולים את מנות ה־GF <b>ראשונות</b> על נייר כסף נקי; צלחת, מלקחיים וכף הגשה <b>נפרדים</b>; להרחיק לחם/פירורים רגילים.</p>
+      <p>🍫 <b>קינוח GF קל:</b> פירות, מרשמלו, עוגיות GF, גלידה.</p>
+    </div></div>
+  </div>
+</div>
+
+<!-- =========================== INFO =========================== -->
+<div class="view" id="view-info">
+  <div class="wrap pad">
+    <h2>🧭 מידע ולוגיסטיקה</h2>
+
+    <h3>האילוצים הגדולים (לקרוא קודם)</h3>
+    <div class="card"><div class="body">
+      <p>🕯️ <b>שבת בירושלים 19–20/6:</b> כניסת שבת <b>שישי 19:07</b> · צאת שבת <b>שבת ~20:30</b> · פרשת <b>חוקת</b>.</p>
+      <p>🏕️ <b>צ'ק־אין:</b> שישי 13:00 עד שעתיים לפני שבת (~17:00). <b>אין צ'ק־אין בשבת.</b> <b>צ'ק־אאוט:</b> מוצ"ש עד שעה אחרי צאת השבת (~21:30). ללא כלבים, ללא עישון. ✅ מנגל מותר.</p>
+      <p>🏛️ <b>עיר דוד:</b> שישי 08:00–14:00 (כניסה אחרונה לנקבה ~12:30) · <b>שבת סגור</b>. 👉 כל פעילות עיר דוד חייבת להיות בבוקר שישי.</p>
+      <p>🎟️ <b>קודי הנחה:</b> יש לכם קופונים במייל ההזמנה לסיורים המודרכים ולאומגה — הזינו אותם בקופה באתר עיר דוד.</p>
+    </div></div>
+
+    <h3 style="margin-top:24px">📋 צ'ק־ליסט לפני הטיול</h3>
+    <div class="progress"><i id="pg-pre"></i></div>
+    <ul class="check" id="ck-pre" data-key="jlm-pre">
+      <li><span class="box">✓</span><span class="txt">להזמין סיור מודרך עיר דוד + נקבת חזקיהו לשישי בבוקר (9 אנשים) + להזין קודי הנחה</span></li>
+      <li><span class="box">✓</span><span class="txt">להחליט נקבה רטובה / יבשה לכל אחד · לארוז נעלי מים + פנס</span></li>
+      <li><span class="box">✓</span><span class="txt">להירשם מראש לקבלת שבת בחווה בגיא (12:00–14:00)</span></li>
+      <li><span class="box">✓</span><span class="txt">לאמת את גיל הילד/ה הקטן/ה (3 או 4) לפעילויות מותנות־גיל</span></li>
+      <li><span class="box">✓</span><span class="txt">לקנות מצרכים ללא גלוטן בגלולס לפני שבת (סגור בשבת)</span></li>
+    </ul>
+
+    <h3 style="margin-top:14px">🎒 רשימת ציוד</h3>
+    <div class="progress"><i id="pg-pack"></i></div>
+    <ul class="check" id="ck-pack" data-key="jlm-pack">
+      <li><span class="box">✓</span><span class="txt">נעלי מים / סנדלים סגורים (יירטבו) + פנס/פנס ראש לזוג</span></li>
+      <li><span class="box">✓</span><span class="txt">בגדים להחלפה לילדים · שקית אטומה לטלפונים בנקבה</span></li>
+      <li><span class="box">✓</span><span class="txt">כובעים, קרם הגנה, הרבה מים (יוני = חם)</span></li>
+      <li><span class="box">✓</span><span class="txt">צידנית + קרח, צלחות/סכו"ם, שקיות אשפה</span></li>
+      <li><span class="box">✓</span><span class="txt">מנגל: פחמים/מצית, נייר כסף, מלקחיים, סט הגשה GF נפרד</span></li>
+      <li><span class="box">✓</span><span class="txt">מצרכי GF מגלולס (נקנו לפני שבת)</span></li>
+      <li><span class="box">✓</span><span class="txt">כדור, פריזבי, בועות סבון, מקלות זוהרים</span></li>
+      <li><span class="box">✓</span><span class="txt">קלפים/משחקים קומפקטיים, ערכת ציור, ספרים</span></li>
+      <li><span class="box">✓</span><span class="txt">רמקול בלוטות' (טעון) + מטעני נייד</span></li>
+      <li><span class="box">✓</span><span class="txt">כרטיסי חיפוש אוצר / בינגו טבע מודפסים</span></li>
+    </ul>
+
+    <h3 style="margin-top:24px">🗺️ חניות — דף עזר</h3>
+    <table class="tbl">
+      <tr><th>תחנה</th><th>Waze / כתובת</th><th>חניה</th></tr>
+      <tr><td><b>קמפינג</b></td><td>קמפינג יער השלום</td><td><span class="ok">✅ חינם במקום</span></td></tr>
+      <tr><td><b>עיר דוד (שישי)</b></td><td>עיר דוד / שער האשפות</td><td>חניון גבעתי (בתשלום, מוגבל) — מוקדם; עודף: חניון הר ציון (~9 דק' הליכה)</td></tr>
+      <tr><td><b>קבלת שבת – חווה בגיא</b></td><td>ליד התחנה הראשונה</td><td>ליד התחנה הראשונה (~17₪/יום) או רחוב</td></tr>
+      <tr><td><b>טיילת</b></td><td>טיילת ארמון הנציב</td><td><span class="ok">✅ חינם</span> (לא ברחוב דניאל ינובסקי)</td></tr>
+      <tr><td><b>עיר עתיקה (שבת)</b></td><td>שער יפו</td><td>חניון קרתא — ⚠️ לאמת פעילות בשבת</td></tr>
+      <tr><td><b>עמק הצבאים</b></td><td>עמק הצבאים</td><td>חניון כניסה (מוגבל) — מוקדם</td></tr>
+      <tr><td><b>מוזיאון ישראל / בלומפילד</b></td><td>דרך רופין 11 / שד' המוזיאונים 3</td><td>חניוני המקום (גבעת רם)</td></tr>
+      <tr><td><b>עין חמד (כביש 1)</b></td><td>גן לאומי עין חמד</td><td>חניון הגן הלאומי</td></tr>
+      <tr><td><b>פארק איילון–קנדה</b></td><td>פארק קנדה / עין איילון</td><td><span class="ok">✅ חניון חינם</span></td></tr>
+    </table>
+    <div class="warn">❗ ה<b>שאטל החינמי</b> מהתחנה הראשונה לעיר העתיקה <b>הופסק</b> ("השירות הופסק עד להודעה חדשה") — אל תסמכו עליו; תיסעו ברכב.</div>
+  </div>
+</div>
+
+<!-- =========================== TRIVIA =========================== -->
+<div class="view" id="view-trivia">
+  <div class="wrap pad">
+    <h2>🏆 טריוויה וסיפורים לילדים</h2>
+    <p class="muted">חוברת כיף למשפחות סולומון וצמרת־איגר 🎒 — לדרך, ליד המנגל, או תוך כדי הסיור.</p>
+    <div class="subtabs">
+      <div class="subtab on" data-pane="game">🎮 התחרות הגדולה</div>
+      <div class="subtab" data-pane="stories">📖 סיפורים</div>
+      <div class="subtab" data-pane="findit">🔍 מצאו את זה</div>
+    </div>
+
+    <!-- ===== GAME PANE ===== -->
+    <div class="pane on" id="pane-game">
+      <div class="gamewrap">
+        <div class="score">
+          <div class="team" id="teamA"><div class="nm" id="nameA">משפחת סולומון</div><div class="sc" id="scA">0</div><button class="editteam" data-team="A">שנה שם</button></div>
+          <div class="team" id="teamB"><div class="nm" id="nameB">משפחת צמרת־איגר</div><div class="sc" id="scB">0</div><button class="editteam" data-team="B">שנה שם</button></div>
+        </div>
+        <div class="roundbar" id="roundbar"></div>
+        <div id="gameArea"></div>
+        <div class="gnav">
+          <button id="prevQ">◀ הקודמת</button>
+          <span id="qpos"></span>
+          <button id="nextQ">הבאה ▶</button>
+        </div>
+      </div>
+      <div class="tip">💡 טיפ להוגנות: תנו לקטנטנים (3–4) לענות בעיקר על 🟢 ועל סבב הציור, ולגדולים את 💎 ואת סבב הברק. ככה כולם אלופים! 💛</div>
+    </div>
+
+    <!-- ===== STORIES PANE ===== -->
+    <div class="pane" id="pane-stories"></div>
+
+    <!-- ===== FIND-IT PANE ===== -->
+    <div class="pane" id="pane-findit">
+      <p class="muted">מי שמוצא ראשון — נקודה! (אפשר לשחק תוך כדי הביקור). לוחצים כדי לסמן.</p>
+      <ul class="findit" id="finditlist"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- =========================== MEDIA =========================== -->
+<div class="view" id="view-media">
+  <div class="wrap pad">
+    <h2>🎧 מדיה לדרך ולפני הטיול</h2>
+    <p class="muted">פודקאסטים לנסיעה 🚗 וסרטונים לצפייה לפני — כדי שהילדים יגיעו לעיר דוד עם רקע ויתחברו הרבה יותר. ⚠️ שמות עשויים להשתנות — חפשו את השם ב־Spotify / Apple / YouTube.</p>
+
+    <h3>🎧 פודקאסטים לנסיעה</h3>
+    <div class="mcard"><h4>"הסודות של עיר דוד" <span class="badge">הכי רלוונטי</span></h4><div class="src">עיר דוד · Spotify / Apple · באתר עיר דוד</div><p>סדרת פודקאסט למשפחה (~7 פרקים) על דוד המלך, בית המקדש הראשון, המצור של אשור ובבל, וגילוי העיר מחדש. הקרינו פרק בנסיעה — והילדים ייכנסו לנקבה כשהם כבר "מכירים" את הסיפור.</p></div>
+    <div class="mcard"><h4>"סיפורי תנ״ך לילדים" — עקיבא צוקרמן</h4><div class="src">Apple Podcasts / Podbean</div><p>סיפורי התנ״ך מותאמים לילדים — כולל ספר מלכים (דוד, שלמה, חזקיהו) שמתחבר ישירות לעיר דוד.</p></div>
+    <div class="mcard"><h4>"היסטוריה לילדים" (כאן)</h4><div class="src">kan.org.il</div><p>ממציאים, מנהיגים ומתקני עולם — היסטוריה בגובה העיניים. מצוין לנסיעה כללית.</p></div>
+    <div class="mcard"><h4>"עושים היסטוריה" (לגדולים/הורים)</h4><div class="src">osimhistoria.com</div><p>פרקים על היסטוריה יהודית וירושלים — מתאים מגיל 10+ ולהורים שרוצים רקע מעמיק.</p></div>
+
+    <h3 style="margin-top:24px">📺 סרטונים לראות לפני (5–15 דק')</h3>
+    <div class="mcard"><h4>הסרטונים של עיר דוד <span class="badge">מומלץ</span></h4><div class="src">cityofdavid.org.il/videos/ · גלריית וידאו · יוטיוב עיר דוד</div><p>אוסף מרתק — כולל איך הילד יעקב אליהו גילה את כתובת השילוח, ולמה הנקבה פלא הנדסי.</p></div>
+    <div class="mcard"><h4>"טיול בנקבת השילוח" — תצוגה מקדימה</h4><div class="src">YouTube — חפשו "נקבת השילוח" / "נקבת חזקיהו טיול"</div><p>איך נראית ההליכה בתוך הנקבה עם המים — מצוין כדי להחליט מי הולך רטוב ומי יבש.</p></div>
+    <div class="mcard"><h4>מכון מגלי״ם (Megalim)</h4><div class="src">megalim.org.il</div><p>סרטונים שמסבירים את הממצאים הארכיאולוגיים בעיר דוד בצורה נגישה.</p></div>
+    <div class="mcard"><h4>"בית המקדש" — סדרת אנימציה לילדים</h4><div class="src">YouTube — @beit_hamikdas · "עולם הילדים" הידברות</div><p>אנימציה שממחישה איך נראה בית המקדש — מתחבר לשלמה המלך ולכותל.</p></div>
+
+    <div class="why" style="margin-top:18px"><b>הצעה לסדר:</b> שבוע לפני — 1–2 סרטונים קצרים. בנסיעה (בוקר שישי) — פרק מ"הסודות של עיר דוד" + טריוויה. בדרך חזרה — פרק רגוע לסיכום. 💡 הורידו לאופליין — קליטה בהרי ירושלים לא תמיד יציבה.</div>
+  </div>
+</div>
+
+<!-- =========================== MAP =========================== -->
+<div class="view" id="view-map">
+  <div class="wrap pad">
+    <h2>🗺️ מפת התחנות</h2>
+    <p class="muted">כל התחנות על מפה אחת. שימו לב כמה קרוב הכול בדרום־מזרח ירושלים. לחצו על סמן לקישורי ניווט.</p>
+    <div class="maplegend">
+      <span><i class="dotm" style="background:#c25b35"></i> קמפינג</span>
+      <span><i class="dotm" style="background:#d99a2b"></i> שישי</span>
+      <span><i class="dotm" style="background:#2f7fb3"></i> שבת (ירושלים)</span>
+      <span><i class="dotm" style="background:#7a8b3c"></i> בדרך הביתה (מערב)</span>
+    </div>
+    <div id="jmap"></div>
+    <p class="muted" style="font-size:12px; margin-top:8px">מפה: © OpenStreetMap contributors · Leaflet. דורש חיבור לאינטרנט.</p>
+  </div>
+</div>
+
+<!-- =========================== FOOTER =========================== -->
+<footer>
+  <div class="wrap">
+    <h4>🏛️ ירושלים '26 — סוף שבוע משפחתי</h4>
+    <p>נבנה באהבה למשפחות סולומון וצמרת־איגר. מחירים, שעות וזמינות הם הערכות ל־2026 — <b>אמתו קרוב לתאריך</b>, והתקשרו למסעדות בבוקר אותו יום.</p>
+    <p style="font-size:12px; color:#9aa6c2">🔒 דף ציבורי — ללא מספרי הזמנה, קודי הנחה אישיים, טלפונים פרטיים או פרטי תשלום.</p>
+    <h4 style="margin-top:18px; font-size:14px">📷 קרדיט תמונות (Wikimedia Commons)</h4>
+    <div class="creds" id="creds"></div>
+  </div>
+</footer>
+
+<!-- lightbox + confetti -->
+<div class="lb" id="lightbox"><span class="x">×</span><img id="lbimg" src="" alt=""><div class="cap" id="lbcap"></div></div>
+<canvas id="confetti"></canvas>
+
+<script>
+/* ================= ROUTER ================= */
+function show(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+id));
+  document.querySelectorAll('nav a.tab').forEach(a=>a.classList.toggle('on', a.dataset.view===id));
+  window.scrollTo({top:0,behavior:'smooth'});
+  try{ if(location.hash!=='#'+id) history.replaceState(null,'','#'+id); }catch(e){}
+  if(id==='map') initMap();
+  blip();
+}
+document.querySelectorAll('[data-view]').forEach(el=>{
+  el.addEventListener('click',e=>{ e.preventDefault(); show(el.dataset.view); });
+});
+window.addEventListener('hashchange',()=>show((location.hash.slice(1))||'home'));
+
+/* ================= SOUND (Web Audio) ================= */
+let AC=null, soundOn=false, ambGain=null, ambNodes=[];
+function ac(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return AC; }
+function tone(freq,dur,type,vol,when){ const c=ac(); if(!c||!soundOn) return; const t=(when||c.currentTime); const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq; o.connect(g); g.connect(c.destination); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol||0.18,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.25)); o.start(t); o.stop(t+(dur||0.25)+0.02); }
+function ding(){ const c=ac(); if(!c) return; tone(659,0.16,'sine',0.2); tone(988,0.28,'sine',0.18,c.currentTime+0.09); }
+function buzz(){ tone(150,0.28,'square',0.13); }
+function blip(){ tone(520,0.06,'triangle',0.07); }
+function fanfare(){ const c=ac(); if(!c) return; const n=[523,659,784,1047]; n.forEach((f,i)=>tone(f,0.3,'triangle',0.16,c.currentTime+i*0.12)); }
+function startAmbient(){ const c=ac(); if(!c) return; ambGain=c.createGain(); ambGain.gain.value=0.0; ambGain.connect(c.destination);
+  [110,164.8,220].forEach((f,i)=>{ const o=c.createOscillator(); o.type='sine'; o.frequency.value=f; const g=c.createGain(); g.gain.value=i===0?0.05:0.025; o.connect(g); g.connect(ambGain); o.start(); ambNodes.push(o);
+    const l=c.createOscillator(); l.frequency.value=0.06+i*0.02; const lg=c.createGain(); lg.gain.value=0.015; l.connect(lg); lg.connect(g.gain); l.start(); ambNodes.push(l); });
+  ambGain.gain.linearRampToValueAtTime(0.5,c.currentTime+2);
+}
+function stopAmbient(){ const c=ac(); if(ambGain&&c){ ambGain.gain.linearRampToValueAtTime(0,c.currentTime+0.6);} ambNodes.forEach(o=>{try{o.stop(c.currentTime+0.7);}catch(e){}}); ambNodes=[]; ambGain=null; }
+document.getElementById('sndToggle').addEventListener('click',function(){
+  soundOn=!soundOn; this.textContent=soundOn?'🔊':'🔇'; const c=ac(); if(c&&c.state==='suspended')c.resume();
+  if(soundOn){ ding(); startAmbient(); } else { stopAmbient(); }
+});
+
+/* ================= COUNTDOWN + CLOCK ================= */
+const TARGET=new Date('2026-06-19T08:00:00+03:00').getTime();
+function tickCD(){
+  const d=TARGET-Date.now();
+  const set=(id,v)=>{const e=document.getElementById(id); if(e)e.textContent=v;};
+  if(d<=0){ set('cd-d','0');set('cd-h','0');set('cd-m','0');set('cd-s','0'); return; }
+  const dd=Math.floor(d/864e5),hh=Math.floor(d%864e5/36e5),mm=Math.floor(d%36e5/6e4),ss=Math.floor(d%6e4/1e3);
+  set('cd-d',dd);set('cd-h',hh);set('cd-m',mm);set('cd-s',ss);
+}
+function tickClock(){
+  try{ const t=new Intl.DateTimeFormat('he-IL',{timeZone:'Asia/Jerusalem',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());
+    const e=document.getElementById('ilclock'); if(e)e.textContent=t; }catch(e){}
+}
+tickCD(); tickClock(); setInterval(tickCD,1000); setInterval(tickClock,10000);
+
+/* ================= STARS ================= */
+(function(){ const s=document.getElementById('stars'); if(!s)return; let h='';
+  for(let i=0;i<60;i++){ h+=`<i style="left:${Math.random()*100}%;top:${Math.random()*55}%;animation-delay:${(Math.random()*4).toFixed(2)}s"></i>`; }
+  s.innerHTML=h;
+})();
+
+/* ================= SCROLL REVEAL ================= */
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in'); io.unobserve(e.target);}})},{threshold:0.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ================= LIGHTBOX ================= */
+const lb=document.getElementById('lightbox'),lbimg=document.getElementById('lbimg'),lbcap=document.getElementById('lbcap');
+document.querySelectorAll('img.photo').forEach(img=>{
+  img.addEventListener('click',()=>{ lbimg.src=img.src; lbcap.textContent=img.dataset.cap||img.alt||''; lb.classList.add('on'); });
+});
+lb.addEventListener('click',()=>lb.classList.remove('on'));
+
+/* ================= SATURDAY FILTERS ================= */
+document.querySelectorAll('#view-saturday .chip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    document.querySelectorAll('#view-saturday .chip').forEach(c=>c.classList.remove('on'));
+    chip.classList.add('on'); const f=chip.dataset.filter; blip();
+    document.querySelectorAll('#view-saturday .filterable').forEach(card=>{
+      card.style.display=(f==='all'||card.classList.contains(f))?'':'none';
+    });
+  });
+});
+
+/* ================= CHECKLISTS (localStorage) ================= */
+function setupCheck(ulId,pgId){
+  const ul=document.getElementById(ulId); if(!ul)return; const key=ul.dataset.key;
+  const saved=JSON.parse(localStorage.getItem(key)||'[]');
+  const items=[...ul.querySelectorAll('li')];
+  function upd(){ const done=items.filter(li=>li.classList.contains('done')).length;
+    const pct=items.length?Math.round(done/items.length*100):0; const bar=document.getElementById(pgId); if(bar)bar.style.width=pct+'%';
+    localStorage.setItem(key,JSON.stringify(items.map(li=>li.classList.contains('done')))); }
+  items.forEach((li,i)=>{ if(saved[i])li.classList.add('done');
+    li.addEventListener('click',()=>{ li.classList.toggle('done'); if(li.classList.contains('done'))ding(); upd(); }); });
+  upd();
+}
+setupCheck('ck-pre','pg-pre'); setupCheck('ck-pack','pg-pack');
+
+/* ================= MAP ================= */
+let mapInited=false, jmap=null, mapTries=0;
+const PLACES=[
+  {n:'קמפינג יער השלום',c:[31.7549,35.2375],k:'camp',d:'הלינה · חניה חינם'},
+  {n:'עיר דוד + נקבת חזקיהו',c:[31.7740,35.2356],k:'fri',d:'שישי בוקר · הסיור והנקבה'},
+  {n:'בריכת השילוח',c:[31.7706,35.2353],k:'fri',d:'יציאת הנקבה'},
+  {n:'התחנה הראשונה / קבלת שבת',c:[31.7659,35.2233],k:'fri',d:'קבלת שבת בחווה בגיא + צהריים'},
+  {n:'טיילת ארמון הנציב',c:[31.7530,35.2300],k:'fri',d:'שקיעה · חניה חינם'},
+  {n:'שער יפו + מגדל דוד',c:[31.7766,35.2278],k:'sat',d:'שבת בוקר · עיר עתיקה'},
+  {n:'הכותל המערבי',c:[31.7767,35.2345],k:'sat',d:'תמיד פתוח'},
+  {n:'עמק הצבאים',c:[31.7626,35.1935],k:'sat',d:'שמורת טבע עירונית'},
+  {n:'מוזיאון ישראל',c:[31.7720,35.2040],k:'sat',d:'דגם בית שני + היכל הספר'},
+  {n:'מוזיאון המדע בלומפילד',c:[31.7770,35.1980],k:'sat',d:'מדע התנסותי'},
+  {n:'פארק המסילה',c:[31.7585,35.2185],k:'sat',d:'טיילת עץ'},
+  {n:'גן לאומי עין חמד',c:[31.8050,35.1330],k:'west',d:'מים + מצודה צלבנית'},
+  {n:'קיף צובא',c:[31.7905,35.1080],k:'west',d:'פארק שעשועים'},
+  {n:'פארק איילון–קנדה',c:[31.8390,35.0150],k:'west',d:'שביל אמת המים'},
+];
+const KCOL={camp:'#c25b35',fri:'#d99a2b',sat:'#2f7fb3',west:'#7a8b3c'};
+function initMap(){
+  if(mapInited){ if(jmap)setTimeout(()=>jmap.invalidateSize(),100); return; }
+  if(typeof L==='undefined'){ if(mapTries++<25){ setTimeout(initMap,300);} else { document.getElementById('jmap').innerHTML='<p style="padding:20px;text-align:center" class="muted">לא ניתן לטעון את המפה (נדרש אינטרנט). השתמשו בקישורי ה־Waze בכרטיסים.</p>'; } return; }
+  mapInited=true;
+  jmap=L.map('jmap',{scrollWheelZoom:false}).setView([31.775,35.18],12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(jmap);
+  const grp=[];
+  PLACES.forEach(p=>{
+    const col=KCOL[p.k]||'#888';
+    const m=L.circleMarker(p.c,{radius:p.k==='camp'?11:9,color:'#fff',weight:2,fillColor:col,fillOpacity:1}).addTo(jmap);
+    const q=encodeURIComponent(p.n);
+    m.bindPopup(`<b>${p.n}</b><br>${p.d}<br><a href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank">Google Maps ↗</a> · <a href="https://waze.com/ul?q=${q}" target="_blank">Waze ↗</a>`);
+    grp.push(p.c);
+  });
+  jmap.fitBounds(grp,{padding:[40,40]});
+  setTimeout(()=>jmap.invalidateSize(),200);
+}
+
+/* ================= IMAGE CREDITS ================= */
+const CREDITS=[
+ ['פנורמת העיר העתיקה וכיפת הסלע','Adam Jones','CC BY-SA 2.0','https://commons.wikimedia.org/wiki/File:Panorama_with_Dome_of_the_Rock_-_Temple_Mount_-_Old_City_-_East_Jerusalem_(5684536532).jpg'],
+ ['הכותל המערבי','יהודה גרינברג (PikiWiki)','CC BY 2.5','https://commons.wikimedia.org/wiki/File:PikiWiki_Israel_47231_Revealing_of_the_Western_Wall_.jpg'],
+ ['עיר דוד','Matson Collection','נחלת הכלל','https://commons.wikimedia.org/wiki/File:City_of_David,_Southern_Wall_Temple_Mount_Kidron_Valley_Ophel_and_Siloam.jpg'],
+ ['בתוך נקבת חזקיהו','Ian Scott','CC BY-SA 2.0','https://commons.wikimedia.org/wiki/File:Inside_Hezekiah%27s_Tunnel-A_(3782613123).jpg'],
+ ['מגדל דוד','Bukvoed','CC BY 4.0','https://commons.wikimedia.org/wiki/File:Jerusalem-Tower-of-David-V2-348.jpg'],
+ ['התחנה הראשונה','Danny Gershoni','CC BY-SA 4.0','https://commons.wikimedia.org/wiki/File:First_power_station_-_Jerusalem_1.jpg'],
+ ['טיילת האז','Djampa','CC BY-SA 4.0','https://commons.wikimedia.org/wiki/File:Jerusalem_Haas_Promenade_Belvedere_Hanoucca.jpg'],
+ ['עין חמד','Bukvoed','CC BY 3.0','https://commons.wikimedia.org/wiki/File:Ein-Chemed-143.jpg'],
+ ['דגם בית שני, מוזיאון ישראל','Berthold Werner','נחלת הכלל','https://commons.wikimedia.org/wiki/File:Jerusalem_Modell_BW_2.JPG'],
+ ['עמק הצבאים','Yuvalr','CC BY-SA 3.0','https://commons.wikimedia.org/wiki/File:Gazelle_Valley_in_Jerusalem,_as_seen_from_the_south.jpg'],
+ ['שוק העיר העתיקה','Willem van de Poll','CC0','https://commons.wikimedia.org/wiki/File:Souk_van_boven_gezien,_Bestanddeelnr_255-5299.jpg'],
+ ['הר הזיתים','Godot13','CC BY-SA 4.0','https://commons.wikimedia.org/wiki/File:2013-Aerial-Mount_of_Olives.jpg'],
+];
+document.getElementById('creds').innerHTML=CREDITS.map(c=>`<div>${c[0]} — <a href="${c[3]}" target="_blank" rel="noopener">${c[1]}</a> · ${c[2]}</div>`).join('');
+
+/* ================= STORIES + FIND-IT DATA ================= */
+const STORIES=[
+ {img:'assets/city-of-david.jpg',cap:'עיר דוד · Matson Collection (נחלת הכלל)',title:'דוד והעיר הנסתרת',
+  tale:[`לפני שלושת אלפים שנה עמד על הגבעה הזאת מבצר חזק של עם בשם <b>היבוסים</b>. החומות שלהם היו כל כך גבוהות, שהיבוסים עמדו עליהן, צחקו על דוד וצעקו: "אפילו עיוורים ופיסחים יספיקו לשמור על העיר — אתה לעולם לא תיכנס!" 😏`,
+   `אבל לדוד היה ראש חכם. הוא גילה <b>סוד</b>: לעיר היה <b>צינור מים נסתר</b> שהוביל מהמעיין שבתחתית הגבעה אל תוך החומות. בזמן שכולם שמרו על השערים, לוחם אמיץ בשם <b>יואב</b> טיפס בשקט דרך פיר המים הצר והחשוך — ועלה מבפנים! 😲 לפני שהיבוסים הבינו מה קרה, העיר כבר הייתה של דוד.`,
+   `דוד הפך אותה לבירה שלו, הביא אליה את ארון הברית, וקרא לה בשמו: <b>עיר דוד</b>. 👑 (ואולי הצינור הנסתר הוא בדיוק "פיר וורן" שרואים שם היום!)`],
+  qs:[['🟢','בת כמה ירושלים בערך?','יותר מ-3,000 שנה! 🤯'],['🔵','מי הפך את ירושלים לבירה?','דוד המלך — ולכן "עיר דוד".'],['🔵','מאיזו אבן בנויה העיר העתיקה?','אבן ירושלמית זהובה — ורודה־זהובה בשקיעה. 🌅']]},
+ {img:'assets/hezekiah-tunnel.jpg',cap:'בתוך נקבת חזקיהו · Ian Scott, CC BY-SA 2.0',title:'המלך שניצח בלי להילחם',
+  tale:[`יום אחד קיבל <b>המלך חזקיהו</b> ידיעה מפחידה: <b>סנחריב</b>, מלך <b>אשור</b> — בעל הצבא הכי חזק בעולם דאז — צועד ישר לירושלים. הוא כבר כבש עיר אחרי עיר. 😨`,
+   `אבל חזקיהו לא בזבז רגע. הוא הבין: "אם נישאר בלי מים — אנחנו אבודים. ואם האויב ימצא את המעיין — הוא ינצח." אז נתן פקודה מטורפת: <b>"חפרו מנהרה דרך ההר! הכניסו את כל המים פנימה, והסתירו את המעיין מבחוץ!"</b>`,
+   `שתי קבוצות חופרים חצבו — אחת מכל צד — לאור עששיות, במכושים, בחושך ובלחות. ואז יום אחד מישהו קפא והרים יד: "ששש… אתם שומעים? יש קולות מהצד השני!" 👂 הם חצבו מהר יותר עד ש… <b>בּוּם!</b> המכושים נפגשו, והמים זרמו פנימה. 💦`,
+   `וכשהצבא הענק של סנחריב הגיע — לעיר היו מים, ולחיילים שבחוץ לא היה כלום. הצבא נסוג, וירושלים ניצלה. ניצחון ענק — בזכות <b>תכנון חכם, מהירות וקצת אומץ</b>. 💪`],
+  qs:[['🟢','מה הכי חשוב שעיר צריכה כדי לחיות?','מים! בעיר דוד — ממעיין הגיחון.'],['🔵','באורך כמה מטרים הנקבה?','בערך 533 מטר — יותר מ-5 מגרשי כדורגל! 😲'],['🔵','מה קרה כששתי קבוצות החופרים נפגשו?','נפגשו בדיוק באמצע ההר — בלי GPS, רק אוזניים טובות! 👷']]},
+ {img:'assets/city-of-david.jpg',cap:'עיר דוד · Matson Collection (נחלת הכלל)',title:'הילד שגילה מסר בן 2,700 שנה',
+  tale:[`יום קיץ חם לפני בערך 150 שנה. ילד בשם <b>יעקב אליהו</b> אהב לשכשך במים הקרירים בתוך הנקבה החשוכה. הוא צעד פנימה עם נר קטן, המים עד הברכיים, הקירות מטפטפים.`,
+   `פתאום אצבעותיו נתקלו במשהו <b>לא חלק</b> — שקעים, קווים, צורות. הוא קירב את הנר הרועד… <b>אותיות!</b> ✍️ מישהו חקק מילים עמוק בתוך ההר.`,
+   `החוקרים נדהמו: זאת הייתה <b>כתובת השילוח</b> — הודעה שכתבו <b>החופרים של חזקיהו עצמם</b> ברגע שסיימו! הם סיפרו איך שמעו זה את קול חברו דרך הסלע. <b>מכתב מהפועלים מלפני 2,700 שנה — ישר אלינו.</b> 🤯`],
+  qs:[['🟢','מה נלך לעשות בתוך ההר?','ללכת בתוך מנהרת מים — נקבת חזקיהו! 🔦'],['🔵','מי גילה את כתובת השילוח?','ילד בשם יעקב אליהו, ששיחק במים.'],['🟢','לאן הגיעו המים בסוף הנקבה?','לבריכת השילוח.']]},
+ {img:'assets/western-wall.jpg',cap:'הכותל המערבי · יהודה גרינברג (PikiWiki), CC BY 2.5',title:'הבית שכולם זכרו',
+  tale:[`<b>שלמה המלך</b>, הבן של דוד, נחשב לחכם באדם. הוא בנה לירושלים <b>בית מקדש</b> מפואר — מאבני ענק, מעצי ארז ריחניים ומזהב נוצץ. הבנייה ארכה <b>שבע שנים</b>! 🏗️`,
+   `שנים אחר כך הגיעו <b>הבבלים</b>, החריבו את המקדש, והגלו את העם רחוק. אבל העם <b>לא שכח</b> את ירושלים לרגע — וכשחזרו, בנו <b>בית מקדש שני</b>.`,
+   `בסוף גם הוא נחרב, בידי הרומאים. אבל <b>קיר אחד</b> מחומת התמך נשאר עומד עד היום — <b>הכותל המערבי</b>. אנשים מכל העולם באים, נוגעים באבנים, ומכניסים <b>פתקים עם משאלות</b> בין הסדקים. 🙏`],
+  qs:[['🟢','מי בנה את בית המקדש הראשון?','שלמה המלך — הבן של דוד.'],['🔵','איך נקרא הקיר שמתפללים לידו?','הכותל המערבי.'],['💎','כמה בתי מקדש היו בירושלים?','שניים — של שלמה, ואחריו השני.']]},
+ {img:'assets/tower-of-david.jpg',cap:'מגדל דוד · Bukvoed, CC BY 4.0',title:'נס קטן של גיבורים גדולים',
+  tale:[`לפני יותר מ-2,000 שנה שלטו כאן ה<b>יוונים</b>, והמלך שלהם אסר על היהודים לקיים את המסורת. לא הוגן? בדיוק! 😤 ואז משפחה אמיצה — <b>המכבים</b> (החשמונאים) — קמה ואמרה: "מספיק!"`,
+   `הם היו <b>מעטים</b> מול <b>צבא ענק</b>, אבל נלחמו בחוכמה ובאומץ — והפתיעו את כולם בניצחון. 🦁 כשחזרו לבית המקדש לטהר אותו, מצאו רק כד שמן זעיר — שמספיק ליום אחד.`,
+   `ואז קרה <b>נס</b>: השמן דלק <b>שמונה ימים</b>! 🔥 לכן בחנוכה מדליקים נרות שמונה לילות, אוכלים סופגניות, ומסובבים סביבון. הכול התחיל כאן, ביהודה.`],
+  qs:[['🔵','איך קראו לממלכה שירושלים הייתה בירתה?','ממלכת יהודה.'],['🟢','איזה חג קשור למכבים?','חנוכה! 🕎'],['🔵','מהו "הקארדו" בעיר העתיקה?','רחוב מסחר עתיק ומקורה עם עמודים.']]},
+ {img:'assets/promenade.jpg',cap:'טיילת האז · Djampa, CC BY-SA 4.0',title:'טיילת עם שלושה שמות טובים',
+  tale:[`כשהבריטים שלטו בארץ, לפני קום מדינת ישראל, גר באזור הזה ה<b>נציב העליון</b> — האדם הכי חשוב מטעם הבריטים — בארמון יפהפה עם נוף לכל ירושלים. 🏛️ עד היום קוראים לאזור "ארמון הנציב".`,
+   `שנים אחר כך, אנשים טובים מכל העולם <b>תרמו כסף</b> כדי לבנות כאן טיילת מטופחת, שכל אחד — עשיר או עני, מקומי או תייר — יוכל ליהנות מהנוף בחינם. 💛 לכן יש לה שלושה חלקים על שם התורמים: <b>האז</b>, <b>שרובר</b> ו<b>גולדמן</b>.`,
+   `בפעם הבאה שאתם עומדים שם ורואים את העיר העתיקה נצבעת בזהב בשקיעה — תגידו תודה בלב לאנשים האלה. 🌅`],
+  qs:[['🟢','איזה הר מפורסם רואים מהטיילת?','הר הזיתים. 🫒'],['💎','מי היה ה"נציב"?','הנציב העליון הבריטי, ששלט בארץ לפני קום המדינה.']]},
+];
+function renderStories(){
+  const wrap=document.getElementById('pane-stories'); if(!wrap)return;
+  wrap.innerHTML=STORIES.map((s,si)=>`
+    <div class="story">
+      <img class="photo" src="${s.img}" alt="${s.title}" data-cap="${s.cap}">
+      <div class="body">
+        <h3>📖 ${s.title}</h3>
+        <div class="tale">${s.tale.map(p=>`<p>${p}</p>`).join('')}</div>
+        <div class="qchips">
+          ${s.qs.map((q,qi)=>`<div class="qchip" data-s="${si}" data-q="${qi}"><div class="q">${q[0]} ${q[1]}</div><div class="a">✅ ${q[2]}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+  // lightbox for story photos
+  wrap.querySelectorAll('img.photo').forEach(img=>img.addEventListener('click',()=>{ lbimg.src=img.src; lbcap.textContent=img.dataset.cap||''; lb.classList.add('on'); }));
+  wrap.querySelectorAll('.qchip').forEach(ch=>ch.addEventListener('click',()=>{ ch.classList.toggle('open'); if(ch.classList.contains('open'))blip(); }));
+}
+const FINDIT=['🔦 אבן עם חריטה/סימן עתיק בעיר דוד','💧 רגע שבו המים מגיעים עד הברכיים בנקבה','🏺 שבר חרס או אבן עתיקה שחשפו הארכיאולוגים','🌉 חומות העיר העתיקה מהטיילת','🫒 הר הזיתים ממול','🐦 ציפור, נמלה בשורה ואבן חלקה (לקטנטנים)'];
+function renderFindit(){
+  const ul=document.getElementById('finditlist'); if(!ul)return;
+  ul.innerHTML=FINDIT.map(t=>`<li>${t}</li>`).join('');
+  ul.querySelectorAll('li').forEach(li=>li.addEventListener('click',()=>{ li.classList.toggle('got'); if(li.classList.contains('got'))ding(); }));
+}
+
+/* ================= TRIVIA GAME ENGINE ================= */
+const ROUNDS=[
+ {id:'tf',name:'נכון / לא נכון',type:'tf',qs:[
+   ['ירושלים בת יותר מ-3,000 שנה.',true],
+   ['דוד המלך בנה את בית המקדש הראשון.',false,'שלמה, הבן שלו, בנה אותו.'],
+   ['בנקבת חזקיהו יש מים שאפשר ללכת בתוכם.',true],
+   ['את ירושלים דוד כבש מהפלשתים.',false,'מהיבוסים.'],
+   ['הכותל המערבי הוא חלק מחומת תמך של הר הבית.',true],
+   ['חנוכה קשור לסיפור המכבים.',true],
+   ['מעיין הגיחון נמצא על ראש ההר.',false,'בתחתית הגבעה.'],
+   ['את נקבת חזקיהו חפרו משני הכיוונים ונפגשו באמצע.',true],
+   ['הר הזיתים נראה מהטיילת.',true],
+   ['בית המקדש השני נבנה לפני הראשון.',false,'קודם הראשון, אחר כך השני.'],
+ ]},
+ {id:'mc',name:'בחרו תשובה',type:'mc',qs:[
+   ['מי טיפס דרך צינור המים וכבש את העיר עבור דוד?',['שלמה','יואב','סנחריב'],1],
+   ['כמה זמן בערך נמשכה בניית בית המקדש הראשון?',['יום אחד','חודש','שבע שנים'],2],
+   ['איך קוראים לבריכה שאליה הגיעו מי הנקבה?',['בריכת רחוב','בריכת השילוח','בריכת הגיחון'],1],
+   ['הצבא הענק שאיים על חזקיהו היה של מלך…?',['אשור (סנחריב)','יוון','רומא'],0],
+   ['כמה ימים דלק השמן בנס חנוכה?',['שלושה','שמונה','שלושים'],1],
+   ['מאיזו אבן בנויה ירושלים העתיקה?',['שיש לבן','אבן ירושלמית זהובה','זכוכית'],1],
+   ['מי גילה את כתובת השילוח בתוך הנקבה?',['מלך','ארכיאולוג מבוגר','ילד בשם יעקב אליהו'],2],
+   ['"הקארדו" בעיר העתיקה הוא…?',['שער','רחוב מסחר עתיק עם עמודים','מגדל'],1],
+ ]},
+ {id:'guess',name:'נחשו את המספר',type:'reveal',qs:[
+   ['באורך כמה מטרים בערך נקבת חזקיהו?','~533 מטר'],
+   ['בת כמה שנים בערך הנקבה?','~2,700 שנה'],
+   ['כמה שערים פתוחים יש בחומת העיר העתיקה היום?','7 שערים (ועוד אחד סגור — שער הרחמים)'],
+   ['בן כמה לערך יכול להגיע עץ זית?','מאות שנים, ויש אפילו בני 1,000+ 🫒'],
+   ['כמה דקות בערך הולכים בנקבה הרטובה?','בערך 30–40 דקות'],
+   ['כמה אנשים יש בשתי המשפחות שלנו יחד?','9 😄'],
+ ]},
+ {id:'riddle',name:'חידות',type:'reveal',qs:[
+   ['"אני זורם בחושך בתוך הר, חצבו אותי מלך וחופרים, רגליכם ירטבו בי מחר — מי אני?"','נקבת חזקיהו 🕳️💧'],
+   ['"אני קיר עתיק, אבנים גדולות, אנשים שמים בי פתקים ומשאלות — מי אני?"','הכותל המערבי 🙏'],
+   ['"פורץ פתאום, מבעבע ושוקט, נתתי לעיר מים — מי אני?"','מעיין הגיחון 💦'],
+   ['"אני חג של נרות, סביבון וסופגנייה, התחלתי מניצחון וכד שמן זעיר — מי אני?"','חנוכה 🕎'],
+   ['"בנה אותי המלך החכם בעולם, שבע שנים של אבן ארז וזהב — מי אני?"','בית המקדש הראשון 🏛️'],
+   ['"מגבעה תלולה אני משקיף, רואים ממני עיר עתיקה והר זיתים — מי אני?"','הטיילת (ארמון הנציב) 🌄'],
+ ]},
+ {id:'lightning',name:'ברק! ⚡',type:'reveal',qs:[
+   ['עיר דוד נקראת על שם מי?','דוד המלך'],['בן של דוד שבנה את המקדש?','שלמה'],['מאיזה עם כבש דוד את העיר?','היבוסים'],
+   ['שם נוסף לנקבת חזקיהו?','נקבת השילוח'],['החוקר שעל שמו "הפיר"?','(צ\'ארלס) וורן'],['הר מפורסם שרואים מהטיילת?','הר הזיתים'],
+   ['גיבורי חנוכה?','המכבים / החשמונאים'],['הקיר שמתפללים לידו?','הכותל המערבי'],['מה הכי חשוב שעיר צריכה לחיים?','מים'],['שם הממלכה שירושלים הייתה בירתה?','יהודה'],
+ ]},
+ {id:'draw',name:'ציירו או הציגו 🎨',type:'draw',qs:[
+   ['ציירו/הציגו (בלי מילים): חופר בנקבה עם פנס 🔦'],['ציירו/הציגו: דוד המלך עם כתר 👑'],
+   ['ציירו/הציגו: מנורת חנוכה 🕎'],['ציירו/הציגו: מעיין שפורץ מים 💦'],['ציירו/הציגו: השקיעה על העיר העתיקה 🌅'],
+ ]},
+];
+let gR=0, gQ=0, score={A:0,B:0}, revealed=false;
+const names={A:'משפחת סולומון',B:'משפחת צמרת־איגר'};
+function renderRoundbar(){
+  document.getElementById('roundbar').innerHTML=ROUNDS.map((r,i)=>`<span class="rb ${i===gR?'on':''}" data-r="${i}">${i+1}. ${r.name}</span>`).join('');
+  document.querySelectorAll('.rb').forEach(b=>b.addEventListener('click',()=>{ gR=+b.dataset.r; gQ=0; renderRoundbar(); renderQ(); }));
+}
+function updScore(){
+  document.getElementById('scA').textContent=score.A; document.getElementById('scB').textContent=score.B;
+  document.getElementById('teamA').classList.toggle('lead',score.A>score.B&&score.A>0);
+  document.getElementById('teamB').classList.toggle('lead',score.B>score.A&&score.B>0);
+}
+function renderQ(){
+  const r=ROUNDS[gR], q=r.qs[gQ], area=document.getElementById('gameArea'); revealed=false;
+  document.getElementById('qpos').textContent=`שאלה ${gQ+1}/${r.qs.length}`;
+  let inner=`<div class="qcard"><div class="rnd">סבב ${gR+1}: ${r.name}</div><div class="qtext">${q[0]}</div>`;
+  if(r.type==='mc'){
+    inner+=`<div class="opts">`+q[1].map((o,i)=>`<div class="opt" data-i="${i}" data-correct="${i===q[2]}">${o}</div>`).join('')+`</div>`;
+  } else if(r.type==='tf'){
+    inner+=`<div class="opts"><div class="opt" data-tf="true" data-correct="${q[1]===true}">נכון ✅</div><div class="opt" data-tf="false" data-correct="${q[1]===false}">לא נכון ❌</div></div>`;
+  } else {
+    inner+=`<div id="ansSlot"></div>`;
+  }
+  inner+=`</div><div class="gbtns">`;
+  if(r.type==='reveal'||r.type==='tf'||r.type==='mc') inner+=`<button class="gbtn reveal" id="btnReveal">גלה תשובה 👀</button>`;
+  inner+=`<button class="gbtn a" data-pt="A">+ ${names.A}</button><button class="gbtn b" data-pt="B">+ ${names.B}</button><button class="gbtn skip" data-pt="skip">דלג</button></div>`;
+  area.innerHTML=inner;
+  // option clicks (mc/tf): reveal correctness
+  area.querySelectorAll('.opt').forEach(op=>op.addEventListener('click',()=>{ doReveal(); }));
+  const br=document.getElementById('btnReveal'); if(br)br.addEventListener('click',doReveal);
+  area.querySelectorAll('.gbtn[data-pt]').forEach(b=>b.addEventListener('click',()=>{
+    const t=b.dataset.pt;
+    if(t==='skip'){ buzz(); } else { score[t]++; updScore(); ding(); }
+    nextQ();
+  }));
+}
+function doReveal(){
+  if(revealed)return; revealed=true; const r=ROUNDS[gR], q=r.qs[gQ], area=document.getElementById('gameArea');
+  if(r.type==='mc'||r.type==='tf'){
+    area.querySelectorAll('.opt').forEach(op=>{ if(op.dataset.correct==='true')op.classList.add('correct'); else op.classList.add('wrong'); });
+    const note=(r.type==='tf'&&q[2])?`<div class="reveal-ans" style="margin-top:10px">${q[2]}</div>`:'';
+    if(note)area.querySelector('.opts').insertAdjacentHTML('afterend',note);
+  } else {
+    const slot=document.getElementById('ansSlot'); if(slot)slot.innerHTML=`<div class="reveal-ans">✅ ${q[1]}</div>`;
+  }
+  ding();
+}
+function nextQ(){
+  const r=ROUNDS[gR];
+  if(gQ<r.qs.length-1){ gQ++; renderQ(); }
+  else if(gR<ROUNDS.length-1){ fanfare(); gR++; gQ=0; renderRoundbar(); renderQ(); }
+  else { endGame(); }
+}
+function prevQ(){ if(gQ>0){gQ--;renderQ();} else if(gR>0){gR--;gQ=ROUNDS[gR].qs.length-1;renderRoundbar();renderQ();} }
+function endGame(){
+  fanfare(); confettiBurst();
+  const win = score.A>score.B?names.A : score.B>score.A?names.B : null;
+  document.getElementById('gameArea').innerHTML=`<div class="qcard endscreen">
+    <div style="font-size:50px">🏆</div>
+    <div class="winner">${win?win+' ניצחה!':'תיקו! 🤝'}</div>
+    <p>${names.A}: <b>${score.A}</b> · ${names.B}: <b>${score.B}</b></p>
+    <p>${win?'המנצחת בוחרת את הקינוח! 🍫':'כולם בוחרים קינוח! 🍦'}</p>
+    <div class="gbtns"><button class="gbtn next" id="again">משחק חדש 🔄</button></div>
+  </div>`;
+  document.getElementById('again').addEventListener('click',()=>{ score={A:0,B:0}; gR=0;gQ=0; updScore(); renderRoundbar(); renderQ(); });
+}
+document.getElementById('nextQ').addEventListener('click',nextQ);
+document.getElementById('prevQ').addEventListener('click',prevQ);
+document.querySelectorAll('.editteam').forEach(b=>b.addEventListener('click',()=>{
+  const t=b.dataset.team; const v=prompt('שם הקבוצה:',names[t]); if(v&&v.trim()){ names[t]=v.trim(); document.getElementById('name'+t).textContent=names[t]; renderQ(); }
+}));
+// subtab switching
+document.querySelectorAll('#view-trivia .subtab').forEach(st=>st.addEventListener('click',()=>{
+  document.querySelectorAll('#view-trivia .subtab').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('#view-trivia .pane').forEach(p=>p.classList.remove('on'));
+  st.classList.add('on'); document.getElementById('pane-'+st.dataset.pane).classList.add('on'); blip();
+}));
+
+/* ================= CONFETTI ================= */
+function confettiBurst(){
+  const cv=document.getElementById('confetti'),ctx=cv.getContext('2d'); cv.style.display='block';
+  cv.width=innerWidth; cv.height=innerHeight; const cols=['#d99a2b','#2f7fb3','#c25b35','#7a8b3c','#eab64f'];
+  let parts=[]; for(let i=0;i<140;i++)parts.push({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*0.3,r:4+Math.random()*6,c:cols[i%cols.length],vy:2+Math.random()*4,vx:-2+Math.random()*4,rot:Math.random()*6,vr:-.2+Math.random()*.4});
+  let t=0; (function anim(){ ctx.clearRect(0,0,cv.width,cv.height); parts.forEach(p=>{ p.y+=p.vy;p.x+=p.vx;p.rot+=p.vr; ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.c;ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*1.6);ctx.restore(); });
+    t++; if(t<170)requestAnimationFrame(anim); else cv.style.display='none'; })();
+}
+
+/* ================= INIT ================= */
+renderStories(); renderFindit(); renderRoundbar(); renderQ(); updScore();
+show((location.hash.slice(1))||'home');
+</script>
+</body>
+</html>

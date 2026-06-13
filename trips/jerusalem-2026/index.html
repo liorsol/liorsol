@@ -266,7 +266,7 @@ header.hero{position:relative; overflow:hidden; color:#fff; text-align:center}
 .awardlbl{flex-basis:100%; font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; color:#cfe0ff; opacity:.85}
 .gbtn{cursor:pointer; font-family:'Heebo',sans-serif; font-weight:700; font-size:14px; padding:10px 16px; border-radius:12px; border:none; color:#fff; transition:.15s; flex:1; min-width:120px}
 .gbtn:hover{filter:brightness(1.08)}
-.gbtn.reveal{background:var(--amber); color:var(--night); display:block; width:100%; margin-top:14px; font-size:16px; box-shadow:0 5px 14px -5px rgba(0,0,0,.35)}
+.gbtn.showans{background:#f0b53e; color:#10203b; display:block; width:100%; margin:14px 0 0; font-size:16px; box-shadow:0 4px 14px -4px rgba(0,0,0,.4)}
 .gbtn.a{background:var(--olive)}
 .gbtn.b{background:var(--sky)}
 .gbtn.skip{background:#7a8290}
@@ -1221,8 +1221,8 @@ function renderQ(){
   } else {
     inner+=`<div id="ansSlot"></div>`;
   }
-  if(r.type==='reveal'||r.type==='tf'||r.type==='mc') inner+=`<button class="gbtn reveal" id="btnReveal">👀 גלה תשובה</button>`;
   inner+=`</div>`;
+  if(r.type==='reveal'||r.type==='tf'||r.type==='mc') inner+=`<button class="gbtn showans" id="btnReveal">👀 גלה תשובה</button>`;
   inner+=`<div class="gbtns"><div class="awardlbl">מי צדק? תנו נקודה:</div><button class="gbtn a" data-pt="A">+ ${names.A}</button><button class="gbtn b" data-pt="B">+ ${names.B}</button><button class="gbtn skip" data-pt="skip">דלג</button></div>`;
   area.innerHTML=inner;
   area.querySelectorAll('.opt').forEach(op=>op.addEventListener('click',doReveal));

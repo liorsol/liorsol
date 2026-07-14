@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>צ'ק ליסט מקיף לבדיקת רכב חשמלי (EV) לפני קנייה</title>
+    <title>צ'ק ליסט בדיקת רכב חשמלי (EV) לפני קנייה</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts (Rubik for clean readable Hebrew) -->
+    <!-- Google Fonts (Rubik) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700;900&display=swap" rel="stylesheet">
@@ -18,16 +18,20 @@
             print-color-adjust: exact;
         }
 
-        /* סגנונות ספציפיים להדפסה לקבלת 2 עמודים בדיוק */
+        /* סגנונות מיוחדים להדפסה בלבד (Print Media) */
         @media print {
+            #screen-app-view {
+                display: none !important;
+            }
+            #print-document-view {
+                display: block !important;
+            }
             body {
                 background: white !important;
                 color: black !important;
                 font-size: 11px !important;
                 padding: 0 !important;
-            }
-            .no-print {
-                display: none !important;
+                margin: 0 !important;
             }
             .page-container {
                 box-shadow: none !important;
@@ -53,7 +57,6 @@
                 background-color: transparent !important;
                 -webkit-print-color-adjust: exact;
             }
-            /* כוונון רווחים קומפקטי להדפסה */
             .section-title {
                 font-size: 13px !important;
                 margin-bottom: 4px !important;
@@ -74,543 +77,932 @@
             }
         }
 
-        /* מראה מסך דיגיטלי אינטראקטיבי ורספונסיבי לחלוטין */
+        /* סגנונות למסך בלבד (Screen Media) */
         @media screen {
-            .page-container {
-                width: 100%;
-                max-width: 210mm; /* מגביל לגודל A4 רק במסכים רחבים */
-                min-height: 297mm;
-                background: white;
-                margin: 12px auto;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-                border-radius: 16px;
-                padding: 16px;
-                border: 1px solid #e2e8f0;
+            #print-document-view {
+                display: none !important;
             }
-            body {
-                background-color: #f8fafc;
-                padding: 0 8px;
+            #screen-app-view {
+                display: block !important;
+            }
+            /* ביטול הדגשת סימון כחולה של מגע בניידים */
+            button, label, input {
+                -webkit-tap-highlight-color: transparent;
             }
         }
 
-        @media screen and (min-width: 768px) {
-            .page-container {
-                padding: 20mm 15mm;
-                margin: 24px auto;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.12);
-            }
-            body {
-                padding: 0;
-            }
-        }
-
-        /* התאמת דגל הסימון */
-        .checked-item {
-            text-decoration: line-through;
-            color: #94a3b8;
+        /* עיצוב חלבי לסימונים דיגיטליים */
+        .checked-card-bg {
+            background-color: rgba(16, 185, 129, 0.04) !important;
+            border-color: rgba(16, 185, 129, 0.2) !important;
         }
     </style>
 </head>
-<body class="text-slate-800 transition-all duration-300">
+<body class="text-slate-800 bg-slate-50 transition-all duration-300">
 
-    <!-- סרגל כלים עליון למסך בלבד -->
-    <div class="no-print bg-slate-900 text-white sticky top-0 z-50 shadow-lg border-b border-teal-500/30 -mx-2 md:mx-0">
-        <div class="max-w-5xl mx-auto px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div class="flex items-center gap-3 self-stretch sm:self-auto justify-between">
-                <div class="flex items-center gap-2">
-                    <span class="p-1.5 bg-gradient-to-tr from-teal-500 to-emerald-400 rounded-lg text-slate-950 font-black text-sm flex items-center justify-center shadow-md">
-                        ⚡ EV
-                    </span>
-                    <div>
-                        <h1 class="font-bold text-xs md:text-sm tracking-tight">צ'ק ליסט בדיקה לפני קנייה</h1>
-                        <p class="text-[9px] text-teal-400">מותאם אישית להדפסת A4 דו-עמודים ולנייד</p>
+    <!-- ========================================== -->
+    <!--  תצוגת מסך: אפליקציה אינטראקטיבית למובייל ודפדפן -->
+    <!-- ========================================== -->
+    <div id="screen-app-view" class="min-h-screen pb-16">
+        
+        <!-- סרגל עליון קבוע ואינטראקטיבי -->
+        <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md border-b border-teal-500/30">
+            <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="p-1.5 bg-gradient-to-tr from-teal-500 to-emerald-400 rounded-lg text-slate-950 font-black text-sm">⚡ EV</span>
+                        <div>
+                            <h1 class="font-bold text-sm tracking-tight">צ'ק ליסט בדיקת רכב חשמלי</h1>
+                            <p class="text-[10px] text-teal-400">מותאם לשטח בנייד ולשמירת התקדמות</p>
+                        </div>
+                    </div>
+                    <!-- התקדמות מהירה בנייד -->
+                    <div class="bg-slate-800 px-3 py-1 rounded-full border border-slate-700 font-bold text-xs text-teal-300" id="screen-progress-badge">
+                        0/40
                     </div>
                 </div>
-                <!-- תצוגת התקדמות קטנה למובייל בלבד -->
-                <div class="sm:hidden text-[10px] bg-slate-800 px-2 py-1 rounded border border-slate-700 font-medium text-teal-300" id="progress-badge-mobile">
-                    0/44
+
+                <!-- מד התקדמות פנימי באחוזים -->
+                <div class="w-full">
+                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+                        <div id="screen-progress-bar" class="bg-gradient-to-r from-teal-400 to-emerald-400 h-2 w-0 transition-all duration-500 rounded-full"></div>
+                    </div>
+                </div>
+
+                <!-- כפתורי פעולה מהירים -->
+                <div class="flex items-center justify-between gap-2 pt-1">
+                    <button onclick="toggleSidebar(true)" class="flex-1 max-w-xs px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700/50">
+                        🔗 כלים ומאגרים
+                    </button>
+                    <button onclick="showResetConfirm()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 border border-slate-700/50">
+                        🔄 איפוס
+                    </button>
+                    <button onclick="window.print()" class="flex-1 max-w-xs px-3.5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 text-slate-950 font-bold rounded-xl text-xs shadow-md flex items-center justify-center gap-1.5 transform active:scale-95">
+                        🖨️ הדפס דו"ח (A4)
+                    </button>
                 </div>
             </div>
+        </header>
+
+        <!-- תוכן האפליקציה המרכזי -->
+        <main class="max-w-6xl mx-auto px-4 mt-4 space-y-4">
             
-            <!-- מד התקדמות אינטראקטיבי (טאבלט ודסקטופ) -->
-            <div class="flex-1 max-w-xs mx-4 hidden sm:block">
-                <div class="flex justify-between text-[10px] mb-1 font-medium text-slate-300">
-                    <span>התקדמות בדיקה:</span>
-                    <span id="progress-text">0/44 (0%)</span>
-                </div>
-                <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden border border-slate-700">
-                    <div id="progress-bar" class="bg-gradient-to-r from-teal-400 to-emerald-400 h-1.5 w-0 transition-all duration-500 rounded-full"></div>
+            <!-- תיבת חיפוש וכרטיס זיהוי הרכב בנייד -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <h3 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            🚗 זיהוי הרכב המבוקש
+                        </h3>
+                        <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono font-semibold">MG ZS EV | 291-60-201</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <span class="block text-[10px] text-slate-500 font-medium">יצרן, דגם וגימור:</span>
+                            <input type="text" id="screen-input-model" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-teal-500 font-medium" value="MG ZS EV" oninput="syncInputs(this, 'print-input-model')">
+                        </div>
+                        <div>
+                            <span class="block text-[10px] text-slate-500 font-medium">מספר רכב:</span>
+                            <input type="text" id="screen-input-id" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-teal-500 font-medium" value="291-60-201" oninput="syncInputs(this, 'print-input-id')">
+                        </div>
+                    </div>
+
+                    <!-- שורת חיפוש חכמה בשטח -->
+                    <div class="relative mt-1">
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 text-xs">🔍</span>
+                        <input type="text" id="search-box" oninput="filterChecklist()" placeholder="חפש מילת מפתח (למשל: סוללה, צמיג, בלם)..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pr-9 pl-3 py-2.5 text-xs focus:outline-none focus:border-teal-500 focus:bg-white transition-all">
+                    </div>
                 </div>
             </div>
 
-            <!-- לחצני פעולה נגישים ומותאמי מגע -->
-            <div class="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-                <button onclick="toggleSidebar(true)" class="flex-1 sm:flex-initial px-2.5 py-2 bg-teal-950 hover:bg-teal-900 text-teal-300 hover:text-teal-200 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1 border border-teal-800/50">
-                    🔗 מאגרים וכלים
-                </button>
-                <button onclick="showResetConfirm()" class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[11px] font-medium transition-all flex items-center justify-center gap-1 border border-slate-700">
-                    🔄 איפוס
-                </button>
-                <button onclick="window.print()" class="flex-1 sm:flex-initial px-3.5 py-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-slate-950 font-bold rounded-lg text-[11px] transition-all shadow-md flex items-center justify-center gap-1 transform active:scale-95">
-                    🖨️ הדפס דו"ח
-                </button>
+            <!-- פרקי הצ'ק ליסט האינטראקטיביים -->
+            <div class="space-y-3" id="screen-chapters-container">
+
+                <!-- פרק א' -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden chapter-card" data-chapter="א">
+                    <button onclick="toggleChapter(this)" class="w-full p-4 flex items-center justify-between bg-slate-50 border-b border-slate-100 text-right">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">א</span>
+                            <h3 class="font-bold text-xs md:text-sm text-slate-800">בדיקות מקדימות, ניירת והיסטוריה</h3>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] bg-teal-500/10 text-teal-700 font-bold px-2 py-0.5 rounded-full chapter-progress">0/7</span>
+                            <span class="text-slate-400 transition-transform duration-200 chevron">▼</span>
+                        </div>
+                    </button>
+                    <div class="p-3 space-y-2.5 chapter-content">
+                        <!-- פריטים מהירים -->
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-1" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-1')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">אימות בעלות ורשיונות:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">הצלבת ת.ז. המוכר מול רישיון רכב. בדיקת "כפל רישיון" או "הפקדת סוחר" ומועד מעבר יד אחרון.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-2" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-2')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">ביטוח חובה לנסיעה:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">לוודא קיום ביטוח בתוקף המאפשר לך (הקונה) לבצע נסיעת מבחן בשטח באופן חוקי.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-ins" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-ins')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">היסטוריה ביטוחית (מרכז הסליקה):</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">הפקת דוח מסלקת הביטוח המשותף (היסטוריית תביעות). ודא היעדר ירידות ערך משמעותיות, אובדן להלכה או טוטאל לוס.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-3" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-3')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">שעבודים ועיקולים:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדיקה חובה ברשם המשכונות. רכבים חשמליים רבים נרכשים במימון מלא/חלקי של עשרות אלפי שקלים.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-4" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-4')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">אחריות סוללה ומערכת הנעה:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדיקת תוקף אחריות יצרן על הסוללה (לרוב 8 שנים או 150-160 אלף ק"מ). האם יש תיעוד מלא?</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-5" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-5')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">היסטוריית טיפולים במוסך מורשה:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">האם הרכב טופל אך ורק לפי הנחיות יבואן? (טיפול לא מורשה עלול לבטל את אחריות היבואן לסוללה).</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-6" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-6')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">עדכוני תוכנה וקריאות שירות:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדיקת היסטוריית החלפת מכלולים באחריות (מטען פנימי OBC, מנוע או סוללה) ועדכוני קריאות שירות (Recall).</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- פרק ב' -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden chapter-card" data-chapter="ב">
+                    <button onclick="toggleChapter(this)" class="w-full p-4 flex items-center justify-between bg-slate-50 border-b border-slate-100 text-right">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">ב</span>
+                            <h3 class="font-bold text-xs md:text-sm text-slate-800">סוללה, טעינה ומערכת הנעה (הלב החשמלי)</h3>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] bg-teal-500/10 text-teal-700 font-bold px-2 py-0.5 rounded-full chapter-progress">0/6</span>
+                            <span class="text-slate-400 transition-transform duration-200 chevron">▼</span>
+                        </div>
+                    </button>
+                    <div class="p-3 space-y-2.5 chapter-content">
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-7" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-7')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">דוח בריאות סוללה (SoH):</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">דרישת בדיקת בריאות סוללה (State of Health) ממוסך או באמצעות סורק OBD. שחיקה תקינה: 1-2% בשנה.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-8" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-8')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">טווח נסיעה מוצג:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדיקת הטווח המוצג במד המרחק ביחס לאחוז הסוללה (SoC) הנוכחי. האם היחס נראה ריאלי ושומר על עקביות?</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-9" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-9')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">בדיקת פיזית של שקעי הטעינה:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">פתח דלתית, ודא תקינות נעילה וקפיץ. בדוק חזותית מגעים בחיבורי Type 2 ו-CCS2 (ללא פינים עקומים, פיח או שברים).</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-10" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-10')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">ציוד טעינה נלווה (בבגאז'):</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">ודא קיום כבל טעינה ציבורי (Mode 3) ומטען ביתי נייד ("סבתא") תקינים וללא סדקים או חוטים חשופים.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-11" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-11')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">מצבר עזר 12V:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדוק תאריך ייצור של מצבר ה-12V הרגיל. מצבר חלש הוא הסיבה המובילה לתקיעות ומערכות מחשב מושבתות ב-EV.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-12" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-12')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">תקינות לוח חיווי טעינה:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">ודא תאורת לד וחיווי במד המחוונים או על גבי דלתית הטעינה פועלים ומצביעים על חיבור תקני.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- פרק ג' -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden chapter-card" data-chapter="ג">
+                    <button onclick="toggleChapter(this)" class="w-full p-4 flex items-center justify-between bg-slate-50 border-b border-slate-100 text-right">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">ג</span>
+                            <h3 class="font-bold text-xs md:text-sm text-slate-800">בדיקה ויזואלית ומרכב תחתון (קריטי!)</h3>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] bg-teal-500/10 text-teal-700 font-bold px-2 py-0.5 rounded-full chapter-progress">0/6</span>
+                            <span class="text-slate-400 transition-transform duration-200 chevron">▼</span>
+                        </div>
+                    </button>
+                    <div class="p-3 space-y-2.5 chapter-content">
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-13" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-13')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">תחתית הרכב ומיגון סוללה:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">חובה לבדוק מלמטה שאין שפשופים עמוקים, מעיכות או סדקים במשטח הסוללה. נזק קל פוסל רכב!</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-14" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-14')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">מתלים ובולמי זעזועים:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">עקב משקל הרכב הגבוה, הבולמים והמשולשים נשחקים במהירות. בדוק חריקות בלחיצה על פינות המרכב.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-15" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-15')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">צמיגים ייעודיים ל-EV:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדוק קיום סימון EV או XL/HL (עומס מוגבר). צמיגים רגילים נשחקים מהר מאוד, מפחיתים טווח ויוצרים רעש דרך מוגבר.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-16" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-16')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">שחיקת צמיגים וכיוון פרונט:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">ודא שחיקה אחידה על כל רוחב הסוליה. שחיקה לא שווה מצביעה על בעיות כיוון פרונט או עיוות שלדה.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-17" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-17')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">בדיקת גג, צבע וחלודה:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדיקת היעדר קילופי צבע, חלודה או תיקוני צבע מקומיים (במיוחד מסביב למסגרת הגג והשמשה).</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-18" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-18')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">תא מטען אחורי וקדמי (Frunk):</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדיקת אטימות גומיות בשני התאים. ודא קיום ערכת תיקון תקרים/קומפרסור (אין גלגל רזרבי במרבית ה-EVs).</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- פרק ד' -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden chapter-card" data-chapter="ד">
+                    <button onclick="toggleChapter(this)" class="w-full p-4 flex items-center justify-between bg-slate-50 border-b border-slate-100 text-right">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">ד</span>
+                            <h3 class="font-bold text-xs md:text-sm text-slate-800">תא מנוע קדמי ומערכות נוזלים</h3>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] bg-teal-500/10 text-teal-700 font-bold px-2 py-0.5 rounded-full chapter-progress">0/4</span>
+                            <span class="text-slate-400 transition-transform duration-200 chevron">▼</span>
+                        </div>
+                    </button>
+                    <div class="p-3 space-y-2.5 chapter-content">
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-19" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-19')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">נוזל קירור סוללה (Thermal Management):</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">הסוללה משתמשת בנוזל קירור מיוחד. ודא מפלס תקין במיכל העיבוי ושלמות הצינורות (ללא נזילות כחולות/ורודות).</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-20" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-20')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">נוזל בלמים:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדיקת מפלס ואיכות נוזל הבלמים. למרות השימוש ברגנרציה, נוזל הבלמים עדיין היגרוסקופי ומצריך החלפה כל שנתיים.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-21" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-21')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">מערכת מגבים ושמשות:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדוק מיקום מיכל מילוי מים לוישרים, פעולה תקינה של המתזים (קדמי ואחורי) והיעדר חסימות בצנרת.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-22" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-22')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">תיבת נתיכים (Fuse Box):</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">ודא כי כל הנתיכים קיימים במקומם, וכי אין סימני שריפה, פלסטיק נמס או קורוזיה בתא הנתיכים המרכזי.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- פרק ה' -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden chapter-card" data-chapter="ה">
+                    <button onclick="toggleChapter(this)" class="w-full p-4 flex items-center justify-between bg-slate-50 border-b border-slate-100 text-right">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">ה</span>
+                            <h3 class="font-bold text-xs md:text-sm text-slate-800">תא נוסעים, מערכות חשמל ותוכנה</h3>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] bg-teal-500/10 text-teal-700 font-bold px-2 py-0.5 rounded-full chapter-progress">0/6</span>
+                            <span class="text-slate-400 transition-transform duration-200 chevron">▼</span>
+                        </div>
+                    </button>
+                    <div class="p-3 space-y-2.5 chapter-content">
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-23" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-23')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">מסכים ומולטימדיה:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדוק תגובת מסך המרכז, כנס לתפריט ניהול סוללה והגדרות טעינה (בדוק אם קיימת הגבלת אחוז טעינה מקסימלי).</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-24" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-24')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">בקרת אקלים (חימום PTC/משאבת חום):</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">חשוב מאוד! הפעל קירור וחימום מקסימליים. ודא פעולה מיידית ושקטה ללא ויברציות חריגות מהמפוח.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-25" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-25')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">מערכות בטיחות אקטיביות (ADAS):</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדיקת מצלמות 360, חיישנים היקפיים, מערכת שמירת נתיב ומערכות בלימה אוטונומיות.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-26" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-26')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">גרסאות תוכנה ועדכוני OTA:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדוק בתפריט המערכת האם מערכת ההפעלה של הרכב מעודכנת והאם ישנם עדכונים חיוניים הממתינים להתקנה.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-27" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-27')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">פתיחה ומפתחות חכמים:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">החל מפתח חכם חלופי במידת הצורך. ודא קבלת שני מפתחות/כרטיסים חכמים תקינים. שחזור מפתח חכם עולה אלפי שקלים.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-28" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-28')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">אביזרי פנים ופנלים:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדוק חלונות, מושבים חשמול, תקינות חגורות בטיחות, תאורת אווירה פנימית וידיות פתיחה.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- פרק ו' -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden chapter-card" data-chapter="ו">
+                    <button onclick="toggleChapter(this)" class="w-full p-4 flex items-center justify-between bg-slate-50 border-b border-slate-100 text-right">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">ו</span>
+                            <h3 class="font-bold text-xs md:text-sm text-slate-800">נסיעת מבחן ייעודית (להקשיב לשקט)</h3>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] bg-teal-500/10 text-teal-700 font-bold px-2 py-0.5 rounded-full chapter-progress">0/6</span>
+                            <span class="text-slate-400 transition-transform duration-200 chevron">▼</span>
+                        </div>
+                    </button>
+                    <div class="p-3 space-y-2.5 chapter-content">
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-29" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-29')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">התנעה ומעבר למצב Ready:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">מעבר חלק למצב נסיעה ללא רעשי ממסרים (נקישות חזקות) מאזור הסוללה התחתונה.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-30" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-30')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">רעשי נסיעה במהירות נמוכה:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">הקשב היטב לרעשי מתלים/מיסבים. מאחר ואין רעש מנוע, קל לגלות בעיות בידוד או שחיקת גומיות.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-31" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-31')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">מערכת VESS (התראת הולכי רגל):</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">ודא שהרכב משמיע צליל ייעודי במהירות נמוכה (עד 30 קמ"ש) להזהרת הולכי רגל.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-32" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-32')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">בלימה רגנרטיבית (Regen):</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">בדוק את הרמות השונות של הרגנרציה. ודא שהרכב מאט עצמאית והמד מציג החזר אנרגיה.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-33" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-33')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">בדיקת בלמים מכניים:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">מאחר והם פחות פעילים, בדוק שהם לא חלודים או תפוסים על ידי לחיצה חזקה במצב ניטרלי N.</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-34" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-34')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">תאוצה ליניארית ורציפה:</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">לחץ לחיצה בריאה על דוושת התאוצה. כוח צריך לעבור מיידית וללא השהיה, משיכה של ההגה או רעידות.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- פרק נספח שאלות טלפון -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden chapter-card" data-chapter="נספח">
+                    <button onclick="toggleChapter(this)" class="w-full p-4 flex items-center justify-between bg-slate-50 border-b border-slate-100 text-right">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">📞</span>
+                            <h3 class="font-bold text-xs md:text-sm text-slate-800">נספח: שאלות סינון טלפוניות מהירות</h3>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] bg-teal-500/10 text-teal-700 font-bold px-2 py-0.5 rounded-full chapter-progress">0/4</span>
+                            <span class="text-slate-400 transition-transform duration-200 chevron">▼</span>
+                        </div>
+                    </button>
+                    <div class="p-3 space-y-2.5 chapter-content">
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-q1" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-q1')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">"האם הרכב רשום על שמך והאם תהיה נוכח במעמד המכירה?"</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-q2" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-q2')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">"האם קיימת היסטוריית טיפולים מלאה מתועדת במורשה יבואן?"</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-q3" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-q3')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">"האם הרכב עבר תאונות, תיקוני שלדה, או קיבל מכה בתחתית?"</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-all screen-item">
+                            <input type="checkbox" id="screen-chk-q4" class="mt-0.5 w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500 focus:ring-offset-0 shrink-0" onchange="syncCheckbox(this, 'chk-q4')">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-800">"מה אחוז בריאות הסוללה (SoH) האחרון שנמדד במוסך?"</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
             </div>
-        </div>
+
+            <!-- הערות וסיכום מחיר דיגיטלי -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                <h3 class="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5">
+                    📝 הערות וסיכום עסקה
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <span class="block text-[10px] text-slate-500 font-medium mb-1">הערות כלליות וממצאים מהבדיקה:</span>
+                        <textarea id="screen-input-notes" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 focus:outline-none focus:border-teal-500 font-medium h-20" placeholder="למשל: נדרש להחליף צמיגים קדמיים בקרוב..." oninput="syncInputs(this, 'print-input-notes')"></textarea>
+                    </div>
+                    <div>
+                        <span class="block text-[10px] text-slate-500 font-medium mb-1">סיכום כספי ומחיר מוסכם:</span>
+                        <textarea id="screen-input-price" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 focus:outline-none focus:border-teal-500 font-medium h-20" placeholder="מחירון: ______ ₪ | מחיר סגירה: ______ ₪" oninput="syncInputs(this, 'print-input-price')"></textarea>
+                    </div>
+                </div>
+            </div>
+
+        </main>
     </div>
 
-    <!-- עמוד 1 מתוך 2 -->
-    <div class="page-container flex flex-col justify-between">
-        <div>
-            <!-- כותרת ראשית (קומפקטית) -->
-            <div class="border-b-4 border-teal-600 pb-2 mb-3.5 flex justify-between items-end">
-                <div>
-                    <h2 class="text-base md:text-xl font-black text-slate-900 tracking-tight flex items-center gap-1.5">
-                        <span>📋 צ'ק ליסט מקיף ומעודכן לרכב חשמלי (BEV)</span>
-                    </h2>
-                    <p class="text-[10px] text-slate-500 mt-0.5">מבוסס על עקרונות הסינון של "צ'ק ליסט.pdf" והתאמה טכנולוגית לסוללה ומערכת הנעה חשמלית</p>
+    <!-- ========================================== -->
+    <!--  תצוגת הדפסה: מסמך A4 קומפקטי (עמודים 1 ו-2)  -->
+    <!-- ========================================== -->
+    <div id="print-document-view" class="hidden">
+        
+        <!-- עמוד 1 מתוך 2 בהדפסה -->
+        <div class="page-container flex flex-col justify-between">
+            <div>
+                <!-- כותרת ראשית (קומפקטית) -->
+                <div class="border-b-4 border-teal-600 pb-2 mb-3.5 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-[17px] font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+                            <span>📋 צ'ק ליסט מקיף ומעודכן לרכב חשמלי (BEV)</span>
+                        </h2>
+                        <p class="text-[9px] text-slate-500 mt-0.5">מבוסס על עקרונות הסינון של "צ'ק ליסט.pdf" והתאמה טכנולוגית לסוללה ומערכת הנעה חשמלית</p>
+                    </div>
+                    <div class="text-left text-[9px] text-slate-500 font-medium shrink-0">עמוד 1 מתוך 2</div>
                 </div>
-                <div class="text-left text-[10px] text-slate-500 font-medium shrink-0">עמוד 1 מתוך 2</div>
+
+                <!-- תעודת זהות ופרטי הרכב -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-3">
+                    <h3 class="text-[10px] font-bold text-teal-800 uppercase tracking-wider mb-2">
+                        🚗 כרטיס זיהוי הרכב (בדיקת ניירת מקדימה)
+                    </h3>
+                    <div class="grid grid-cols-4 gap-2 text-[11px]">
+                        <div>
+                            <label class="block text-[8px] text-slate-500 font-medium">יצרן ודגם (רמת גימור):</label>
+                            <input type="text" id="print-input-model" class="w-full bg-white border border-slate-300 rounded px-2 py-0.5 text-slate-800 focus:outline-none" value="MG ZS EV">
+                        </div>
+                        <div>
+                            <label class="block text-[8px] text-slate-500 font-medium">מספר רכב (לבדיקת שעבוד):</label>
+                            <input type="text" id="print-input-id" class="w-full bg-white border border-slate-300 rounded px-2 py-0.5 text-slate-800 focus:outline-none" value="291-60-201">
+                        </div>
+                        <div>
+                            <label class="block text-[8px] text-slate-500 font-medium">שנת ייצור וטסט עד:</label>
+                            <input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-0.5 text-slate-800 focus:outline-none" value="שנת 2020">
+                        </div>
+                        <div>
+                            <label class="block text-[8px] text-slate-500 font-medium">קילומטראז' ורמת יד:</label>
+                            <input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-0.5 text-slate-800 focus:outline-none" value="45,000 ק״מ | יד ראשונה">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- פרק א': בדיקות מקדימות וניירת -->
+                <div class="mb-3">
+                    <h3 class="section-title text-[11px] font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-1.5">
+                        פרק א': בדיקות מקדימות, ניירת והיסטוריה (טלפון ומפגש)
+                    </h3>
+                    <div class="checklist-grid grid grid-cols-2 gap-2 text-[10px]">
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-1" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-1')">
+                            <div>
+                                <span class="font-bold text-slate-900">אימות בעלות ורשיונות:</span>
+                                <span class="text-slate-600">הצלבת ת.ז. המוכר מול רישיון. בדיקת "כפל רישיון" או "הפקדת סוחר".</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-2" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-2')">
+                            <div>
+                                <span class="font-bold text-slate-900">ביטוח חובה לנסיעה:</span>
+                                <span class="text-slate-600">לוודא קיום ביטוח בתוקף המאפשר לך לבצע נסיעת מבחן בשטח באופן חוקי.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-ins" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-ins')">
+                            <div>
+                                <span class="font-bold text-slate-900">היסטוריה ביטוחית (מסלקה):</span>
+                                <span class="text-slate-600">הפקת דוח מסלקת הביטוח המשותף (היסטוריית תביעות) למניעת אובדן להלכה.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-3" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-3')">
+                            <div>
+                                <span class="font-bold text-slate-900">שעבודים ועיקולים:</span>
+                                <span class="text-slate-600">בדיקה חובה ברשם המשכונות. רכבים חשמליים רבים נרכשים במימון מלא/חלקי.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-4" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-4')">
+                            <div>
+                                <span class="font-bold text-slate-900">אחריות סוללה ומערכת הנעה:</span>
+                                <span class="text-slate-600">בדיקת תוקף אחריות יצרן על הסוללה (לרוב 8 שנים או 150-160 אלף ק"מ).</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-5" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-5')">
+                            <div>
+                                <span class="font-bold text-slate-900">היסטוריית טיפולים במוסך מורשה:</span>
+                                <span class="text-slate-600">האם הרכב טופל רק לפי הנחיות יבואן? (טיפול לא מורשה מבטל אחריות סוללה).</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100 col-span-2">
+                            <input type="checkbox" id="chk-6" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-6')">
+                            <div>
+                                <span class="font-bold text-slate-900">עדכוני תוכנה וקריאות שירות:</span>
+                                <span class="text-slate-600">בדיקת היסטוריית החלפת מכלולים באחריות (מטען פנימי OBC, מנוע או סוללה) ועדכוני קריאות שירות (Recall).</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- פרק ב': סוללה, טעינה ומערכת הנעה -->
+                <div class="mb-3">
+                    <h3 class="section-title text-[11px] font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-1.5">
+                        פרק ב': בדיקת סוללה, טעינה ומערכות הנעה (הלב החשמלי)
+                    </h3>
+                    <div class="checklist-grid grid grid-cols-2 gap-2 text-[10px]">
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-7" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-7')">
+                            <div>
+                                <span class="font-bold text-slate-900">דוח בריאות סוללה (SoH):</span>
+                                <span class="text-slate-600">דרישת בדיקת בריאות סוללה ממוסך או באמצעות סורק OBD. שחיקה תקינה: 1-2% בשנה.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-8" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-8')">
+                            <div>
+                                <span class="font-bold text-slate-900">טווח נסיעה מוצג:</span>
+                                <span class="text-slate-600">בדיקת הטווח המוצג ביחס לאחוז הסוללה (SoC) הנוכחי. האם היחס נראה ריאלי ועקבי?</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-9" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-9')">
+                            <div>
+                                <span class="font-bold text-slate-900">בדיקת פיזית של שקעי הטעינה:</span>
+                                <span class="text-slate-600">פתח דלתית, ודא נעילה וקפיץ. בדוק מגעים בחיבורי Type 2 ו-CCS2 (ללא שברים או פיח).</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-10" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-10')">
+                            <div>
+                                <span class="font-bold text-slate-900">ציוד טעינה נלווה (בבגאז'):</span>
+                                <span class="text-slate-600">ודא קיום כבל טעינה ציבורי (Mode 3) ומטען ביתי נייד ("סבתא") תקינים ללא סדקים.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-11" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-11')">
+                            <div>
+                                <span class="font-bold text-slate-900">מצבר עזר 12V:</span>
+                                <span class="text-slate-600">בדוק תאריך ייצור של מצבר ה-12V. מצבר חלש הוא הסיבה המובילה לתקיעות ב-EV.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-12" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-12')">
+                            <div>
+                                <span class="font-bold text-slate-900">תקינות לוח חיווי טעינה:</span>
+                                <span class="text-slate-600">ודא תאורת לד וחיווי במד המחוונים או על גבי דלתית הטעינה פועלים ומצביעים על חיבור.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- פרק ג': בדיקה ויזואלית ומרכב תחתון -->
+                <div class="mb-3">
+                    <h3 class="section-title text-[11px] font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-1.5">
+                        פרק ג': בדיקה ויזואלית, מרכב ותחתית הרכב (קריטי בחשמלי!)
+                    </h3>
+                    <div class="checklist-grid grid grid-cols-2 gap-2 text-[10px]">
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-13" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-13')">
+                            <div>
+                                <span class="font-bold text-slate-900">בדיקת תחתית הרכב ומיגון סוללה:</span>
+                                <span class="text-slate-600">חובה לבדוק מלמטה שאין שפשופים, מעיכות או סדקים בסוללה. נזק קל פוסל רכב!</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-14" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-14')">
+                            <div>
+                                <span class="font-bold text-slate-900">מתלים ובולמי זעזועים:</span>
+                                <span class="text-slate-600">משקל הרכב גבוה, הבולמים והמשולשים נשחקים במהירות. בדוק חריקות בלחיצה.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-15" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-15')">
+                            <div>
+                                <span class="font-bold text-slate-900">צמיגים ייעודיים ל-EV:</span>
+                                <span class="text-slate-600">בדוק קיום סימון EV או XL/HL (עומס מוגבר). צמיגים רגילים יוצרים רעש ונשחקים מהר.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-16" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-16')">
+                            <div>
+                                <span class="font-bold text-slate-900">שחיקת צמיגים וכיוון פרונט:</span>
+                                <span class="text-slate-600">ודא שחיקה אחידה על כל רוחב הסוליה. שחיקה לא שווה מצביעה על עיוות שלדה.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-17" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-17')">
+                            <div>
+                                <span class="font-bold text-slate-900">בדיקת גג, צבע וחלודה:</span>
+                                <span class="text-slate-600">בדיקת היעדר קילופי צבע, חלודה או תיקוני צבע מקומיים (במיוחד מסביב למסגרת הגג).</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-18" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-18')">
+                            <div>
+                                <span class="font-bold text-slate-900">תא מטען אחורי וקדמי (Frunk):</span>
+                                <span class="text-slate-600">בדיקת אטימות גומיות בשני התאים. ודא קיום ערכת תיקון תקרים/קומפרסור (אין גלגל רזרבי).</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
             </div>
 
-            <!-- תעודת זהות ופרטי הרכב -->
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-3.5">
-                <h3 class="text-[10px] font-bold text-teal-800 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    🚗 כרטיס זיהוי הרכב (בדיקת ניירת מקדימה)
-                </h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                    <div>
-                        <label class="block text-[9px] text-slate-500 font-medium">יצרן ודגם (רמת גימור):</label>
-                        <input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-teal-500" placeholder="למשל: MG ZS EV" value="MG ZS EV">
-                    </div>
-                    <div>
-                        <label class="block text-[9px] text-slate-500 font-medium">מספר רכב (לבדיקת שעבוד):</label>
-                        <input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-teal-500" placeholder="12-345-67" value="291-60-201">
-                    </div>
-                    <div>
-                        <label class="block text-[9px] text-slate-500 font-medium">שנת ייצור וטסט עד:</label>
-                        <input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-teal-500" placeholder="שנת 2020 | טסט עד 09/26" value="שנת 2020">
-                    </div>
-                    <div>
-                        <label class="block text-[9px] text-slate-500 font-medium">קילומטראז' ורמת יד:</label>
-                        <input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-teal-500" placeholder="45,000 ק״מ | יד ראשונה">
-                    </div>
-                </div>
-            </div>
-
-            <!-- פרק א': בדיקות מקדימות וניירת -->
-            <div class="mb-3.5">
-                <h3 class="section-title text-xs font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-2">
-                    פרק א': בדיקות מקדימות, ניירת והיסטוריה (טלפון ומפגש)
-                </h3>
-                <div class="checklist-grid grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                    <!-- סעיף 1 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-1" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">אימות בעלות ורשיונות:</span>
-                            <span class="text-slate-600">הצלבת ת.ז. המוכר מול רישיון רכב. בדיקת "כפל רישיון" או "הפקדת סוחר" ומועד מעבר יד אחרון.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 2 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-2" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">ביטוח חובה לנסיעה:</span>
-                            <span class="text-slate-600">לוודא קיום ביטוח בתוקף המאפשר לך (הקונה) לבצע נסיעת מבחן בשטח באופן חוקי.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 3 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-ins" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">היסטוריה ביטוחית (מרכז הסליקה):</span>
-                            <span class="text-slate-600">הפקת דוח מסלקת הביטוח המשותף (היסטוריית תביעות). ודא היעדר ירידות ערך משמעותיות, אובדן להלכה או טוטאל לוס.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 4 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-3" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">שעבודים ועיקולים:</span>
-                            <span class="text-slate-600">בדיקה חובה ברשם המשכונות. רכבים חשמליים רבים נרכשים במימון מלא/חלקי של עשרות אלפי שקלים.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 5 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-4" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">אחריות סוללה ומערכת הנעה:</span>
-                            <span class="text-slate-600">בדיקת תוקף אחריות יצרן על הסוללה (לרוב 8 שנים או 150-160 אלף ק"מ). האם יש תיעוד מלא?</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 6 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-5" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">היסטוריית טיפולים במוסך מורשה:</span>
-                            <span class="text-slate-600">האם הרכב טופל אך ורק לפי הנחיות יבואן? (טיפול לא מורשה עלול לבטל את אחריות היבואן לסוללה).</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 7 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer col-span-1 md:col-span-2">
-                        <input type="checkbox" id="chk-6" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">עדכוני תוכנה וקריאות שירות:</span>
-                            <span class="text-slate-600">בדיקת היסטוריית החלפת מכלולים באחריות (מטען פנימי OBC, מנוע או סוללה) ועדכוני קריאות שירות (Recall).</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- פרק ב': סוללה, טעינה ומערכת הנעה -->
-            <div class="mb-3.5">
-                <h3 class="section-title text-xs font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-2">
-                    פרק ב': בדיקת סוללה, טעינה ומערכות הנעה (הלב החשמלי)
-                </h3>
-                <div class="checklist-grid grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                    <!-- סעיף 8 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-7" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">דוח בריאות סוללה (SoH):</span>
-                            <span class="text-slate-600">דרישת בדיקת בריאות סוללה (State of Health) ממוסך או באמצעות סורק OBD. שחיקה תקינה: 1-2% בשנה.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 9 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-8" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">טווח נסיעה מוצג:</span>
-                            <span class="text-slate-600">בדיקת הטווח המוצג במד המרחק ביחס לאחוז הסוללה (SoC) הנוכחי. האם היחס נראה ריאלי ושומר על עקביות?</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 10 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-9" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">בדיקת פיזית של שקעי הטעינה:</span>
-                            <span class="text-slate-600">פתח דלתית, ודא תקינות נעילה וקפיץ. בדוק חזותית מגעים בחיבורי Type 2 ו-CCS2 (ללא פינים עקומים, פיח או שברים).</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 11 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-10" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">ציוד טעינה נלווה (בבגאז'):</span>
-                            <span class="text-slate-600">ודא קיום כבל טעינה ציבורי (Mode 3) ומטען ביתי נייד ("סבתא") תקינים וללא סדקים או חוטים חשופים.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 12 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-11" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">מצבר עזר 12V:</span>
-                            <span class="text-slate-600">בדוק תאריך ייצור של מצבר ה-12V הרגיל. מצבר חלש הוא הסיבה המובילה לתקיעות ומערכות מחשב מושבתות ב-EV.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 13 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-12" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">תקינות לוח חיווי טעינה:</span>
-                            <span class="text-slate-600">ודא תאורת לד וחיווי במד המחוונים או על גבי דלתית הטעינה פועלים ומצביעים על חיבור תקני.</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- פרק ג': בדיקה ויזואלית ומרכב תחתון -->
-            <div class="mb-3.5">
-                <h3 class="section-title text-xs font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-2">
-                    פרק ג': בדיקה ויזואלית, מרכב ותחתית הרכב (קריטי בחשמלי!)
-                </h3>
-                <div class="checklist-grid grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                    <!-- סעיף 14 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-13" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">בדיקת תחתית הרכב ומיגון סוללה:</span>
-                            <span class="text-slate-600">חובה לבדוק מלמטה שאין שפשופים עמוקים, מעיכות או סדקים במשטח הסוללה. נזק קל פוסל רכב!</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 15 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-14" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">מתלים ובולמי זעזועים:</span>
-                            <span class="text-slate-600">עקב משקל הרכב הגבוה, הבולמים והמשולשים נשחקים במהירות. בדוק חריקות בלחיצה על פינות המרכב.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 16 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-15" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">צמיגים ייעודיים ל-EV:</span>
-                            <span class="text-slate-600">בדוק קיום סימון EV או XL/HL (עומס מוגבר). צמיגים רגילים נשחקים מהר מאוד, מפחיתים טווח ויוצרים רעש דרך מוגבר.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 17 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-16" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">שחיקת צמיגים וכיוון פרונט:</span>
-                            <span class="text-slate-600">ודא שחיקה אחידה על כל רוחב הסוליה. שחיקה לא שווה מצביעה על בעיות כיוון פרונט או עיוות שלדה.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 18 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-17" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">בדיקת גג, צבע וחלודה:</span>
-                            <span class="text-slate-600">בדיקת היעדר קילופי צבע, חלודה או תיקוני צבע מקומיים (במיוחד מסביב למסגרת הגג והשמשה).</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 19 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-18" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">תא מטען אחורי וקדמי (Frunk):</span>
-                            <span class="text-slate-600">בדיקת אטימות גומיות בשני התאים. ודא קיום ערכת תיקון תקרים/קומפרסור (אין גלגל רזרבי במרבית ה-EVs).</span>
-                        </div>
-                    </label>
-                </div>
+            <!-- הערת שוליים ממודפסת -->
+            <div class="border-t border-slate-200 pt-1.5 flex justify-between items-center text-[8px] text-slate-400 mt-2">
+                <span>צ'ק ליסט בדיקת רכב חשמלי - הוכן עבור בדיקה עצמאית מקיפה</span>
+                <span>סמן את התיבות בעיפרון או דרך הדפדפן לפני ההדפסה</span>
             </div>
         </div>
 
-        <!-- הערת שוליים ממודפסת -->
-        <div class="border-t border-slate-200 pt-2 flex justify-between items-center text-[9px] text-slate-400 mt-2">
-            <span>צ'ק ליסט בדיקת רכב חשמלי - הוכן עבור בדיקה עצמאית מקיפה</span>
-            <span>סמן את התיבות בעיפרון או דרך הדפדפן לפני ההדפסה</span>
-        </div>
-    </div>
-
-    <!-- עמוד 2 מתוך 2 -->
-    <div class="page-container flex flex-col justify-between">
-        <div>
-            <!-- כותרת עמוד 2 קומפקטית -->
-            <div class="border-b-4 border-teal-600 pb-2 mb-3.5 flex justify-between items-end">
-                <div>
-                    <h2 class="text-base md:text-xl font-black text-slate-900 tracking-tight">📋 צ'ק ליסט מקיף לרכב חשמלי (המשך)</h2>
-                    <p class="text-[10px] text-slate-500 mt-0.5">תא המנוע, מערכות פנים, תוכנה ונסיעת מבחן ייעודית</p>
-                </div>
-                <div class="text-left text-[10px] text-slate-500 font-medium shrink-0">עמוד 2 מתוך 2</div>
-            </div>
-
-            <!-- פרק ד': תא המנוע הקדמי ומערכות נוזלים -->
-            <div class="mb-3.5">
-                <h3 class="section-title text-xs font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-2">
-                    פרק ד': תא המנוע (הקדמי) ומערכות נוזלים
-                </h3>
-                <div class="checklist-grid grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                    <!-- סעיף 20 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-19" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">נוזל קירור סוללה (Thermal Management):</span>
-                            <span class="text-slate-600">הסוללה משתמשת בנוזל קירור מיוחד. ודא מפלס תקין במיכל העיבוי ושלמות הצינורות (ללא נזילות כחולות/ורודות).</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 21 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-20" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">נוזל בלמים:</span>
-                            <span class="text-slate-600">בדיקת מפלס ואיכות נוזל הבלמים. למרות השימוש ברגנרציה, נוזל הבלמים עדיין היגרוסקופי ומצריך החלפה כל שנתיים.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 22 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-21" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">מערכת מגבים ושמשות:</span>
-                            <span class="text-slate-600">בדוק מיקום מיכל מילוי מים לוישרים, פעולה תקינה של המתזים (קדמי ואחורי) והיעדר חסימות בצנרת.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 23 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-22" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">תיבת נתיכים (Fuse Box):</span>
-                            <span class="text-slate-600">ודא כי כל הנתיכים קיימים במקומם, וכי אין סימני שריפה, פלסטיק נמס או קורוזיה בתא הנתיכים המרכזי.</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- פרק ה': תא הנוסעים, מערכות חשמל ותוכנה -->
-            <div class="mb-3.5">
-                <h3 class="section-title text-xs font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-2">
-                    פרק ה': תא הנוסעים, מערכות חשמל ותוכנה
-                </h3>
-                <div class="checklist-grid grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                    <!-- סעיף 24 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-23" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">מסכים ומולטימדיה:</span>
-                            <span class="text-slate-600">בדוק תגובת מסך המרכז, כנס לתפריט ניהול סוללה והגדרות טעינה (בדוק אם קיימת הגבלת אחוז טעינה מקסימלי).</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 25 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-24" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">בקרת אקלים (חימום PTC/משאבת חום):</span>
-                            <span class="text-slate-600">חשוב מאוד! הפעל קירור וחימום מקסימליים. ודא פעולה מיידית ושקטה ללא ויברציות חריגות מהמפוח.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 26 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-25" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">מערכות בטיחות אקטיביות (ADAS):</span>
-                            <span class="text-slate-600">בדיקת מצלמות 360, חיישנים היקפיים, מערכת שמירת נתיב ומערכות בלימה אוטונומיות.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 27 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-26" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">גרסאות תוכנה ועדכוני OTA:</span>
-                            <span class="text-slate-600">בדוק בתפריט המערכת האם מערכת ההפעלה של הרכב מעודכנת והאם ישנם עדכונים חיוניים הממתינים להתקנה.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 28 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-27" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">פתיחה ומפתחות חכמים:</span>
-                            <span class="text-slate-600">ודא קבלת שני מפתחות/כרטיסים חכמים תקינים. שחזור מפתח חכם לרכב חשמלי עולה אלפי שקלים.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 29 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-28" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">אביזרי פנים ופנלים:</span>
-                            <span class="text-slate-600">בדוק חלונות, מושבים חשמליים, תקינות חגורות בטיחות, תאורת אווירה פנימית וידיות פתיחה.</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- פרק ו': נסיעת מבחן -->
-            <div class="mb-3.5">
-                <h3 class="section-title text-xs font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-2">
-                    פרק ו': נסיעת מבחן ייעודית (להקשיב לשקט)
-                </h3>
-                <div class="checklist-grid grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                    <!-- סעיף 30 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-29" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">התנעה ומעבר למצב Ready:</span>
-                            <span class="text-slate-600">מעבר חלק למצב נסיעה ללא רעשי ממסרים (נקישות חזקות) מאזור הסוללה התחתונה.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 31 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-30" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">רעשי נסיעה במהירות נמוכה:</span>
-                            <span class="text-slate-600">הקשב היטב לרעשי מתלים/מיסבים. מאחר ואין רעש מנוע, קל לגלות בעיות בידוד או שחיקת גומיות.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 32 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-31" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">מערכת VESS (התראת הולכי רגל):</span>
-                            <span class="text-slate-600">ודא שהרכב משמיע צליל ייעודי במהירות נמוכה (עד 30 קמ"ש) להזהרת הולכי רגל.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 33 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-32" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">בלימה רגנרטיבית (Regen):</span>
-                            <span class="text-slate-600">בדוק את הרמות השונות של הרגנרציה. ודא שהרכב מאט עצמאית והמד מציג החזר אנרגיה.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 34 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-33" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">בדיקת בלמים מכניים:</span>
-                            <span class="text-slate-600">מאחר והם פחות פעילים, בדוק שהם לא חלודים או תפוסים על ידי לחיצה חזקה במצב ניטרלי N.</span>
-                        </div>
-                    </label>
-                    <!-- סעיף 35 -->
-                    <label class="item-box flex items-start gap-2.5 p-2.5 sm:p-2 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-34" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div>
-                            <span class="font-bold text-slate-900">תאוצה ליניארית ורציפה:</span>
-                            <span class="text-slate-600">לחץ לחיצה בריאה על דוושת התאוצה. כוח צריך לעבור מיידית וללא השהיה, משיכה של ההגה או רעידות.</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- נספח שאלון טלפוני וכרטיס עסקה -->
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                <h3 class="text-[10px] font-bold text-teal-800 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    📞 נספח: שאלות סינון טלפוניות מהירות (מבוסס על שאלות טלפון.pdf)
-                </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    <!-- שאלה 1 -->
-                    <label class="item-box flex items-start gap-2 p-2 bg-white rounded border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-q1" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div class="mr-1">
-                            <span class="font-medium text-slate-700">"האם הרכב רשום על שמך והאם תהיה נוכח במעמד המכירה?"</span>
-                        </div>
-                    </label>
-                    <!-- שאלה 2 -->
-                    <label class="item-box flex items-start gap-2 p-2 bg-white rounded border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-q2" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div class="mr-1">
-                            <span class="font-medium text-slate-700">"האם קיימת היסטוריית טיפולים מלאה מתועדת במורשה יבואן?"</span>
-                        </div>
-                    </label>
-                    <!-- שאלה 3 -->
-                    <label class="item-box flex items-start gap-2 p-2 bg-white rounded border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-q3" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div class="mr-1">
-                            <span class="font-medium text-slate-700">"האם הרכב עבר תאונות, תיקוני שלדה, או קיבל מכה בתחתית?"</span>
-                        </div>
-                    </label>
-                    <!-- שאלה 4 -->
-                    <label class="item-box flex items-start gap-2 p-2 bg-white rounded border border-slate-100 hover:bg-slate-100 transition-all cursor-pointer">
-                        <input type="checkbox" id="chk-q4" class="checkbox-custom mt-0.5 w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 rounded focus:ring-teal-500" onchange="updateProgress()">
-                        <div class="mr-1">
-                            <span class="font-medium text-slate-700">"מה אחוז בריאות הסוללה (SoH) האחרון שנמדד במוסך?"</span>
-                        </div>
-                    </label>
-                </div>
-                
-                <!-- הערות ומחיר סיכום -->
-                <div class="mt-2.5 pt-2.5 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <!-- עמוד 2 מתוך 2 בהדפסה -->
+        <div class="page-container flex flex-col justify-between">
+            <div>
+                <!-- כותרת עמוד 2 קומפקטית -->
+                <div class="border-b-4 border-teal-600 pb-2 mb-3.5 flex justify-between items-end">
                     <div>
-                        <span class="block text-[9px] text-slate-500 font-medium">הערות כלליות ומכלולים להחלפה:</span>
-                        <input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-teal-500" placeholder="למשל: נדרש להחליף צמיגים קדמיים בקרוב...">
+                        <h2 class="text-[17px] font-black text-slate-900 tracking-tight">📋 צ'ק ליסט מקיף לרכב חשמלי (המשך)</h2>
+                        <p class="text-[9px] text-slate-500 mt-0.5">תא המנוע, מערכות פנים, תוכנה ונסיעת מבחן ייעודית</p>
                     </div>
-                    <div>
-                        <span class="block text-[9px] text-slate-500 font-medium">סיכום מחיר מוסכם ועסקה:</span>
-                        <input type="text" class="w-full bg-white border border-slate-300 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-teal-500" placeholder="מחירון: ______ ₪ | מחיר סגירה: ______ ₪">
+                    <div class="text-left text-[9px] text-slate-500 font-medium shrink-0">עמוד 2 מתוך 2</div>
+                </div>
+
+                <!-- פרק ד': תא המנוע הקדמי ומערכות נוזלים -->
+                <div class="mb-3">
+                    <h3 class="section-title text-[11px] font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-1.5">
+                        פרק ד': תא המנוע (הקדמי) ומערכות נוזלים
+                    </h3>
+                    <div class="checklist-grid grid grid-cols-2 gap-2 text-[10px]">
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-19" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-19')">
+                            <div>
+                                <span class="font-bold text-slate-900">נוזל קירור סוללה:</span>
+                                <span class="text-slate-600">הסוללה משתמשת בנוזל קירור מיוחד. ודא מפלס תקין ושלמות צינורות (ללא נזילות כחולות/ורודות).</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-20" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-20')">
+                            <div>
+                                <span class="font-bold text-slate-900">נוזל בלמים:</span>
+                                <span class="text-slate-600">בדיקת מפלס ואיכות נוזל הבלמים. למרות השימוש ברגנרציה, מצריך החלפה כל שנתיים.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-21" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-21')">
+                            <div>
+                                <span class="font-bold text-slate-900">מערכת מגבים ושמשות:</span>
+                                <span class="text-slate-600">בדוק מיקום מיכל מילוי מים לוישרים, פעולה תקינה של המתזים (קדמי ואחורי).</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-22" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-22')">
+                            <div>
+                                <span class="font-bold text-slate-900">תיבת נתיכים (Fuse Box):</span>
+                                <span class="text-slate-600">ודא כי כל הנתיכים קיימים במקומם, ללא סימני שריפה או פלסטיק נמס.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- פרק ה': תא הנוסעים, מערכות חשמל ותוכנה -->
+                <div class="mb-3">
+                    <h3 class="section-title text-[11px] font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-1.5">
+                        פרק ה': תא הנוסעים, מערכות חשמל ותוכנה
+                    </h3>
+                    <div class="checklist-grid grid grid-cols-2 gap-2 text-[10px]">
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-23" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-23')">
+                            <div>
+                                <span class="font-bold text-slate-900">מסכים ומולטימדיה:</span>
+                                <span class="text-slate-600">בדוק תגובת מסך, כנס לתפריט ניהול סוללה והגדרות טעינה (הגבלת אחוז טעינה מקסימלי).</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-24" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-24')">
+                            <div>
+                                <span class="font-bold text-slate-900">בקרת אקלים (חימום PTC/משאבת חום):</span>
+                                <span class="text-slate-600">הפעל קירור וחימום מקסימליים. ודא פעולה מיידית ושקטה ללא ויברציות חריגות מהמפוח.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-25" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-25')">
+                            <div>
+                                <span class="font-bold text-slate-900">מערכות בטיחות אקטיביות (ADAS):</span>
+                                <span class="text-slate-600">בדיקת מצלמות 360, חיישנים היקפיים, מערכת שמירת נתיב ומערכות בלימה אוטונומיות.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-26" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-26')">
+                            <div>
+                                <span class="font-bold text-slate-900">גרסאות תוכנה ועדכוני OTA:</span>
+                                <span class="text-slate-600">בדוק בתפריט המערכת האם מערכת ההפעלה של הרכב מעודכנת והאם ישנם עדכונים חיוניים.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-27" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-27')">
+                            <div>
+                                <span class="font-bold text-slate-900">פתיחה ומפתחות חכמים:</span>
+                                <span class="text-slate-600">ודא קבלת שני מפתחות/כרטיסים חכמים תקינים. שחזור מפתח חכם עולה אלפי שקלים.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-28" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-28')">
+                            <div>
+                                <span class="font-bold text-slate-900">אביזרי פנים ופנלים:</span>
+                                <span class="text-slate-600">בדוק חלונות, מושבים חשמליים, תקינות חגורות בטיחות, תאורת אווירה פנימית.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- פרק ו': נסיעת מבחן -->
+                <div class="mb-3">
+                    <h3 class="section-title text-[11px] font-bold text-slate-900 border-r-4 border-teal-500 pr-2 mb-1.5">
+                        פרק ו': נסיעת מבחן ייעודית (להקשיב לשקט)
+                    </h3>
+                    <div class="checklist-grid grid grid-cols-2 gap-2 text-[10px]">
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-29" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-29')">
+                            <div>
+                                <span class="font-bold text-slate-900">התנעה ומעבר למצב Ready:</span>
+                                <span class="text-slate-600">מעבר חלק למצב נסיעה ללא רעשי ממסרים (נקישות חזקות) מאזור הסוללה התחתונה.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-30" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-30')">
+                            <div>
+                                <span class="font-bold text-slate-900">רעשי נסיעה במהירות נמוכה:</span>
+                                <span class="text-slate-600">הקשב היטב לרעשי מתלים/מיסבים. מאחר ואין רעש מנוע, קל לגלות בעיות בידוד או גומיות.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-31" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-31')">
+                            <div>
+                                <span class="font-bold text-slate-900">מערכת VESS (התראת הולכי רגל):</span>
+                                <span class="text-slate-600">ודא שהרכב משמיע צליל ייעודי במהירות נמוכה (עד 30 קמ"ש) להזהרת הולכי רגל.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-32" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-32')">
+                            <div>
+                                <span class="font-bold text-slate-900">בלימה רגנרטיבית (Regen):</span>
+                                <span class="text-slate-600">בדוק את הרמות השונות של הרגנרציה. ודא שהרכב מאט עצמאית והמד מציג החזר אנרגיה.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-33" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-33')">
+                            <div>
+                                <span class="font-bold text-slate-900">בדיקת בלמים מכניים:</span>
+                                <span class="text-slate-600">מאחר והם פחות פעילים, בדוק שהם לא חלודים או תפוסים על ידי לחיצה חזקה ב-N.</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-slate-50 rounded border border-slate-100">
+                            <input type="checkbox" id="chk-34" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-34')">
+                            <div>
+                                <span class="font-bold text-slate-900">תאוצה ליניארית ורציפה:</span>
+                                <span class="text-slate-600">לחץ לחיצה בריאה על דוושת התאוצה. כוח צריך לעבור מיידית וללא השהיה או רעידות.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- נספח שאלון טלפוני וכרטיס עסקה -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    <h3 class="text-[9px] font-bold text-teal-800 uppercase tracking-wider mb-1.5">
+                        📞 נספח: שאלות סינון טלפוניות מהירות (מבוסס על שאלות טלפון.pdf)
+                    </h3>
+                    <div class="grid grid-cols-2 gap-1.5 text-[9.5px] mb-2">
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-white rounded border border-slate-100">
+                            <input type="checkbox" id="chk-q1" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-q1')">
+                            <div>
+                                <span class="font-medium text-slate-700">"האם הרכב רשום על שמך ותהיה נוכח במכירה?"</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-white rounded border border-slate-100">
+                            <input type="checkbox" id="chk-q2" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-q2')">
+                            <div>
+                                <span class="font-medium text-slate-700">"האם קיימת היסטוריית טיפולים מלאה במורשה יבואן?"</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-white rounded border border-slate-100">
+                            <input type="checkbox" id="chk-q3" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-q3')">
+                            <div>
+                                <span class="font-medium text-slate-700">"האם הרכב עבר תאונות או קיבל מכה בתחתית?"</span>
+                            </div>
+                        </label>
+                        <label class="item-box flex items-start gap-1.5 p-1 bg-white rounded border border-slate-100">
+                            <input type="checkbox" id="chk-q4" class="checkbox-custom mt-0.5 w-3.5 h-3.5 text-teal-600 bg-gray-100 border-gray-300 rounded" onchange="syncCheckbox(this, 'screen-chk-q4')">
+                            <div>
+                                <span class="font-medium text-slate-700">"מה אחוז בריאות הסוללה (SoH) האחרון שנמדד?"</span>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <!-- הערות ומחיר סיכום להדפסה -->
+                    <div class="pt-2 border-t border-slate-200 grid grid-cols-2 gap-2 text-[10px]">
+                        <div>
+                            <span class="block text-[8px] text-slate-500 font-medium">ממצאים כלליים להחלפה:</span>
+                            <textarea id="print-input-notes" class="w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 focus:outline-none h-9 font-medium" placeholder="נדרש להחליף צמיגים קדמיים..." oninput="syncInputs(this, 'screen-input-notes')"></textarea>
+                        </div>
+                        <div>
+                            <span class="block text-[8px] text-slate-500 font-medium">סיכום כספי סופי מוסכם:</span>
+                            <textarea id="print-input-price" class="w-full bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 focus:outline-none h-9 font-medium" placeholder="מחיר סגירה מוסכם..." oninput="syncInputs(this, 'screen-input-price')"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- הערת שוליים מודפסת -->
+            <div class="border-t border-slate-200 pt-1.5 flex justify-between items-center text-[8px] text-slate-400 mt-2">
+                <span>צ'ק ליסט בדיקת רכב חשמלי - סוף מסמך (עמוד 2 מתוך 2)</span>
+                <span>עודכן בהתאמה לקובץ המקורי "—‰‰š ˜‹-ƒ‰—…š 2.xls"</span>
+            </div>
         </div>
 
-        <!-- הערת שוליים מודפסת -->
-        <div class="border-t border-slate-200 pt-2 flex justify-between items-center text-[9px] text-slate-400 mt-2">
-            <span>צ'ק ליסט בדיקת רכב חשמלי - סוף מסמך (עמוד 2 מתוך 2)</span>
-            <span>עודכן בהתאמה לקובץ המקורי "—‰‰š ˜‹-ƒ‰—…š 2.xls"</span>
-        </div>
     </div>
 
     <!-- סיידבר כלים דיגיטליים וקישורים מהירים (לא להדפסה) -->
     <div id="tools-sidebar" class="no-print fixed inset-y-0 right-0 z-[100] w-full max-w-md bg-slate-900 text-slate-100 shadow-2xl transform translate-x-full transition-transform duration-300 border-l border-teal-500/20 flex flex-col">
-        <!-- כותרת סיידבר -->
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
             <div class="flex items-center gap-2">
                 <span class="text-teal-400 text-lg">⚡</span>
@@ -619,13 +1011,11 @@
             <button onclick="toggleSidebar(false)" class="text-slate-400 hover:text-white text-2xl p-2 rounded-lg hover:bg-slate-800 transition-all leading-none">&times;</button>
         </div>
         
-        <!-- תוכן סיידבר -->
         <div class="p-4 overflow-y-auto space-y-4 flex-1">
             <p class="text-[11px] text-slate-400 leading-relaxed">
                 דף מידע דיגיטלי נפרד המכיל קישורים ממוקדים לרכב המבוקש. מידע זה אינו נכלל בגרסה המודפסת של הצ'ק-ליסט לצורך חיסכון במקום.
             </p>
             
-            <!-- כרטיס מידע הרכב -->
             <div class="bg-slate-950 border border-teal-500/20 rounded-xl p-4 space-y-2">
                 <div class="flex justify-between items-center">
                     <span class="text-[9px] font-bold text-teal-400 uppercase tracking-wider">רכב ממוקד לבדיקה</span>
@@ -643,8 +1033,7 @@
 
             <!-- רשימת כרטיסי קישור -->
             <div class="space-y-2.5">
-                <!-- ממשלתי -->
-                <a href="https://www.gov.il/he/Departments/DynamicCollectors/private_vehicle_history_1?skip=0&mispar_rechev=29160201" target="_blank" class="block p-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-teal-500/40 rounded-xl transition-all group">
+                <a href="https://www.gov.il/he/Departments/DynamicCollectors/private_vehicle_history_1?skip=0&mispar_rechev=29160201" target="_blank" class="block p-3 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-teal-500/40 rounded-xl transition-all group">
                     <div class="flex justify-between items-start gap-2">
                         <div>
                             <h4 class="text-xs font-bold text-white group-hover:text-teal-300 transition-colors">מאגר מידע ממשלתי (היסטוריית רכב)</h4>
@@ -654,8 +1043,7 @@
                     </div>
                 </a>
 
-                <!-- משומשת -->
-                <a href="https://meshumeshet.com/c/29160201" target="_blank" class="block p-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-teal-500/40 rounded-xl transition-all group">
+                <a href="https://meshumeshet.com/c/29160201" target="_blank" class="block p-3 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-teal-500/40 rounded-xl transition-all group">
                     <div class="flex justify-between items-start gap-2">
                         <div>
                             <h4 class="text-xs font-bold text-white group-hover:text-teal-300 transition-colors">בדיקת נתונים מורחבת באתר "משומשת"</h4>
@@ -665,8 +1053,7 @@
                     </div>
                 </a>
 
-                <!-- טרייד מוביל -->
-                <a href="https://trademobile.co.il/cars/%D7%90%D7%9D.%20%D7%92'%D7%99./ZS-EV/291-60-201-1" target="_blank" class="block p-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-teal-500/40 rounded-xl transition-all group">
+                <a href="https://trademobile.co.il/cars/%D7%90%D7%9D.%20%D7%92'%D7%99./ZS-EV/291-60-201-1" target="_blank" class="block p-3 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-teal-500/40 rounded-xl transition-all group">
                     <div class="flex justify-between items-start gap-2">
                         <div>
                             <h4 class="text-xs font-bold text-white group-hover:text-teal-300 transition-colors">מודעת הרכב המקורית בטרייד מוביל</h4>
@@ -676,8 +1063,7 @@
                     </div>
                 </a>
 
-                <!-- טכנוטסט -->
-                <a href="https://www.technotest.co.il/" target="_blank" class="block p-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-teal-500/40 rounded-xl transition-all group">
+                <a href="https://www.technotest.co.il/" target="_blank" class="block p-3 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-teal-500/40 rounded-xl transition-all group">
                     <div class="flex justify-between items-start gap-2">
                         <div>
                             <h4 class="text-xs font-bold text-white group-hover:text-teal-300 transition-colors">תיאום בדיקה ברשת מכוני "טכנוטסט"</h4>
@@ -689,7 +1075,6 @@
             </div>
         </div>
         
-        <!-- כפתור תחתית סיידבר -->
         <div class="p-4 bg-slate-950 border-t border-slate-800 text-[10px] text-slate-500 text-center">
             הקישורים והכלים מותאמים לצפייה בנייד/במסך בלבד ואינם יודפסו.
         </div>
@@ -698,7 +1083,7 @@
     <!-- מסך ערפול רקע לסיידבר -->
     <div id="sidebar-overlay" onclick="toggleSidebar(false)" class="no-print fixed inset-0 bg-black/60 z-[90] hidden transition-opacity duration-300 opacity-0"></div>
 
-    <!-- חלונית אישור מותאמת אישית מרהיבה (מחליפה את ה-confirm המובנה של הדפדפן) -->
+    <!-- חלונית אישור איפוס מותאמת אישית מרהיבה -->
     <div id="confirm-modal" class="no-print fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm transition-all duration-300">
         <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-200">
             <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center text-xl mb-4">
@@ -713,81 +1098,175 @@
         </div>
     </div>
 
-    <!-- קוד אינטראקטיבי לשמירה ועדכון התקדמות -->
+    <!-- ========================================== -->
+    <!--  מנגנוני JavaScript של האפליקציה          -->
+    <!-- ========================================== -->
     <script>
-        let checkboxes = [];
+        // שמירת רשימת פריטי הבדיקה
+        let allCheckboxes = [];
 
-        // טעינה ראשונית של המצב השמור
         window.onload = function() {
-            // בחירת כל תיבות הסימון כולל אלו שבנספח השאלות
-            checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            checkboxes.forEach((checkbox) => {
-                const checked = localStorage.getItem('ev_chk_' + checkbox.id) === 'true';
-                checkbox.checked = checked;
-                toggleTextDecoration(checkbox);
+            // טעינת פריטים פעם ראשונה
+            allCheckboxes = document.querySelectorAll('#print-document-view input[type="checkbox"]');
+            
+            // שחזור ערכים שמורים מ-localStorage
+            allCheckboxes.forEach((printCheckbox) => {
+                const uniqueId = printCheckbox.id; // למשל 'chk-1'
+                const screenCheckbox = document.getElementById('screen-' + uniqueId);
+                const savedState = localStorage.getItem('ev_chk_' + uniqueId) === 'true';
+                
+                printCheckbox.checked = savedState;
+                if (screenCheckbox) {
+                    screenCheckbox.checked = savedState;
+                }
+                
+                // עדכון סגנון ויזואלי של כרטיס הסימון במסך
+                toggleScreenCardStyle(uniqueId, savedState);
             });
+
+            // שחזור שדות טקסט
+            const textFields = ['notes', 'price', 'model', 'id'];
+            textFields.forEach(field => {
+                const savedText = localStorage.getItem('ev_txt_' + field);
+                if (savedText !== null) {
+                    const scrInput = document.getElementById('screen-input-' + field);
+                    const prnInput = document.getElementById('print-input-' + field);
+                    if (scrInput) scrInput.value = savedText;
+                    if (prnInput) prnInput.value = savedText;
+                }
+            });
+
+            // עדכון חזותי של התקדמות
             updateProgress();
         }
 
-        // עדכון ההתקדמות ושמירה
-        function updateProgress() {
-            checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            let checkedCount = 0;
+        // סנכרון דו-כיווני בין דף הדפסה למסך מובייל
+        function syncCheckbox(element, counterpartId) {
+            const counterpart = document.getElementById(counterpartId);
+            if (counterpart) {
+                counterpart.checked = element.checked;
+            }
             
-            checkboxes.forEach((checkbox) => {
-                localStorage.setItem('ev_chk_' + checkbox.id, checkbox.checked);
-                toggleTextDecoration(checkbox);
-                if (checkbox.checked) {
-                    checkedCount++;
-                }
-            });
+            // זיהוי ה-ID הבסיסי (ללא screen-)
+            const baseId = element.id.replace('screen-', '');
+            localStorage.setItem('ev_chk_' + baseId, element.checked);
             
-            const totalItems = checkboxes.length;
-            const percentage = totalItems > 0 ? Math.round((checkedCount / totalItems) * 100) : 0;
-            
-            // עדכון רכיבי ה-UI במגוון המסכים
-            const textElement = document.getElementById('progress-text');
-            const barElement = document.getElementById('progress-bar');
-            const badgeMobile = document.getElementById('progress-badge-mobile');
-            
-            if (textElement) textElement.innerText = `${checkedCount}/${totalItems} (${percentage}%)`;
-            if (barElement) barElement.style.width = `${percentage}%`;
-            if (badgeMobile) badgeMobile.innerText = `${checkedCount}/${totalItems}`;
+            toggleScreenCardStyle(baseId, element.checked);
+            updateProgress();
         }
 
-        // שינוי עיצוב הטקסט בבחירה
-        function toggleTextDecoration(checkbox) {
-            const labelText = checkbox.nextElementSibling;
-            if (labelText) {
-                if (checkbox.checked) {
-                    labelText.classList.add('checked-item');
+        // סנכרון שדות טקסט חופשי ושמירתם
+        function syncInputs(element, counterpartId) {
+            const counterpart = document.getElementById(counterpartId);
+            if (counterpart) {
+                counterpart.value = element.value;
+            }
+            
+            // זיהוי איזה שדה עודכן
+            const fieldType = element.id.replace('screen-input-', '').replace('print-input-', '');
+            localStorage.setItem('ev_txt_' + fieldType, element.value);
+        }
+
+        // שינוי עיצוב כרטיס הפריט במסך לקבלת משוב ויזואלי מהיר
+        function toggleScreenCardStyle(baseId, isChecked) {
+            const screenCheckbox = document.getElementById('screen-' + baseId);
+            if (screenCheckbox) {
+                const cardLabel = screenCheckbox.parentElement;
+                if (isChecked) {
+                    cardLabel.classList.add('checked-card-bg');
                 } else {
-                    labelText.classList.remove('checked-item');
+                    cardLabel.classList.remove('checked-card-bg');
                 }
             }
         }
 
-        // פונקציות להפעלת מודאל האישור המותאם אישית
-        function showResetConfirm() {
-            const modal = document.getElementById('confirm-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden'; // מניעת גלילה של הרקע
+        // עדכון אחוזי ההתקדמות בפרקים ובכללי
+        function updateProgress() {
+            let totalChecked = 0;
+            const printCheckboxes = document.querySelectorAll('#print-document-view input[type="checkbox"]');
+            
+            printCheckboxes.forEach(chk => {
+                if (chk.checked) totalChecked++;
+            });
+
+            const totalCount = printCheckboxes.length;
+            const percent = totalCount > 0 ? Math.round((totalChecked / totalCount) * 100) : 0;
+
+            // עדכון רכיבי סרגל עליון
+            document.getElementById('screen-progress-badge').innerText = `${totalChecked}/${totalCount}`;
+            document.getElementById('screen-progress-bar').style.width = `${percent}%`;
+
+            // עדכון התקדמות פרטנית לכל פרק באפליקציה
+            const chapters = document.querySelectorAll('.chapter-card');
+            chapters.forEach(chapter => {
+                const chapterId = chapter.getAttribute('data-chapter');
+                const chapterCheckboxes = chapter.querySelectorAll('.chapter-content input[type="checkbox"]');
+                let chapterChecked = 0;
+                
+                chapterCheckboxes.forEach(chk => {
+                    if (chk.checked) chapterChecked++;
+                });
+
+                const progressBadge = chapter.querySelector('.chapter-progress');
+                if (progressBadge) {
+                    progressBadge.innerText = `${chapterChecked}/${chapterCheckboxes.length}`;
+                    
+                    // החלפת צבע התג בפרק שהושלם לחלוטין
+                    if (chapterChecked === chapterCheckboxes.length) {
+                        progressBadge.className = "text-[10px] bg-emerald-500 text-white font-bold px-2 py-0.5 rounded-full chapter-progress shadow-sm transition-all";
+                    } else {
+                        progressBadge.className = "text-[10px] bg-teal-500/10 text-teal-700 font-bold px-2 py-0.5 rounded-full chapter-progress transition-all";
+                    }
+                }
+            });
         }
 
-        function closeConfirmModal(shouldReset) {
-            const modal = document.getElementById('confirm-modal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-            document.body.style.overflow = ''; // החזרת הגלילה
+        // פונקציית סינון וחיפוש פריטים בשטח (מצוין למובייל)
+        function filterChecklist() {
+            const query = document.getElementById('search-box').value.toLowerCase().trim();
+            const chapters = document.querySelectorAll('.chapter-card');
 
-            if (shouldReset) {
-                checkboxes.forEach((checkbox) => {
-                    checkbox.checked = false;
-                    localStorage.removeItem('ev_chk_' + checkbox.id);
-                    toggleTextDecoration(checkbox);
+            chapters.forEach(chapter => {
+                const items = chapter.querySelectorAll('.screen-item');
+                let hasVisibleItem = false;
+
+                items.forEach(item => {
+                    const text = item.innerText.toLowerCase();
+                    if (text.includes(query) || query === '') {
+                        item.style.display = 'flex';
+                        hasVisibleItem = true;
+                    } else {
+                        item.style.display = 'none';
+                    }
                 });
-                updateProgress();
+
+                // אם יש לפחות פריט אחד מתאים - הצג את הפרק כולו, אחרת הסתר
+                if (hasVisibleItem) {
+                    chapter.style.display = 'block';
+                    // אם בוצע חיפוש אקטיבי, פתח את הפרק אוטומטית
+                    if (query !== '') {
+                        const content = chapter.querySelector('.chapter-content');
+                        const chevron = chapter.querySelector('.chevron');
+                        content.style.display = 'block';
+                        chevron.style.transform = 'rotate(180deg)';
+                    }
+                } else {
+                    chapter.style.display = 'none';
+                }
+            });
+        }
+
+        // פתיחה וכיווץ של פרקים באפליקציה למובייל
+        function toggleChapter(button) {
+            const content = button.nextElementSibling;
+            const chevron = button.querySelector('.chevron');
+            
+            if (content.style.display === "none" || content.style.display === "") {
+                content.style.display = "block";
+                chevron.style.transform = "rotate(180deg)";
+            } else {
+                content.style.display = "none";
+                chevron.style.transform = "rotate(0deg)";
             }
         }
 
@@ -811,6 +1290,44 @@
                 setTimeout(() => {
                     overlay.classList.add('hidden');
                 }, 300);
+            }
+        }
+
+        // מודאל אישור איפוס מותאם אישית
+        function showResetConfirm() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeConfirmModal(shouldReset) {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+
+            if (shouldReset) {
+                // מחיקה ואיפוס מוחלט
+                localStorage.clear();
+                
+                // איפוס פיזי של כל הצ'קבוקסים
+                const allInputs = document.querySelectorAll('input[type="checkbox"]');
+                allInputs.forEach(input => {
+                    input.checked = false;
+                    toggleScreenCardStyle(input.id.replace('screen-', ''), false);
+                });
+
+                // איפוס שדות טקסט
+                const textInputs = ['notes', 'price', 'model', 'id'];
+                textInputs.forEach(field => {
+                    const scrInput = document.getElementById('screen-input-' + field);
+                    const prnInput = document.getElementById('print-input-' + field);
+                    if (scrInput) scrInput.value = (field === 'model' ? 'MG ZS EV' : (field === 'id' ? '291-60-201' : ''));
+                    if (prnInput) prnInput.value = (field === 'model' ? 'MG ZS EV' : (field === 'id' ? '291-60-201' : ''));
+                });
+
+                updateProgress();
             }
         }
     </script>

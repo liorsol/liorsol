@@ -61,7 +61,7 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 - **Extended family ~20 people**, 5 families: Solomon (2 parents + girls 7, 10) · grandparents · family (2 + baby 1.5) · family (2 + girls 6, 3, 1) · family (2 + girls 8, 12, 14, 17).
 - **Lodging:**
   - **Night of 13.8 (arrival) — near the airport (Rinas), NOT the villa.** Correction (June 2026, from the user): the Durrës villa starts only on **14.8** (second night), so the landing night everyone sleeps near Tirana airport. Each of the 5 families books its own — must have **free parking + 24h shuttle** because landing is 22:25 and some car-hire desks close 23:00–24:00. Candidates: **Airport Garden Hotel** (~50 m / 5-min walk, Booking 8.7) · **Hotel Airport Tirana** (4★, in front of terminal, free 24h shuttle, pool) · **Best Western Premier Ark** (4★ premium) · **Nerium Garden Inn** (Booking 9.6, shuttle by arrangement) · **Airport Holiday Hotel** (budget). Solomon-family August nightly ranges (verify on Booking): Airport Holiday ~€45–65 · Hotel Airport Tirana ~€60–90 · BW Ark ~€70–120 · Airport Garden ~€80–110 · Nerium ~€90–130.
-  - Villa in Durrës (everyone), **check-in 14.8**, checkout 19.8 (**5 nights**, confirmed by user). **Property swapped (Aug 2026, user):** the booking moved to a different villa — [Booking link](https://www.booking.com/Share-gUxozMP) (was `luxury-villa-with-big-swimming-pool`). The share link could not be resolved from this environment (booking.com is blocked by the network policy), so the new property's **name, exact address and amenities are unverified** — the page deliberately states no features and carries no map link. Get the name/city from the user and restore the map link + `.meta` details.
+  - **Villa Maxhaku, Shëngjergj (Shën Gjergj), Tirana County** (everyone), **check-in 14.8**, checkout 19.8 (**5 nights**, confirmed by user) — [Booking link](https://www.booking.com/hotel/al/villa-maxhaku.he.html). **The base moved (Aug 2026, user):** it was a villa on the Durrës coast; it is now a mountain village ~37 km / ~1 h north-east of Tirana. This is a structural change, not a rename — the old base sold "shallow Adriatic sea at the doorstep for the toddlers", and the new one sells mountain air, quiet and a private pool, with the beach becoming a planned day trip. Note: booking.com is blocked by this environment's network policy (curl and WebFetch both get 403), so property details came from listing aggregators and are **unverified** — sleeps ~20, pool, parking, EV charger, terrace.
   - Asters hotel in Ksamil, checkout 21.8 — [Booking link](https://www.booking.com/hotel/al/asters.en-gb.html) · **night of 21.8 not yet booked** — decided: low budget, not city center; near airport (Rinas) or up to ~30 min away if morning mountain view (Krujë candidates: Hotel Panorama Kruje, Rooms Emiliano, Vila Taga). Must be at the airport ~17:25 (2.5h before the 19:55 flight) — the whole morning and afternoon of 22.8 are free.
 - **Car (Solomon):** OK Mobility, Hyundai Venue (Compact, 5 seats). Whole family needs 4–5 cars.
 - **Events:** grandma's birthday (14.8, Friday dinner) · Daniel's birthday (18.8) · combined anniversaries party + adults-only quiz 🔞.
@@ -72,12 +72,12 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 | Date | Day | Plan |
 |---|---|---|
 | 13.8 | Thu | Landing 22:25 → sleep near airport (Rinas) — villa only from 14.8 |
-| 14.8 | Fri | Collect cars → Tirana + shopping → check in to Durrës villa · grandma's birthday dinner |
+| 14.8 | Fri | Collect cars → Tirana + **big supermarket run** → check in to the villa (Shëngjergj) · grandma's birthday dinner |
 | 15.8 | Sat | Mt. Dajti (cable car) |
 | 16.8 | Sun | Lake Shkodra / nearer alternative (Kruja, water park) |
 | 17.8 | Mon | Berat |
 | 18.8 | Tue | Lake Bovilla · Daniel's birthday evening |
-| 19.8 | Wed | Drive south Durrës→Ksamil (full travel day) |
+| 19.8 | Wed | Drive south Shëngjergj→Ksamil (full travel day, ~1 h longer than from Durrës) |
 | 20.8 | Thu | Ksamil: Butrint + beaches + Lëkurësi |
 | 21.8 | Fri | North (Blue Eye + Gjirokastër optional) → sleep near airport |
 | 22.8 | Sat | Free last day (Krujë / Tirana / Durrës beach) → at airport ~17:25 → flight 19:55 |
@@ -93,7 +93,7 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 ### Resolved (August 2026)
 
 - **Flights rescheduled** (see Trip data): return moved 10:30 → 19:55. The 21.8 "go north and sleep near the airport" plan still stands (Ksamil checkout is 21.8 regardless), and it now buys a genuinely free 22.8 instead of a 04:00 start. Krujë as the 21.8 option got stronger — a whole morning at the castle/bazaar before a ~25–30 min drive to the airport.
-- **Villa swapped** to a different property — new Booking link only; name/city/amenities still to be confirmed with the user.
+- **Villa swapped and the northern base moved** — Durrës coast → Villa Maxhaku in the Shëngjergj mountains (see Trip data). All "from Durrës" drive times in the star-trip catalogue were recomputed from the new base, and the day skeleton, hero subtitle, nav label and section titles were rewritten off Durrës. Two consequences worth re-checking with the user: **(a)** there is no beach at the base any more — Durrës beach is now a day trip; **(b)** the 19.8 drive south to Ksamil starts ~1 h further inland, so it is a longer travel day than planned.
 
 ### Resolved (June 2026)
 

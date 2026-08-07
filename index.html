@@ -13,6 +13,9 @@
 <script>document.getElementById('hljsTheme').href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/' + (THEME === 'light' ? 'github.min.css' : 'github-dark.min.css');</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.6/viewer.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.6/viewer.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
   :root { color-scheme: dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --fg:#c9d1d9; --muted:#8b949e; --accent:#58a6ff;
           --hover-bg:#21262d; --stripe:#ffffff06; --code-bg:#ffffff14; --code-block-bg:#ffffff0a; --swatch-border:rgba(255,255,255,.25);
@@ -51,17 +54,28 @@
   .muted { color:var(--muted); }
   .swatch { display:inline-block; width:.85em; height:.85em; border-radius:2px; margin-inline-end:.3em; vertical-align:-0.1em; border:1px solid var(--swatch-border); }
 
-  /* image viewer */
-  #imgWrap { flex:1; overflow:auto; display:flex; align-items:center; justify-content:center; padding:16px; }
-  #imgWrap.zoomed { align-items:flex-start; justify-content:flex-start; }
-  #imgWrap img { display:block; }
+  /* image viewer (Viewer.js inline mode owns sizing/scrolling of its own canvas).
+     Viewer.js sizes its canvas off this container's real height, so it needs one —
+     #view is a definite-height flex item, but isn't itself a flex container, so
+     percentage height (not flex:1) is what resolves against it. */
+  #imgWrap { height:100%; overflow:hidden; position:relative; }
+  /* Viewer.js's inline mode leaves the source <img> in normal flow at native size
+     instead of hiding it (its own clone is what's actually displayed) — take it out
+     of flow so it neither shows through nor skews the container's layout math. */
+  #imgWrap > img { position:absolute; visibility:hidden; }
 
   /* csv table */
   .csv-scroll { overflow:auto; height:100%; }
   table.csv { border-collapse:collapse; width:100%; font-size:13px; }
-  table.csv th, table.csv td { border:1px solid var(--line); padding:5px 9px; text-align:left; white-space:nowrap; }
+  table.csv th, table.csv td { border:1px solid var(--line); padding:0; text-align:left; vertical-align:top; }
   table.csv th { background:var(--panel); position:sticky; top:0; }
   table.csv tr:nth-child(even) td { background:var(--stripe); }
+  /* th/td stay display:table-cell (for column/row alignment) — the drag handle lives on an inner
+     inline-block div instead, since table cells don't reliably show a native resize handle. */
+  table.csv th > div, table.csv td > div { padding:5px 9px; white-space:pre-line; display:inline-block;
+    overflow:auto; box-sizing:border-box; min-width:2em; min-height:1.2em; }
+  table.csv th > div { resize:horizontal; }
+  table.csv td > div { resize:vertical; }
 
   /* json tree */
   .jsontree { padding:12px; font-size:13px; }
@@ -75,7 +89,7 @@
   .jt-leaf { padding:1px 0 1px 16px; }
 
   /* markdown */
-  .markdown { padding:20px 24px; max-width:860px; }
+  .markdown { padding:20px 24px; }
   .markdown h1, .markdown h2, .markdown h3 { border-bottom:1px solid var(--line); padding-bottom:.3em; }
   .markdown h1 { font-size:1.7rem; } .markdown h2 { font-size:1.35rem; } .markdown h3 { font-size:1.1rem; }
   .markdown code { background:var(--code-bg); padding:.15em .4em; border-radius:4px; font-size:.9em; }
@@ -321,28 +335,16 @@ function addColorSwatches(code) {
 }
 
 function showCsv(text) {
-  const rows = text.split(/\r?\n/).filter(l => l.length).map(parseCsvLine);
+  const rows = Papa.parse(text, { skipEmptyLines: true }).data;
   const view = el('#view');
   view.className = 'csv-scroll';
   if (!rows.length) { view.textContent = '(empty)'; return; }
   const [head, ...body] = rows;
   const table = document.createElement('table');
   table.className = 'csv';
-  table.innerHTML = `<thead><tr>${head.map(h => `<th>${escHtml(h)}</th>`).join('')}</tr></thead>` +
-    `<tbody>${body.map(r => `<tr>${r.map(c => `<td>${escHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  table.innerHTML = `<thead><tr>${head.map(h => `<th><div>${escHtml(h)}</div></th>`).join('')}</tr></thead>` +
+    `<tbody>${body.map(r => `<tr>${r.map(c => `<td><div>${escHtml(c)}</div></td>`).join('')}</tr>`).join('')}</tbody>`;
   view.append(table);
-}
-function parseCsvLine(line) {
-  const cells = []; let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (inQ) { if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else inQ = false; } else cur += c; }
-    else if (c === '"') inQ = true;
-    else if (c === ',') { cells.push(cur); cur = ''; }
-    else cur += c;
-  }
-  cells.push(cur);
-  return cells;
 }
 const escHtml = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -391,6 +393,9 @@ marked.use({ renderer: { code(code, lang) {
 function showMarkdown(text) {
   const view = el('#view');
   view.className = 'markdown';
+  const hebrew = (text.match(/[֐-׿]/g) || []).length;
+  const latin = (text.match(/[A-Za-z]/g) || []).length;
+  view.dir = hebrew > latin ? 'rtl' : 'ltr';
   view.innerHTML = marked.parse(text);
 }
 
@@ -404,6 +409,8 @@ function showHtml(path, raw) {
   grab(path).then(async r => showCode(r.ok ? await r.text() : `fetch failed: ${r.status}`, path, raw));
 }
 
+let imgViewer = null; // tracks the current Viewer.js instance so it can be destroyed before the next one is created
+
 function showImage(path) {
   const view = el('#view');
   const wrap = document.createElement('div');
@@ -413,22 +420,27 @@ function showImage(path) {
   wrap.append(img);
   view.append(wrap);
 
-  let zoom = 1; // 1 = fit-to-view, no upscaling
-  const apply = () => {
-    if (zoom === 1) { img.style.width = ''; img.style.height = ''; img.style.maxWidth = '100%'; img.style.maxHeight = '100%'; wrap.classList.remove('zoomed'); return; }
-    wrap.classList.add('zoomed');
-    img.style.maxWidth = 'none'; img.style.maxHeight = 'none';
-    const base = Math.min((wrap.clientWidth - 32) / (img.naturalWidth || 1), (wrap.clientHeight - 32) / (img.naturalHeight || 1), 1);
-    img.style.width = Math.round((img.naturalWidth || 0) * base * zoom) + 'px';
-    img.style.height = 'auto';
-  };
-  img.onload = apply;
-  setActions([
-    actionBtn('−', () => { zoom = Math.max(0.25, zoom / 1.4); apply(); }),
-    actionBtn('reset', () => { zoom = 1; apply(); }),
-    actionBtn('+', () => { zoom = Math.min(12, zoom * 1.4); apply(); }),
-    actionLink('raw', path),
-  ]);
+  if (imgViewer) imgViewer.destroy();
+  // navbar/title off: single image, no gallery filmstrip or filename caption needed.
+  // toolbar keeps zoom/rotate/flip (replaces our old hand-rolled zoom buttons) but drops
+  // prev/play/next, which only make sense for a multi-image gallery.
+  // transition:false: viewer.js's "viewed" event (and every zoom call gated behind it —
+  // toolbar buttons, wheel, our own zoomTo) waits on a CSS transitionend that some
+  // browser contexts never fire, permanently stalling the viewer. Skipping the animation
+  // makes the fit-to-view snap into place synchronously and instantly instead of racing it.
+  imgViewer = new Viewer(img, {
+    inline: true, navbar: false, title: false, transition: false,
+    toolbar: { zoomIn: true, zoomOut: true, oneToOne: true, reset: true, prev: false, play: false, next: false, rotateLeft: true, rotateRight: true, flipHorizontal: true, flipVertical: true },
+    // viewer.js's own initial-fit ratio comes out wrong in inline mode (its own docs set
+    // the ratio explicitly here rather than trust it) — set "fit to view, no upscaling"
+    // ourselves.
+    viewed() {
+      const { width: cw, height: ch } = wrap.getBoundingClientRect();
+      imgViewer.zoomTo(Math.min(cw / img.naturalWidth, ch / img.naturalHeight, 1));
+    },
+  });
+
+  setActions([actionLink('raw', path)]);
 }
 
 el('#filter').oninput = e => renderTree(ALL_PATHS, e.target.value.trim().toLowerCase());

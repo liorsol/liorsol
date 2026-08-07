@@ -60,6 +60,43 @@ Open [`savings-calculator.html#test`](savings-calculator.html#test) to run the b
 checks — the engine is verified against closed-form compound-growth, ordinary-annuity,
 annuity-due, fee-drag and tax gross-up results.
 
+## Car checklist sync (Firebase)
+
+[`car-checklist.html`](car-checklist.html) syncs checkbox/text state across devices via a
+Firebase Realtime Database, using plain `fetch()` (no SDK):
+
+- **DB:** `https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/`, scoped to
+  the `checklist` path. Reads/writes: `GET`/`PUT` to `checklist/<key>.json`; a full reset does
+  `DELETE` on `checklist.json`.
+- **Access:** open read/write, no auth. This DB has no backend, so any secret shipped in the
+  page's JS would be public anyway — there's no way to hide credentials on a static host. The
+  accepted risk: anyone who finds the URL can edit or wipe this one checklist. Nothing else is
+  reachable, and there's no sensitive data in it.
+- **Considered and rejected:** Firebase App Check (reCAPTCHA v3) would restrict calls to real
+  browsers on this domain, but adds a dependency for a risk this low. Origin/Referer/User-Agent
+  header checks were rejected too — none are real security, since any HTTP client can set those
+  headers to whatever it wants; RTDB rules can't even see them.
+- **What the rules *do* enforce** (data validation, not caller identity — configured in the
+  Firebase console, under this project's control, not stored in this repo):
+  ```json
+  {
+    "rules": {
+      "checklist": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.numChildren() <= 100",
+        "$key": {
+          ".validate": "$key.matches(/^ev_(chk|txt)_[A-Za-z0-9_-]{1,50}$/) && (newData.isBoolean() || (newData.isString() && newData.val().length < 1000))"
+        }
+      }
+    }
+  }
+  ```
+  This caps the node at 100 keys (today's app writes 38: 34 checkboxes + 4 text fields) and
+  rejects unknown key names, oversized strings, and non-boolean/non-string values — so an open
+  endpoint can't be turned into unbounded storage, even though it stays writable by anyone who
+  finds the URL.
+
 ## Running locally
 
 ```bash

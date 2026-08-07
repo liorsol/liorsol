@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מפת המסלול · טיול אלבניה 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+  :root{
+    --sea:#0c4b57; --sea-deep:#072f38; --azure:#1b8a9e;
+    --sand:#f7efe0; --paper:#fffdf8;
+    --terra:#d96b4f; --terra-deep:#b5482f; --gold:#e3a23a; --olive:#6f8a5b;
+    --ink:#1d2a2e; --ink-soft:#465256; --line:#e3d8c4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--sand); color:var(--ink); font-family:'Assistant',sans-serif; font-size:16px}
+  h1,h2{font-family:'Suez One',serif; font-weight:400; color:var(--sea); margin:0}
+  .bar{background:rgba(9,58,68,.97); border-bottom:2px solid var(--gold); padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .bar h1{color:#fff; font-size:19px}
+  .back{background:var(--gold); color:#3a2a08; text-decoration:none; font-family:'Heebo',sans-serif;
+    font-weight:700; font-size:14px; white-space:nowrap; padding:8px 16px; border-radius:999px; transition:.15s}
+  .back:hover{background:#fff}
+  .filters{display:flex; gap:6px; flex-wrap:wrap; padding:9px 18px; background:var(--paper); border-bottom:1px solid var(--line)}
+  .filters a{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; text-decoration:none;
+    padding:5px 13px; border-radius:999px; border:1.5px solid var(--line); color:var(--ink-soft); background:#fff; transition:.15s}
+  .filters a:hover{border-color:var(--azure); color:var(--sea)}
+  .filters a.on{background:var(--sea); border-color:var(--sea); color:#fff}
+  #map{height:calc(100vh - 104px); width:100%}
+  @media print{ #map{height:520px} .bar .back,.filters{display:none} }
+  .leaflet-popup-content{font-family:'Assistant',sans-serif; direction:rtl; text-align:right; font-size:14.5px; line-height:1.5}
+  .leaflet-popup-content b{font-family:'Heebo',sans-serif; color:var(--sea)}
+  .leaflet-popup-content a{color:var(--terra-deep); font-family:'Heebo',sans-serif; font-weight:700; font-size:13px}
+  .pin{display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50% 50% 50% 0; transform:rotate(45deg); box-shadow:0 2px 6px rgba(0,0,0,.35); border:2px solid #fff}
+  .pin span{transform:rotate(-45deg); font-size:13px}
+  .leaflet-control-layers{font-family:'Assistant',sans-serif; direction:rtl; text-align:right; font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <h1 id="title">🗺️ מפת המסלול — כל המקומות בתכנית</h1>
+  <a class="back" href="index.html">→ חזרה לעמוד הטיול</a>
+</div>
+<div class="filters" id="filters"></div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+/* Coordinates verified Aug 2026 against OpenStreetMap / Wikidata / Wikipedia.
+   A few are flagged in their note as unverified or approximate — those, and only
+   those, still need a Waze/Maps check before navigating.
+   Categories mirror the trip page's group tags + repo sections. */
+var CATS = {
+  lodging:  {label:'🛏️ לינה',              color:'#b5482f'},
+  north:    {label:'🗺️ בסיס הוילה + צפון', color:'#1b8a9e'},
+  tirana:   {label:'🏛️ טריאנה',            color:'#6f8a5b'},
+  drive:    {label:'🚗 הדרך דרומה וצפונה',  color:'#e3a23a'},
+  south:    {label:'🏝️ קסאמיל + דרום',     color:'#2bb8c4'},
+  food:     {label:'🍽️ מסעדות',            color:'#8a6310'}
+};
+
+var PLACES = [
+  // --- lodging ---
+  {n:'שדה התעופה ריקאס (TIA)', cat:'lodging', lat:41.4192, lng:19.7142, q:'Tirana+International+Airport+Rinas', note:'נחיתה 13.8 · המראה 22.8'},
+  {n:'Hotel Vila Zeus', cat:'lodging', lat:41.4205, lng:19.7095, q:'Hotel+Vila+Zeus+Rinas+Tirana', note:'✅ ליל 13.8 — הוזמן · ~1 ק״מ מהטרמינל · לתאם הסעה מראש'},
+  {n:'Hotel Airport Tirana', cat:'lodging', lat:41.4165, lng:19.7126, q:'Hotel+Airport+Tirana+Rinas', note:'אופציה ללילה 21.8 — שאטל 24/7'},
+  {n:'Airport Garden Hotel', cat:'lodging', lat:41.4202, lng:19.7114, q:'Airport+Garden+Hotel+Rinas+Tirana', note:'אופציה ללילה 21.8'},
+  {n:'Airport Holiday Hotel', cat:'lodging', lat:41.4154, lng:19.7123, q:'Airport+Holiday+Hotel+Rinas+Tirana', note:'אופציה ללילה 21.8 — תקציבי'},
+  {n:'Villa Maxhaku, שן-ג׳רג׳', cat:'lodging', lat:41.3376, lng:20.0955, q:'Villa+Maxhaku+Shengjergj+Tirana', note:'הבית שלנו · צ׳ק-אין 14.8 · צ׳ק-אאוט 19.8 · מיקום מקורב (מקור יחיד) — לבקש פין מהמארח'},
+  {n:'Asters Hotel, קסאמיל', cat:'lodging', lat:39.7647, lng:19.9967, q:'Asters+Hotel+Ksamil', note:'צ׳ק-אין 19.8 · צ׳ק-אאוט 21.8'},
+  {n:'Hotel Panorama Kruje', cat:'lodging', lat:41.5075, lng:19.7935, q:'Hotel+Panorama+Kruje', note:'אופציה ללילה 21.8'},
+  {n:'Rooms Emiliano, קרויה', cat:'lodging', lat:41.5090, lng:19.7928, q:'Rooms+Emiliano+Castle+Of+Kruja', note:'אופציה ללילה 21.8'},
+  {n:'Vila Taga Guesthouse, קרויה', cat:'lodging', lat:41.5128, lng:19.7955, q:'Vila+Taga+Guesthouse+Kruje', note:'אופציה ללילה 21.8'},
+
+  // --- north / villa star-trips ---
+  {n:'מפל שן-ג׳רג׳', cat:'north', lat:41.3292, lng:20.0326, q:'Shengjergj+Waterfall+Albania', note:'~1.5–2 ק״מ הליכה מהכפר'},
+  {n:'בוית׳ינה טומאדה (חווה+סוסים)', cat:'north', lat:41.3276, lng:20.0933, q:'Bujtina+Tomadhe+Shengjergj', note:'בכפר עצמו'},
+  {n:'רכבל דאיטי (Dajti Ekspres)', cat:'north', lat:41.3508, lng:19.8611, q:'Dajti+Ekspres+Cable+Car'},
+  {n:'פארק מים Blue Magic (קשאר)', cat:'north', lat:41.36649, lng:19.68822, q:'Aquapark+Albania+Blue+Magic+Water+Kashar', note:'ליד קניון Citypark, על כביש SH2'},
+  {n:'מצודת קרויה', cat:'north', lat:41.5083, lng:19.7936, q:'Kruja+Castle'},
+  {n:'מצודת בראט', cat:'north', lat:40.7081, lng:19.9455, q:'Berat+Castle', note:'אפשר לעלות ברכב עד השער ולחנות בפנים'},
+  {n:'נקודת התצפית של בראט', cat:'north', lat:40.70569, lng:19.94727, q:'Berat+Viewing+Platform', note:'תצפית חינם · יש רמפה נגישה'},
+  {n:'אגם בלשי', cat:'north', lat:40.978, lng:19.8916, q:'Belsh+Lake+Albania', note:'טיילת מישורית — עצירת מנוחה בדרך לבראט'},
+  {n:'קניון אוסום', cat:'north', lat:40.469, lng:20.2567, q:'Osum+Canyon+Albania', note:'רפטינג לנוער, ליד בראט'},
+  {n:'EQUOS Resort, מולט', cat:'north', lat:41.2619, lng:19.9017, q:'EQUOS+Resort+Mullet+Tirana', note:'סוסים + פארק מים · חלופה ל-16.8'},
+  {n:'אגרו-תיירות Huqi', cat:'north', lat:41.4106, lng:19.61, q:'Agriturizem+Huqi+Rade+Manez+Durres', note:'חווה על אגם · חלופה ל-16.8'},
+  {n:'Uka Farm, לאקנאס', cat:'north', lat:41.3689, lng:19.7426, q:'Uka+Farm+Laknas+Tirana', note:'חווה אורגנית ויקב · 15–20 ד׳ מהשדה · הזמנה מראש'},
+  {n:'אגם שקודרה', cat:'north', lat:42.059, lng:19.4575, q:'Lake+Shkoder', note:'~2:30–3 ש׳ לכיוון — ההמלצה לוותר'},
+  {n:'מצודת רוזאפה', cat:'north', lat:42.0465, lng:19.4939, q:'Rozafa+Castle+Shkoder'},
+  {n:'אגם בוביליה', cat:'north', lat:41.4477, lng:19.8643, q:'Bovilla+Lake', note:'⚠️ 6–8 הק״מ האחרונים — כביש חצץ, לבדוק לפני 18.8'},
+  {n:'אמפיתאטרון דורס', cat:'north', lat:41.3111, lng:19.4472, q:'Durres+Amphitheatre'},
+  {n:'מגדל ונציאני, דורס', cat:'north', lat:41.3097, lng:19.4469, q:'Venetian+Tower+Durres'},
+
+  // --- tirana ---
+  {n:'כיכר סקנדרבג', cat:'tirana', lat:41.3275, lng:19.8187, q:'Skanderbeg+Square+Tirana'},
+  {n:'הפירמידה של טריאנה', cat:'tirana', lat:41.323, lng:19.8215, q:'Pyramid+of+Tirana', note:'אפשר לטפס במדרגות החיצוניות — חינם'},
+  {n:'מסגד את׳הם ביי', cat:'tirana', lat:41.3275, lng:19.8194, q:'Et+hem+Bej+Mosque+Tirana', note:'בפינת כיכר סקנדרבג'},
+  {n:'קתדרלת תחיית ישו', cat:'tirana', lat:41.3265, lng:19.8174, q:'Resurrection+of+Christ+Orthodox+Cathedral+Tirana', note:'הקתדרלה האורתודוקסית · ~5 ד׳ מהכיכר'},
+  {n:'פאזארי אירי (שוק)', cat:'tirana', lat:41.3303, lng:19.8246, q:'Pazari+i+Ri+Tirana'},
+  {n:'Bunk’Art 1', cat:'tirana', lat:41.3498, lng:19.8604, q:'Bunk+Art+1+Tirana', note:'ליד תחנת הרכבל'},
+  {n:'Bunk’Art 2', cat:'tirana', lat:41.327, lng:19.8196, q:'Bunk+Art+2+Tirana'},
+  {n:'בית העלים', cat:'tirana', lat:41.3265, lng:19.8163, q:'House+of+Leaves+Museum+Tirana'},
+  {n:'המוזיאון הלאומי להיסטוריה', cat:'tirana', lat:41.3293, lng:19.8172, q:'National+History+Museum+Tirana'},
+  {n:'הפארק הגדול של טריאנה', cat:'tirana', lat:41.3117, lng:19.8281, q:'Grand+Park+of+Tirana'},
+
+  // --- drive south / north waypoints ---
+  {n:'מצודת פטרלה', cat:'drive', lat:41.2549, lng:19.8545, q:'Petrela+Castle+Albania', note:'כניסה חינם + מסעדה · בתחילת המסלול הפנימי'},
+  {n:'Zipline Albania, פטרלה', cat:'drive', lat:41.2606, lng:19.8525, q:'Zipline+Albania+Petrele', note:'~1,250 מ׳ · גיל 10+ · 35–125 ק״ג · ~€15–25'},
+  {n:'אויי-פטוהט, טפלנה', cat:'drive', lat:40.2504, lng:20.0649, q:'Uji+i+Ftohte+Tepelene', note:'מעיינות ומסעדות — עצירת אמצע הדרך (לא אומת)'},
+  {n:'קוזום באבא, וְלורה', cat:'drive', lat:40.4674, lng:19.4933, q:'Kuzum+Baba+Vlore', note:'תצפית + מסעדה עם מתקני משחק · עדיף על חניה בטיילת'},
+  {n:'טיילת וְלורה', cat:'drive', lat:40.4674, lng:19.4905, q:'Vlore+Promenade', note:'חניה מאתגרת בעונה · טיילת באורך ~4 ק״מ — זהו הקצה הצפוני, ליד קוזום באבא'},
+  {n:'מעבר לוגרה', cat:'drive', lat:40.1982, lng:19.5917, q:'Llogara+Pass', note:'1,027 מ׳ · יש גם מנהרה שעוקפת את הסרפנטינות'},
+
+  // --- south (Ksamil / Saranda area) ---
+  {n:'איי קסאמיל', cat:'south', lat:39.7751, lng:19.9961, q:'Ksamil+Islands'},
+  {n:'חוף המראה (Pasqyrat)', cat:'south', lat:39.8043, lng:20.0053, q:'Mirror+Beach+Ksamil', note:'בין סרנדה לקסאמיל — ~4 ק״מ צפונית לקסאמיל, נסיעה'},
+  {n:'The Mussel House, קסאמיל', cat:'south', lat:39.7886, lng:20.0114, q:'The+Mussel+House+Ksamil'},
+  {n:'הפארק הלאומי בוטרינט', cat:'south', lat:39.7474, lng:20.0219, q:'Butrint+National+Park'},
+  {n:'העין הכחולה (Syri i Kaltër)', cat:'south', lat:39.9238, lng:20.1925, q:'Blue+Eye+Syri+i+Kalter+Saranda', note:'שחייה אסורה, ~10°C'},
+  {n:'מצודת לקורסי', cat:'south', lat:39.8658, lng:20.0257, q:'Lekuresi+Castle+Saranda', note:'נוף + ארוחת שקיעה'},
+  {n:'מצודת ג׳ירוקסטרה', cat:'south', lat:40.0742, lng:20.1389, q:'Gjirokaster+Castle'},
+
+  // --- food ---
+  {n:'Panja — מאפייה ללא גלוטן', cat:'food', lat:41.329, lng:19.8126, q:'Panja+Tirana+Gluten+Free+Bakery', note:'⭐ 100% ללא גלוטן ולקטוז — היחידה באלבניה · לקנייה של 14.8'},
+  {n:'Taverna Muzaka, בראט', cat:'food', lat:40.70351, lng:19.94869, q:'Taverna+Muzaka+Berat', note:'ברובע גוריצה — אותו מקום כמו Hotel Muzaka'},
+  {n:'Era Restaurant, טריאנה', cat:'food', lat:41.32013, lng:19.81464, q:'Era+Restaurant+Tirana', note:'סניף בלוקו (המקורי) — יש סניף שני בעיר'},
+  {n:'Tony’s American, טריאנה', cat:'food', lat:41.3231, lng:19.8223, q:'Tonys+American+Restaurant+Tirana'},
+  {n:'Fishbar, סרנדה', cat:'food', lat:39.8774, lng:20.0111, q:'Fishbar+Saranda', note:'~450 מ׳ מהטיילת, לא על המים'},
+  {n:'Sophra, סרנדה', cat:'food', lat:39.8547, lng:20.0212, q:'Sophra+Restaurant+Saranda', note:'על כביש בוטרינטי, ~2.6 ק״מ מהטיילת — צריך רכב · חניה במקום'},
+  {n:'Centrali, סרנדה', cat:'food', lat:39.8735, lng:20.0121, q:'Centrali+Saranda'},
+  {n:'Salad Farm, סרנדה', cat:'food', lat:39.85717, lng:20.02066, q:'Salad+Farm+Saranda', note:'⚠️ ייתכן שנסגר — לבדוק טלפונית לפני'}
+];
+
+var map = L.map('map', {zoomControl:true}).setView([41.0, 19.9], 8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+var layerGroups = {}, groupBounds = {};
+Object.keys(CATS).forEach(function(k){ layerGroups[k] = L.layerGroup(); groupBounds[k] = []; });
+
+var allBounds = [];
+PLACES.forEach(function(p){
+  var c = CATS[p.cat];
+  var icon = L.divIcon({
+    className:'', html:'<div class="pin" style="background:'+c.color+'"><span>●</span></div>',
+    iconSize:[26,26], iconAnchor:[13,26], popupAnchor:[0,-24]
+  });
+  var mapsUrl = 'https://www.google.com/maps/search/?api=1&query='+p.q;
+  var html = '<b>'+p.n+'</b>' + (p.note ? '<br>'+p.note : '') +
+             '<br><a href="'+mapsUrl+'" target="_blank" rel="noopener">מפה / ניווט ↖</a>';
+  L.marker([p.lat, p.lng], {icon:icon}).bindPopup(html).addTo(layerGroups[p.cat]);
+  groupBounds[p.cat].push([p.lat, p.lng]);
+  allBounds.push([p.lat, p.lng]);
+});
+
+var overlays = {};
+Object.keys(CATS).forEach(function(k){ overlays[CATS[k].label] = layerGroups[k]; });
+L.control.layers(null, overlays, {collapsed:false}).addTo(map);
+
+/* #<category> shows just that section's pins — the per-view maps the trip page links to.
+   No hash (or an unknown one) = everything. */
+function apply(){
+  var cat = location.hash.replace(/^#/, '');
+  if(!CATS[cat]) cat = '';
+  var bounds = [];
+  Object.keys(CATS).forEach(function(k){
+    var on = !cat || k === cat;
+    if(on){ layerGroups[k].addTo(map); bounds = bounds.concat(groupBounds[k]); }
+    else   { map.removeLayer(layerGroups[k]); }
+  });
+  document.getElementById('title').textContent =
+    cat ? CATS[cat].label + ' — ' + groupBounds[cat].length + ' נקודות'   /* labels already carry an emoji */
+        : '🗺️ מפת המסלול — כל ' + PLACES.length + ' המקומות בתכנית';
+  document.querySelectorAll('#filters a[data-cat]').forEach(function(a){
+    a.classList.toggle('on', a.dataset.cat === cat);
+  });
+  map.invalidateSize();
+  if(bounds.length) map.fitBounds(bounds, {padding:[30,30]});
+}
+
+var f = document.getElementById('filters');
+f.innerHTML = '<a href="#" data-cat="">הכל (' + PLACES.length + ')</a>' +
+  Object.keys(CATS).map(function(k){
+    return '<a href="#'+k+'" data-cat="'+k+'">'+CATS[k].label+' ('+groupBounds[k].length+')</a>';
+  }).join('');
+f.querySelector('a[data-cat=""]').addEventListener('click', function(e){
+  e.preventDefault();
+  if(location.hash){ history.pushState(null,'','#'); }   // keep Back working
+  apply();
+});
+
+window.addEventListener('hashchange', apply);
+window.addEventListener('popstate', apply);
+apply();
+</script>
+</body>
+</html>

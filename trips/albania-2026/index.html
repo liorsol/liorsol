@@ -110,6 +110,45 @@
     background:var(--gold); color:#3a2a08; padding:8px 16px; border-radius:999px}
   @media (max-width:640px){ .mapbanner{flex-wrap:wrap} .mapbanner .go{width:100%; text-align:center} }
 
+  /* SHARED BOARDS (Firebase) — comments per view + a links board */
+  .talk,.links-board{margin:26px 0 0; padding-top:16px; border-top:2px dashed var(--line)}
+  .talk h3,.links-board h3{font-size:19px; margin:0 0 2px}
+  .board-sub{color:var(--ink-soft); font-size:14px; margin:0 0 10px}
+  .board-warn{background:#fdeee9; border:1px solid #f0c3b3; border-radius:11px; padding:8px 13px;
+    font-size:13.5px; margin:0 0 12px; color:#7a2f1c}
+  .board-form{display:flex; flex-direction:column; gap:8px; background:var(--paper);
+    border:1px solid var(--line); border-radius:14px; padding:14px 16px}
+  .board-form .row{display:flex; gap:8px; flex-wrap:wrap}
+  .board-form input,.board-form textarea{font-family:'Assistant',sans-serif; font-size:15px;
+    border:1.5px solid var(--line); border-radius:10px; padding:8px 11px; background:#fff; color:var(--ink); width:100%}
+  .board-form input:focus,.board-form textarea:focus{outline:2px solid var(--azure); outline-offset:1px; border-color:var(--azure)}
+  .board-form .who{flex:0 0 170px; min-width:130px}
+  .board-form .grow{flex:1 1 220px}
+  .board-form textarea{min-height:74px; resize:vertical}
+  .board-form .foot{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .btn{font-family:'Heebo',sans-serif; font-weight:700; font-size:14px; border:none; cursor:pointer;
+    background:var(--sea); color:#fff; padding:9px 20px; border-radius:999px; transition:.15s}
+  .btn:hover:not(:disabled){background:var(--azure)}
+  .btn:disabled{opacity:.5; cursor:default}
+  .btn.ghost{background:transparent; color:var(--ink-soft); border:1.5px solid var(--line); padding:7px 14px}
+  .btn.ghost:hover{border-color:var(--azure); color:var(--sea); background:#fff}
+  .board-msg{font-size:13.5px; font-family:'Heebo',sans-serif; font-weight:700}
+  .board-msg.err{color:var(--terra-deep)} .board-msg.ok{color:#0c5e5a}
+  .board-count{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; color:var(--ink-soft)}
+  .board-list{list-style:none; padding:0; margin:14px 0 0; display:flex; flex-direction:column; gap:10px}
+  .board-list li{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:11px 15px}
+  .board-list .head{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin-bottom:2px}
+  .board-list .who{font-family:'Heebo',sans-serif; font-weight:900; color:var(--sea); font-size:14.5px}
+  .board-list .when{font-size:12.5px; color:var(--ink-soft)}
+  .board-list .del{margin-inline-start:auto; background:none; border:none; cursor:pointer;
+    color:var(--line); font-size:15px; padding:0 4px; line-height:1}
+  .board-list .del:hover{color:var(--terra)}
+  .board-list .body{font-size:15px; white-space:pre-wrap; overflow-wrap:anywhere}
+  .board-list a.lnk{font-family:'Heebo',sans-serif; font-weight:700; font-size:15px;
+    color:var(--terra-deep); overflow-wrap:anywhere}
+  .board-empty{color:var(--ink-soft); font-size:14.5px; font-style:italic; margin:12px 0 0}
+  @media print{ .board-form,.board-warn,.board-list .del{display:none} }
+
   /* DISCLOSURE — high-level by default, detail on demand */
   details{margin-top:11px; border-top:1px dashed var(--line-soft); padding-top:9px}
   details summary{cursor:pointer; font-family:'Heebo',sans-serif; font-weight:700; font-size:13.5px;
@@ -254,6 +293,8 @@
       <a class="tile" href="map.html"><div class="ic">🗺️</div><h3>מפת המסלול</h3><p>כל האטרקציות, הלינות והמסעדות על מפה אחת, לפי קבוצות.</p></a>
     </div>
     <p style="color:var(--ink-soft); font-size:14px; margin-top:18px">💡 בכל כרטיס יש שורת ״<span style="color:var(--azure); font-weight:700">◂ פרטים</span>״ — לחיצה פותחת את המידע המלא. סגור = תמונה כללית, פתוח = הכל.</p>
+  
+  <section class="talk" data-topic="home" aria-label="הערות כלליות"></section>
   </div>
 </div>
 
@@ -484,7 +525,9 @@
       <div class="links" style="margin:0"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Rozafa+Castle+Shkoder" target="_blank" rel="noopener">רוזאפה ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Lake+Shkoder" target="_blank" rel="noopener">האגם ↖</a></div>
     </details>
   </div>
-</div></div>
+
+  <section class="talk" data-topic="north" aria-label="הערות על הוילה והצפון"></section>
+  </div></div>
 
 <!-- ======================= TIRANA ======================= -->
 <div class="view" id="view-tirana"><div class="wrap pad">
@@ -542,7 +585,9 @@
       <div class="links" style="margin:0"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Grand+Park+of+Tirana" target="_blank" rel="noopener">מפה ↖</a></div>
     </details>
   </div>
-</div></div>
+
+  <section class="talk" data-topic="tirana" aria-label="הערות על טריאנה"></section>
+  </div></div>
 
 <!-- ======================= DRIVE ======================= -->
 <div class="view" id="view-drive"><div class="wrap pad">
@@ -600,7 +645,9 @@
       <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Blue+Eye+Syri+i+Kalter+Saranda" target="_blank" rel="noopener">העין הכחולה ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Gjirokaster+Castle" target="_blank" rel="noopener">מצודת ג׳ירוקסטרה ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Uka+Farm+Laknas+Tirana" target="_blank" rel="noopener">Uka Farm ↖</a></div>
     </details>
   </div>
-</div></div>
+
+  <section class="talk" data-topic="drive" aria-label="הערות על ימי הנסיעה"></section>
+  </div></div>
 
 <!-- ======================= SOUTH ======================= -->
 <div class="view" id="view-south"><div class="wrap pad">
@@ -701,7 +748,9 @@
       <div class="links" style="margin:0"><a href="https://ksamil.al" target="_blank" rel="noopener">אופרטור מקומי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Mussel+House+Ksamil" target="_blank" rel="noopener">בית הצדפות ↖</a></div>
     </details>
   </div>
-</div></div>
+
+  <section class="talk" data-topic="south" aria-label="הערות על הדרום"></section>
+  </div></div>
 
 <!-- ======================= LAST DAY (22.8) ======================= -->
 <div class="view" id="view-last"><div class="wrap pad">
@@ -756,7 +805,9 @@
       <div class="why" style="margin-top:8px"><b>חלופה ששווה לשקול:</b> לצאת מקסאמיל כבר ב-21.8 אחרי הצהריים ולישון צפונה כמו משפחת סולומון. זה קונה יום אחרון רגוע במקום יום נהיגה, במחיר של חצי יום פחות בקסאמיל. שווה להעלות לדיון מול מי שהזמין את הלילה הנוסף.</div>
     </details>
   </div>
-</div></div>
+
+  <section class="talk" data-topic="last" aria-label="הערות על היום האחרון"></section>
+  </div></div>
 
 <!-- ======================= FOOD ======================= -->
 <div class="view" id="view-food"><div class="wrap pad">
@@ -829,7 +880,9 @@
     <span class="chip">Unë nuk mund të ha gluten</span> אני לא יכול/ה לאכול גלוטן ·
     <span class="chip">pa miell, pa bukë</span> בלי קמח, בלי לחם ·
     <span class="chip">A është pa gluten?</span> האם זה ללא גלוטן?</div>
-</div></div>
+
+  <section class="talk" data-topic="food" aria-label="הערות על אוכל וגלוטן"></section>
+  </div></div>
 
 <!-- ======================= INFO ======================= -->
 <div class="view" id="view-info"><div class="wrap pad">
@@ -843,7 +896,11 @@
     <div class="card"><h4>📶 תקשורת</h4><p>כיסוי טוב באזורים מיושבים. שווה <a href="https://esimdb.com/albania" target="_blank" rel="noopener">eSIM</a> או סים מקומי לניווט. <b>להוריד מפות אופליין</b> — הקליטה בשן-ג׳רג׳ לא אומתה, ובחלק מדרכי הדרום היא חלשה.</p></div>
     <div class="card"><h4>🗓️ תיאום קבוצתי</h4><p>עם ~20 איש ו-5 רכבים: לקבוע מראש נקודות מפגש וזמן יעד יומי, ולשמור קבוצת וואטסאפ אחת. ״תכנית מרכזית + פיצול לפי תגיות״ מוריד הרבה חיכוך.</p></div>
   </div>
-</div></div>
+
+  <section class="links-board" id="links" aria-label="קישורים שימושיים"></section>
+
+  <section class="talk" data-topic="info" aria-label="הערות על המידע הפרקטי"></section>
+  </div></div>
 
 <!-- ======================= CHECKLIST ======================= -->
 <div class="view" id="view-checklist"><div class="wrap pad">
@@ -889,7 +946,9 @@
 
   <div class="note"><div class="nh">🔌 חשמל</div>
     שקעים אירופאיים (Type C/F, ‏230V) — רוב התקעים הישראליים עובדים, אבל כדאי מתאם אוניברסלי אחד לכל משפחה.</div>
-</div></div>
+
+  <section class="talk" data-topic="checklist" aria-label="הערות על הצ׳ק-ליסט"></section>
+  </div></div>
 
 <!-- ======================= MINE (our family) ======================= -->
 <div class="view" id="view-mine"><div class="wrap pad">
@@ -970,7 +1029,9 @@
       <li><b>ערב הפולקלור ״למבוגרים בלבד״</b> — מי עם הילדים.</li>
     </ul>
   </div>
-</div></div>
+
+  <section class="talk" data-topic="mine" aria-label="הערות של משפחת סולומון"></section>
+  </div></div>
 
 <footer>
   טיול משפחתי לאלבניה · <b>13–22 באוגוסט 2026</b><br>
@@ -1036,6 +1097,283 @@
     window.addEventListener('beforeprint', function(){
       document.querySelectorAll('details').forEach(function(d){ d.open = true; });
     });
+  })();
+
+  /* ============================================================
+     Shared boards — comments per view + a links board.
+     Storage: Firebase RTDB, path `albania2026` (see repo README).
+
+     The DB rules allow only a bool/number/string under each key, so an
+     entry is ONE flat key holding a JSON string. Key must match
+     ^[A-Za-z0-9_-]{1,50}$ and the value must stay under 2000 chars —
+     both are re-checked here before every write.
+
+     SECURITY: that path is public, unauthenticated and world-writable.
+     Everything read back is untrusted input from the internet:
+     render with textContent only, and never trust a stored URL without
+     re-checking its scheme.
+     ============================================================ */
+  (function(){
+    var DB   = 'https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/albania2026';
+    var MAXV = 2000;                       // DB rule: string value length
+    var KEYRE = /^[A-Za-z0-9_-]{1,50}$/;   // DB rule: key shape
+    var LIM  = {name:24, text:800, title:100, url:500};
+
+    var boards = [].slice.call(document.querySelectorAll('.talk'));
+    var linksEl = document.getElementById('links');
+    if(!boards.length && !linksEl) return;
+
+    function newKey(prefix, topic){
+      var k = prefix + (topic ? '_' + topic : '') + '_' +
+              Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+      return KEYRE.test(k) ? k : null;
+    }
+    function clip(s, n){ return String(s == null ? '' : s).trim().slice(0, n); }
+
+    /* Only http(s) may ever reach an href. Blocks javascript:, data:, etc. */
+    function safeUrl(raw){
+      var s = clip(raw, LIM.url);
+      if(!s) return null;
+      if(!/^https?:\/\//i.test(s)) s = 'https://' + s;
+      try{
+        var u = new URL(s);
+        return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null;
+      }catch(e){ return null; }
+    }
+    function when(ms){
+      var d = new Date(ms);
+      return isNaN(d) ? '' : d.toLocaleDateString('he-IL', {day:'numeric', month:'short'}) +
+             ' · ' + d.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
+    }
+    function nameFor(who){ return who || 'אנונימי'; }
+
+    var STORE = 'albania2026_name';
+    function savedName(){ try{ return localStorage.getItem(STORE) || ''; }catch(e){ return ''; } }
+    function rememberName(v){ try{ localStorage.setItem(STORE, v); }catch(e){} }
+
+    /* --- transport ------------------------------------------------ */
+    var pending = null;                    // all boards share one GET per refresh
+    function loadAll(force){
+      if(pending && !force) return pending;
+      pending = fetchAll();
+      return pending;
+    }
+    function fetchAll(){
+      return fetch(DB + '.json', {cache:'no-store'}).then(function(r){
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function(raw){
+        var out = [];
+        Object.keys(raw || {}).forEach(function(key){
+          var val = raw[key];
+          if(typeof val !== 'string') return;      // ignore anything not ours
+          var rec; try{ rec = JSON.parse(val); }catch(e){ return; }
+          if(!rec || typeof rec !== 'object') return;
+          rec._key = key;
+          out.push(rec);
+        });
+        return out;
+      });
+    }
+    function put(key, obj){
+      var body = JSON.stringify(JSON.stringify(obj));
+      if(body.length - 2 >= MAXV) return Promise.reject(new Error('too_long'));
+      return fetch(DB + '/' + encodeURIComponent(key) + '.json', {method:'PUT', body:body})
+        .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); });
+    }
+    function del(key){
+      return fetch(DB + '/' + encodeURIComponent(key) + '.json', {method:'DELETE'})
+        .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); });
+    }
+
+    /* --- shared chrome -------------------------------------------- */
+    function build(el, opts){
+      el.innerHTML = '';
+      var h = document.createElement('h3'); h.textContent = opts.heading; el.appendChild(h);
+      var sub = document.createElement('p'); sub.className = 'board-sub';
+      sub.textContent = opts.sub; el.appendChild(sub);
+
+      var warn = document.createElement('div'); warn.className = 'board-warn';
+      warn.textContent = '⚠️ הלוח הזה ציבורי ופתוח — כל מי שיש לו את הקישור לעמוד יכול לקרוא, ' +
+        'לכתוב ולמחוק. אל תכתבו כאן פרטים אישיים: מספרי הזמנה, טלפונים, כתובות, דרכונים או פרטי תשלום.';
+      el.appendChild(warn);
+
+      var form = document.createElement('form'); form.className = 'board-form'; form.noValidate = true;
+      var row = document.createElement('div'); row.className = 'row';
+      var who = document.createElement('input');
+      who.className = 'who'; who.maxLength = LIM.name; who.placeholder = 'השם שלך (לא חובה)';
+      who.value = savedName(); who.setAttribute('aria-label', 'שם');
+      row.appendChild(who);
+      form.appendChild(row);
+      var extraEl = opts.extra(row, form);
+
+      var foot = document.createElement('div'); foot.className = 'foot';
+      var send = document.createElement('button');
+      send.type = 'submit'; send.className = 'btn'; send.textContent = opts.submit;
+      var msg = document.createElement('span'); msg.className = 'board-msg';
+      var count = document.createElement('span'); count.className = 'board-count';
+      foot.appendChild(send); foot.appendChild(msg); foot.appendChild(count);
+      form.appendChild(foot);
+      el.appendChild(form);
+
+      var list = document.createElement('ul'); list.className = 'board-list'; el.appendChild(list);
+      return {form:form, who:who, send:send, msg:msg, count:count, list:list, extraEl:extraEl};
+    }
+    function say(ui, text, kind){
+      ui.msg.textContent = text; ui.msg.className = 'board-msg' + (kind ? ' ' + kind : '');
+      if(kind === 'ok') setTimeout(function(){ if(ui.msg.textContent === text) ui.msg.textContent = ''; }, 2500);
+    }
+    function entry(rec, onDelete){
+      var li = document.createElement('li');
+      var head = document.createElement('div'); head.className = 'head';
+      var w = document.createElement('span'); w.className = 'who';
+      w.textContent = nameFor(clip(rec.n, LIM.name));            // untrusted → textContent
+      var t = document.createElement('span'); t.className = 'when';
+      t.textContent = when(rec.d);
+      var x = document.createElement('button');
+      x.className = 'del'; x.type = 'button'; x.textContent = '✕';
+      x.title = 'מחיקה'; x.setAttribute('aria-label', 'מחיקה');
+      x.addEventListener('click', onDelete);
+      head.appendChild(w); head.appendChild(t); head.appendChild(x);
+      li.appendChild(head);
+      return li;
+    }
+
+    /* --- comments -------------------------------------------------- */
+    function initTalk(el){
+      var topic = el.dataset.topic;
+      var ui = build(el, {
+        heading: '💬 ' + el.getAttribute('aria-label'),
+        sub: 'מקום להערות, שאלות והצעות על הסעיף הזה. משותף לכל מי שנכנס לעמוד.',
+        submit: 'שליחה',
+        extra: function(row, form){
+          var ta = document.createElement('textarea');
+          ta.maxLength = LIM.text; ta.placeholder = 'ההערה שלך…';
+          ta.setAttribute('aria-label', 'הערה');
+          form.appendChild(ta);
+          return ta;
+        }
+      });
+      var ta = ui.extraEl;
+      function render(all){
+        var mine = all.filter(function(r){ return r._key.indexOf('c_' + topic + '_') === 0; })
+                      .sort(function(a, b){ return (a.d || 0) - (b.d || 0); });
+        ui.list.innerHTML = '';
+        ui.count.textContent = mine.length ? (mine.length === 1 ? 'הערה אחת' : mine.length + ' הערות') : '';
+        if(!mine.length){
+          var p = document.createElement('p'); p.className = 'board-empty';
+          p.textContent = 'אין עדיין הערות על הסעיף הזה.';
+          ui.list.appendChild(p); return;
+        }
+        mine.forEach(function(rec){
+          var li = entry(rec, function(){
+            if(!confirm('למחוק את ההערה?')) return;
+            del(rec._key).then(function(){ return refresh(true); }).catch(function(){ say(ui, 'המחיקה נכשלה', 'err'); });
+          });
+          var b = document.createElement('div'); b.className = 'body';
+          b.textContent = clip(rec.t, LIM.text);                  // untrusted → textContent
+          li.appendChild(b); ui.list.appendChild(li);
+        });
+      }
+      function refresh(force){
+        return loadAll(force).then(render).catch(function(){
+          ui.list.innerHTML = '';
+          var p = document.createElement('p'); p.className = 'board-empty';
+          p.textContent = 'לא הצלחנו לטעון את ההערות (בעיית רשת?). נסו לרענן.';
+          ui.list.appendChild(p);
+        });
+      }
+      ui.form.addEventListener('submit', function(e){
+        e.preventDefault();
+        var text = clip(ta.value, LIM.text);
+        if(!text){ say(ui, 'צריך לכתוב משהו', 'err'); return; }
+        var key = newKey('c', topic);
+        if(!key){ say(ui, 'שגיאה פנימית', 'err'); return; }
+        var nm = clip(ui.who.value, LIM.name); rememberName(nm);
+        ui.send.disabled = true; say(ui, 'שולח…');
+        put(key, {n:nm, t:text, d:Date.now()}).then(function(){
+          ta.value = ''; say(ui, 'נשלח ✓', 'ok'); return refresh(true);
+        }).catch(function(err){
+          say(ui, err.message === 'too_long' ? 'ההערה ארוכה מדי' : 'השליחה נכשלה — נסו שוב', 'err');
+        }).then(function(){ ui.send.disabled = false; });
+      });
+      refresh();
+    }
+
+    /* --- links board ----------------------------------------------- */
+    function initLinks(el){
+      var url, title;
+      var ui = build(el, {
+        heading: '🔗 קישורים שימושיים',
+        sub: 'מדריכים, סרטונים, כתבות או כל דבר שכדאי שכולם יראו. משותף לכל מי שנכנס לעמוד.',
+        submit: 'הוספת קישור',
+        extra: function(row){
+          url = document.createElement('input');
+          url.className = 'grow'; url.maxLength = LIM.url;
+          url.placeholder = 'כתובת הקישור (https://…)';
+          url.setAttribute('aria-label', 'כתובת'); url.type = 'text';
+          title = document.createElement('input');
+          title.className = 'grow'; title.maxLength = LIM.title;
+          title.placeholder = 'על מה זה? (לא חובה)';
+          title.setAttribute('aria-label', 'תיאור');
+          row.appendChild(url); row.appendChild(title);
+        }
+      });
+      function render(all){
+        var mine = all.filter(function(r){ return r._key.indexOf('l_') === 0; })
+                      .sort(function(a, b){ return (b.d || 0) - (a.d || 0); });
+        ui.list.innerHTML = '';
+        ui.count.textContent = mine.length ? (mine.length === 1 ? 'קישור אחד' : mine.length + ' קישורים') : '';
+        if(!mine.length){
+          var p = document.createElement('p'); p.className = 'board-empty';
+          p.textContent = 'אין עדיין קישורים. הוסיפו את הראשון.';
+          ui.list.appendChild(p); return;
+        }
+        mine.forEach(function(rec){
+          var href = safeUrl(rec.u);        // re-validate: stored value is untrusted
+          if(!href) return;                 // silently drop anything not http(s)
+          var li = entry(rec, function(){
+            if(!confirm('למחוק את הקישור?')) return;
+            del(rec._key).then(function(){ return refresh(true); }).catch(function(){ say(ui, 'המחיקה נכשלה', 'err'); });
+          });
+          var a = document.createElement('a');
+          a.className = 'lnk'; a.href = href;
+          a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
+          a.textContent = clip(rec.t, LIM.title) || href;         // untrusted → textContent
+          li.appendChild(a);
+          var sub = document.createElement('div');
+          sub.className = 'when'; sub.textContent = href;
+          li.appendChild(sub);
+          ui.list.appendChild(li);
+        });
+      }
+      function refresh(force){
+        return loadAll(force).then(render).catch(function(){
+          ui.list.innerHTML = '';
+          var p = document.createElement('p'); p.className = 'board-empty';
+          p.textContent = 'לא הצלחנו לטעון את הקישורים (בעיית רשת?). נסו לרענן.';
+          ui.list.appendChild(p);
+        });
+      }
+      ui.form.addEventListener('submit', function(e){
+        e.preventDefault();
+        var href = safeUrl(url.value);
+        if(!href){ say(ui, 'כתובת לא תקינה — צריך קישור http/https', 'err'); return; }
+        var key = newKey('l', null);
+        if(!key){ say(ui, 'שגיאה פנימית', 'err'); return; }
+        var nm = clip(ui.who.value, LIM.name); rememberName(nm);
+        ui.send.disabled = true; say(ui, 'שומר…');
+        put(key, {n:nm, u:href, t:clip(title.value, LIM.title), d:Date.now()}).then(function(){
+          url.value = ''; title.value = ''; say(ui, 'נוסף ✓', 'ok'); return refresh(true);
+        }).catch(function(err){
+          say(ui, err.message === 'too_long' ? 'הקישור ארוך מדי' : 'השמירה נכשלה — נסו שוב', 'err');
+        }).then(function(){ ui.send.disabled = false; });
+      });
+      refresh();
+    }
+
+    boards.forEach(initTalk);
+    if(linksEl) initLinks(linksEl);
   })();
 </script>
 </body>

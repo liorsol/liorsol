@@ -31,6 +31,7 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
     ├── index.html             ← ★ source of truth — the trip page. Edit here!
     ├── map.html               ← all locations from the plan on one Leaflet/OSM map, grouped by category (no API key)
     ├── albania-2026.csv       ← original raw planning draft (day table)
+    ├── research-gemini.md      ← raw Gemini research report (source doc, broken citations — see below)
     └── presentation/          ← family slide deck (reveal.js, Hebrew RTL)
         ├── index.html         ← ★ source of truth for the deck. Edit here!
         ├── styles.css
@@ -47,11 +48,81 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
 
 ## Dynamic data (Firebase)
 
-This page has its own reserved DB key, `albania2026`, for any dynamic/shared data it ends up
-needing — full rules, DB URL and access-model reasoning are in the
-[README](../../README.md#firebase-realtime-database-dynamic-data-sync). No feature writes here
-yet. **Privacy still applies** (see the section above) — that path is public and
-unauthenticated like the rest of this repo, so never put personal/private data in it.
+The page uses its reserved DB key, `albania2026` — DB URL, rules and access-model reasoning
+are in the [README](../../README.md#firebase-realtime-database-dynamic-data-sync).
+**Privacy still applies** (see the section above): that path is public, unauthenticated and
+**world-writable**, so never put personal/private data in it. The page shows a warning saying
+exactly that above every input box — keep it.
+
+Two features write there (built Aug 2026, on the user's request):
+
+1. **Comments — one board per view.** `<section class="talk" data-topic="VIEW">` sits at the
+   bottom of all 10 views; the JS builds the form and list.
+2. **A links board** in the practical-info view: `<section class="links-board" id="links">`.
+
+### Storage schema
+
+The DB rules allow **only a bool/number/string** under each key — *no nested objects* — and
+cap keys at 50 chars (`^[A-Za-z0-9_-]{1,50}$`) and string values at 2000. So each entry is
+**one flat key holding a JSON string**. Do not try to nest; `albania2026/comments/x` fails
+validation, because `$key` would be `comments` and its value an object.
+
+| Key | Value (JSON string) |
+|---|---|
+| `c_<view>_<ts36>_<rnd4>` | `{"n":name,"t":text,"d":epoch_ms}` |
+| `l_<ts36>_<rnd4>` | `{"n":name,"u":url,"t":title,"d":epoch_ms}` |
+
+Reads are one shared `GET albania2026.json` for the whole page (all 11 boards filter it
+client-side by key prefix — don't reintroduce a fetch per board). Writes are `PUT` to
+`albania2026/<key>.json`, deletes are `DELETE` on the same.
+
+### Reading the boards back (the point of the feature)
+
+The user's plan is to collect family input here, then fold it into the static page. To read
+everything:
+
+```bash
+curl -s "https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/albania2026.json" | python3 -m json.tool
+```
+
+Grouped and readable, newest last:
+
+```bash
+curl -s "https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/albania2026.json" \
+| python3 -c '
+import sys, json, datetime as dt
+raw = json.load(sys.stdin) or {}
+rows = []
+for k, v in raw.items():
+    try: r = json.loads(v)
+    except Exception: continue
+    kind, topic = ("comment", k.split("_")[1]) if k.startswith("c_") else ("link", "-")
+    rows.append((r.get("d",0), kind, topic, r.get("n") or "anon", r.get("t",""), r.get("u","")))
+for d, kind, topic, who, text, url in sorted(rows):
+    when = dt.datetime.fromtimestamp(d/1000).strftime("%Y-%m-%d %H:%M") if d else "?"
+    print(f"[{kind}/{topic}] {when} {who}: {text} {url}".rstrip())'
+```
+
+After folding a comment into the page, delete it so the board does not accumulate stale notes:
+`curl -X DELETE ".../albania2026/<key>.json"`.
+
+### Security — non-negotiable
+
+Anyone can write anything to that path, so **everything read back is untrusted input from the
+internet.**
+
+- Render **only** with `textContent`. Never `innerHTML` for stored values. (The five
+  `innerHTML` uses in the page are all `= ''` clears — keep it that way.)
+- **Re-validate every URL at render time**, not just on submit: `new URL()` and accept only
+  `http:`/`https:`. Anything else is dropped silently. This blocks `javascript:` and `data:`.
+- Links get `rel="noopener noreferrer nofollow"` and `target="_blank"`.
+- Mirror the DB rules client-side before each write (key shape, serialized length < 2000) so
+  a rejected write is a clear message and not a silent 400.
+
+Verified end to end in-browser: `<img src=x onerror=…>` in a name and a comment rendered as
+literal text with no element created and no handler fired; `javascript:` URLs were rejected;
+a bare domain was upgraded to `https://`; post → list → delete round-tripped against the real
+DB, and the test rows were removed afterwards.
 
 ## HTML structure (technical)
 
@@ -59,6 +130,13 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 
 - Each section = `div.view` with `id="view-XXX"`. Navigation via elements with `data-view="XXX"`.
 - Existing views: `home, north, tirana, drive, south, last, food, info, checklist, mine`.
+- **Progressive disclosure is the page's core rule (user's explicit request, Aug 2026).** A card shows only the high-level layer by default: title → `.tags` → `.meta` (drive time, hours, `.pr` price, `.done` for booked) → one `.gist` paragraph. **Everything else goes inside `<details><summary>…</summary>`** — the why, the caveats, the accessibility notes, the `.links`. Write the `<summary>` as a concrete promise of what's inside ("איך מפצלים את היום בין הגילאים"), never a generic "פרטים".
+- Exception: a genuinely blocking warning (`.note.warn`) stays outside `<details>` — e.g. the Bovilla gravel road, the Vila Zeus shuttle.
+- `beforeprint` opens every `<details>` (JS), and `@media print` hides the summaries.
+- Map links: `https://www.google.com/maps/search/?api=1&query=NAME+LOCATION`
+- Group tags (for splitting up): `t-beach` sea & chill · `t-cult` culture · `t-adv` adventure & teens · `t-grand` "נגיש" accessible & relaxed (CSS class kept as `t-grand`; label renamed from "סבא-סבתא" — covers strollers too, less offensive) · `t-all` everyone.
+- The hash update is wrapped in try/catch (sandboxed-iframe fix) — do not remove.
+- **No HANDOFF comment.** It used to duplicate this file at the top of `index.html`; it was deleted (Aug 2026). **This file is the only canonical context** — don't re-add a research dump to the HTML.
 
 ### Deep links (user's explicit request, Aug 2026)
 
@@ -78,14 +156,7 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 
 ### Per-section maps
 
-`map.html#<category>` shows only that category and fits bounds to it; no hash = all 60 pins. Categories: `lodging, north, tirana, drive, south, food`. Each view's region banner carries a `.viewmap` link to its own slice, `map.html` has filter chips, and the home view has a full-width `.mapbanner` (the plain nav link was too easy to miss).
-- **Progressive disclosure is the page's core rule (user's explicit request, Aug 2026).** A card shows only the high-level layer by default: title → `.tags` → `.meta` (drive time, hours, `.pr` price, `.done` for booked) → one `.gist` paragraph. **Everything else goes inside `<details><summary>…</summary>`** — the why, the caveats, the accessibility notes, the `.links`. Write the `<summary>` as a concrete promise of what's inside ("איך מפצלים את היום בין הגילאים"), never a generic "פרטים".
-- Exception: a genuinely blocking warning (`.note.warn`) stays outside `<details>` — e.g. the Bovilla gravel road, the Vila Zeus shuttle.
-- `beforeprint` opens every `<details>` (JS), and `@media print` hides the summaries.
-- Map links: `https://www.google.com/maps/search/?api=1&query=NAME+LOCATION`
-- Group tags (for splitting up): `t-beach` sea & chill · `t-cult` culture · `t-adv` adventure & teens · `t-grand` "נגיש" accessible & relaxed (CSS class kept as `t-grand`; label renamed from "סבא-סבתא" — covers strollers too, less offensive) · `t-all` everyone.
-- The hash update is wrapped in try/catch (sandboxed-iframe fix) — do not remove.
-- **No HANDOFF comment.** It used to duplicate this file at the top of `index.html`; it was deleted (Aug 2026). **This file is the only canonical context** — don't re-add a research dump to the HTML.
+`map.html#<category>` shows only that category and fits bounds to it; no hash = all 58 pins. Categories: `lodging, north, tirana, drive, south, food`. Each view's region banner carries a `.viewmap` link to its own slice, `map.html` has filter chips, and the home view has a full-width `.mapbanner` (the plain nav link was too easy to miss).
 
 ### RTL arrow convention (non-obvious — gets it wrong every time otherwise)
 
@@ -103,7 +174,7 @@ Verify with `python3 -c "import unicodedata as u; print(u.mirrored('→'))"` bef
 
 ## Trip data
 
-- **Flights (rescheduled, Aug 2026):** outbound TLV 20:30 → TIA 22:25 (13.8) · return TIA 19:55 → TLV 23:40 (22.8). The return moved from 10:30 to 19:55, so **22.8 is a near-full day in Albania** and the airport deadline is ~17:25 (2.5h before), not 08:00.
+- **Flights (rescheduled, Aug 2026):** outbound TLV 20:30 → TIA 22:25 (13.8) · return TIA 19:55 → TLV 23:40 (22.8). The return moved from 10:30 to 19:55, so **22.8 is a near-full day in Albania** and the airport deadline is **17:00**.
 - **Extended family ~20 people**, 5 families: Solomon (2 parents + girls 7, 10) · grandparents · family (2 + baby 1.5) · family (2 + girls 6, 3, 1) · family (2 + girls 8, 12, 14, 17).
 - **Lodging:**
   - **Night of 13.8 (arrival) — ✅ BOOKED: `Hotel Vila Zeus`, Rinas** (told by the user, Aug 2026). The villa starts only on **14.8**, so the landing night is near the airport. Verified facts: 4★, **~1 km / ~12-min walk from the terminal** (the hotel's own site says 3,281 ft — a search snippet claiming 0.2 mi is wrong), **free private parking**, **24h front desk**, coffee shop + bar (not a full restaurant), no pool, Booking ~7.4 from ~1,900 reviews. Largest room listed is a **Superior Double, 50 m², sleeps 4** with sofa bed — no dedicated family rooms.
@@ -111,7 +182,7 @@ Verify with `python3 -c "import unicodedata as u; print(u.mirrored('→'))"` bef
     **Unresolved:** whether this booking covers all 5 families or only the Solomons — ask the user; the page is worded to work either way.
     Backups kept on the page: **Hotel Airport Tirana** (4★, in front of terminal, free 24/7 shuttle, pool) · **Side Airport Hotel** (steps from terminal, family rooms, 9.4) · **Best Western Premier Ark** (4★ premium) · **Airport Holiday Hotel** (budget).
   - **Villa Maxhaku, Shëngjergj (Shën Gjergj), Tirana County** (everyone), **check-in 14.8**, checkout 19.8 (**5 nights**, confirmed by user) — [Booking link](https://www.booking.com/hotel/al/villa-maxhaku.he.html). **The base moved (Aug 2026, user):** it was a villa on the Durrës coast; it is now a mountain village ~37 km / ~1 h north-east of Tirana. This is a structural change, not a rename — the old base sold "shallow Adriatic sea at the doorstep for the toddlers", and the new one sells mountain air, quiet and a private pool, with the beach becoming a planned day trip. Note: booking.com is blocked by this environment's network policy (curl and WebFetch both get 403), so property details came from a single listing aggregator (PickleTrip, which mirrors Booking) and are **unverified** — sleeps ~20, 8 bathrooms, ~500 m², pool, parking, EV charger, terrace. **Bedroom count and guest rating could not be found anywhere** — confirm with the host before assigning rooms for 20 people. The aggregator's "1 bedroom" figure is a scraping artefact, not real.
-  - Asters hotel in Ksamil, checkout 21.8 — [Booking link](https://www.booking.com/hotel/al/asters.en-gb.html) · **night of 21.8 not yet booked** — decided: low budget, not city center; near airport (Rinas) or up to ~30 min away if morning mountain view (Krujë candidates: Hotel Panorama Kruje, Rooms Emiliano, Vila Taga). Must be at the airport ~17:25 (2.5h before the 19:55 flight) — the whole morning and afternoon of 22.8 are free.
+  - Asters hotel in Ksamil — **the Solomons check out 21.8; the other families stay a second night and check out 22.8** (see the 22.8 split below) — [Booking link](https://www.booking.com/hotel/al/asters.en-gb.html) · **Solomons’ night of 21.8 not yet booked** — decided: low budget, not city center; near airport (Rinas) or up to ~30 min away if morning mountain view (Krujë candidates: Hotel Panorama Kruje, Rooms Emiliano, Vila Taga). Must be at the airport **17:00** — for the Solomons the whole morning and afternoon of 22.8 are free.
 - **Car (Solomon):** OK Mobility, Hyundai Venue (Compact, 5 seats). Whole family needs 4–5 cars.
 - **Events:** grandma's birthday (14.8, Friday dinner) · Daniel's birthday (18.8) · combined anniversaries party + adults-only quiz 🔞.
 - **Gluten:** some family members are sensitive — every restaurant recommendation must address gluten (dedicated `food` view).
@@ -168,7 +239,7 @@ Facts that came out of the validation and changed the page:
 
 Drive times: only Shëngjergj↔Tirana centre (~37–40 km, ~55–70 min, over the Qafë Priskë pass) is directly sourced. Everything else in the catalogue is a composite of that leg plus a sourced Tirana→destination leg — flagged as estimates per the repo convention. Not found despite searching: any supermarket, pharmacy or petrol station in Shëngjergj (pop. ~1,377), mobile reception data, and any local thermal springs (the last appears genuinely not to exist there).
 
-**Second research pass (Aug 2026) — what was accepted and what was thrown out.** The user supplied a "Comprehensive Research Report" plus a list of Google Maps pins. Everything below was independently re-verified before it went on the page; **the report's own footnote numbering is broken** (claims about Villa Maxhaku cite Reddit threads about Bovilla; the Blue Eye golf cart cites an Expedia page for Hotel Panorama Krujë), so nothing was taken from it on trust.
+**Second research pass (Aug 2026) — what was accepted and what was thrown out.** The user supplied a Gemini deep-research report — kept verbatim at [`research-gemini.md`](research-gemini.md) — plus a list of Google Maps pins. Everything below was independently re-verified before it went on the page; **the report's own footnote numbering is broken** (claims about Villa Maxhaku cite Reddit threads about Bovilla; the Blue Eye golf cart cites an Expedia page for Hotel Panorama Krujë), so nothing was taken from it on trust.
 
 Accepted after independent verification:
 - **Panja** (Rr. Mihal Duri, Tirana) — Albania's only 100% dedicated gluten-free/lactose-free bakery. The single highest-value find for this family; tied to the 14.8 Tirana shopping run.

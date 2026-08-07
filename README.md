@@ -13,7 +13,7 @@ dependencies — every page is plain HTML/CSS/JS and can be opened straight from
 | [`savings-calculator.html`](savings-calculator.html) | Monthly portfolio simulator: deposits, withdrawals, fees, capital-gains tax, inflation indexation. Hebrew, RTL. |
 | [`restaurants.html`](restaurants.html) | HTZone restaurant list, sortable/filterable (`app.js` + `rest_combined.json`). |
 | [`car-checklist.html`](car-checklist.html) | Road-trip car checklist, synced across devices via Firebase Realtime Database. |
-| [`trips/albania-2026/`](trips/albania-2026/) | Family trip page + reveal.js slide deck. |
+| [`trips/albania-2026/`](trips/albania-2026/) | Family trip page (SPA, deep links, shared comment/link boards), Leaflet map, reveal.js slide deck, and the raw research the plan was built from. |
 | [`trips/jerusalem-2026/`](trips/jerusalem-2026/) | Family weekend trip page (SPA with map, trivia, media). |
 
 `albania-2026.html` and `jerusalem-2026.html` at the root are redirect stubs to the moved
@@ -112,12 +112,43 @@ text fields).
 
 ### `albania2026` — [`trips/albania-2026/`](trips/albania-2026/)
 
-Reserved for whatever dynamic data that trip page needs (e.g. a shared packing list, headcount
-confirmations, live day-of notes) — no feature writes here yet, but the key and rules are
-decided now so nothing has to change in the Firebase console when one is built. Deliberately
-generic: any short key name, holding a bool/number/short string — tighten the `$key` pattern to
-the real field names once a concrete feature lands, the way `checklist`'s is scoped to
-`ev_chk_*`/`ev_txt_*`.
+Backs two shared boards on the trip page: **a comments board per section** (all 10 views) and
+**a links board** in the practical-info section.
+
+Because the rules allow only a bool/number/string per key — no nested objects — each entry is
+**one flat key holding a JSON string**:
+
+| Key | Value | Meaning |
+|---|---|---|
+| `c_<view>_<ts36>_<rnd4>` | `{"n":name,"t":text,"d":epoch_ms}` | a comment on that view |
+| `l_<ts36>_<rnd4>` | `{"n":name,"u":url,"t":title,"d":epoch_ms}` | a link |
+
+The page does one `GET albania2026.json` and filters client-side by key prefix; writes are
+`PUT albania2026/<key>.json`, deletes `DELETE` the same. Details, plus the commands to read
+the boards back when folding family input into the static page, are in
+[`trips/albania-2026/CLAUDE.md`](trips/albania-2026/CLAUDE.md#dynamic-data-firebase).
+
+**This path is world-writable, so everything read from it is untrusted input.** The page
+renders stored values with `textContent` only and re-validates every stored URL's scheme
+(`http:`/`https:` only) at render time, which is what stops a `javascript:` URL someone else
+wrote from becoming a live link. Any future feature reading this key must do the same.
+
+**Worth tightening in the console now that the real key shapes are known** — the current
+`$key` pattern accepts any short name. Scoping it to the two prefixes, the way `checklist`'s
+is scoped to `ev_chk_*`/`ev_txt_*`, would replace the `albania2026` block with:
+
+```json
+"albania2026": {
+  ".read": true,
+  ".write": true,
+  "$key": {
+    ".validate": "$key.matches(/^(c_[a-z]{1,12}|l)_[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.isString() && newData.val().length < 2000"
+  }
+}
+```
+
+Not done yet — it needs a console change, and publishing replaces the whole rules document, so
+the `checklist` block has to be kept alongside it.
 
 ## Running locally
 

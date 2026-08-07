@@ -23,7 +23,8 @@ If the user wants the trip page to reference such details (e.g., car-hire confir
 ```
 liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main)
 ├── albania-2026.html          ← redirect stub to trips/albania-2026/ — do not delete
-├── index.html                 ← UNRELATED project (savings calculator) — do not touch
+├── index.html                 ← UNRELATED — repo file browser (site home) — do not touch
+├── savings-calculator.html    ← UNRELATED project (savings calculator) — do not touch
 ├── restaurants.html, app.js, style.css, rest_combined.json ← UNRELATED — do not touch
 └── trips/albania-2026/        ← everything trip-related lives here
     ├── CLAUDE.md              ← this file (canonical project context)

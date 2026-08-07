@@ -62,49 +62,54 @@ Two features write there (built Aug 2026, on the user's request):
 
 ### Storage schema
 
-The DB rules allow **only a bool/number/string** under each key — *no nested objects* — and
-cap keys at 50 chars (`^[A-Za-z0-9_-]{1,50}$`) and string values at 2000. So each entry is
-**one flat key holding a JSON string**. Do not try to nest; `albania2026/comments/x` fails
-validation, because `$key` would be `comments` and its value an object.
+Real nested JSON, one node per entry:
 
-| Key | Value (JSON string) |
-|---|---|
-| `c_<view>_<ts36>_<rnd4>` | `{"n":name,"t":text,"d":epoch_ms}` |
-| `l_<ts36>_<rnd4>` | `{"n":name,"u":url,"t":title,"d":epoch_ms}` |
+```
+albania2026/
+  comments/<view>/<id>   {n: name, t: text,  d: epoch_ms}
+  links/<id>             {n: name, u: url, t: title, d: epoch_ms}
+```
 
-Reads are one shared `GET albania2026.json` for the whole page (all 11 boards filter it
-client-side by key prefix — don't reintroduce a fetch per board). Writes are `PUT` to
-`albania2026/<key>.json`, deletes are `DELETE` on the same.
+`<view>` is the SPA view name; `<id>` is `Date.now().toString(36) + '_' + 4 random base36`
+(13 chars today, and the timestamp stays 8 chars until 2059).
+
+**The rules and this shape must change together.** The rules validate per field — type,
+length, required children, and `$other: false` rejecting unknown keys — so adding a field to
+an entry without publishing new rules gets a **401 Permission denied**, not a silent drop.
+The page turns that 401 into a specific message ("הכתיבה נחסמה — כללי ה-DB צריכים עדכון")
+rather than a generic failure, because it is the one error that a page reload will never fix.
+The full rules document lives in the [README](../../README.md#firebase-realtime-database-dynamic-data-sync).
+
+Reads are one shared `GET albania2026.json` for the whole page (all 11 boards slice it
+client-side — don't reintroduce a fetch per board). Writes `PUT` the entry node, deletes
+`DELETE` it.
+
+*History: entries were originally one flat key holding a JSON string, because the first
+version of the rules allowed only bool/number/string per key. The rules were widened to
+proper nested objects in Aug 2026; there was no data to migrate.*
 
 ### Reading the boards back (the point of the feature)
 
-The user's plan is to collect family input here, then fold it into the static page. To read
-everything:
+The user's plan is to collect family input here, then fold it into the static page:
 
 ```bash
-curl -s "https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/albania2026.json" | python3 -m json.tool
-```
-
-Grouped and readable, newest last:
-
-```bash
-curl -s "https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/albania2026.json" \
-| python3 -c '
+curl -s "https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/albania2026.json" > /tmp/boards.json
+python3 - /tmp/boards.json <<'EOF'
 import sys, json, datetime as dt
-raw = json.load(sys.stdin) or {}
-rows = []
-for k, v in raw.items():
-    try: r = json.loads(v)
-    except Exception: continue
-    kind, topic = ("comment", k.split("_")[1]) if k.startswith("c_") else ("link", "-")
-    rows.append((r.get("d",0), kind, topic, r.get("n") or "anon", r.get("t",""), r.get("u","")))
-for d, kind, topic, who, text, url in sorted(rows):
-    when = dt.datetime.fromtimestamp(d/1000).strftime("%Y-%m-%d %H:%M") if d else "?"
-    print(f"[{kind}/{topic}] {when} {who}: {text} {url}".rstrip())'
+d = json.load(open(sys.argv[1])) or {}
+rows  = [("comment", v, i, r) for v, ids in (d.get("comments") or {}).items() for i, r in ids.items()]
+rows += [("link", "-", i, r) for i, r in (d.get("links") or {}).items()]
+for kind, view, i, r in sorted(rows, key=lambda x: x[3].get("d", 0)):
+    when = dt.datetime.fromtimestamp(r.get("d", 0) / 1000).strftime("%Y-%m-%d %H:%M")
+    path = "comments/%s/%s" % (view, i) if kind == "comment" else "links/%s" % i
+    print("[%s/%s] %s  %s: %s %s" % (kind, view, when, r.get("n") or "anon",
+                                     r.get("t", ""), r.get("u", "")))
+    print("    delete: %s" % path)
+EOF
 ```
 
-After folding a comment into the page, delete it so the board does not accumulate stale notes:
-`curl -X DELETE ".../albania2026/<key>.json"`.
+After folding an entry into the page, delete it so the board doesn't accumulate stale notes:
+`curl -X DELETE ".../albania2026/comments/<view>/<id>.json"`.
 
 ### Security — non-negotiable
 

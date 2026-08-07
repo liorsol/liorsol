@@ -76,7 +76,7 @@ one top-level path per page (a "key"), each with its own rules.
   headers to whatever it wants; RTDB rules can't even see them.
 - **What the rules *do* enforce** (data validation, not caller identity — configured in the
   Firebase console under this project's control, not stored in this repo; publishing replaces
-  the whole rules document, so keep every path's block below in it together):
+  the whole rules document, so this is the complete document, every path together):
   ```json
   {
     "rules": {
@@ -89,9 +89,28 @@ one top-level path per page (a "key"), each with its own rules.
       },
       "albania2026": {
         ".read": true,
-        ".write": true,
-        "$key": {
-          ".validate": "$key.matches(/^[A-Za-z0-9_-]{1,50}$/) && (newData.isBoolean() || newData.isNumber() || (newData.isString() && newData.val().length < 2000))"
+        "comments": {
+          ".write": true,
+          "$view": {
+            "$id": {
+              ".validate": "$view.matches(/^[a-z]{2,12}$/) && $id.matches(/^[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.hasChildren(['t','d'])",
+              "n": { ".validate": "newData.isString() && newData.val().length <= 24" },
+              "t": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 800" },
+              "d": { ".validate": "newData.isNumber()" },
+              "$other": { ".validate": false }
+            }
+          }
+        },
+        "links": {
+          ".write": true,
+          "$id": {
+            ".validate": "$id.matches(/^[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.hasChildren(['u','d'])",
+            "n": { ".validate": "newData.isString() && newData.val().length <= 24" },
+            "u": { ".validate": "newData.isString() && newData.val().length <= 500 && (newData.val().beginsWith('https://') || newData.val().beginsWith('http://'))" },
+            "t": { ".validate": "newData.isString() && newData.val().length <= 100" },
+            "d": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
         }
       }
     }
@@ -113,42 +132,28 @@ text fields).
 ### `albania2026` — [`trips/albania-2026/`](trips/albania-2026/)
 
 Backs two shared boards on the trip page: **a comments board per section** (all 10 views) and
-**a links board** in the practical-info section.
+**a links board** in the practical-info section. Stored as real nested JSON, one node per entry:
 
-Because the rules allow only a bool/number/string per key — no nested objects — each entry is
-**one flat key holding a JSON string**:
-
-| Key | Value | Meaning |
-|---|---|---|
-| `c_<view>_<ts36>_<rnd4>` | `{"n":name,"t":text,"d":epoch_ms}` | a comment on that view |
-| `l_<ts36>_<rnd4>` | `{"n":name,"u":url,"t":title,"d":epoch_ms}` | a link |
-
-The page does one `GET albania2026.json` and filters client-side by key prefix; writes are
-`PUT albania2026/<key>.json`, deletes `DELETE` the same. Details, plus the commands to read
-the boards back when folding family input into the static page, are in
-[`trips/albania-2026/CLAUDE.md`](trips/albania-2026/CLAUDE.md#dynamic-data-firebase).
-
-**This path is world-writable, so everything read from it is untrusted input.** The page
-renders stored values with `textContent` only and re-validates every stored URL's scheme
-(`http:`/`https:` only) at render time, which is what stops a `javascript:` URL someone else
-wrote from becoming a live link. Any future feature reading this key must do the same.
-
-**Worth tightening in the console now that the real key shapes are known** — the current
-`$key` pattern accepts any short name. Scoping it to the two prefixes, the way `checklist`'s
-is scoped to `ev_chk_*`/`ev_txt_*`, would replace the `albania2026` block with:
-
-```json
-"albania2026": {
-  ".read": true,
-  ".write": true,
-  "$key": {
-    ".validate": "$key.matches(/^(c_[a-z]{1,12}|l)_[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.isString() && newData.val().length < 2000"
-  }
-}
+```
+albania2026/
+  comments/<view>/<id>   {n: name, t: text,  d: epoch_ms}
+  links/<id>             {n: name, u: url, t: title, d: epoch_ms}
 ```
 
-Not done yet — it needs a console change, and publishing replaces the whole rules document, so
-the `checklist` block has to be kept alongside it.
+`<view>` is the SPA view name (`north`, `south`, …); `<id>` is `<base36 ms>_<4 random>`. The
+page does one `GET albania2026.json` and slices it client-side — writes are `PUT` to the entry
+node, deletes `DELETE` the same. Details, plus the commands to read the boards back when
+folding family input into the static page, are in
+[`trips/albania-2026/CLAUDE.md`](trips/albania-2026/CLAUDE.md#dynamic-data-firebase).
+
+Unlike `checklist`, this key's rules validate **per field**: type, length, required children,
+and `$other: false` to reject unknown fields. A link's URL must literally begin `http://` or
+`https://`, so a `javascript:` URL cannot even be stored.
+
+**Still: this path is world-writable, so everything read from it is untrusted input.** The
+page renders stored values with `textContent` only and re-checks every stored URL's scheme at
+render time rather than trusting the rules to be the only gate. Any future feature reading
+this key must do the same.
 
 ## Running locally
 

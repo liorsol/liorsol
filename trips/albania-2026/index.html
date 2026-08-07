@@ -1103,30 +1103,33 @@
      Shared boards — comments per view + a links board.
      Storage: Firebase RTDB, path `albania2026` (see repo README).
 
-     The DB rules allow only a bool/number/string under each key, so an
-     entry is ONE flat key holding a JSON string. Key must match
-     ^[A-Za-z0-9_-]{1,50}$ and the value must stay under 2000 chars —
-     both are re-checked here before every write.
+     Real nested JSON, one node per entry:
+
+       albania2026/comments/<view>/<id> = {n, t, d}
+       albania2026/links/<id>           = {n, u, t, d}
+
+     <id> is `<ts36>_<rnd4>`. The DB rules validate each field's type and
+     length server-side and reject unknown fields, so the shapes below and
+     the published rules must be changed together.
 
      SECURITY: that path is public, unauthenticated and world-writable.
      Everything read back is untrusted input from the internet:
-     render with textContent only, and never trust a stored URL without
-     re-checking its scheme.
+     render with textContent only, and re-check every stored URL's scheme
+     before it reaches an href — the rules check it too, but this page must
+     not depend on that being the only gate.
      ============================================================ */
   (function(){
     var DB   = 'https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/albania2026';
-    var MAXV = 2000;                       // DB rule: string value length
-    var KEYRE = /^[A-Za-z0-9_-]{1,50}$/;   // DB rule: key shape
+    var IDRE = /^[a-z0-9]{1,10}_[a-z0-9]{4}$/;    // must match the DB rules
     var LIM  = {name:24, text:800, title:100, url:500};
 
     var boards = [].slice.call(document.querySelectorAll('.talk'));
     var linksEl = document.getElementById('links');
     if(!boards.length && !linksEl) return;
 
-    function newKey(prefix, topic){
-      var k = prefix + (topic ? '_' + topic : '') + '_' +
-              Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
-      return KEYRE.test(k) ? k : null;
+    function newId(){
+      var id = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+      return IDRE.test(id) ? id : null;
     }
     function clip(s, n){ return String(s == null ? '' : s).trim().slice(0, n); }
 
@@ -1135,6 +1138,7 @@
       var s = clip(raw, LIM.url);
       if(!s) return null;
       if(!/^https?:\/\//i.test(s)) s = 'https://' + s;
+      if(s.length > LIM.url) return null;
       try{
         var u = new URL(s);
         return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : null;
@@ -1145,7 +1149,6 @@
       return isNaN(d) ? '' : d.toLocaleDateString('he-IL', {day:'numeric', month:'short'}) +
              ' · ' + d.toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'});
     }
-    function nameFor(who){ return who || 'אנונימי'; }
 
     var STORE = 'albania2026_name';
     function savedName(){ try{ return localStorage.getItem(STORE) || ''; }catch(e){ return ''; } }
@@ -1155,35 +1158,42 @@
     var pending = null;                    // all boards share one GET per refresh
     function loadAll(force){
       if(pending && !force) return pending;
-      pending = fetchAll();
-      return pending;
-    }
-    function fetchAll(){
-      return fetch(DB + '.json', {cache:'no-store'}).then(function(r){
+      pending = fetch(DB + '.json', {cache:'no-store'}).then(function(r){
         if(!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
-      }).then(function(raw){
-        var out = [];
-        Object.keys(raw || {}).forEach(function(key){
-          var val = raw[key];
-          if(typeof val !== 'string') return;      // ignore anything not ours
-          var rec; try{ rec = JSON.parse(val); }catch(e){ return; }
-          if(!rec || typeof rec !== 'object') return;
-          rec._key = key;
-          out.push(rec);
+      }).then(function(raw){ return raw || {}; });
+      return pending;
+    }
+    /* A 401 here almost always means the DB rules are older than this page. */
+    function write(path, obj){
+      return fetch(DB + '/' + path + '.json', {method:'PUT', body:JSON.stringify(obj)})
+        .then(function(r){
+          if(r.status === 401) throw new Error('rules');
+          if(!r.ok) throw new Error('HTTP ' + r.status);
         });
-        return out;
+    }
+    function remove(path){
+      return fetch(DB + '/' + path + '.json', {method:'DELETE'}).then(function(r){
+        if(r.status === 401) throw new Error('rules');
+        if(!r.ok) throw new Error('HTTP ' + r.status);
       });
     }
-    function put(key, obj){
-      var body = JSON.stringify(JSON.stringify(obj));
-      if(body.length - 2 >= MAXV) return Promise.reject(new Error('too_long'));
-      return fetch(DB + '/' + encodeURIComponent(key) + '.json', {method:'PUT', body:body})
-        .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); });
+    function failMsg(err){
+      if(err && err.message === 'rules') return 'הכתיבה נחסמה — כללי ה-DB צריכים עדכון';
+      return 'הפעולה נכשלה — נסו שוב';
     }
-    function del(key){
-      return fetch(DB + '/' + encodeURIComponent(key) + '.json', {method:'DELETE'})
-        .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); });
+
+    /* Turn a stored node into a record, dropping anything malformed. */
+    function rows(node, extra){
+      var out = [];
+      Object.keys(node || {}).forEach(function(id){
+        var r = node[id];
+        if(!r || typeof r !== 'object') return;                 // ignore junk
+        if(typeof r.d !== 'number') return;
+        out.push({id:id, n:clip(r.n, LIM.name), t:clip(r.t, extra === 'link' ? LIM.title : LIM.text),
+                  u:r.u, d:r.d});
+      });
+      return out;
     }
 
     /* --- shared chrome -------------------------------------------- */
@@ -1223,11 +1233,16 @@
       ui.msg.textContent = text; ui.msg.className = 'board-msg' + (kind ? ' ' + kind : '');
       if(kind === 'ok') setTimeout(function(){ if(ui.msg.textContent === text) ui.msg.textContent = ''; }, 2500);
     }
+    function empty(ui, text){
+      ui.list.innerHTML = '';
+      var p = document.createElement('p'); p.className = 'board-empty';
+      p.textContent = text; ui.list.appendChild(p);
+    }
     function entry(rec, onDelete){
       var li = document.createElement('li');
       var head = document.createElement('div'); head.className = 'head';
       var w = document.createElement('span'); w.className = 'who';
-      w.textContent = nameFor(clip(rec.n, LIM.name));            // untrusted → textContent
+      w.textContent = rec.n || 'אנונימי';                        // untrusted → textContent
       var t = document.createElement('span'); t.className = 'when';
       t.textContent = when(rec.d);
       var x = document.createElement('button');
@@ -1241,7 +1256,7 @@
 
     /* --- comments -------------------------------------------------- */
     function initTalk(el){
-      var topic = el.dataset.topic;
+      var view = el.dataset.topic;
       var ui = build(el, {
         heading: '💬 ' + el.getAttribute('aria-label'),
         sub: 'מקום להערות, שאלות והצעות על הסעיף הזה. משותף לכל מי שנכנס לעמוד.',
@@ -1255,46 +1270,42 @@
         }
       });
       var ta = ui.extraEl;
+
       function render(all){
-        var mine = all.filter(function(r){ return r._key.indexOf('c_' + topic + '_') === 0; })
-                      .sort(function(a, b){ return (a.d || 0) - (b.d || 0); });
+        var mine = rows(((all.comments || {})[view]) || {})
+                     .sort(function(a, b){ return a.d - b.d; });
         ui.list.innerHTML = '';
         ui.count.textContent = mine.length ? (mine.length === 1 ? 'הערה אחת' : mine.length + ' הערות') : '';
-        if(!mine.length){
-          var p = document.createElement('p'); p.className = 'board-empty';
-          p.textContent = 'אין עדיין הערות על הסעיף הזה.';
-          ui.list.appendChild(p); return;
-        }
+        if(!mine.length){ empty(ui, 'אין עדיין הערות על הסעיף הזה.'); return; }
         mine.forEach(function(rec){
           var li = entry(rec, function(){
             if(!confirm('למחוק את ההערה?')) return;
-            del(rec._key).then(function(){ return refresh(true); }).catch(function(){ say(ui, 'המחיקה נכשלה', 'err'); });
+            remove('comments/' + view + '/' + rec.id)
+              .then(function(){ return refresh(true); })
+              .catch(function(err){ say(ui, failMsg(err), 'err'); });
           });
           var b = document.createElement('div'); b.className = 'body';
-          b.textContent = clip(rec.t, LIM.text);                  // untrusted → textContent
+          b.textContent = rec.t;                                  // untrusted → textContent
           li.appendChild(b); ui.list.appendChild(li);
         });
       }
       function refresh(force){
         return loadAll(force).then(render).catch(function(){
-          ui.list.innerHTML = '';
-          var p = document.createElement('p'); p.className = 'board-empty';
-          p.textContent = 'לא הצלחנו לטעון את ההערות (בעיית רשת?). נסו לרענן.';
-          ui.list.appendChild(p);
+          empty(ui, 'לא הצלחנו לטעון את ההערות (בעיית רשת?). נסו לרענן.');
         });
       }
       ui.form.addEventListener('submit', function(e){
         e.preventDefault();
         var text = clip(ta.value, LIM.text);
         if(!text){ say(ui, 'צריך לכתוב משהו', 'err'); return; }
-        var key = newKey('c', topic);
-        if(!key){ say(ui, 'שגיאה פנימית', 'err'); return; }
+        var id = newId();
+        if(!id){ say(ui, 'שגיאה פנימית', 'err'); return; }
         var nm = clip(ui.who.value, LIM.name); rememberName(nm);
         ui.send.disabled = true; say(ui, 'שולח…');
-        put(key, {n:nm, t:text, d:Date.now()}).then(function(){
+        write('comments/' + view + '/' + id, {n:nm, t:text, d:Date.now()}).then(function(){
           ta.value = ''; say(ui, 'נשלח ✓', 'ok'); return refresh(true);
         }).catch(function(err){
-          say(ui, err.message === 'too_long' ? 'ההערה ארוכה מדי' : 'השליחה נכשלה — נסו שוב', 'err');
+          say(ui, failMsg(err), 'err');
         }).then(function(){ ui.send.disabled = false; });
       });
       refresh();
@@ -1309,9 +1320,9 @@
         submit: 'הוספת קישור',
         extra: function(row){
           url = document.createElement('input');
-          url.className = 'grow'; url.maxLength = LIM.url;
+          url.className = 'grow'; url.maxLength = LIM.url; url.type = 'text';
           url.placeholder = 'כתובת הקישור (https://…)';
-          url.setAttribute('aria-label', 'כתובת'); url.type = 'text';
+          url.setAttribute('aria-label', 'כתובת');
           title = document.createElement('input');
           title.className = 'grow'; title.maxLength = LIM.title;
           title.placeholder = 'על מה זה? (לא חובה)';
@@ -1320,53 +1331,51 @@
         }
       });
       function render(all){
-        var mine = all.filter(function(r){ return r._key.indexOf('l_') === 0; })
-                      .sort(function(a, b){ return (b.d || 0) - (a.d || 0); });
+        var mine = rows(all.links || {}, 'link')
+                     .sort(function(a, b){ return b.d - a.d; });
         ui.list.innerHTML = '';
         ui.count.textContent = mine.length ? (mine.length === 1 ? 'קישור אחד' : mine.length + ' קישורים') : '';
-        if(!mine.length){
-          var p = document.createElement('p'); p.className = 'board-empty';
-          p.textContent = 'אין עדיין קישורים. הוסיפו את הראשון.';
-          ui.list.appendChild(p); return;
-        }
+        if(!mine.length){ empty(ui, 'אין עדיין קישורים. הוסיפו את הראשון.'); return; }
+        var shown = 0;
         mine.forEach(function(rec){
-          var href = safeUrl(rec.u);        // re-validate: stored value is untrusted
-          if(!href) return;                 // silently drop anything not http(s)
+          var href = safeUrl(rec.u);     // re-validate: stored value is untrusted
+          if(!href) return;              // silently drop anything not http(s)
+          shown++;
           var li = entry(rec, function(){
             if(!confirm('למחוק את הקישור?')) return;
-            del(rec._key).then(function(){ return refresh(true); }).catch(function(){ say(ui, 'המחיקה נכשלה', 'err'); });
+            remove('links/' + rec.id)
+              .then(function(){ return refresh(true); })
+              .catch(function(err){ say(ui, failMsg(err), 'err'); });
           });
           var a = document.createElement('a');
           a.className = 'lnk'; a.href = href;
           a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
-          a.textContent = clip(rec.t, LIM.title) || href;         // untrusted → textContent
+          a.textContent = rec.t || href;                          // untrusted → textContent
           li.appendChild(a);
           var sub = document.createElement('div');
           sub.className = 'when'; sub.textContent = href;
           li.appendChild(sub);
           ui.list.appendChild(li);
         });
+        if(!shown) empty(ui, 'אין עדיין קישורים. הוסיפו את הראשון.');
       }
       function refresh(force){
         return loadAll(force).then(render).catch(function(){
-          ui.list.innerHTML = '';
-          var p = document.createElement('p'); p.className = 'board-empty';
-          p.textContent = 'לא הצלחנו לטעון את הקישורים (בעיית רשת?). נסו לרענן.';
-          ui.list.appendChild(p);
+          empty(ui, 'לא הצלחנו לטעון את הקישורים (בעיית רשת?). נסו לרענן.');
         });
       }
       ui.form.addEventListener('submit', function(e){
         e.preventDefault();
         var href = safeUrl(url.value);
         if(!href){ say(ui, 'כתובת לא תקינה — צריך קישור http/https', 'err'); return; }
-        var key = newKey('l', null);
-        if(!key){ say(ui, 'שגיאה פנימית', 'err'); return; }
+        var id = newId();
+        if(!id){ say(ui, 'שגיאה פנימית', 'err'); return; }
         var nm = clip(ui.who.value, LIM.name); rememberName(nm);
         ui.send.disabled = true; say(ui, 'שומר…');
-        put(key, {n:nm, u:href, t:clip(title.value, LIM.title), d:Date.now()}).then(function(){
+        write('links/' + id, {n:nm, u:href, t:clip(title.value, LIM.title), d:Date.now()}).then(function(){
           url.value = ''; title.value = ''; say(ui, 'נוסף ✓', 'ok'); return refresh(true);
         }).catch(function(err){
-          say(ui, err.message === 'too_long' ? 'הקישור ארוך מדי' : 'השמירה נכשלה — נסו שוב', 'err');
+          say(ui, failMsg(err), 'err');
         }).then(function(){ ui.send.disabled = false; });
       });
       refresh();

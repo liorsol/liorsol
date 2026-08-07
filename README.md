@@ -122,6 +122,8 @@ one top-level path per page (a "key"), each with its own rules.
   naming pattern and stay within its type/size limit, so this can't be turned into a blob store,
   just (at worst) many small well-formed entries.
 
+  DB Console link: https://console.firebase.google.com/u/0/project/liorsol-github/database/liorsol-github-default-rtdb/data
+
 ### `checklist` — [`car-checklist.html`](car-checklist.html)
 
 Syncs checkbox/text state across devices. Reads/writes: `GET`/`PUT` to

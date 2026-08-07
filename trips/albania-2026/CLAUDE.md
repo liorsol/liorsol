@@ -43,6 +43,14 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
 - Old URL `.../albania-2026.html` at repo root is a redirect stub — keep it.
 - After editing `trips/albania-2026/index.html`: commit + push (ask the user before pushing unless they explicitly requested it).
 
+## Dynamic data (Firebase)
+
+This page has its own reserved DB key, `albania2026`, for any dynamic/shared data it ends up
+needing — full rules, DB URL and access-model reasoning are in the
+[README](../../README.md#firebase-realtime-database-dynamic-data-sync). No feature writes here
+yet. **Privacy still applies** (see the section above) — that path is public and
+unauthenticated like the rest of this repo, so never put personal/private data in it.
+
 ## HTML structure (technical)
 
 Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Suez One, Assistant, Heebo).

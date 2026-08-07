@@ -86,7 +86,21 @@ client-side — don't reintroduce a fetch per board). Writes `PUT` the entry nod
 
 *History: entries were originally one flat key holding a JSON string, because the first
 version of the rules allowed only bool/number/string per key. The rules were widened to
-proper nested objects in Aug 2026; there was no data to migrate.*
+proper nested objects in Aug 2026 and the two links that existed by then were migrated —
+`l_<id>` became `links/<id>` with the original name and timestamp preserved.*
+
+**Two dead legacy keys remain at the root** (`l_msjia2rm_x6k6`, `l_msjiciov_e3yr`). The new
+rules grant `.write` only under `comments` and `links`, so a root-level key is readable but
+**not deletable over REST** — `DELETE` returns 401. They are harmless: the page reads only
+`comments` and `links`, so they never render. To actually remove them, delete the two nodes
+in the Firebase console. (The alternative is a rule permitting deletion of string-valued root
+keys only — `"$legacy": {".write": "data.isString() && !newData.exists()"}` — which cannot
+touch `comments`/`links` because those are objects, and becomes inert once no root string
+exists. Not published; the console is simpler for two nodes.)
+
+**Lesson for the next schema change:** grant `.write` where the data *currently* lives, not
+only where it is moving to, or the old data strands. Migrate before tightening, or widen
+temporarily.
 
 ### Reading the boards back (the point of the feature)
 

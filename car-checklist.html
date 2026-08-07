@@ -1105,21 +1105,29 @@
         // שמירת רשימת פריטי הבדיקה
         let allCheckboxes = [];
 
-        window.onload = function() {
-            // טעינת פריטים פעם ראשונה
-            allCheckboxes = document.querySelectorAll('#print-document-view input[type="checkbox"]');
-            
-            // שחזור ערכים שמורים מ-localStorage
+        // סנכרון בין מכשירים דרך Firebase Realtime Database (מסלול "checklist" בלבד)
+        const CHECKLIST_DB = 'https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/checklist';
+
+        // כתיבה מרוחקת - best-effort, localStorage כבר עדכני מקומית גם אם הרשת נכשלת
+        function remoteSet(key, value) {
+            fetch(CHECKLIST_DB + '/' + encodeURIComponent(key) + '.json', {
+                method: 'PUT',
+                body: JSON.stringify(value)
+            }).catch(() => {});
+        }
+
+        // החלת המצב השמור (מקומי או מרוחק) על ה-DOM
+        function applyLoadedState() {
             allCheckboxes.forEach((printCheckbox) => {
                 const uniqueId = printCheckbox.id; // למשל 'chk-1'
                 const screenCheckbox = document.getElementById('screen-' + uniqueId);
                 const savedState = localStorage.getItem('ev_chk_' + uniqueId) === 'true';
-                
+
                 printCheckbox.checked = savedState;
                 if (screenCheckbox) {
                     screenCheckbox.checked = savedState;
                 }
-                
+
                 // עדכון סגנון ויזואלי של כרטיס הסימון במסך
                 toggleScreenCardStyle(uniqueId, savedState);
             });
@@ -1140,17 +1148,39 @@
             updateProgress();
         }
 
+        // משיכת המצב העדכני ביותר מהמכשירים האחרים ומיזוגו לתוך localStorage
+        function syncFromRemote() {
+            fetch(CHECKLIST_DB + '.json')
+                .then(res => res.json())
+                .then(remote => {
+                    if (!remote) return;
+                    Object.entries(remote).forEach(([key, value]) => localStorage.setItem(key, value));
+                    applyLoadedState();
+                })
+                .catch(() => {});
+        }
+
+        window.onload = function() {
+            // טעינת פריטים פעם ראשונה
+            allCheckboxes = document.querySelectorAll('#print-document-view input[type="checkbox"]');
+
+            // שחזור מיידי מ-localStorage, ואז סנכרון עם הענן ברקע
+            applyLoadedState();
+            syncFromRemote();
+        }
+
         // סנכרון דו-כיווני בין דף הדפסה למסך מובייל
         function syncCheckbox(element, counterpartId) {
             const counterpart = document.getElementById(counterpartId);
             if (counterpart) {
                 counterpart.checked = element.checked;
             }
-            
+
             // זיהוי ה-ID הבסיסי (ללא screen-)
             const baseId = element.id.replace('screen-', '');
             localStorage.setItem('ev_chk_' + baseId, element.checked);
-            
+            remoteSet('ev_chk_' + baseId, element.checked);
+
             toggleScreenCardStyle(baseId, element.checked);
             updateProgress();
         }
@@ -1161,10 +1191,11 @@
             if (counterpart) {
                 counterpart.value = element.value;
             }
-            
+
             // זיהוי איזה שדה עודכן
             const fieldType = element.id.replace('screen-input-', '').replace('print-input-', '');
             localStorage.setItem('ev_txt_' + fieldType, element.value);
+            remoteSet('ev_txt_' + fieldType, element.value);
         }
 
         // שינוי עיצוב כרטיס הפריט במסך לקבלת משוב ויזואלי מהיר
@@ -1310,6 +1341,7 @@
             if (shouldReset) {
                 // מחיקה ואיפוס מוחלט
                 localStorage.clear();
+                fetch(CHECKLIST_DB + '.json', { method: 'DELETE' }).catch(() => {});
                 
                 // איפוס פיזי של כל הצ'קבוקסים
                 const allInputs = document.querySelectorAll('input[type="checkbox"]');

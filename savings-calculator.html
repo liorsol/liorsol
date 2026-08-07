@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>מחשבון חיסכון, משיכות והצמדה</title>
+<style>
+  :root {
+    --bg:#f6f7f9; --card:#fff; --fg:#111827; --muted:#6b7280; --line:#e5e7eb;
+    --accent:#2563eb; --accent-soft:#dbeafe; --good:#059669; --bad:#dc2626;
+    --shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1115; --card:#171a21; --fg:#e5e7eb; --muted:#9099ab; --line:#262b36;
+            --accent:#60a5fa; --accent-soft:#1e293b; --good:#34d399; --bad:#f87171;
+            --shadow:0 1px 2px rgba(0,0,0,.4); }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px 64px; background:var(--bg); color:var(--fg);
+         font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Rubik,Arial,sans-serif; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h1 { margin:0 0 4px; font-size:1.6rem; }
+  h2 { margin:0 0 12px; font-size:1.1rem; }
+  .muted { color:var(--muted); font-size:.9rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px;
+          padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin-bottom:4px; }
+  input[type=number], select { width:100%; padding:9px 10px; border:1px solid var(--line);
+          border-radius:9px; background:var(--bg); color:var(--fg); font:inherit; }
+  input:focus, select:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  .check { display:flex; align-items:center; gap:8px; margin-top:22px; }
+  .check label { margin:0; color:var(--fg); font-size:.95rem; }
+  fieldset { border:0; padding:0; margin:0 0 4px; }
+  fieldset + fieldset { border-top:1px solid var(--line); padding-top:14px; margin-top:14px; }
+  legend { font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); padding:0 0 8px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  button { padding:9px 15px; border-radius:9px; border:1px solid var(--line);
+           background:var(--card); color:var(--fg); font:inherit; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; }
+  .stat { background:var(--bg); border:1px solid var(--line); border-radius:11px; padding:12px 14px; }
+  .stat .k { font-size:.82rem; color:var(--muted); }
+  .stat .v { font-size:1.28rem; font-weight:600; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .stat.warn .v { color:var(--bad); }
+  .stat.ok .v { color:var(--good); }
+  table { border-collapse:collapse; width:100%; font-size:.88rem; font-variant-numeric:tabular-nums; }
+  th, td { border-bottom:1px solid var(--line); padding:7px 9px; text-align:right; white-space:nowrap; }
+  th { position:sticky; top:0; background:var(--card); font-weight:600; color:var(--muted); }
+  tbody tr:hover { background:var(--accent-soft); }
+  .scroll { max-height:420px; overflow:auto; }
+  .chart { width:100%; height:280px; display:block; }
+  /* text-anchor is direction-relative; the page is RTL, so pin chart labels to LTR. */
+  .chart text { direction:ltr; unicode-bidi:isolate; }
+  .legend { display:flex; gap:16px; font-size:.85rem; color:var(--muted); margin-top:6px; }
+  .swatch { display:inline-block; width:10px; height:10px; border-radius:2px; margin-inline-end:6px; }
+  a { color:var(--accent); }
+  #selftest:not(:empty) { margin-bottom:16px; white-space:pre-wrap; font-family:ui-monospace,monospace; font-size:.85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>מחשבון חיסכון, משיכות והצמדה</h1>
+  <p class="muted">
+    סימולציה חודשית של תיק עם הפקדות, משיכות, דמי ניהול, מס רווחי הון והצמדה לאינפלציה.
+    כל שינוי מחושב מיד. <a href="./">חזרה לאינדקס</a>
+  </p>
+
+  <div id="selftest"></div>
+
+  <div class="card">
+    <fieldset>
+      <legend>תיק ותשואה</legend>
+      <div class="grid">
+        <div><label for="initial">סכום התחלתי (₪)</label><input id="initial" type="number" step="1000" /></div>
+        <div><label for="gain0">מתוכו רווח לא ממומש (₪)</label><input id="gain0" type="number" step="1000" /></div>
+        <div><label for="annual">תשואה שנתית נומינלית (%)</label><input id="annual" type="number" step="0.1" /></div>
+        <div><label for="fees">דמי ניהול שנתיים מהצבירה (%)</label><input id="fees" type="number" step="0.05" /></div>
+        <div><label for="years">מספר שנים</label><input id="years" type="number" step="1" min="1" max="80" /></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>תזרים חודשי</legend>
+      <div class="grid">
+        <div><label for="deposit">הפקדה חודשית (₪)</label><input id="deposit" type="number" step="100" /></div>
+        <div><label for="withdraw">משיכה חודשית נטו, שנה ראשונה (₪)</label><input id="withdraw" type="number" step="100" /></div>
+        <div><label for="stopYear">משיכות מתחילות בשנה</label><input id="stopYear" type="number" step="1" min="1" /></div>
+        <div>
+          <label for="timing">עיתוי המשיכה</label>
+          <select id="timing">
+            <option value="end">סוף חודש (רגיל)</option>
+            <option value="begin">תחילת חודש</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>אינפלציה</legend>
+      <div class="grid">
+        <div class="check"><input id="enable_inflation" type="checkbox" /><label for="enable_inflation">הצמדת המשיכה וההפקדה לאינפלציה</label></div>
+        <div><label for="inflation">אינפלציה שנתית (%)</label><input id="inflation" type="number" step="0.1" /></div>
+        <div>
+          <label for="inflation_mode">אופן ההצמדה</label>
+          <select id="inflation_mode">
+            <option value="annual">שנתי – בתחילת כל שנה (מהשנייה)</option>
+            <option value="monthly">חודשי – שקול לשנתי</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>מס רווחי הון</legend>
+      <div class="grid">
+        <div><label for="tax">שיעור מס על הרווח במשיכה (%)</label><input id="tax" type="number" step="1" /></div>
+        <div>
+          <label for="tax_basis">בסיס המס</label>
+          <select id="tax_basis">
+            <option value="nominal">נומינלי (ני״ע ישראליים)</option>
+            <option value="real">ריאלי – הקרן צמודה למדד</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="actions">
+      <button class="primary" id="solve">מצא משיכה מקסימלית</button>
+      <button id="reset">אפס לברירות מחדל</button>
+      <button id="csv">ייצוא CSV</button>
+      <button id="share">העתק קישור</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>תוצאות</h2>
+    <div class="stats" id="stats"></div>
+    <p class="muted" id="assumptions"></p>
+  </div>
+
+  <div class="card">
+    <h2>מסלול היתרה</h2>
+    <svg class="chart" id="chart"></svg>
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--accent)"></i>יתרה נומינלית</span>
+      <span><i class="swatch" style="background:var(--good)"></i>יתרה ריאלית (במונחי היום)</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>פירוט שנתי</h2>
+    <div class="scroll" id="yearly"></div>
+  </div>
+</div>
+
+<script>
+const DEFAULTS = { initial:1000000, gain0:0, annual:8, fees:0, years:20, deposit:0, withdraw:5000,
+                   stopYear:1, timing:'end', enable_inflation:true, inflation:3,
+                   inflation_mode:'annual', tax:0, tax_basis:'nominal' };
+const FIELDS = Object.keys(DEFAULTS);
+const $ = id => document.getElementById(id);
+const money = n => '₪ ' + new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(n);
+
+/**
+ * Month-by-month portfolio simulation.
+ * Withdrawals are NET (what lands in the bank): when tax > 0 the gross sale is grossed up so
+ * the net stays on target, which is why `taxPaid` is reported separately.
+ */
+function simulate(p) {
+  const r = p.annual / 100 / 12;
+  const feeM = p.fees / 100 / 12;
+  const infl = p.enable_inflation ? p.inflation / 100 : 0;
+  const inflM = Math.pow(1 + infl, 1 / 12) - 1;
+  const taxRate = p.tax / 100;
+  const years = Math.max(1, Math.min(80, p.years | 0));
+
+  let bal = p.initial;
+  let basis = Math.max(0, p.initial - p.gain0);   // untaxed principal
+  let W = p.withdraw, D = p.deposit;
+  let cpi = 1;                                     // cumulative inflation index
+  const totals = { withdrawn: 0, deposited: 0, tax: 0, fees: 0, growth: 0 };
+  const rows = [];
+  let depletedMonth = null;
+
+  for (let y = 1; y <= years; y++) {
+    if (p.enable_inflation && p.inflation_mode === 'annual' && y > 1) { W *= 1 + infl; D *= 1 + infl; }
+    const row = { year: y, open: bal, deposited: 0, growth: 0, fees: 0, withdrawn: 0, tax: 0, wStart: W };
+
+    for (let m = 1; m <= 12; m++) {
+      const first = y === 1 && m === 1;
+      if (p.enable_inflation && p.inflation_mode === 'monthly' && !first) { W *= 1 + inflM; D *= 1 + inflM; }
+      if (!first) cpi *= 1 + inflM;
+
+      const wantW = y >= p.stopYear ? W : 0;
+      const take = () => {
+        if (wantW <= 0 || bal <= 0) return;
+        // Taxable share of any sale = unrealised gain / balance, with the basis optionally CPI-linked.
+        const adjBasis = Math.min(bal, p.tax_basis === 'real' ? basis * cpi : basis);
+        const gainFrac = bal > 0 ? Math.max(0, (bal - adjBasis) / bal) : 0;
+        const eff = taxRate * gainFrac;
+        let gross = Math.min(bal, wantW / (1 - eff));
+        const tax = gross * eff, net = gross - tax;
+        basis -= basis * (gross / bal);
+        bal -= gross;
+        row.withdrawn += net; row.tax += tax;
+        totals.withdrawn += net; totals.tax += tax;
+        if (bal <= 1e-6 && depletedMonth === null) depletedMonth = (y - 1) * 12 + m;
+      };
+
+      if (D > 0) { bal += D; basis += D; row.deposited += D; totals.deposited += D; }
+      if (p.timing === 'begin') take();
+
+      const growth = bal * r;
+      bal += growth; row.growth += growth; totals.growth += growth;
+      const fee = bal * feeM;
+      bal -= fee; row.fees += fee; totals.fees += fee;
+
+      if (p.timing === 'end') take();
+      if (bal < 1e-8) bal = 0;
+    }
+
+    row.close = bal;
+    row.closeReal = bal / Math.pow(1 + infl, y);
+    row.wEnd = W;
+    rows.push(row);
+  }
+
+  return { rows, totals, final: bal, finalReal: bal / Math.pow(1 + infl, years),
+           lastW: W, depletedMonth, cpi };
+}
+
+function read() {
+  const p = {};
+  for (const f of FIELDS) {
+    const el = $(f);
+    p[f] = el.type === 'checkbox' ? el.checked : (el.type === 'number' ? parseFloat(el.value || '0') : el.value);
+  }
+  return p;
+}
+function write(p) {
+  for (const f of FIELDS) {
+    const el = $(f);
+    if (el.type === 'checkbox') el.checked = !!p[f]; else el.value = p[f];
+  }
+}
+
+function render() {
+  const p = read();
+  const s = simulate(p);
+  save(p);
+
+  const depleted = s.depletedMonth !== null;
+  const dY = depleted ? Math.ceil(s.depletedMonth / 12) : 0;
+  $('stats').innerHTML = [
+    ['יתרה בסוף התקופה', money(s.final), s.final > 0 ? 'ok' : 'warn'],
+    ['יתרה ריאלית (מונחי היום)', money(s.finalReal), ''],
+    ['סה״כ נמשך נטו', money(s.totals.withdrawn), ''],
+    ['סה״כ הופקד', money(s.totals.deposited), ''],
+    ['סה״כ רווחי תיק', money(s.totals.growth), ''],
+    ['סה״כ דמי ניהול', money(s.totals.fees), s.totals.fees > 0 ? 'warn' : ''],
+    ['סה״כ מס ששולם', money(s.totals.tax), s.totals.tax > 0 ? 'warn' : ''],
+    ['משיכה בחודש האחרון', money(s.lastW), ''],
+    ['הכסף נגמר', depleted ? `בשנה ${dY} (חודש ${s.depletedMonth})` : 'לא נגמר', depleted ? 'warn' : 'ok'],
+  ].map(([k, v, cls]) => `<div class="stat ${cls}"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+
+  $('assumptions').textContent =
+    `ריבית נומינלית מחולקת ל-12 (r=${(p.annual / 12).toFixed(3)}% לחודש), דמי ניהול נגבים חודשית מהצבירה, ` +
+    `המשיכה היא סכום נטו לאחר מס, והמס מחושב על חלק הרווח שבתיק בעת המשיכה. ` +
+    `אם היתרה אינה מספיקה — המשיכה מוגבלת ליתרה.`;
+
+  drawChart(s.rows);
+
+  const cols = ['שנה', 'יתרה בפתיחה', 'הופקד', 'רווח', 'דמי ניהול', 'נמשך נטו', 'מס', 'יתרה בסוף', 'יתרה ריאלית', 'משיכה חודשית'];
+  $('yearly').innerHTML = `<table><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>` +
+    s.rows.map(r => `<tr><td>${r.year}</td><td>${money(r.open)}</td><td>${money(r.deposited)}</td><td>${money(r.growth)}</td>` +
+      `<td>${money(r.fees)}</td><td>${money(r.withdrawn)}</td><td>${money(r.tax)}</td><td>${money(r.close)}</td>` +
+      `<td>${money(r.closeReal)}</td><td>${money(r.wEnd)}</td></tr>`).join('') + '</tbody></table>';
+  window.lastRun = { p, s };
+}
+
+function drawChart(rows) {
+  // viewBox tracks the real pixel size so labels aren't stretched by the aspect fit.
+  const svg = $('chart'), W = Math.max(320, svg.clientWidth), H = 280, pad = { t: 12, r: 14, b: 26, l: 10 };
+  const max = Math.max(1, ...rows.map(r => r.close));
+  const x = i => pad.l + (W - pad.l - pad.r) * (rows.length > 1 ? i / (rows.length - 1) : 0);
+  const y = v => pad.t + (H - pad.t - pad.b) * (1 - v / max);
+  const path = key => rows.map((r, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(r[key]).toFixed(1)}`).join('');
+  const ticks = [0, .5, 1].map(f => `<line x1="${pad.l}" x2="${W - pad.r}" y1="${y(max * f)}" y2="${y(max * f)}" stroke="var(--line)"/>` +
+    `<text x="${W - pad.r}" y="${y(max * f) - 4}" fill="var(--muted)" font-size="11" text-anchor="end">${money(max * f)}</text>`).join('');
+  const labels = rows.filter((_, i) => i % Math.ceil(rows.length / 10) === 0 || i === rows.length - 1)
+    .map(r => `<text x="${x(r.year - 1)}" y="${H - 6}" fill="var(--muted)" font-size="11" text-anchor="middle">${r.year}</text>`).join('');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = ticks + labels +
+    `<path d="${path('closeReal')}" fill="none" stroke="var(--good)" stroke-width="2" stroke-dasharray="4 3"/>` +
+    `<path d="${path('close')}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>` +
+    rows.map((r, i) => `<circle cx="${x(i)}" cy="${y(r.close)}" r="9" fill="transparent"><title>שנה ${r.year}: ${money(r.close)} (ריאלי ${money(r.closeReal)})</title></circle>`).join('');
+}
+
+// Bisection on the year-1 withdrawal so the portfolio lands on ~0 at the end.
+function solveMaxWithdrawal() {
+  const p = read();
+  let lo = 0, hi = Math.max(1000, p.initial);
+  for (let i = 0; i < 80; i++) {
+    const mid = (lo + hi) / 2;
+    if (simulate({ ...p, withdraw: mid }).final > 0) lo = mid; else hi = mid;
+  }
+  $('withdraw').value = Math.floor(lo);
+  render();
+}
+
+const save = p => { try { localStorage.setItem('calc', JSON.stringify(p)); } catch {} };
+function load() {
+  const q = new URLSearchParams(location.search);
+  let p = { ...DEFAULTS };
+  try { Object.assign(p, JSON.parse(localStorage.getItem('calc') || '{}')); } catch {}
+  for (const f of FIELDS) if (q.has(f)) p[f] = f === 'enable_inflation' ? q.get(f) === '1'
+    : ($(f).type === 'number' ? parseFloat(q.get(f)) : q.get(f));
+  write(p);
+}
+
+$('reset').onclick = () => { write(DEFAULTS); render(); };
+$('solve').onclick = solveMaxWithdrawal;
+$('share').onclick = async e => {
+  const p = read();
+  const q = new URLSearchParams(Object.fromEntries(FIELDS.map(f => [f, p[f] === true ? 1 : p[f] === false ? 0 : p[f]])));
+  const url = location.origin + location.pathname + '?' + q;
+  try { await navigator.clipboard.writeText(url); e.target.textContent = 'הועתק ✓'; }
+  catch { location.search = q; }
+  setTimeout(() => e.target.textContent = 'העתק קישור', 1500);
+};
+$('csv').onclick = () => {
+  const head = ['year', 'open', 'deposited', 'growth', 'fees', 'withdrawn_net', 'tax', 'close', 'close_real', 'monthly_withdrawal'];
+  const csv = [head.join(','), ...window.lastRun.s.rows.map(r =>
+    [r.year, r.open, r.deposited, r.growth, r.fees, r.withdrawn, r.tax, r.close, r.closeReal, r.wEnd]
+      .map(v => typeof v === 'number' ? v.toFixed(2) : v).join(','))].join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })), download: 'savings.csv' });
+  a.click(); URL.revokeObjectURL(a.href);
+};
+document.querySelectorAll('input,select').forEach(el => el.addEventListener('input', render));
+addEventListener('resize', () => drawChart(window.lastRun.s.rows));
+
+// Open with #test to check the engine against closed-form results.
+function selfTest() {
+  const base = { ...DEFAULTS, initial: 1000, gain0: 0, annual: 12, fees: 0, years: 10,
+                 deposit: 0, withdraw: 0, stopYear: 1, timing: 'end',
+                 enable_inflation: false, inflation: 0, inflation_mode: 'annual', tax: 0, tax_basis: 'nominal' };
+  const r = 0.12 / 12, n = 120, out = [];
+  const near = (a, b, msg, eps = 1e-6) => out.push(`${Math.abs(a - b) <= eps * Math.max(1, Math.abs(b)) ? 'PASS' : 'FAIL'} ${msg} (${a.toFixed(4)} ≈ ${b.toFixed(4)})`);
+
+  near(simulate(base).final, 1000 * Math.pow(1 + r, n), 'compound growth, no flows');
+  const W = 10;
+  near(simulate({ ...base, withdraw: W }).final,
+       1000 * Math.pow(1 + r, n) - W * ((Math.pow(1 + r, n) - 1) / r), 'level withdrawal = annuity formula');
+  near(simulate({ ...base, deposit: W, timing: 'end' }).final,
+       1000 * Math.pow(1 + r, n) + W * ((Math.pow(1 + r, n) - 1) / r) * (1 + r), 'level deposit = annuity-due formula');
+  // All-gain portfolio at 25% tax: a 100 net withdrawal must sell 133.33 gross.
+  const t = simulate({ ...base, gain0: 1000, annual: 0, withdraw: 100, years: 1, tax: 25 });
+  near(t.totals.tax / t.totals.withdrawn, 1 / 3, 'tax gross-up on fully-taxable portfolio', 1e-3);
+  near(simulate({ ...base, fees: 12, annual: 12 }).final,
+       1000 * Math.pow((1 + r) * (1 - 0.01), n), 'fees drag');
+  const d = simulate({ ...base, initial: 120, annual: 0, withdraw: 10, years: 2 });
+  out.push(`${d.depletedMonth === 12 ? 'PASS' : 'FAIL'} depletion detected at month 12 (got ${d.depletedMonth})`);
+
+  $('selftest').textContent = out.join('\n');
+  console.log(out.join('\n'));
+}
+
+load();
+render();
+if (location.hash === '#test') selfTest();
+</script>
+</body>
+</html>

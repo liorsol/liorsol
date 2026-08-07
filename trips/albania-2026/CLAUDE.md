@@ -23,7 +23,8 @@ If the user wants the trip page to reference such details (e.g., car-hire confir
 ```
 liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main)
 ├── albania-2026.html          ← redirect stub to trips/albania-2026/ — do not delete
-├── index.html                 ← UNRELATED project (savings calculator) — do not touch
+├── index.html                 ← UNRELATED — repo file browser (site home) — do not touch
+├── savings-calculator.html    ← UNRELATED project (savings calculator) — do not touch
 ├── restaurants.html, app.js, style.css, rest_combined.json ← UNRELATED — do not touch
 └── trips/albania-2026/        ← everything trip-related lives here
     ├── CLAUDE.md              ← this file (canonical project context)
@@ -43,6 +44,14 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
 - **Presentation URL:** `https://liorsol.github.io/liorsol/trips/albania-2026/presentation/`
 - Old URL `.../albania-2026.html` at repo root is a redirect stub — keep it.
 - After editing `trips/albania-2026/index.html`: commit + push (ask the user before pushing unless they explicitly requested it).
+
+## Dynamic data (Firebase)
+
+This page has its own reserved DB key, `albania2026`, for any dynamic/shared data it ends up
+needing — full rules, DB URL and access-model reasoning are in the
+[README](../../README.md#firebase-realtime-database-dynamic-data-sync). No feature writes here
+yet. **Privacy still applies** (see the section above) — that path is public and
+unauthenticated like the rest of this repo, so never put personal/private data in it.
 
 ## HTML structure (technical)
 

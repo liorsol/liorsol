@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>מפת המסלול · טיול אלבניה 2026</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇦🇱</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -23,6 +24,10 @@
   .back{background:var(--gold); color:#3a2a08; text-decoration:none; font-family:'Heebo',sans-serif;
     font-weight:700; font-size:14px; white-space:nowrap; padding:8px 16px; border-radius:999px; transition:.15s}
   .back:hover{background:#fff}
+  /* Embedded in the trip page's #map view — its side menu replaces this back link,
+     and under 900px its ☰ button floats over this bar, so leave room for it. */
+  .embed .back{display:none}
+  @media (max-width:900px){ .embed .bar h1{padding-inline-start:48px} }
   .filters{display:flex; gap:6px; flex-wrap:wrap; padding:9px 18px; background:var(--paper); border-bottom:1px solid var(--line)}
   .filters a{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; text-decoration:none;
     padding:5px 13px; border-radius:999px; border:1.5px solid var(--line); color:var(--ink-soft); background:#fff; transition:.15s}
@@ -39,6 +44,7 @@
 </style>
 </head>
 <body>
+<script>if(window.top !== window.self) document.documentElement.className = 'embed';</script>
 
 <div class="bar">
   <h1 id="title">🗺️ מפת המסלול — כל המקומות בתכנית</h1>

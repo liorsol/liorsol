@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>טיול משפחתי · אלבניה · אוגוסט 2026</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇦🇱</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -24,14 +25,34 @@
   a{color:var(--terra-deep)}
   [data-view]{cursor:pointer} /* internal SPA links have no href — force hand cursor */
 
-  /* NAV */
-  nav{position:sticky; top:0; z-index:60; background:rgba(9,58,68,.97); backdrop-filter:blur(8px); border-bottom:2px solid var(--gold)}
-  nav .bar{max-width:980px; margin:0 auto; display:flex; gap:5px; align-items:center; overflow-x:auto; padding:10px 14px; scrollbar-width:none}
-  nav .bar::-webkit-scrollbar{display:none}
-  nav .brand{font-family:'Suez One',serif; color:var(--gold); font-size:15px; white-space:nowrap; margin-inline-end:6px; cursor:pointer}
-  nav a{color:#e9dcc2; text-decoration:none; font-family:'Heebo',sans-serif; font-weight:500; font-size:14px; white-space:nowrap; padding:7px 12px; border-radius:999px; transition:.18s; cursor:pointer}
+  /* SIDE NAV — fixed rail on desktop, off-canvas drawer under 900px.
+     The page is always dir=rtl, so the rail sits on the right and the
+     drawer slides out to the right (translateX is physical, not logical). */
+  :root{--navw:224px}
+  body{padding-inline-start:var(--navw)}
+  nav{position:fixed; inset-block:0; inset-inline-start:0; width:var(--navw); z-index:60; overflow-y:auto;
+    background:rgba(9,58,68,.97); backdrop-filter:blur(8px); border-inline-end:2px solid var(--gold)}
+  nav .bar{display:flex; flex-direction:column; gap:3px; padding:18px 12px}
+  nav .brand{font-family:'Suez One',serif; color:var(--gold); font-size:17px; padding:0 10px; margin-bottom:12px; cursor:pointer}
+  nav a{color:#e9dcc2; text-decoration:none; font-family:'Heebo',sans-serif; font-weight:500; font-size:14.5px; padding:8px 12px; border-radius:10px; transition:.18s; cursor:pointer}
   nav a:hover{background:rgba(255,255,255,.12); color:#fff}
   nav a.on{background:var(--gold); color:#3a2a08; font-weight:700}
+  nav hr{border:none; border-top:1px solid rgba(255,255,255,.15); margin:8px 10px}
+  .navtoggle,.navscrim{display:none}
+  @media (max-width:900px){
+    body{padding-inline-start:0}
+    nav{transform:translateX(100%); transition:transform .22s ease; box-shadow:var(--shadow)}
+    nav .bar{padding-top:62px}                    /* clear the ☰ button, which floats above the drawer */
+    nav.open{transform:none}
+    .navtoggle{display:block; position:fixed; top:10px; inset-inline-start:10px; z-index:70;
+      background:rgba(9,58,68,.94); color:var(--gold); border:1.5px solid var(--gold); border-radius:12px;
+      font-size:21px; line-height:1; padding:7px 11px; cursor:pointer}
+    nav.open ~ .navscrim{display:block; position:fixed; inset:0; z-index:55; background:rgba(7,47,56,.45)}
+  }
+
+  /* MAP VIEW — map.html embedded, so the side menu stays put and there is no page
+     reload between the plan and the map. map.html still works on its own URL. */
+  .mapframe{display:block; width:100%; height:100vh; height:100dvh; border:0; background:var(--sand)}
 
   /* VIEWS */
   .view{display:none; animation:fade .35s ease}
@@ -41,15 +62,12 @@
   .back{display:inline-flex; align-items:center; gap:6px; font-family:'Heebo',sans-serif; font-weight:700; font-size:14px; color:var(--azure); text-decoration:none; cursor:pointer; margin-bottom:6px}
 
   /* HERO (home) */
-  header.hero{position:relative; overflow:hidden; color:#fff; text-align:center;
-    background:linear-gradient(160deg,#0a3d47,#0c4b57 42%,#1b8a9e); padding:56px 20px 96px}
-  header.hero::before{content:""; position:absolute; inset:0;
-    background:radial-gradient(circle at 80% 16%, rgba(227,162,58,.34), transparent 40%),
-               radial-gradient(circle at 12% 84%, rgba(43,184,196,.3), transparent 44%)}
-  header.hero .sun{position:absolute; top:34px; left:50%; transform:translateX(-50%); width:70px;height:70px;border-radius:50%;
-    background:radial-gradient(circle,#ffe7a8,#e3a23a); box-shadow:0 0 56px 16px rgba(227,162,58,.5); opacity:.92}
-  header.hero h1{position:relative; color:#fff; font-size:clamp(34px,6.5vw,60px); margin:54px 0 .12em; text-shadow:0 6px 28px rgba(0,0,0,.25)}
-  header.hero .dates{position:relative; font-family:'Heebo',sans-serif; font-weight:700; letter-spacing:.08em; font-size:clamp(15px,2.2vw,19px); color:#ffe1a6}
+  header.hero{position:relative; overflow:hidden; color:#fff; text-align:center; padding:110px 20px 116px;
+    background:linear-gradient(rgba(7,47,56,.34),rgba(7,47,56,.62)),
+               url('https://img.worldtourismforum.net/uploads/csm_19_ALBANIA_Saranda_AdobeStock_476387140_374de3ecbe.webp') center/cover no-repeat,
+               linear-gradient(160deg,#0a3d47,#0c4b57 42%,#1b8a9e)}
+  header.hero h1{position:relative; color:#fff; font-size:clamp(34px,6.5vw,60px); margin:0 0 .12em; text-shadow:0 4px 22px rgba(0,0,0,.55)}
+  header.hero .dates{position:relative; font-family:'Heebo',sans-serif; font-weight:700; letter-spacing:.08em; font-size:clamp(15px,2.2vw,19px); color:#ffe1a6; text-shadow:0 2px 12px rgba(0,0,0,.5)}
   .hero-wave{position:absolute; bottom:-1px; left:0; width:100%; display:block}
 
   .sec-head{display:flex; align-items:baseline; gap:12px; margin:0 0 4px}
@@ -216,7 +234,7 @@
   footer b{color:#ffe1a6}
 
   @media (max-width:640px){ body{font-size:16px} .two{grid-template-columns:1fr} }
-  @media print{ nav{display:none} .view{display:block!important} header.hero{padding:24px 0 40px} .card,.region,.note,.tile{box-shadow:none} details summary{display:none} }
+  @media print{ nav,.navtoggle,.navscrim{display:none} body{padding-inline-start:0} .view{display:block!important} #view-map{display:none!important} header.hero{padding:24px 0 40px} .card,.region,.note,.tile{box-shadow:none} details summary{display:none} }
 </style>
 </head>
 <body>
@@ -224,25 +242,29 @@
 <!-- מסמך ההקשר המלא של הפרויקט (החלטות, נתוני טיול, מקורות, כללי עבודה) נמצא ב-CLAUDE.md
      שבאותה תיקייה — הוא מקור האמת. לא לשכפל אותו לכאן. -->
 
-<nav><div class="bar">
+<button class="navtoggle" aria-label="תפריט" aria-expanded="false" aria-controls="nav">☰</button>
+<nav id="nav"><div class="bar">
   <span class="brand" data-view="home">🇦🇱 אלבניה ’26</span>
   <a data-view="home">בית</a>
+  <a data-view="agenda">📅 האג׳נדה המלאה</a>
+  <a data-view="map">🗺️ מפת המסלול</a>
+  <hr>
   <a data-view="north">הוילה + צפון</a>
   <a data-view="tirana">טריאנה</a>
   <a data-view="drive">הדרך דרומה וצפונה</a>
   <a data-view="south">קסאמיל + דרום</a>
   <a data-view="last">היום האחרון</a>
+  <hr>
   <a data-view="food">אוכל &amp; גלוטן</a>
   <a data-view="info">מידע פרקטי</a>
   <a data-view="checklist">צ׳ק-ליסט</a>
   <a data-view="mine">משפחת סולומון</a>
-  <a href="map.html">🗺️ מפה</a>
 </div></nav>
+<div class="navscrim"></div>
 
 <!-- ======================= HOME ======================= -->
 <div class="view" id="view-home">
   <header class="hero">
-    <div class="sun"></div>
     <h1>טיול משפחתי לאלבניה</h1>
     <div class="dates">13–22 באוגוסט 2026</div>
     <svg class="hero-wave" viewBox="0 0 1440 80" preserveAspectRatio="none"><path fill="#f7efe0" d="M0,36 C240,80 480,80 720,50 C960,20 1200,20 1440,50 L1440,80 L0,80 Z"></path></svg>
@@ -263,25 +285,24 @@
       </details>
     </div>
 
-    <a class="mapbanner" href="map.html">
+    <a class="mapbanner" href="#map">
       <span class="ic">🗺️</span>
       <span class="tx"><b>מפת המסלול — כל המקומות בתכנית</b>
         <span>60 נקודות: לינות, אטרקציות, תחנות בדרך ומסעדות, לפי קבוצות. אפשר לכבות ולהדליק שכבות.</span></span>
       <span class="go">פתיחת המפה ←</span>
     </a>
 
-    <h3 style="margin:22px 0 2px">מקרא הקבוצות (להתפצלות)</h3>
-    <p class="lead" style="margin:0 0 8px">כל אטרקציה מתויגת לקבוצה שהיא הכי מתאימה — כך ביום שאין הסכמה אפשר לפצל בקלות:</p>
-    <div class="legend">
-      <div class="l"><div class="h" style="color:#0c5e5a">🏖️ ים &amp; רוגע</div><p>פעוטות (1, 1.5, 3) + הוריהם ומי שרוצה יום עצלן. חופים רדודים, בריכות.</p></div>
-      <div class="l"><div class="h" style="color:#a8401f">🏛️ תרבות &amp; נופים</div><p>מבוגרים והגדולות שאוהבות סיפור. ערים עתיקות, מצודות, שווקים.</p></div>
-      <div class="l"><div class="h" style="color:#8a6310">🧗 הרפתקה &amp; נוער</div><p>הגדולים (8–17) + הורים אקטיביים. הליכות, זיפליין, רפטינג, סירות.</p></div>
-      <div class="l"><div class="h" style="color:#2c4a73">🧘 נגיש ונינוח</div><p>מעט הליכה, צל ומקום לשבת — נוח גם לעגלות תינוק. רכבל, טיילות, נוף ממסעדה.</p></div>
-    </div>
+    <a class="mapbanner" data-view="agenda" style="background:linear-gradient(135deg,#b5482f,#d96b4f 60%,#e3a23a)">
+      <span class="ic">📅</span>
+      <span class="tx"><b>האג׳נדה המלאה — יום אחר יום</b>
+        <span>כל עשרת הימים במקום אחד: 13.8 הנחיתה ועד 22.8 הטיסה, כולל הימים הפתוחים והפיצולים.</span></span>
+      <span class="go">לאג׳נדה ←</span>
+    </a>
 
     <h3 style="margin:24px 0 2px">בחרו סעיף</h3>
     <div class="tiles">
-      <a class="tile" data-view="north"><div class="ic">🗺️</div><h3>בסיס הוילה + צפון</h3><p>14–19.8: הלינה, שלד השבוע וקטלוג טיולי הכוכב מהוילה.</p></a>
+      <a class="tile" data-view="agenda"><div class="ic">📅</div><h3>האג׳נדה המלאה</h3><p>13–22.8 יום אחר יום — התכנית המוצעת כולה בעמוד אחד.</p></a>
+      <a class="tile" data-view="north"><div class="ic">🗺️</div><h3>בסיס הוילה + צפון</h3><p>14–19.8: הלינה וקטלוג טיולי הכוכב מהוילה.</p></a>
       <a class="tile" data-view="tirana"><div class="ic">🏛️</div><h3>יום בטריאנה</h3><p>מסלול הליכה במרכז, בונקרים, מוזיאונים, פארק ורכבל.</p></a>
       <a class="tile" data-view="drive"><div class="ic">🚗</div><h3>הדרך דרומה וצפונה</h3><p>19.8 שן-ג׳רג׳←קסאמיל ו-21.8 בחזרה: מסלולים ותחנות.</p></a>
       <a class="tile" data-view="south"><div class="ic">🏝️</div><h3>קסאמיל + הדרום</h3><p>חופים ואיים, בוטרינט, העין הכחולה, לקורסי, ג׳ירוקסטרה.</p></a>
@@ -290,20 +311,124 @@
       <a class="tile" data-view="info"><div class="ic">ℹ️</div><h3>מידע פרקטי</h3><p>כסף, נהיגה, חום, תינוקות, תקשורת ותיאום קבוצתי.</p></a>
       <a class="tile" data-view="checklist"><div class="ic">🧳</div><h3>צ׳ק-ליסט לפני נסיעה</h3><p>דרכונים, רישיונות, מזומן, כיסאות בטיחות.</p></a>
       <a class="tile mine" data-view="mine"><div class="ic">👨‍👩‍👧‍👧</div><h3>משפחת סולומון</h3><p>הרכב שלנו, ליל הנחיתה, הנסיעה צפונה והלינה האחרונה.</p></a>
-      <a class="tile" href="map.html"><div class="ic">🗺️</div><h3>מפת המסלול</h3><p>כל האטרקציות, הלינות והמסעדות על מפה אחת, לפי קבוצות.</p></a>
+      <a class="tile" href="#map"><div class="ic">🗺️</div><h3>מפת המסלול</h3><p>כל האטרקציות, הלינות והמסעדות על מפה אחת, לפי קבוצות.</p></a>
     </div>
     <p style="color:var(--ink-soft); font-size:14px; margin-top:18px">💡 בכל כרטיס יש שורת ״<span style="color:var(--azure); font-weight:700">◂ פרטים</span>״ — לחיצה פותחת את המידע המלא. סגור = תמונה כללית, פתוח = הכל.</p>
-  
+
+    <h3 style="margin:28px 0 2px">מקרא הקבוצות (להתפצלות)</h3>
+    <p class="lead" style="margin:0 0 8px">כל אטרקציה מתויגת לקבוצה שהיא הכי מתאימה — כך ביום שאין הסכמה אפשר לפצל בקלות:</p>
+    <div class="legend">
+      <div class="l"><div class="h" style="color:#0c5e5a">🏖️ ים &amp; רוגע</div><p>פעוטות (1, 1.5, 3) + הוריהם ומי שרוצה יום עצלן. חופים רדודים, בריכות.</p></div>
+      <div class="l"><div class="h" style="color:#a8401f">🏛️ תרבות &amp; נופים</div><p>מבוגרים והגדולות שאוהבות סיפור. ערים עתיקות, מצודות, שווקים.</p></div>
+      <div class="l"><div class="h" style="color:#8a6310">🧗 הרפתקה &amp; נוער</div><p>הגדולים (8–17) + הורים אקטיביים. הליכות, זיפליין, רפטינג, סירות.</p></div>
+      <div class="l"><div class="h" style="color:#2c4a73">🧘 נגיש ונינוח</div><p>מעט הליכה, צל ומקום לשבת — נוח גם לעגלות תינוק. רכבל, טיילות, נוף ממסעדה.</p></div>
+    </div>
+
   <section class="talk" data-topic="home" aria-label="הערות כלליות"></section>
   </div>
 </div>
+
+<!-- ======================= MAP =======================
+     The map lives in its own file (Leaflet + 58 pins) and is embedded here so that
+     navigating to it is a view switch, not a page load. `src` is set on first visit
+     only — #map/<category> loads map.html#<category>. -->
+<div class="view" id="view-map">
+  <iframe class="mapframe" title="מפת המסלול — כל המקומות בתכנית"></iframe>
+</div>
+
+<!-- ======================= AGENDA (all 10 days in one place) ======================= -->
+<div class="view" id="view-agenda"><div class="wrap pad">
+  <a class="back" data-view="home">→ חזרה לבית</a>
+  <div class="region drive"><div class="when">13–22 באוגוסט 2026</div><h2>האג׳נדה המלאה — יום אחר יום</h2>
+    <p>כל התכנית המוצעת בעמוד אחד: עשרה ימים, מה קורה בכל אחד, מאיפה יוצאים ואיפה ישנים. הפרטים המלאים על כל אתר נמצאים בכרטיסים — כל שורה מקושרת לשלה.</p>
+    <a class="viewmap" href="#map">🗺️ כל הנקודות על המפה</a></div>
+
+  <div class="card" id="agenda-days"><h3>🗓️ עשרת הימים <a class="anchor" href="#agenda/agenda-days" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <div class="meta"><span>🛏️ ריקאס 1 לילה · שן-ג׳רג׳ 5 · קסאמיל 2–3</span><span>🚗 שני ימי נסיעה ארוכים: 19.8 ו-22.8</span></div>
+
+    <div class="day"><span class="dot"></span><div class="date">חמישי 13.8 · לילה</div>
+      <div class="ttl">נחיתה 22:25 ← Hotel Vila Zeus, ריקאס</div>
+      <p>ליל הנחיתה ליד השדה — הוילה מתחילה רק ב-14.8. <a href="#north/stay-airport">הכרטיס ←</a></p>
+      <div class="tags"><span class="tag t-all">כולם</span></div></div>
+
+    <div class="day"><span class="dot"></span><div class="date">שישי 14.8</div>
+      <div class="ttl">איסוף הרכבים ← טריאנה + קנייה גדולה ← צ׳ק-אין לוילה · בערב ארוחת שישי ויום הולדת לסבתא ❤️</div>
+      <p>הקנייה הגדולה נעשית בטירנה בדרך למעלה — בכפר אין סופר, בית מרקחת או תחנת דלק, ורק בעיר יש מדף ללא גלוטן ואת מאפיית <a href="#food/panja">Panja</a>. עולים לוילה <b>לאור יום</b>. <a href="#north/villa">הוילה ←</a> · <a data-view="tirana">טריאנה ←</a></p>
+      <div class="tags"><span class="tag t-all">כולם</span></div></div>
+
+    <div class="day"><span class="dot"></span><div class="date">שבת 15.8</div>
+      <div class="ttl">✅ יום בוילה</div>
+      <p>בריכה, התארגנות ומנוחה. <a href="#north/villa-day">הכרטיס ←</a></p>
+      <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">נגיש</span></div></div>
+
+    <div class="day"><span class="dot"></span><div class="date">ראשון 16.8</div>
+      <div class="ttl">✅ הר דאיטי — רכבל ופארק הרפתקאות</div>
+      <p>יום שמפצל את עצמו: רכבל ומסעדת נוף למי שרוצה לשבת, פארק חבלים מגיל 5 לגדולות. <a href="#north/dajti">הכרטיס ←</a></p>
+      <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">נגיש</span><span class="tag t-adv">5+</span></div></div>
+
+    <div class="day"><span class="dot"></span><div class="date">שני 17.8</div>
+      <div class="ttl">❓ יום פתוח — ההמלצה: <a href="#agenda/week">בראט</a></div>
+      <p>היום הארוך, בתחילת השבוע כשיש כוח. <a href="#agenda/week">טבלת האפשרויות ←</a></p>
+      <div class="tags"><span class="tag t-cult">תרבות</span></div></div>
+
+    <div class="day"><span class="dot"></span><div class="date">שלישי 18.8</div>
+      <div class="ttl">❓ יום פתוח · בערב יום הולדת לדניאל ❤️</div>
+      <p>עדיף יום קצר או בלי נסיעה בכלל, כדי לחזור מוקדם לערב. <a href="#agenda/week">טבלת האפשרויות ←</a></p>
+      <div class="tags"><span class="tag t-all">כולם</span></div></div>
+
+    <div class="day"><span class="dot"></span><div class="date">רביעי 19.8</div>
+      <div class="ttl">צ׳ק-אאוט מהוילה ← נסיעה דרומה לקסאמיל ← צ׳ק-אין ב-Asters</div>
+      <p><b>המסלול הפנימי</b> (~5–5.5 ש׳) עדיף על החופי — פחות סרפנטינות ופחות בחילות. תחנות: <a href="#drive/stops-inland">פטרלה וטפלנה ←</a> · <a data-view="drive">שני המסלולים במלואם ←</a></p>
+      <div class="tags"><span class="tag t-all">יום נסיעה</span></div></div>
+
+    <div class="day"><span class="dot"></span><div class="date">חמישי 20.8 · היום המלא בדרום</div>
+      <div class="ttl">בוטרינט בבוקר ← חופים ואיים ← שקיעה בלקורסי</div>
+      <p>פיצול טבעי: קבוצת התרבות ל<a href="#south/butrint">בוטרינט</a> לפני החום, קבוצת הרוגע ישר ל<a href="#south/ksamil">חוף</a>; מתאחדים על האיים בצהריים ובערב ב<a href="#south/lekuresi">לקורסי</a>. חניה בקסאמיל כמעט בלתי אפשרית אחרי 09:00.</p>
+      <div class="tags"><span class="tag t-cult">תרבות</span><span class="tag t-beach">ים</span><span class="tag t-grand">נגיש</span></div></div>
+
+    <div class="day"><span class="dot"></span><div class="date">שישי 21.8</div>
+      <div class="ttl">כאן המשפחה נפרדת</div>
+      <p><b>סולומון:</b> מפנים את Asters ← <a href="#south/blueeye">העין הכחולה</a> ← <a href="#south/gjirokaster">ג׳ירוקסטרה</a> ← לינה באזור השדה. <a href="#drive/drive-north">לוח הזמנים ←</a><br>
+      <b>שאר המשפחות:</b> לילה נוסף בקסאמיל — חופים, איים או <a href="#south/boats">שייט</a>.</p>
+      <div class="tags"><span class="tag t-cult">תרבות</span><span class="tag t-beach">ים</span></div></div>
+
+    <div class="day"><span class="dot"></span><div class="date">שבת 22.8 · יום הטיסה</div>
+      <div class="ttl">שני מסלולים נפרדים ← בטרמינל 17:00 ← המראה 19:55</div>
+      <p><b>סולומון</b> ישנים כבר צפונה, אז זה יום פנוי: קרויה / טריאנה / חוף דורס, וצהריים ב-<a href="#north/ukafarm">Uka Farm</a>. <b>שאר המשפחות</b> עושות את כל הדרך מקסאמיל — יציאה 07:30 ועצירה מתוכננת אחת בלבד. <a data-view="last">התכנית המלאה ←</a></p>
+      <div class="tags"><span class="tag t-all">יום נסיעה + טיסה</span></div></div>
+  </div>
+
+  <div class="card" id="week"><h3>❓ שני הימים הפתוחים — 17.8 ו-18.8 <a class="anchor" href="#agenda/week" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <div class="meta"><span>📍 הכל יוצא מהוילה בשן-ג׳רג׳ וחוזר אליה</span><span>❗ עדיין לא נסגר</span></div>
+    <p class="gist">כל האפשרויות בטווח נסיעה מהוילה, לפי אורך היום ולמי הוא מתאים.</p>
+    <table class="h" style="margin-top:8px">
+      <tr><th>אפשרות</th><th>נסיעה לכיוון</th><th>אופי היום</th><th>למי</th></tr>
+      <tr><td><b><a href="#north/berat">בראט</a></b> (אונסק״ו)</td><td>~2:45–3 ש׳</td><td>יום שלם וכבד — מעל 5.5 ש׳ נהיגה</td><td>תרבות · אפשרי לכולם אם עולים ברכב עד שער המצודה</td></tr>
+      <tr><td><b><a href="#north/kruja">קרויה</a></b></td><td>~1:40–1:50</td><td>חצי יום — מצודה, מוזיאון, בזאר</td><td>תרבות · לא נוח לעגלות</td></tr>
+      <tr><td><b><a href="#north/equos">EQUOS, מולט</a></b></td><td>~1:15</td><td>יום אחד, שתי פעילויות באותו מתחם</td><td>סוסים + מים + מסעדה — הכי טוב לכל הגילאים יחד</td></tr>
+      <tr><td><b><a href="#north/huqi">אגרו-תיירות Huqi</a></b></td><td>~1:20–1:30</td><td>יום רגוע על אגם + ארוחה</td><td>שטח מישורי, נוח לעגלות ולסבא-סבתא</td></tr>
+      <tr><td><b><a href="#north/waterparks">פארק מים Blue Magic</a></b></td><td>~1:10</td><td>יום מים מלא</td><td>כל הילדים · אזור 0–5 · אסור אוכל מבחוץ</td></tr>
+      <tr><td><b><a href="#north/durres">יום ים בדורס</a></b></td><td>~1:40–2 ש׳</td><td>יום שלם — ים בבוקר, עיר עתיקה אחה״צ</td><td>החוף הכי ידידותי לפעוטות בטווח</td></tr>
+      <tr><td><b><a href="#north/bovilla">אגם בוביליה</a></b></td><td>~1:30–2 ש׳</td><td>תצפית ופיקניק</td><td>⚠️ 6–8 ק״מ אחרונים לא סלולים — לברר לפני</td></tr>
+      <tr><td><b><a href="#north/waterfall">מפל שן-ג׳רג׳</a></b></td><td>~5 ק״מ (~10–15 ד׳)</td><td>חצי יום מהכפר</td><td>מועמד ליום של דניאל — חוזרים לצהריים</td></tr>
+      <tr><td><b><a href="#north/tomadhe">בוית׳ינה טומאדה</a></b></td><td>~1 ק״מ מהוילה</td><td>חצי יום / ארוחה בכפר</td><td>סוסים וחיות · מועמד לערב יום ההולדת</td></tr>
+      <tr><td><b><a data-view="tirana">יום בטריאנה</a></b></td><td>~55–70 ד׳</td><td>יום עיר + ערב פולקלור</td><td>תרבות · ההמלצה: לא באותו יום עם בראט</td></tr>
+    </table>
+    <div class="why" style="margin-top:9px"><b>אם רוצים המלצה:</b> <b>17.8 בראט</b> — היום הארוך, בתחילת השבוע כשיש כוח. <b>18.8 EQUOS או יום בכפר</b> — קרוב, קליל, וחוזרים מוקדם לערב של דניאל. אם מוותרים על בראט: קרויה ב-17.8, ואז לא לחזור אליה בלינה של 21.8.</div>
+  </div>
+
+  <div class="note q"><div class="nh">❓ מה עוד לא נסגר בתכנית</div>
+    <b>17.8 ו-18.8</b> — לבחור מהטבלה למעלה (EQUOS ו-Huqi דורשים תיאום מראש לקבוצה של 20) · <b>לינת 21.8 של סולומון</b> — צמוד לשדה או קרויה (<a data-view="mine">ההשוואה ←</a>) · <b>בוביליה</b> — לברר את הכביש הלא סלול · <b>ערב הפולקלור ״למבוגרים בלבד״</b> — מי עם הילדים.</div>
+
+  <section class="talk" data-topic="agenda" aria-label="הערות על האג׳נדה"></section>
+  </div></div>
 
 <!-- ======================= NORTH ======================= -->
 <div class="view" id="view-north"><div class="wrap pad">
   <a class="back" data-view="home">→ חזרה לבית</a>
   <div class="region north"><div class="when">13–19 באוגוסט</div><h2>בסיס הוילה בשן-ג׳רג׳ + צפון אלבניה</h2>
     <p>שן-ג׳רג׳ הוא כפר הררי כ-37 ק״מ מזרחית-צפונית לטירנה, בגובה שמוריד את החום של אוגוסט. הוילה היא ה״בית״: בריכה, מרפסות ונוף, ומכאן יוצאים כל בוקר לטיול כוכב וחוזרים בערב. אין ים בבסיס — יום ים הוא יציאה מתוכננת.</p>
-    <a class="viewmap" href="map.html#north">🗺️ מפת הצפון והוילה</a></div>
+    <a class="viewmap" href="#map/north">🗺️ מפת הצפון והוילה</a></div>
 
   <div class="card" id="stay-airport"><h3>🛬 ליל הנחיתה (13.8) — Hotel Vila Zeus, ריקאס <a class="anchor" href="#north/stay-airport" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <div class="tags"><span class="tag t-all">לכל המשפחות</span></div>
@@ -335,48 +460,8 @@
     </details>
   </div>
 
-  <h3 style="margin-top:22px">שלד השבוע</h3>
-  <div class="card" id="week"><h3 style="font-size:16px; color:var(--ink-soft); margin:0 0 6px">14–19 באוגוסט <a class="anchor" href="#north/week" title="קישור ישיר">🔗</a></h3>
-    <div class="day"><span class="dot"></span><div class="date">חמישי 13.8 · לילה</div>
-      <div class="ttl">נחיתה 22:25 ← Hotel Vila Zeus, ריקאס</div>
-      <div class="tags"><span class="tag t-all">מתאים לכולם</span></div></div>
-
-    <div class="day"><span class="dot"></span><div class="date">שישי 14.8</div>
-      <div class="ttl">איסוף הרכבים ← טריאנה + קנייה גדולה ← צ׳ק-אין לוילה · בערב ארוחת שישי ויום הולדת לסבתא ❤️</div>
-      <p><a data-view="tirana">אטרקציות בטריאנה ←</a></p>
-      <div class="note warn" style="margin:8px 0 0"><div class="nh">🛒 הקנייה הגדולה — בטירנה, לא למעלה</div>
-        בכפר לא אותר סופר, בית מרקחת או תחנת דלק, ולרדת לקניות זו נסיעה של שעה לכל כיוון. <b>עושים קנייה גדולה בטירנה בדרך למעלה</b> (Spar / Conad / Big Market) לשבת, ליום ההולדת ולרוב ארוחות השבוע — וגם דלק, בית מרקחת ומוצרי תינוקות. מדף ה״ללא גלוטן״ קיים רק בסופרים הגדולים בעיר; המאפייה הייעודית ללא גלוטן (Panja) גם היא בטירנה — <a data-view="food">ראו אוכל &amp; גלוטן ←</a></div>
-      <div class="tags"><span class="tag t-all">מתאים לכולם</span></div></div>
-
-    <div class="day"><span class="dot"></span><div class="date">שבת 15.8</div>
-      <div class="ttl">✅ יום בוילה</div>
-      <p>היום הראשון בהרים נשאר בבית: בריכה, התארגנות ומנוחה אחרי הנחיתה, הקניות והעלייה. <a href="#north/villa-day">הכרטיס ←</a></p>
-      <div class="tags"><span class="tag t-all">כולם</span></div></div>
-
-    <div class="day"><span class="dot"></span><div class="date">ראשון 16.8</div>
-      <div class="ttl">✅ הר דאיטי — רכבל ופארק הרפתקאות</div>
-      <p>יום שמפצל את עצמו: רכבל ומסעדת נוף למי שרוצה לשבת, פארק חבלים מגיל 5 לגדולות. <a href="#north/dajti">הכרטיס ←</a></p>
-      <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">נגיש</span><span class="tag t-adv">5+</span></div></div>
-
-    <div class="day"><span class="dot"></span><div class="date">שני 17.8 · שלישי 18.8</div>
-      <div class="ttl">❓ שני ימים פתוחים — לבחור מהקטלוג</div>
-      <p>בערב שלישי 18.8 יום הולדת לדניאל ❤️ — שווה שהיום הזה יהיה הקצר מבין השניים, או יום בלי נסיעה בכלל.</p>
-      <table class="h" style="margin-top:8px">
-        <tr><th>אפשרות</th><th>נסיעה לכיוון</th><th>אופי היום</th><th>למי</th></tr>
-        <tr><td><b><a href="#north/berat">בראט</a></b> (אונסק״ו)</td><td>~2:45–3 ש׳</td><td>יום שלם וכבד — מעל 5.5 ש׳ נהיגה</td><td>תרבות · אפשרי לכולם אם עולים ברכב עד שער המצודה</td></tr>
-        <tr><td><b><a href="#north/kruja">קרויה</a></b></td><td>~1:40–1:50</td><td>חצי יום — מצודה, מוזיאון, בזאר</td><td>תרבות · לא נוח לעגלות</td></tr>
-        <tr><td><b><a href="#north/equos">EQUOS, מולט</a></b></td><td>~1:15</td><td>יום אחד, שתי פעילויות באותו מתחם</td><td>סוסים + מים + מסעדה — הכי טוב לכל הגילאים יחד</td></tr>
-        <tr><td><b><a href="#north/huqi">אגרו-תיירות Huqi</a></b></td><td>~1:20–1:30</td><td>יום רגוע על אגם + ארוחה</td><td>שטח מישורי, נוח לעגלות ולסבא-סבתא</td></tr>
-        <tr><td><b><a href="#north/waterparks">פארק מים Blue Magic</a></b></td><td>~1:10</td><td>יום מים מלא</td><td>כל הילדים · אזור 0–5 · אסור אוכל מבחוץ</td></tr>
-        <tr><td><b><a href="#north/durres">יום ים בדורס</a></b></td><td>~1:40–2 ש׳</td><td>יום שלם — ים בבוקר, עיר עתיקה אחה״צ</td><td>החוף הכי ידידותי לפעוטות בטווח</td></tr>
-        <tr><td><b><a href="#north/bovilla">אגם בוביליה</a></b></td><td>~1:30–2 ש׳</td><td>תצפית ופיקניק</td><td>⚠️ 6–8 ק״מ אחרונים לא סלולים — לברר לפני</td></tr>
-        <tr><td><b><a href="#north/waterfall">מפל שן-ג׳רג׳</a></b></td><td>~5 ק״מ (~10–15 ד׳)</td><td>חצי יום מהכפר</td><td>מועמד ליום של דניאל — חוזרים לצהריים</td></tr>
-        <tr><td><b><a href="#north/tomadhe">בוית׳ינה טומאדה</a></b></td><td>~1 ק״מ מהוילה</td><td>חצי יום / ארוחה בכפר</td><td>סוסים וחיות · מועמד לערב יום ההולדת</td></tr>
-        <tr><td><b><a data-view="tirana">יום בטריאנה</a></b></td><td>~55–70 ד׳</td><td>יום עיר + ערב פולקלור</td><td>תרבות · ההמלצה: לא באותו יום עם בראט</td></tr>
-      </table>
-      <div class="why" style="margin-top:9px"><b>אם רוצים המלצה:</b> <b>17.8 בראט</b> — היום הארוך, בתחילת השבוע כשיש כוח. <b>18.8 EQUOS או יום בכפר</b> — קרוב, קליל, וחוזרים מוקדם לערב של דניאל. אם מוותרים על בראט: קרויה ב-17.8, ואז לא לחזור אליה בלינה של 21.8.</div></div>
-  </div>
-
+  <div class="note"><div class="nh">📅 שלד השבוע נמצא בעמוד האג׳נדה</div>
+    כל עשרת הימים, כולל שני הימים הפתוחים (17.8, 18.8) וטבלת האפשרויות, במקום אחד — <a data-view="agenda">לאג׳נדה המלאה ←</a></div>
   <h3 style="margin-top:26px">קטלוג טיולי הכוכב מהוילה</h3>
 
   <div class="card" id="villa-day"><h3>🏡 יום בוילה <a class="anchor" href="#north/villa-day" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
@@ -534,7 +619,7 @@
   <a class="back" data-view="home">→ חזרה לבית</a>
   <div class="region city"><div class="when">יום מומלץ נפרד</div><h2>יום בטריאנה — הבירה</h2>
     <p>הבירה צבעונית ותוססת ומגיע לה יום משלה, לא רק עצירת קניות. מכאן גם הבונקרים והרכבל לדאיטי.</p>
-    <a class="viewmap" href="map.html#tirana">🗺️ מפת טריאנה</a></div>
+    <a class="viewmap" href="#map/tirana">🗺️ מפת טריאנה</a></div>
 
   <div class="note"><div class="nh">💡 המלצה: לפצל את בראט מערב הפולקלור</div>
     יום בראט מלא הוא כבר מעל 5.5 שעות נהיגה, ובראט←טריאנה מוסיף עוד ~שעתיים בסופו. עדיף <b>שני ימים נפרדים</b>: יום לבראט, ויום אחר לטריאנה + ערב פולקלור בעיר. גם טריאנה מקבלת זמן הוגן וגם הערב יוצא רגוע.</div>
@@ -594,7 +679,7 @@
   <a class="back" data-view="home">→ חזרה לבית</a>
   <div class="region drive"><div class="when">19 באוגוסט דרומה · 21 באוגוסט צפונה</div><h2>הדרך דרומה וחזרה צפונה</h2>
     <p>שני ימי נסיעה ארוכים, לא ״עצירות בדרך״. בשניהם מפנים לינה בבוקר ומגיעים ליעד בערב — לכן שווה שהתחנות יהיו מתוכננות מראש.</p>
-    <a class="viewmap" href="map.html#drive">🗺️ מפת התחנות בדרך</a></div>
+    <a class="viewmap" href="#map/drive">🗺️ מפת התחנות בדרך</a></div>
 
   <h3 style="margin-top:20px">19.8 · שן-ג׳רג׳ ← קסאמיל</h3>
   <table class="h">
@@ -654,7 +739,7 @@
   <a class="back" data-view="home">→ חזרה לבית</a>
   <div class="region south"><div class="when">19–21 באוגוסט</div><h2>בסיס קסאמיל + סרנדה (הדרום)</h2>
     <p>מים טורקיז ואיים קטנים מול החוף. הזמן בדרום קצר — יומיים וחצי בפועל — אז שווה לתעדף מראש.</p>
-    <a class="viewmap" href="map.html#south">🗺️ מפת הדרום</a></div>
+    <a class="viewmap" href="#map/south">🗺️ מפת הדרום</a></div>
 
   <div class="note warn"><div class="nh">☀️ קסאמיל באוגוסט — שני דברים שקובעים את היום</div>
     <b>חניה כמעט בלתי אפשרית אחרי 09:00</b> ומיטות השיזוף נתפסות מוקדם. להגיע לחוף מוקדם, או להזמין מראש מיטות ב-beach club. בנוסף, הים היוני חלוקי במקומות — <b>נעלי ים לילדים</b>.</div>
@@ -668,22 +753,8 @@
     </details>
   </div>
 
-  <h3 style="margin-top:20px">שלד הדרום</h3>
-  <div class="card" id="south-plan"><h3 style="font-size:16px; color:var(--ink-soft); margin:0 0 6px">19–22 באוגוסט <a class="anchor" href="#south/south-plan" title="קישור ישיר">🔗</a></h3>
-    <div class="day"><span class="dot"></span><div class="date">רביעי 19.8 · ערב</div>
-      <div class="ttl">הגעה לקסאמיל ← צ׳ק-אין ב-Asters, טבילה וארוחת ערב</div></div>
-    <div class="day"><span class="dot"></span><div class="date">חמישי 20.8 · היום המלא</div>
-      <div class="ttl">בוטרינט בבוקר (לפני החום) ← חופים ואיים ← שקיעה בלקורסי / סרנדה</div>
-      <p>פיצול טבעי: קבוצת התרבות לבוטרינט בבוקר, קבוצת הרוגע ישר לחוף; מתאחדים על האיים בצהריים.</p></div>
-    <div class="day"><span class="dot"></span><div class="date">שישי 21.8</div>
-      <div class="ttl">כאן המשפחה נפרדת</div>
-      <p><b>סולומון:</b> מפנים את המלון ← העין הכחולה ← ג׳ירוקסטרה ← לינה באזור שדה התעופה. <a href="#drive/drive-north">לוח הזמנים ←</a><br>
-      <b>שאר המשפחות:</b> יום נוסף בקסאמיל — חופים, איים, או שייט. <a href="#south/boats">סירות ←</a></p></div>
-    <div class="day"><span class="dot"></span><div class="date">שבת 22.8</div>
-      <div class="ttl">שאר המשפחות: צ׳ק-אאוט ונסיעה מלאה לשדה</div>
-      <p>~5–5.5 ש׳ נטו, ובטרמינל ב-17:00 — <b>היום הכי לחוץ בטיול</b>. <a data-view="last">התכנית המלאה ליום האחרון ←</a></p></div>
-  </div>
-
+  <div class="note"><div class="nh">📅 שלד הימים בדרום נמצא בעמוד האג׳נדה</div>
+    19–22.8 יום אחר יום, יחד עם שאר הטיול — <a data-view="agenda">לאג׳נדה המלאה ←</a></div>
   <h3 style="margin-top:24px">קטלוג האטרקציות בדרום</h3>
 
   <div class="card" id="ksamil"><h3>🏝️ חופי קסאמיל והאיים <a class="anchor" href="#south/ksamil" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
@@ -757,7 +828,7 @@
   <a class="back" data-view="home">→ חזרה לבית</a>
   <div class="region drive"><div class="when">שבת 22 באוגוסט</div><h2>היום האחרון — שני מסלולים נפרדים</h2>
     <p>הטיסה ב-19:55, ו<b>צריך להיות בטרמינל ב-17:00</b>. ביום הזה המשפחה מפוצלת: משפחת סולומון ישנה כבר באזור השדה, ושאר המשפחות ישנות לילה נוסף בקסאמיל ועולות צפונה במשך היום.</p>
-    <a class="viewmap" href="map.html#lodging">🗺️ מפת הלינות והשדה</a></div>
+    <a class="viewmap" href="#map/lodging">🗺️ מפת הלינות והשדה</a></div>
 
   <div class="note warn" style="margin-top:16px"><div class="nh">⛽ שלושה דברים שנכונים לשני המסלולים</div>
     <b>1. תדלוק מלא בערב הקודם</b> — לא לחפש תחנה ביום שיש בו דדליין.<br>
@@ -815,7 +886,7 @@
   <div class="sec-head"><span class="num">🍽️</span><h2>אוכל &amp; ללא גלוטן</h2></div>
   <p class="lead">בסיס המטבח האלבני ידידותי: בשר ודג על הגריל, אורז וריזוטו, סלטים וצדפות. אין באלבניה תקן או סימון לאומי לצליאק, אבל המודעות גדלה — במיוחד באזורי התיירות.</p>
 
-  <a class="viewmap" href="map.html#food" style="background:var(--sea); border-color:var(--sea)">🗺️ מפת המסעדות</a>
+  <a class="viewmap" href="#map/food" style="background:var(--sea); border-color:var(--sea)">🗺️ מפת המסעדות</a>
 
   <div class="note" id="panja" style="margin-top:14px"><div class="nh">🥖 Panja, טירנה — המאפייה הייעודית היחידה ללא גלוטן באלבניה</div>
     מאפייה, קונדיטוריה וחלב צמחי <b>100% ללא גלוטן וללא לקטוז</b>, ברחוב מיהל דורי (Rruga Mihal Duri), כמה דקות מכיכר סקנדרבג. כי כל המוצרים במקום נטולי גלוטן, <b>אין שם סיכון לזיהום צולב</b> — זה המקום היחיד ברשימה שאפשר לסמוך עליו בלי לשאול שאלות.
@@ -955,7 +1026,7 @@
   <a class="back" data-view="home">→ חזרה לבית</a>
   <div class="region mine"><div class="when">ספציפי למשפחת סולומון</div><h2>משפחת סולומון</h2>
     <p>2 הורים + בנות 7 ו-10. שאר המשפחה יכולה לדלג.</p>
-    <a class="viewmap" href="map.html#lodging">🗺️ מפת הלינות</a></div>
+    <a class="viewmap" href="#map/lodging">🗺️ מפת הלינות</a></div>
 
   <div class="card" id="our-car"><h3>🚗 הרכב שלנו <a class="anchor" href="#mine/our-car" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <div class="meta"><span>OK Mobility · Compact</span><span><b>Hyundai Venue</b> (או דומה)</span><span>5 מושבים</span></div>
@@ -1061,23 +1132,50 @@
       return {view:'home'};
     }
 
-    var flashed = null;
-    function show(view, anchor){
+    /* Scroll memory: we own it, the browser doesn't. Every link click stamps the
+       CURRENT history entry with the scroll position, so Back lands exactly where
+       the link was pressed — including Back from map.html, which is a real page
+       load and so also arrives through this path. */
+    try{ history.scrollRestoration = 'manual'; }catch(e){}
+    function stamp(){ try{ history.replaceState({y:window.scrollY}, ''); }catch(e){} }
+    document.addEventListener('click', function(e){
+      if(e.target.closest && e.target.closest('a,[data-view]')) stamp();
+    }, true);
+    window.addEventListener('pagehide', stamp);       // leaving to map.html by any route
+
+    var flashed = null, frame = document.querySelector('.mapframe');
+    function show(view, anchor, restoreY){
       Object.keys(views).forEach(function(n){ views[n].classList.toggle('active', n === view); });
       document.querySelectorAll('nav a[data-view]').forEach(function(a){ a.classList.toggle('on', a.dataset.view === view); });
 
       if(flashed){ flashed.classList.remove('flash'); flashed = null; }
+
+      if(view === 'map'){          // #map/<category> → map.html#<category>, loaded on first visit
+        var src = 'map.html' + (anchor ? '#' + anchor : '');
+        if(frame.getAttribute('src') !== src) frame.setAttribute('src', src);
+        window.scrollTo({top:0, behavior:'instant'});
+        return;
+      }
+
       var el = anchor && document.getElementById(anchor);
       if(el){
         el.querySelectorAll('details').forEach(function(d){ d.open = true; });
-        el.scrollIntoView({behavior:'smooth', block:'start'});
         el.classList.add('flash'); flashed = el;
+      }
+      if(typeof restoreY === 'number'){        // going back — the remembered spot wins
+        window.scrollTo({top:restoreY, behavior:'instant'});   // 'instant' beats html{scroll-behavior:smooth}
+      } else if(el){
+        el.scrollIntoView({behavior:'smooth', block:'start'});
       } else {
         window.scrollTo({top:0, behavior:'smooth'});
       }
     }
 
-    function render(){ var r = parse(location.hash); show(r.view, r.anchor); }
+    function render(){
+      var r = parse(location.hash);
+      var st = history.state;
+      show(r.view, r.anchor, st && typeof st.y === 'number' ? st.y : undefined);
+    }
 
     document.querySelectorAll('[data-view]').forEach(function(el){
       el.addEventListener('click', function(e){
@@ -1092,6 +1190,13 @@
 
     window.addEventListener('hashchange', render);
     render();
+
+    /* Side menu: a fixed rail on desktop, a drawer under 900px. */
+    var nav = document.getElementById('nav'), tog = document.querySelector('.navtoggle');
+    function drawer(open){ nav.classList.toggle('open', open); tog.setAttribute('aria-expanded', open); }
+    tog.addEventListener('click', function(){ drawer(!nav.classList.contains('open')); });
+    document.querySelector('.navscrim').addEventListener('click', function(){ drawer(false); });
+    nav.addEventListener('click', function(e){ if(e.target.closest('a,.brand')) drawer(false); });
 
     // print = everything open
     window.addEventListener('beforeprint', function(){

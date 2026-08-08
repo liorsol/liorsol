@@ -148,7 +148,11 @@ DB, and the test rows were removed afterwards.
 Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Suez One, Assistant, Heebo).
 
 - Each section = `div.view` with `id="view-XXX"`. Navigation via elements with `data-view="XXX"`.
-- Existing views: `home, north, tirana, drive, south, last, food, info, checklist, mine`.
+- Existing views: `home, map, agenda, north, tirana, drive, south, last, food, info, checklist, mine`. All but `map` carry a `.talk` board.
+- **`agenda` is the single home of the day-by-day plan** (all 10 days, 13→22.8, plus the `week` card holding the still-open 17.8/18.8 options table). The `north` and `south` views carry only a pointer note to it — **don't re-add a per-region skeleton**, or the plan has two sources of truth that drift.
+- **Navigation is a fixed side rail** (`--navw`, `inset-inline-start:0` → right, since the page is RTL). Under 900px it becomes an off-canvas drawer: `.navtoggle` ☰ button, `nav.open`, and `nav.open ~ .navscrim` — so the scrim must stay a *following sibling* of `<nav>`.
+- Favicon is an inline emoji-SVG data URI (🇦🇱) in both `index.html` and `map.html` — no file, no request. Caveat: Windows renders regional-indicator pairs as the letters "AL", not a flag; every other platform shows the flag.
+- The home hero is a hotlinked Saranda photo (worldtourismforum.net) under a dark gradient, with the plain-gradient hero kept as the last background layer if the image 404s.
 - **Progressive disclosure is the page's core rule (user's explicit request, Aug 2026).** A card shows only the high-level layer by default: title → `.tags` → `.meta` (drive time, hours, `.pr` price, `.done` for booked) → one `.gist` paragraph. **Everything else goes inside `<details><summary>…</summary>`** — the why, the caveats, the accessibility notes, the `.links`. Write the `<summary>` as a concrete promise of what's inside ("איך מפצלים את היום בין הגילאים"), never a generic "פרטים".
 - Exception: a genuinely blocking warning (`.note.warn`) stays outside `<details>` — e.g. the Bovilla gravel road, the Vila Zeus shuttle.
 - `beforeprint` opens every `<details>` (JS), and `@media print` hides the summaries.
@@ -169,13 +173,44 @@ Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Su
 | `#anything-unknown` | falls back to `home` |
 
 - Every `.card` carries a unique `id` and a `<a class="anchor" href="#view/id">🔗</a>` inside its `<h3>`, so right-click → "copy link address" works natively.
-- Routing goes through `location.hash` (**not** `history.replaceState`) — that is what makes Back/Forward work. The `hashchange` listener is the single render path. Don't "optimise" this back to `replaceState`.
+- Routing goes through `location.hash` (**not** `history.replaceState` for the *navigation*) — that is what makes Back/Forward work. The `hashchange` listener is the single render path. Don't "optimise" this back to `replaceState`.
 - **When adding a card, give it an id and an `.anchor`** or it becomes the only unlinkable thing on the page.
-- Verified working: deep link → nav away → Back returns to the deep link with the card still open.
+
+**Scroll memory (user's explicit request, Aug 2026): Back returns to the exact spot the link was pressed.**
+`history.scrollRestoration = 'manual'` — the page owns scroll, the browser doesn't. A capture-phase
+click listener stamps the *current* history entry with `{y: scrollY}` via `replaceState` before any
+`<a>`/`[data-view]` click, and `pagehide` does the same when leaving to `map.html`. `show()` then
+prefers that `y` over the anchor: `restoreY` present → `scrollTo({behavior:'instant'})` (must be
+`'instant'`, or `html{scroll-behavior:smooth}` animates the restore); no `y` + anchor →
+`scrollIntoView` smooth; neither → top. The card's `<details>` still open and flash either way.
+
+Verified in-browser: deep link → scroll inside the target view → nav away → Back lands on the deep
+link at the exact y it was left at, card still open; second Back restores the previous view's y;
+`map.html` → Back restores y too (it is a real page load, so it arrives through `pagehide` + state).
+
+*Note for testing: the in-app browser never completes a smooth scroll — `behavior:'smooth'` and
+plain `scrollTo(x,y)` (which inherits `scroll-behavior:smooth`) are both no-ops there. Set up test
+scroll positions with `scrollTo({top, behavior:'instant'})`, or the test silently proves nothing.*
 
 ### Per-section maps
 
 `map.html#<category>` shows only that category and fits bounds to it; no hash = all 58 pins. Categories: `lodging, north, tirana, drive, south, food`. Each view's region banner carries a `.viewmap` link to its own slice, `map.html` has filter chips, and the home view has a full-width `.mapbanner` (the plain nav link was too easy to miss).
+
+**The map is a view, not a page jump (user's explicit request, Aug 2026 — "make it feel like one page").**
+`#map` / `#map/<category>` selects `view-map`, whose only child is `<iframe class="mapframe">`. `show()`
+sets `src` to `map.html#<category>` on first visit and only when the category changes, so the side
+menu never reloads and the transition is a view switch. **Nothing in `index.html` links to `map.html`
+directly any more** — a new `href="map.html…"` would drop the reader out of the SPA and lose the menu.
+
+The iframe, not AJAX: `map.html` is Leaflet + its CSS + an inline script, and scripts injected via
+`innerHTML` don't execute. The iframe is the native "embed a document" feature and keeps `map.html`
+working as its own published URL, which is the documented link.
+
+`map.html` detects embedding with `window.top !== window.self` → `html.embed`, which hides its own
+back link (the side menu replaces it) and pads its title clear of the ☰ button. Standalone loads are
+untouched. Its filter chips push onto the joint session history, so Back inside the map undoes the
+last filter before it leaves the map view — coherent, but it means the top-level URL keeps the
+category it was opened with, not the one the chips selected. `#view-map` is hidden in `@media print`.
 
 ### RTL arrow convention (non-obvious — gets it wrong every time otherwise)
 

@@ -392,7 +392,11 @@ function jsonNode(value, depth) {
   }
   const span = document.createElement('span');
   span.className = 'jt-leaf ' + (value === null ? 'jt-null' : typeof value === 'string' ? 'jt-str' : typeof value === 'number' ? 'jt-num' : 'jt-bool');
-  span.textContent = value === null ? 'null' : typeof value === 'string' ? `"${value}"` : String(value);
+  if (typeof value === 'string' && /^https?:\/\//i.test(value)) {
+    span.append('"', Object.assign(document.createElement('a'), { href: value, target: '_blank', rel: 'noopener', textContent: value }), '"');
+  } else {
+    span.textContent = value === null ? 'null' : typeof value === 'string' ? `"${value}"` : String(value);
+  }
   return span;
 }
 

@@ -208,7 +208,29 @@ scroll positions with `scrollTo({top, behavior:'instant'})`, or the test silentl
 
 ### Per-section maps
 
-`map.html#<category>` shows only that category and fits bounds to it; no hash = all 74 pins (51 hard-coded + 23 restaurants from the JSON). Categories: `lodging, north, tirana, drive, south, food`. Each view's region banner carries a `.viewmap` link to its own slice, `map.html` has filter chips, and the home view has a full-width `.mapbanner` (the plain nav link was too easy to miss).
+`map.html#<category>` opens with only that category showing and fits bounds to it; no hash = all 74 pins (51 hard-coded + 23 restaurants from the JSON). Categories: `lodging, north, tirana, drive, south, food`. Each view's region banner carries a `.viewmap` link to its own slice, and the home view has a full-width `.mapbanner` (the plain nav link was too easy to miss).
+
+**The filter chips are the only filter UI (user's request, Aug 2026).** Leaflet's own layers
+control was removed and the chips became **independent toggles** — so each chip carries its
+category's pin colour (`style="--c:…"`), which is the colour↔category key the legend used to
+provide. `הכל` toggles everything on, or off if everything is already on, and wears a grey
+`.some` state whenever the selection is partial. State lives in `shown{}`, not in the URL: the
+hash is an entry point only (`fromHash()`), because an arbitrary subset has no sensible hash
+form. Clicking any chip clears `pinned` so a `#p:` deep link stops re-zooming on every toggle.
+
+**One line, always — `fitChips()`.** Seven chips with Hebrew labels do not fit a phone at any
+readable size, so font scaling alone is not enough. It walks three content levels — full →
+counts hidden (`hide-n`) → words hidden too, icon only (`hide-tx`) — and shrinks within each,
+taking the first combination that fits. Everything in `.filters` is sized in `em` so one
+`font-size` on the container scales chips, padding and radius together. Measured, not guessed:
+text width is font- and language-dependent. Real behaviour: ≥700px full chips at 13px, ~600px
+drops the counts, ≤500px goes icon-only — still at full 13px, because dropping the words buys
+far more room than shrinking them. **Below ~320px it stops shrinking and lets the row scroll**
+(`overflow-x:auto`) — emoji render from a bitmap font that stops tracking `font-size`, so past
+~10px shrinking buys nothing and you would get tiny chips *and* a scroll. Two traps: `fitChips()`
+returns early when `clientWidth` is 0 (laid out while hidden — it would otherwise shrink to the
+floor and stay there), and `#map` is `flex:1` in a column `body` rather than
+`calc(100vh - <magic number>)`, because the filter row's height now changes with the level.
 
 **Pins and cards point at each other (user's request, Aug 2026 — "links to the internal map next to
 the Google ones", "and on the map, links to what's written on the site").** One identifier does both

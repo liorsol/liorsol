@@ -63,7 +63,7 @@
 var CATS = {
   lodging:  {label:'🛏️ לינה',              color:'#b5482f'},
   north:    {label:'🗺️ בסיס הוילה + צפון', color:'#1b8a9e'},
-  tirana:   {label:'🏛️ טריאנה',            color:'#6f8a5b'},
+  tirana:   {label:'🏛️ טירנה',            color:'#6f8a5b'},
   drive:    {label:'🚗 הדרך דרומה וצפונה',  color:'#e3a23a'},
   south:    {label:'🏝️ קסאמיל + דרום',     color:'#2bb8c4'},
   food:     {label:'🍽️ מסעדות',            color:'#8a6310'}
@@ -71,74 +71,76 @@ var CATS = {
 
 var PLACES = [
   // --- lodging ---
-  {n:'שדה התעופה ריקאס (TIA)', cat:'lodging', lat:41.4192, lng:19.7142, q:'Tirana+International+Airport+Rinas', note:'נחיתה 13.8 · המראה 22.8'},
-  {n:'Hotel Vila Zeus', cat:'lodging', lat:41.4205, lng:19.7095, q:'Hotel+Vila+Zeus+Rinas+Tirana', note:'✅ ליל 13.8 — הוזמן · ~1 ק״מ מהטרמינל · לתאם הסעה מראש'},
-  {n:'Hotel Airport Tirana', cat:'lodging', lat:41.4165, lng:19.7126, q:'Hotel+Airport+Tirana+Rinas', note:'אופציה ללילה 21.8 — שאטל 24/7'},
-  {n:'Airport Garden Hotel', cat:'lodging', lat:41.4202, lng:19.7114, q:'Airport+Garden+Hotel+Rinas+Tirana', note:'אופציה ללילה 21.8'},
-  {n:'Airport Holiday Hotel', cat:'lodging', lat:41.4154, lng:19.7123, q:'Airport+Holiday+Hotel+Rinas+Tirana', note:'אופציה ללילה 21.8 — תקציבי'},
-  {n:'Villa Maxhaku, שן-ג׳רג׳', cat:'lodging', lat:41.3376, lng:20.0955, q:'Villa+Maxhaku+Shengjergj+Tirana', note:'הבית שלנו · צ׳ק-אין 14.8 · צ׳ק-אאוט 19.8 · מיקום מקורב (מקור יחיד) — לבקש פין מהמארח'},
-  {n:'Asters Hotel, קסאמיל', cat:'lodging', lat:39.7647, lng:19.9967, q:'Asters+Hotel+Ksamil', note:'צ׳ק-אין 19.8 · צ׳ק-אאוט 21.8'},
-  {n:'Hotel Panorama Kruje', cat:'lodging', lat:41.5075, lng:19.7935, q:'Hotel+Panorama+Kruje', note:'אופציה ללילה 21.8'},
-  {n:'Rooms Emiliano, קרויה', cat:'lodging', lat:41.5090, lng:19.7928, q:'Rooms+Emiliano+Castle+Of+Kruja', note:'אופציה ללילה 21.8'},
-  {n:'Vila Taga Guesthouse, קרויה', cat:'lodging', lat:41.5128, lng:19.7955, q:'Vila+Taga+Guesthouse+Kruje', note:'אופציה ללילה 21.8'},
+  {n:'שדה התעופה ריקאס (TIA)', cat:'lodging', lat:41.4192, lng:19.7142, q:'Tirana+International+Airport+Rinas', note:'נחיתה 13.8 · המראה 22.8', v:'home/flights'},
+  {n:'Hotel Vila Zeus', cat:'lodging', lat:41.4205, lng:19.7095, q:'Hotel+Vila+Zeus+Rinas+Tirana', note:'✅ ליל 13.8 — הוזמן · ~1 ק״מ מהטרמינל · לתאם הסעה מראש', v:'north/stay-airport'},
+  {n:'Hotel Airport Tirana', cat:'lodging', lat:41.4165, lng:19.7126, q:'Hotel+Airport+Tirana+Rinas', note:'אופציה ללילה 21.8 — שאטל 24/7', v:'mine/our-lastnight'},
+  {n:'Airport Garden Hotel', cat:'lodging', lat:41.4202, lng:19.7114, q:'Airport+Garden+Hotel+Rinas+Tirana', note:'אופציה ללילה 21.8', v:'mine/our-lastnight'},
+  {n:'Airport Holiday Hotel', cat:'lodging', lat:41.4154, lng:19.7123, q:'Airport+Holiday+Hotel+Rinas+Tirana', note:'אופציה ללילה 21.8 — תקציבי', v:'mine/our-lastnight'},
+  {n:'Villa Maxhaku, שן-ג׳רג׳', cat:'lodging', lat:41.3376, lng:20.0955, q:'Villa+Maxhaku+Shengjergj+Tirana', note:'הבית שלנו · צ׳ק-אין 14.8 · צ׳ק-אאוט 19.8 · מיקום מקורב (מקור יחיד) — לבקש פין מהמארח', v:'north/villa'},
+  {n:'Asters Hotel, קסאמיל', cat:'lodging', lat:39.7647, lng:19.9967, q:'Asters+Hotel+Ksamil', note:'צ׳ק-אין 19.8 · צ׳ק-אאוט 21.8', v:'south/asters'},
+  {n:'Hotel Panorama Kruje', cat:'lodging', lat:41.5075, lng:19.7935, q:'Hotel+Panorama+Kruje', note:'אופציה ללילה 21.8', v:'mine/our-lastnight'},
+  {n:'Rooms Emiliano, קרויה', cat:'lodging', lat:41.5090, lng:19.7928, q:'Rooms+Emiliano+Castle+Of+Kruja', note:'אופציה ללילה 21.8', v:'mine/our-lastnight'},
+  {n:'Vila Taga Guesthouse, קרויה', cat:'lodging', lat:41.5128, lng:19.7955, q:'Vila+Taga+Guesthouse+Kruje', note:'אופציה ללילה 21.8', v:'mine/our-lastnight'},
 
   // --- north / villa star-trips ---
-  {n:'מפל שן-ג׳רג׳', cat:'north', lat:41.3292, lng:20.0326, q:'Shengjergj+Waterfall+Albania', note:'~1.5–2 ק״מ הליכה מהכפר'},
-  {n:'בוית׳ינה טומאדה (חווה+סוסים)', cat:'north', lat:41.3276, lng:20.0933, q:'Bujtina+Tomadhe+Shengjergj', note:'בכפר עצמו'},
-  {n:'רכבל דאיטי (Dajti Ekspres)', cat:'north', lat:41.3508, lng:19.8611, q:'Dajti+Ekspres+Cable+Car'},
-  {n:'פארק מים Blue Magic (קשאר)', cat:'north', lat:41.36649, lng:19.68822, q:'Aquapark+Albania+Blue+Magic+Water+Kashar', note:'ליד קניון Citypark, על כביש SH2'},
-  {n:'מצודת קרויה', cat:'north', lat:41.5083, lng:19.7936, q:'Kruja+Castle'},
-  {n:'מצודת בראט', cat:'north', lat:40.7081, lng:19.9455, q:'Berat+Castle', note:'אפשר לעלות ברכב עד השער ולחנות בפנים'},
-  {n:'נקודת התצפית של בראט', cat:'north', lat:40.70569, lng:19.94727, q:'Berat+Viewing+Platform', note:'תצפית חינם · יש רמפה נגישה'},
-  {n:'אגם בלשי', cat:'north', lat:40.978, lng:19.8916, q:'Belsh+Lake+Albania', note:'טיילת מישורית — עצירת מנוחה בדרך לבראט'},
-  {n:'קניון אוסום', cat:'north', lat:40.469, lng:20.2567, q:'Osum+Canyon+Albania', note:'רפטינג לנוער, ליד בראט'},
-  {n:'EQUOS Resort, מולט', cat:'north', lat:41.2619, lng:19.9017, q:'EQUOS+Resort+Mullet+Tirana', note:'סוסים + פארק מים · חלופה ל-16.8'},
-  {n:'אגרו-תיירות Huqi', cat:'north', lat:41.4106, lng:19.61, q:'Agriturizem+Huqi+Rade+Manez+Durres', note:'חווה על אגם · חלופה ל-16.8'},
-  {n:'Uka Farm, לאקנאס', cat:'north', lat:41.3689, lng:19.7426, q:'Uka+Farm+Laknas+Tirana', note:'חווה אורגנית ויקב · 15–20 ד׳ מהשדה · הזמנה מראש'},
-  {n:'אגם שקודרה', cat:'north', lat:42.059, lng:19.4575, q:'Lake+Shkoder', note:'~2:30–3 ש׳ לכיוון — ההמלצה לוותר'},
-  {n:'מצודת רוזאפה', cat:'north', lat:42.0465, lng:19.4939, q:'Rozafa+Castle+Shkoder'},
-  {n:'אגם בוביליה', cat:'north', lat:41.4477, lng:19.8643, q:'Bovilla+Lake', note:'⚠️ 6–8 הק״מ האחרונים — כביש חצץ, לבדוק לפני 18.8'},
-  {n:'אמפיתאטרון דורס', cat:'north', lat:41.3111, lng:19.4472, q:'Durres+Amphitheatre'},
-  {n:'מגדל ונציאני, דורס', cat:'north', lat:41.3097, lng:19.4469, q:'Venetian+Tower+Durres'},
+  {n:'מפל שן-ג׳רג׳', cat:'north', lat:41.3292, lng:20.0326, q:'Shengjergj+Waterfall+Albania', note:'~1.5–2 ק״מ הליכה מהכפר', v:'north/waterfall'},
+  {n:'בוית׳ינה טומאדה (חווה+סוסים)', cat:'north', lat:41.3276, lng:20.0933, q:'Bujtina+Tomadhe+Shengjergj', note:'בכפר עצמו', v:'north/tomadhe'},
+  {n:'רכבל דאיטי (Dajti Ekspres)', cat:'north', lat:41.3508, lng:19.8611, q:'Dajti+Ekspres+Cable+Car', v:'north/dajti'},
+  {n:'פארק מים Blue Magic (קשאר)', cat:'north', lat:41.36649, lng:19.68822, q:'Aquapark+Albania+Blue+Magic+Water+Kashar', note:'ליד קניון Citypark, על כביש SH2', v:'north/waterparks'},
+  {n:'מצודת קרויה', cat:'north', lat:41.5083, lng:19.7936, q:'Kruja+Castle', v:'north/kruja'},
+  {n:'מצודת בראט', cat:'north', lat:40.7081, lng:19.9455, q:'Berat+Castle', note:'אפשר לעלות ברכב עד השער ולחנות בפנים', v:'north/berat'},
+  {n:'נקודת התצפית של בראט', cat:'north', lat:40.70569, lng:19.94727, q:'Berat+Viewing+Platform', note:'תצפית חינם · יש רמפה נגישה', v:'north/berat'},
+  {n:'אגם בלשי', cat:'north', lat:40.978, lng:19.8916, q:'Belsh+Lake+Albania', note:'טיילת מישורית — עצירת מנוחה בדרך לבראט', v:'north/berat'},
+  {n:'קניון אוסום', cat:'north', lat:40.469, lng:20.2567, q:'Osum+Canyon+Albania', note:'רפטינג לנוער, ליד בראט', v:'north/berat'},
+  {n:'EQUOS Resort, מולט', cat:'north', lat:41.2619, lng:19.9017, q:'EQUOS+Resort+Mullet+Tirana', note:'סוסים + פארק מים · חלופה ל-16.8', v:'north/equos'},
+  {n:'אגרו-תיירות Huqi', cat:'north', lat:41.4106, lng:19.61, q:'Agriturizem+Huqi+Rade+Manez+Durres', note:'חווה על אגם · חלופה ל-16.8', v:'north/huqi'},
+  {n:'Uka Farm, לאקנאס', cat:'north', lat:41.3689, lng:19.7426, q:'Uka+Farm+Laknas+Tirana', note:'חווה אורגנית ויקב · 15–20 ד׳ מהשדה · הזמנה מראש', v:'north/ukafarm'},
+  {n:'אגם שקודרה', cat:'north', lat:42.059, lng:19.4575, q:'Lake+Shkoder', note:'~2:30–3 ש׳ לכיוון — ההמלצה לוותר', v:'north/shkodra'},
+  {n:'מצודת רוזאפה', cat:'north', lat:42.0465, lng:19.4939, q:'Rozafa+Castle+Shkoder', v:'north/shkodra'},
+  {n:'אגם בוביליה', cat:'north', lat:41.4477, lng:19.8643, q:'Bovilla+Lake', note:'⚠️ 6–8 הק״מ האחרונים — כביש חצץ, לבדוק לפני 18.8', v:'north/bovilla'},
+  {n:'אמפיתאטרון דורס', cat:'north', lat:41.3111, lng:19.4472, q:'Durres+Amphitheatre', v:'north/durres'},
+  {n:'מגדל ונציאני, דורס', cat:'north', lat:41.3097, lng:19.4469, q:'Venetian+Tower+Durres', v:'north/durres'},
 
   // --- tirana ---
-  {n:'כיכר סקנדרבג', cat:'tirana', lat:41.3275, lng:19.8187, q:'Skanderbeg+Square+Tirana'},
-  {n:'הפירמידה של טריאנה', cat:'tirana', lat:41.323, lng:19.8215, q:'Pyramid+of+Tirana', note:'אפשר לטפס במדרגות החיצוניות — חינם'},
-  {n:'מסגד את׳הם ביי', cat:'tirana', lat:41.3275, lng:19.8194, q:'Et+hem+Bej+Mosque+Tirana', note:'בפינת כיכר סקנדרבג'},
-  {n:'קתדרלת תחיית ישו', cat:'tirana', lat:41.3265, lng:19.8174, q:'Resurrection+of+Christ+Orthodox+Cathedral+Tirana', note:'הקתדרלה האורתודוקסית · ~5 ד׳ מהכיכר'},
-  {n:'פאזארי אירי (שוק)', cat:'tirana', lat:41.3303, lng:19.8246, q:'Pazari+i+Ri+Tirana'},
-  {n:'Bunk’Art 1', cat:'tirana', lat:41.3498, lng:19.8604, q:'Bunk+Art+1+Tirana', note:'ליד תחנת הרכבל'},
-  {n:'Bunk’Art 2', cat:'tirana', lat:41.327, lng:19.8196, q:'Bunk+Art+2+Tirana'},
-  {n:'בית העלים', cat:'tirana', lat:41.3265, lng:19.8163, q:'House+of+Leaves+Museum+Tirana'},
-  {n:'המוזיאון הלאומי להיסטוריה', cat:'tirana', lat:41.3293, lng:19.8172, q:'National+History+Museum+Tirana'},
-  {n:'הפארק הגדול של טריאנה', cat:'tirana', lat:41.3117, lng:19.8281, q:'Grand+Park+of+Tirana'},
+  {n:'🅿️ חניון תת-קרקעי, כיכר סקנדרבג', cat:'tirana', lat:41.3283, lng:19.8180, q:'Sheshparkimi+Nentokesor+Sheshi+Skenderbej+Tirana', note:'פתוח 24 ש׳ · 303 מקומות · 0–3 ש׳ 200 לק', v:'tirana/tirana-parking'},
+  {n:'כיכר סקנדרבג', cat:'tirana', lat:41.3275, lng:19.8187, q:'Skanderbeg+Square+Tirana', v:'tirana/tirana-walk'},
+  {n:'הפירמידה של טירנה', cat:'tirana', lat:41.323, lng:19.8215, q:'Pyramid+of+Tirana', note:'אפשר לטפס במדרגות החיצוניות — חינם', v:'tirana/tirana-walk'},
+  {n:'מסגד את׳הם ביי', cat:'tirana', lat:41.3275, lng:19.8194, q:'Et+hem+Bej+Mosque+Tirana', note:'בפינת כיכר סקנדרבג', v:'tirana/tirana-walk'},
+  {n:'קתדרלת תחיית ישו', cat:'tirana', lat:41.3265, lng:19.8174, q:'Resurrection+of+Christ+Orthodox+Cathedral+Tirana', note:'הקתדרלה האורתודוקסית · ~5 ד׳ מהכיכר', v:'tirana/tirana-walk'},
+  {n:'פאזארי אירי (שוק)', cat:'tirana', lat:41.3303, lng:19.8246, q:'Pazari+i+Ri+Tirana', v:'tirana/tirana-walk'},
+  {n:'Bunk’Art 1', cat:'tirana', lat:41.3498, lng:19.8604, q:'Bunk+Art+1+Tirana', note:'ליד תחנת הרכבל', v:'tirana/bunkart'},
+  {n:'Bunk’Art 2', cat:'tirana', lat:41.327, lng:19.8196, q:'Bunk+Art+2+Tirana', v:'tirana/bunkart'},
+  {n:'בית העלים', cat:'tirana', lat:41.3265, lng:19.8163, q:'House+of+Leaves+Museum+Tirana', v:'tirana/museums'},
+  {n:'המוזיאון הלאומי להיסטוריה', cat:'tirana', lat:41.3293, lng:19.8172, q:'National+History+Museum+Tirana', v:'tirana/museums'},
+  {n:'הפארק הגדול של טירנה', cat:'tirana', lat:41.3117, lng:19.8281, q:'Grand+Park+of+Tirana', v:'tirana/grandpark'},
 
   // --- drive south / north waypoints ---
-  {n:'מצודת פטרלה', cat:'drive', lat:41.2549, lng:19.8545, q:'Petrela+Castle+Albania', note:'כניסה חינם + מסעדה · בתחילת המסלול הפנימי'},
-  {n:'Zipline Albania, פטרלה', cat:'drive', lat:41.2606, lng:19.8525, q:'Zipline+Albania+Petrele', note:'~1,250 מ׳ · גיל 10+ · 35–125 ק״ג · ~€15–25'},
-  {n:'אויי-פטוהט, טפלנה', cat:'drive', lat:40.2504, lng:20.0649, q:'Uji+i+Ftohte+Tepelene', note:'מעיינות ומסעדות — עצירת אמצע הדרך (לא אומת)'},
-  {n:'קוזום באבא, וְלורה', cat:'drive', lat:40.4674, lng:19.4933, q:'Kuzum+Baba+Vlore', note:'תצפית + מסעדה עם מתקני משחק · עדיף על חניה בטיילת'},
-  {n:'טיילת וְלורה', cat:'drive', lat:40.4674, lng:19.4905, q:'Vlore+Promenade', note:'חניה מאתגרת בעונה · טיילת באורך ~4 ק״מ — זהו הקצה הצפוני, ליד קוזום באבא'},
-  {n:'מעבר לוגרה', cat:'drive', lat:40.1982, lng:19.5917, q:'Llogara+Pass', note:'1,027 מ׳ · יש גם מנהרה שעוקפת את הסרפנטינות'},
+  {n:'מצודת פטרלה', cat:'north', lat:41.2549, lng:19.8545, q:'Petrela+Castle+Albania', note:'כניסה חינם + מסעדה · 12 ק״מ מטירנה, ליד EQUOS', v:'north/petrela'},
+  {n:'Zipline Albania, פטרלה', cat:'north', lat:41.2606, lng:19.8525, q:'Zipline+Albania+Petrele', note:'~1,250 מ׳ · גיל 10+ · 35–125 ק״ג · ~€15–25', v:'north/petrela'},
+  {n:'אויי-פטוהט, טפלנה', cat:'drive', lat:40.2504, lng:20.0649, q:'Uji+i+Ftohte+Tepelene', note:'מעיינות ומסעדות — עצירת אמצע הדרך (לא אומת)', v:'drive/stops-inland'},
+  {n:'קוזום באבא, וְלורה', cat:'drive', lat:40.4674, lng:19.4933, q:'Kuzum+Baba+Vlore', note:'תצפית + מסעדה עם מתקני משחק · עדיף על חניה בטיילת', v:'drive/stops-coastal'},
+  {n:'טיילת וְלורה', cat:'drive', lat:40.4674, lng:19.4905, q:'Vlore+Promenade', note:'חניה מאתגרת בעונה · טיילת באורך ~4 ק״מ — זהו הקצה הצפוני, ליד קוזום באבא', v:'drive/stops-coastal'},
+  {n:'מעבר לוגרה', cat:'drive', lat:40.1982, lng:19.5917, q:'Llogara+Pass', note:'1,027 מ׳ · יש גם מנהרה שעוקפת את הסרפנטינות', v:'drive/stops-coastal'},
 
   // --- south (Ksamil / Saranda area) ---
-  {n:'איי קסאמיל', cat:'south', lat:39.7751, lng:19.9961, q:'Ksamil+Islands'},
-  {n:'חוף המראה (Pasqyrat)', cat:'south', lat:39.8043, lng:20.0053, q:'Mirror+Beach+Ksamil', note:'בין סרנדה לקסאמיל — ~4 ק״מ צפונית לקסאמיל, נסיעה'},
-  {n:'The Mussel House, קסאמיל', cat:'south', lat:39.7886, lng:20.0114, q:'The+Mussel+House+Ksamil'},
-  {n:'הפארק הלאומי בוטרינט', cat:'south', lat:39.7474, lng:20.0219, q:'Butrint+National+Park'},
-  {n:'העין הכחולה (Syri i Kaltër)', cat:'south', lat:39.9238, lng:20.1925, q:'Blue+Eye+Syri+i+Kalter+Saranda', note:'שחייה אסורה, ~10°C'},
-  {n:'מצודת לקורסי', cat:'south', lat:39.8658, lng:20.0257, q:'Lekuresi+Castle+Saranda', note:'נוף + ארוחת שקיעה'},
-  {n:'מצודת ג׳ירוקסטרה', cat:'south', lat:40.0742, lng:20.1389, q:'Gjirokaster+Castle'},
+  {n:'איי קסאמיל', cat:'south', lat:39.7751, lng:19.9961, q:'Ksamil+Islands', v:'south/ksamil'},
+  {n:'חוף המראה (Pasqyrat)', cat:'south', lat:39.8043, lng:20.0053, q:'Mirror+Beach+Ksamil', note:'בין סרנדה לקסאמיל — ~4 ק״מ צפונית לקסאמיל, נסיעה', v:'south/ksamil'},
+  {n:'The Mussel House, קסאמיל', cat:'south', lat:39.7886, lng:20.0114, q:'The+Mussel+House+Ksamil', v:'food/restaurants'},
+  {n:'הפארק הלאומי בוטרינט', cat:'south', lat:39.7474, lng:20.0219, q:'Butrint+National+Park', v:'south/butrint'},
+  {n:'העין הכחולה (Syri i Kaltër)', cat:'south', lat:39.9238, lng:20.1925, q:'Blue+Eye+Syri+i+Kalter+Saranda', note:'שחייה אסורה, ~10°C', v:'south/blueeye'},
+  {n:'סרנדה — הטיילת', cat:'drive', lat:39.8756, lng:20.0053, q:'Saranda+Promenade+Albania', note:'העצירה האחרונה לפני קסאמיל · סופר, כספומט, מסעדות', v:'drive/stops-coastal'},
+  {n:'מצודת לקורסי', cat:'south', lat:39.8658, lng:20.0257, q:'Lekuresi+Castle+Saranda', note:'נוף + ארוחת שקיעה', v:'south/lekuresi'},
+  {n:'מצודת ג׳ירוקסטרה', cat:'south', lat:40.0742, lng:20.1389, q:'Gjirokaster+Castle', v:'south/gjirokaster'},
 
   // --- food ---
-  {n:'Panja — מאפייה ללא גלוטן', cat:'food', lat:41.329, lng:19.8126, q:'Panja+Tirana+Gluten+Free+Bakery', note:'⭐ 100% ללא גלוטן ולקטוז — היחידה באלבניה · לקנייה של 14.8'},
-  {n:'Taverna Muzaka, בראט', cat:'food', lat:40.70351, lng:19.94869, q:'Taverna+Muzaka+Berat', note:'ברובע גוריצה — אותו מקום כמו Hotel Muzaka'},
-  {n:'Era Restaurant, טריאנה', cat:'food', lat:41.32013, lng:19.81464, q:'Era+Restaurant+Tirana', note:'סניף בלוקו (המקורי) — יש סניף שני בעיר'},
-  {n:'Tony’s American, טריאנה', cat:'food', lat:41.3231, lng:19.8223, q:'Tonys+American+Restaurant+Tirana'},
-  {n:'Fishbar, סרנדה', cat:'food', lat:39.8774, lng:20.0111, q:'Fishbar+Saranda', note:'~450 מ׳ מהטיילת, לא על המים'},
-  {n:'Sophra, סרנדה', cat:'food', lat:39.8547, lng:20.0212, q:'Sophra+Restaurant+Saranda', note:'על כביש בוטרינטי, ~2.6 ק״מ מהטיילת — צריך רכב · חניה במקום'},
-  {n:'Centrali, סרנדה', cat:'food', lat:39.8735, lng:20.0121, q:'Centrali+Saranda'},
-  {n:'Salad Farm, סרנדה', cat:'food', lat:39.85717, lng:20.02066, q:'Salad+Farm+Saranda', note:'⚠️ ייתכן שנסגר — לבדוק טלפונית לפני'}
+  {n:'Panja — מאפייה ללא גלוטן', cat:'food', lat:41.329, lng:19.8126, q:'Panja+Tirana+Gluten+Free+Bakery', note:'⭐ 100% ללא גלוטן ולקטוז — היחידה באלבניה · לקנייה של 14.8', v:'food/panja'},
+  {n:'Taverna Muzaka, בראט', cat:'food', lat:40.70351, lng:19.94869, q:'Taverna+Muzaka+Berat', note:'ברובע גוריצה — אותו מקום כמו Hotel Muzaka', v:'food/restaurants'},
+  {n:'Era Restaurant, טירנה', cat:'food', lat:41.32013, lng:19.81464, q:'Era+Restaurant+Tirana', note:'סניף בלוקו (המקורי) — יש סניף שני בעיר', v:'food/restaurants'},
+  {n:'Tony’s American, טירנה', cat:'food', lat:41.3231, lng:19.8223, q:'Tonys+American+Restaurant+Tirana', v:'food/restaurants'},
+  {n:'Fishbar, סרנדה', cat:'food', lat:39.8774, lng:20.0111, q:'Fishbar+Saranda', note:'~450 מ׳ מהטיילת, לא על המים', v:'food/restaurants'},
+  {n:'Sophra, סרנדה', cat:'food', lat:39.8547, lng:20.0212, q:'Sophra+Restaurant+Saranda', note:'על כביש בוטרינטי, ~2.6 ק״מ מהטיילת — צריך רכב · חניה במקום', v:'food/restaurants'},
+  {n:'Centrali, סרנדה', cat:'food', lat:39.8735, lng:20.0121, q:'Centrali+Saranda', v:'food/restaurants'},
+  {n:'Salad Farm, סרנדה', cat:'food', lat:39.85717, lng:20.02066, q:'Salad+Farm+Saranda', note:'⚠️ ייתכן שנסגר — לבדוק טלפונית לפני', v:'food/restaurants'}
 ];
 
 var map = L.map('map', {zoomControl:true}).setView([41.0, 19.9], 8);
@@ -150,7 +152,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 var layerGroups = {}, groupBounds = {};
 Object.keys(CATS).forEach(function(k){ layerGroups[k] = L.layerGroup(); groupBounds[k] = []; });
 
-var allBounds = [];
+var allBounds = [], byQ = {};
 PLACES.forEach(function(p){
   var c = CATS[p.cat];
   var icon = L.divIcon({
@@ -158,9 +160,14 @@ PLACES.forEach(function(p){
     iconSize:[26,26], iconAnchor:[13,26], popupAnchor:[0,-24]
   });
   var mapsUrl = 'https://www.google.com/maps/search/?api=1&query='+p.q;
+  /* `v` is the pin's card on the trip page. target=_top because this file is
+     normally running inside the trip page's #map view — without it the whole
+     site would load into the iframe. Standalone, _top is this window anyway. */
   var html = '<b>'+p.n+'</b>' + (p.note ? '<br>'+p.note : '') +
-             '<br><a href="'+mapsUrl+'" target="_blank" rel="noopener">מפה / ניווט ↖</a>';
-  L.marker([p.lat, p.lng], {icon:icon}).bindPopup(html).addTo(layerGroups[p.cat]);
+             '<br><a href="'+mapsUrl+'" target="_blank" rel="noopener">מפה / ניווט ↖</a>' +
+             (p.v ? ' · <a href="index.html#'+p.v+'" target="_top">מידע באתר ←</a>' : '');
+  p.marker = L.marker([p.lat, p.lng], {icon:icon}).bindPopup(html).addTo(layerGroups[p.cat]);
+  byQ[p.q] = p;
   groupBounds[p.cat].push([p.lat, p.lng]);
   allBounds.push([p.lat, p.lng]);
 });
@@ -169,10 +176,18 @@ var overlays = {};
 Object.keys(CATS).forEach(function(k){ overlays[CATS[k].label] = layerGroups[k]; });
 L.control.layers(null, overlays, {collapsed:false}).addTo(map);
 
-/* #<category> shows just that section's pins — the per-view maps the trip page links to.
-   No hash (or an unknown one) = everything. */
+/* Two hash forms, both fed by links on the trip page:
+     #<category>  — show just that section's pins (the per-view maps)
+     #p:<q>       — zoom to one pin and open its popup. <q> is the pin's Google
+                    Maps query string, which is the exact same token the trip
+                    page already has in that place's "מפה ↖" href — so the
+                    internal link next to it needs no second identifier.
+   No hash, or anything unrecognised, = everything. */
 function apply(){
-  var cat = location.hash.replace(/^#/, '');
+  var h = location.hash.replace(/^#/, '');
+  try{ h = decodeURIComponent(h); }catch(e){}
+  var pin = h.indexOf('p:') === 0 ? byQ[h.slice(2)] : null;
+  var cat = pin ? pin.cat : h;
   if(!CATS[cat]) cat = '';
   var bounds = [];
   Object.keys(CATS).forEach(function(k){
@@ -181,13 +196,15 @@ function apply(){
     else   { map.removeLayer(layerGroups[k]); }
   });
   document.getElementById('title').textContent =
-    cat ? CATS[cat].label + ' — ' + groupBounds[cat].length + ' נקודות'   /* labels already carry an emoji */
-        : '🗺️ מפת המסלול — כל ' + PLACES.length + ' המקומות בתכנית';
+    pin ? '📍 ' + pin.n
+        : cat ? CATS[cat].label + ' — ' + groupBounds[cat].length + ' נקודות'   /* labels already carry an emoji */
+             : '🗺️ מפת המסלול — כל ' + PLACES.length + ' המקומות בתכנית';
   document.querySelectorAll('#filters a[data-cat]').forEach(function(a){
     a.classList.toggle('on', a.dataset.cat === cat);
   });
   map.invalidateSize();
-  if(bounds.length) map.fitBounds(bounds, {padding:[30,30]});
+  if(pin){ map.setView([pin.lat, pin.lng], 14); pin.marker.openPopup(); }
+  else if(bounds.length) map.fitBounds(bounds, {padding:[30,30]});
 }
 
 var f = document.getElementById('filters');

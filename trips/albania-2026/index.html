@@ -53,6 +53,21 @@
   /* MAP VIEW — map.html embedded, so the side menu stays put and there is no page
      reload between the plan and the map. map.html still works on its own URL. */
   .mapframe{display:block; width:100%; height:100vh; height:100dvh; border:0; background:var(--sand)}
+  /* WEATHER + EXCHANGE RATE — both filled from a public API at load, both hidden until they succeed */
+  .wx-days{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+  .wx-day{min-width:96px; text-align:center; border:1.5px solid var(--line); border-radius:12px; padding:8px 10px; background:#fff}
+  .wx-day.now{border-color:var(--gold); background:#fffaf0}
+  .wx-day .d{font-family:'Heebo',sans-serif; font-weight:700; font-size:12.5px; color:var(--ink-soft)}
+  .wx-day .i{font-size:22px; line-height:1.35}
+  .wx-day .t{font-family:'Heebo',sans-serif; font-weight:900; color:var(--sea); font-size:15px}
+  .wx-day .w{font-size:11.5px; color:var(--ink-soft)}
+  .src{font-size:12px; color:var(--ink-soft); margin:9px 0 0}
+  .fx{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
+  .fx span{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; padding:5px 11px;
+    border-radius:999px; background:var(--sand); border:1.5px solid var(--line); color:var(--sea)}
+  /* the same map, embedded mid-page rather than as a whole view */
+  .mapembed{display:block; width:100%; height:min(70vh,460px); border:0; border-radius:14px;
+    box-shadow:var(--shadow); background:var(--sand); margin-top:14px}
 
   /* VIEWS */
   .view{display:none; animation:fade .35s ease}
@@ -101,6 +116,9 @@
   .links a:hover{background:var(--azure); color:#fff}
   .links a.map{border-color:var(--terra); color:var(--terra-deep)}
   .links a.map:hover{background:var(--terra); color:#fff}
+  /* the same place on our own map — icon only, so it rides along without doubling every row */
+  .links a.map.onmap{border-color:var(--sea); color:var(--sea); padding:6px 9px; margin-inline-start:-4px}
+  .links a.map.onmap:hover{background:var(--sea); color:#fff}
 
   /* DEEP LINKS — every card is addressable */
   .card{scroll-margin-top:70px}                                  /* clear the sticky nav */
@@ -250,7 +268,7 @@
   <a data-view="map">🗺️ מפת המסלול</a>
   <hr>
   <a data-view="north">הוילה + צפון</a>
-  <a data-view="tirana">טריאנה</a>
+  <a data-view="tirana">טירנה</a>
   <a data-view="drive">הדרך דרומה וצפונה</a>
   <a data-view="south">קסאמיל + דרום</a>
   <a data-view="last">היום האחרון</a>
@@ -279,10 +297,17 @@
         <tr><td><b>חזור · שבת 22.8</b></td><td>טירנה (TIA) <b>19:55</b></td><td>תל אביב (TLV) <b>23:40</b></td><td><b>~17:00</b> (כ-3 ש׳ לפני)</td></tr>
       </table>
       <details><summary>מה זה אומר על היום הראשון והאחרון</summary>
-        <p style="margin:0"><b>13.8:</b> נוחתים 22:25. אחרי גבולות ומזוודות זה מתגלגל לחצות, וחלק מדלפקי השכרת הרכב נסגרים 23:00–24:00 — לכן ליל הנחיתה הוא ליד השדה ולא בוילה.</p>
+        <p style="margin:0"><b>13.8:</b> נוחתים 22:25, ואוספים את הרכבים באותו ערב. אחרי גבולות ומזוודות זה מתגלגל לחצות, וחלק מדלפקי השכרת הרכב נסגרים 23:00–24:00 — אם מאחרים, האיסוף נדחה לשישי בבוקר. לכן ליל הנחיתה הוא ליד השדה ולא בוילה.</p>
         <p style="margin:0"><b>22.8:</b> הטיסה ב-19:55, כלומר צריך להיות בטרמינל ב-<b>17:00</b>. <b>ביום הזה המשפחה מפוצלת לשני מסלולים</b> — סולומון מאזור השדה, שאר המשפחות בנסיעה מלאה מקסאמיל. <a data-view="last">התכנית ליום האחרון ←</a></p>
         <p style="margin:0">נוחתים בארץ ב-<b>23:40</b> במוצ״ש — לסדר מראש הסעה/איסוף לשעה כזו.</p>
       </details>
+    </div>
+
+    <!-- Filled from Open-Meteo at load; stays hidden if the call fails. -->
+    <div class="card" id="weather" style="display:none"><h3>🌡️ מזג האוויר <a class="anchor" href="#home/weather" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+      <p class="gist" id="wx-sub"></p>
+      <div class="wx-days" id="wx-days"></div>
+      <p class="src">מקור: Open-Meteo · מתעדכן בכל טעינה של העמוד. בהרים (שן-ג׳רג׳, ~850 מ׳) קריר משמעותית מטירנה — התחזית כאן כבר מתחשבת בגובה.</p>
     </div>
 
     <a class="mapbanner" href="#map">
@@ -303,7 +328,7 @@
     <div class="tiles">
       <a class="tile" data-view="agenda"><div class="ic">📅</div><h3>האג׳נדה המלאה</h3><p>13–22.8 יום אחר יום — התכנית המוצעת כולה בעמוד אחד.</p></a>
       <a class="tile" data-view="north"><div class="ic">🗺️</div><h3>בסיס הוילה + צפון</h3><p>14–19.8: הלינה וקטלוג טיולי הכוכב מהוילה.</p></a>
-      <a class="tile" data-view="tirana"><div class="ic">🏛️</div><h3>יום בטריאנה</h3><p>מסלול הליכה במרכז, בונקרים, מוזיאונים, פארק ורכבל.</p></a>
+      <a class="tile" data-view="tirana"><div class="ic">🏛️</div><h3>יום בטירנה</h3><p>מסלול הליכה במרכז, בונקרים, מוזיאונים, פארק ורכבל.</p></a>
       <a class="tile" data-view="drive"><div class="ic">🚗</div><h3>הדרך דרומה וצפונה</h3><p>19.8 שן-ג׳רג׳←קסאמיל ו-21.8 בחזרה: מסלולים ותחנות.</p></a>
       <a class="tile" data-view="south"><div class="ic">🏝️</div><h3>קסאמיל + הדרום</h3><p>חופים ואיים, בוטרינט, העין הכחולה, לקורסי, ג׳ירוקסטרה.</p></a>
       <a class="tile" data-view="last"><div class="ic">🛫</div><h3>היום האחרון · 22.8</h3><p>שני מסלולים נפרדים — סולומון מהצפון, השאר מקסאמיל. בטרמינל 17:00.</p></a>
@@ -347,13 +372,13 @@
     <div class="meta"><span>🛏️ ריקאס 1 לילה · שן-ג׳רג׳ 5 · קסאמיל 2–3</span><span>🚗 שני ימי נסיעה ארוכים: 19.8 ו-22.8</span></div>
 
     <div class="day"><span class="dot"></span><div class="date">חמישי 13.8 · לילה</div>
-      <div class="ttl">נחיתה 22:25 ← Hotel Vila Zeus, ריקאס</div>
-      <p>ליל הנחיתה ליד השדה — הוילה מתחילה רק ב-14.8. <a href="#north/stay-airport">הכרטיס ←</a></p>
+      <div class="ttl">נחיתה 22:25 ← איסוף הרכבים ← Hotel Vila Zeus, ריקאס</div>
+      <p>אוספים את הרכבים כבר בערב, וישנים ליד השדה — הוילה מתחילה רק ב-14.8. <b>אם הנחיתה מתעכבת</b> והסוכנויות נסגרות (סביב חצות), האיסוף נדחה לשישי בבוקר — וזו בדיוק הסיבה שהלינה היא כאן, במרחק הליכה מהדלפקים. <a href="#north/stay-airport">הכרטיס ←</a></p>
       <div class="tags"><span class="tag t-all">כולם</span></div></div>
 
     <div class="day"><span class="dot"></span><div class="date">שישי 14.8</div>
-      <div class="ttl">איסוף הרכבים ← טריאנה + קנייה גדולה ← צ׳ק-אין לוילה · בערב ארוחת שישי ויום הולדת לסבתא ❤️</div>
-      <p>הקנייה הגדולה נעשית בטירנה בדרך למעלה — בכפר אין סופר, בית מרקחת או תחנת דלק, ורק בעיר יש מדף ללא גלוטן ואת מאפיית <a href="#food/panja">Panja</a>. עולים לוילה <b>לאור יום</b>. <a href="#north/villa">הוילה ←</a> · <a data-view="tirana">טריאנה ←</a></p>
+      <div class="ttl">טירנה + קנייה גדולה ← צ׳ק-אין לוילה · בערב ארוחת שישי ויום הולדת לסבתא ❤️</div>
+      <p>הקנייה הגדולה נעשית בטירנה בדרך למעלה — בכפר אין סופר, בית מרקחת או תחנת דלק, ורק בעיר יש מדף ללא גלוטן ואת מאפיית <a href="#food/panja">Panja</a>. עולים לוילה <b>לאור יום</b>. <a href="#north/villa">הוילה ←</a> · <a data-view="tirana">טירנה ←</a></p>
       <div class="tags"><span class="tag t-all">כולם</span></div></div>
 
     <div class="day"><span class="dot"></span><div class="date">שבת 15.8</div>
@@ -378,7 +403,7 @@
 
     <div class="day"><span class="dot"></span><div class="date">רביעי 19.8</div>
       <div class="ttl">צ׳ק-אאוט מהוילה ← נסיעה דרומה לקסאמיל ← צ׳ק-אין ב-Asters</div>
-      <p><b>המסלול הפנימי</b> (~5–5.5 ש׳) עדיף על החופי — פחות סרפנטינות ופחות בחילות. תחנות: <a href="#drive/stops-inland">פטרלה וטפלנה ←</a> · <a data-view="drive">שני המסלולים במלואם ←</a></p>
+      <p><b>נבחר המסלול החופי</b> (~5.5–6 ש׳, באוגוסט יותר) — דרך וְלורה וסרנדה. לצאת מוקדם ולהיערך לסרפנטינות במעבר לוגרה. תחנות: <a href="#drive/stops-coastal">קוזום באבא, לוגרה, סרנדה ←</a> · <a data-view="drive">שני המסלולים במלואם ←</a></p>
       <div class="tags"><span class="tag t-all">יום נסיעה</span></div></div>
 
     <div class="day"><span class="dot"></span><div class="date">חמישי 20.8 · היום המלא בדרום</div>
@@ -394,7 +419,7 @@
 
     <div class="day"><span class="dot"></span><div class="date">שבת 22.8 · יום הטיסה</div>
       <div class="ttl">שני מסלולים נפרדים ← בטרמינל 17:00 ← המראה 19:55</div>
-      <p><b>סולומון</b> ישנים כבר צפונה, אז זה יום פנוי: קרויה / טריאנה / חוף דורס, וצהריים ב-<a href="#north/ukafarm">Uka Farm</a>. <b>שאר המשפחות</b> עושות את כל הדרך מקסאמיל — יציאה 07:30 ועצירה מתוכננת אחת בלבד. <a data-view="last">התכנית המלאה ←</a></p>
+      <p><b>סולומון</b> ישנים כבר צפונה, אז זה יום פנוי: קרויה / טירנה / חוף דורס, וצהריים ב-<a href="#north/ukafarm">Uka Farm</a>. <b>שאר המשפחות</b> עושות את כל הדרך מקסאמיל — יציאה 07:30 ועצירה מתוכננת אחת בלבד. <a data-view="last">התכנית המלאה ←</a></p>
       <div class="tags"><span class="tag t-all">יום נסיעה + טיסה</span></div></div>
   </div>
 
@@ -406,19 +431,20 @@
       <tr><td><b><a href="#north/berat">בראט</a></b> (אונסק״ו)</td><td>~2:45–3 ש׳</td><td>יום שלם וכבד — מעל 5.5 ש׳ נהיגה</td><td>תרבות · אפשרי לכולם אם עולים ברכב עד שער המצודה</td></tr>
       <tr><td><b><a href="#north/kruja">קרויה</a></b></td><td>~1:40–1:50</td><td>חצי יום — מצודה, מוזיאון, בזאר</td><td>תרבות · לא נוח לעגלות</td></tr>
       <tr><td><b><a href="#north/equos">EQUOS, מולט</a></b></td><td>~1:15</td><td>יום אחד, שתי פעילויות באותו מתחם</td><td>סוסים + מים + מסעדה — הכי טוב לכל הגילאים יחד</td></tr>
+      <tr><td><b><a href="#north/petrela">מצודת פטרלה + זיפליין</a></b></td><td>~1:10–1:20</td><td>חצי יום — מצודה, מסעדה עם נוף, זיפליין לגדולות</td><td>קרוב לטירנה · משתלב עם EQUOS או עם יום בעיר</td></tr>
       <tr><td><b><a href="#north/huqi">אגרו-תיירות Huqi</a></b></td><td>~1:20–1:30</td><td>יום רגוע על אגם + ארוחה</td><td>שטח מישורי, נוח לעגלות ולסבא-סבתא</td></tr>
       <tr><td><b><a href="#north/waterparks">פארק מים Blue Magic</a></b></td><td>~1:10</td><td>יום מים מלא</td><td>כל הילדים · אזור 0–5 · אסור אוכל מבחוץ</td></tr>
       <tr><td><b><a href="#north/durres">יום ים בדורס</a></b></td><td>~1:40–2 ש׳</td><td>יום שלם — ים בבוקר, עיר עתיקה אחה״צ</td><td>החוף הכי ידידותי לפעוטות בטווח</td></tr>
       <tr><td><b><a href="#north/bovilla">אגם בוביליה</a></b></td><td>~1:30–2 ש׳</td><td>תצפית ופיקניק</td><td>⚠️ 6–8 ק״מ אחרונים לא סלולים — לברר לפני</td></tr>
       <tr><td><b><a href="#north/waterfall">מפל שן-ג׳רג׳</a></b></td><td>~5 ק״מ (~10–15 ד׳)</td><td>חצי יום מהכפר</td><td>מועמד ליום של דניאל — חוזרים לצהריים</td></tr>
       <tr><td><b><a href="#north/tomadhe">בוית׳ינה טומאדה</a></b></td><td>~1 ק״מ מהוילה</td><td>חצי יום / ארוחה בכפר</td><td>סוסים וחיות · מועמד לערב יום ההולדת</td></tr>
-      <tr><td><b><a data-view="tirana">יום בטריאנה</a></b></td><td>~55–70 ד׳</td><td>יום עיר + ערב פולקלור</td><td>תרבות · ההמלצה: לא באותו יום עם בראט</td></tr>
+      <tr><td><b><a data-view="tirana">יום בטירנה</a></b></td><td>~55–70 ד׳</td><td>יום עיר + ערב פולקלור</td><td>תרבות · ההמלצה: לא באותו יום עם בראט</td></tr>
     </table>
     <div class="why" style="margin-top:9px"><b>אם רוצים המלצה:</b> <b>17.8 בראט</b> — היום הארוך, בתחילת השבוע כשיש כוח. <b>18.8 EQUOS או יום בכפר</b> — קרוב, קליל, וחוזרים מוקדם לערב של דניאל. אם מוותרים על בראט: קרויה ב-17.8, ואז לא לחזור אליה בלינה של 21.8.</div>
   </div>
 
   <div class="note q"><div class="nh">❓ מה עוד לא נסגר בתכנית</div>
-    <b>17.8 ו-18.8</b> — לבחור מהטבלה למעלה (EQUOS ו-Huqi דורשים תיאום מראש לקבוצה של 20) · <b>לינת 21.8 של סולומון</b> — צמוד לשדה או קרויה (<a data-view="mine">ההשוואה ←</a>) · <b>בוביליה</b> — לברר את הכביש הלא סלול · <b>ערב הפולקלור ״למבוגרים בלבד״</b> — מי עם הילדים.</div>
+    <b>17.8 ו-18.8</b> — לבחור מהטבלה למעלה (EQUOS ו-Huqi דורשים תיאום מראש לקבוצה של 20). ⚠️ <b>18.8 הוא יום שלישי</b>: רכבל דאיטי סגור בשלישי, ו-Bunk’Art סגור בשני ובשלישי — לא לתכנן אותם ליום הזה · <b>לינת 21.8 של סולומון</b> — צמוד לשדה או קרויה (<a data-view="mine">ההשוואה ←</a>) · <b>בוביליה</b> — לברר את הכביש הלא סלול · <b>ערב הפולקלור ״למבוגרים בלבד״</b> — מי עם הילדים.</div>
 
   <section class="talk" data-topic="agenda" aria-label="הערות על האג׳נדה"></section>
   </div></div>
@@ -433,7 +459,7 @@
   <div class="card" id="stay-airport"><h3>🛬 ליל הנחיתה (13.8) — Hotel Vila Zeus, ריקאס <a class="anchor" href="#north/stay-airport" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <div class="tags"><span class="tag t-all">לכל המשפחות</span></div>
     <div class="meta"><span class="done">✅ הוזמן</span><span>📍 ריקאס · ~1 ק״מ הליכה מהטרמינל (~400 מ׳ בקו אווירי)</span><span>🛏️ לילה אחד · 13–14.8</span><span>🅿️ חניה פרטית חינם · קבלה 24 שעות</span></div>
-    <p class="gist">מלון 4★ ליד שדה התעופה. הוילה בשן-ג׳רג׳ מתחילה רק ב-14.8, ואת ליל הנחיתה לנים כאן — 10 דקות מהמסוע במקום שעה של כביש הרים אחרי חצות.</p>
+    <p class="gist">מלון 4★ ליד שדה התעופה. הוילה בשן-ג׳רג׳ מתחילה רק ב-14.8, ואת ליל הנחיתה לנים כאן — 10 דקות מהמסוע במקום שעה של כביש הרים אחרי חצות. <b>הרכבים נאספים כבר בחמישי בערב</b>, והלינה כאן היא גם הביטוח למקרה שהנחיתה מתעכבת והסוכנויות נסגרות: אז אוספים בשישי בבוקר, במרחק הליכה מהמלון.</p>
 
     <div class="note warn" style="margin:10px 0"><div class="nh">⚠️ שתי משימות מול המלון לפני הטיסה</div>
       <b>1. לתאם הסעה מהטרמינל.</b> Vila Zeus לא מפרסם שאטל קבוע — האתר לא מציין שאטל, וביקורות מדווחות על הסעה שמסודרת מול הצוות (חלקן ציינו שהיא הייתה חינם). נוחתים 22:25, ו-1 ק״מ עם ילדים ומזוודות אחרי חצות זה לא כיף. <b>לכתוב למלון מראש עם שעת הנחיתה ולקבל אישור בכתב</b>, או לוודא שיש מוניות בטרמינל.<br>
@@ -443,7 +469,7 @@
       <p style="margin:0">דירוג Booking ~7.4 מתוך ~1,900 ביקורות. בית קפה ובר עם טרסה (לא מסעדה מלאה), אין בריכה, מכולת בסמוך. ביקורות משבחות את הצוות ואת הקרבה לשדה; חלקן מציינות תחזוקת חדרים בינונית.</p>
       <div class="links">
         <a href="https://www.hotelvilazeus.com/" target="_blank" rel="noopener">Vila Zeus – אתר רשמי ↖</a>
-        <a class="map" href="https://www.google.com/maps/search/?api=1&query=Hotel+Vila+Zeus+Rinas+Tirana" target="_blank" rel="noopener">Vila Zeus – מפה ↖</a>
+        <a class="map" href="https://www.google.com/maps/search/?api=1&query=Hotel+Vila+Zeus+Rinas+Tirana" target="_blank" rel="noopener">Vila Zeus – מפה ↖</a><a class="map onmap" href="#map/p:Hotel+Vila+Zeus+Rinas+Tirana" title="Vila Zeus – מפה — במפה שלנו" aria-label="Vila Zeus – מפה במפה שלנו">🗺️</a>
       </div>
     </details>
   </div>
@@ -456,7 +482,7 @@
       <p style="margin:0"><b>הדרך:</b> מטירנה עולים במעבר <b>קאפה-פריסקה</b> (Qafë Priskë), כ-30 ק״מ מפותלים על כתף הר דאיטי — סלול, ובאוגוסט יבש, ורכב קומפקטי מסתדר. שתי הסתייגויות: זה כביש הרים אמיתי עם סרפנטינות רצופות ועיקולים עיוורים (בשיירה — לשמור מרווחים), ו<b>נהיגה בחושך באזורים כפריים פחות נעימה</b>: אין תאורה, ויש עגלות ובעלי חיים על הכביש. לתכנן את העלייה ב-14.8 <b>לאור יום</b>, וגם את החזרות מטיולים.</p>
       <p style="margin:0"><b>לא אומת:</b> מספר חדרי השינה והדירוג. פרטי הנכס (בריכה, ~20 נפש, מרפסות, עמדת טעינה) נאספו מאתרי-מראה של Booking. <b>לוודא מול המארח לפני חלוקת החדרים.</b></p>
       <p style="margin:0"><b>בכפר עצמו (~1,400 תושבים) לא אותרו:</b> סופר, בית מרקחת או תחנת דלק. גם קליטה סלולרית לא אומתה — להוריד מפות אופליין.</p>
-      <div class="links"><a href="https://www.booking.com/hotel/al/villa-maxhaku.he.html" target="_blank" rel="noopener">Villa Maxhaku ב-Booking ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Villa+Maxhaku+Shengjergj+Tirana" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a href="https://www.booking.com/hotel/al/villa-maxhaku.he.html" target="_blank" rel="noopener">Villa Maxhaku ב-Booking ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Villa+Maxhaku+Shengjergj+Tirana" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Villa+Maxhaku+Shengjergj+Tirana" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -480,7 +506,7 @@
     <details><summary>מצב השביל באוגוסט, ומי כדאי שיישאר בוילה</summary>
       <p style="margin:0">ההליכה מתוארת כמתאימה למתחילים — עליות מתונות וקטעים מישוריים. יש שנכנסים למים בתחתית; אלה מי הרים קרים, ובאוגוסט הזרימה חלשה יותר מאשר באביב, אז לצפות למפל צנוע יותר מהתמונות.</p>
       <p style="margin:0"><b>נגישות:</b> שביל טבעי של עפר וסלע, מחליק אחרי גשם, מומלץ בנעליים סגורות — <b>לא מתאים לעגלה</b>. לתינוקות מנשא. מי שקשה לו בהליכה — הבריכה בוילה.</p>
-      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Shengjergj+Waterfall+Albania" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Shengjergj+Waterfall+Albania" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Shengjergj+Waterfall+Albania" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -491,7 +517,7 @@
     <details><summary>למה זה מועמד חזק לערב קבוצתי, ומה לא ידוע</summary>
       <p style="margin:0">זה כנראה הדבר הכי טוב באזור לגילאים הקטנים, והיחיד שמאפשר ״יציאה״ אמיתית בלי להכניס אף אחד לרכב. מתאים במיוחד ליום שבו לא רוצים לזוז, או כערב קבוצתי.</p>
       <p style="margin:0"><b>לא אומתו:</b> מחירים, שעות פתיחה, והאם צריך הזמנה. מקום קטן וכפרי — <b>לתאם מראש</b>.</p>
-      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bujtina+Tomadhe+Shengjergj" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bujtina+Tomadhe+Shengjergj" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Bujtina+Tomadhe+Shengjergj" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -502,8 +528,8 @@
     <details><summary>איך מפצלים את היום בין הגילאים</summary>
       <p style="margin:0"><b>פארק ההרפתקאות (Dajti Adventure Park):</b> מסלולי חבלים וזיפליינים לפי גיל ורמה, <b>מגיל 5</b> ומעלה, כל מסלול מסתיים בזיפליין. פועל מאי עד אוקטובר. מחיר הכניסה כולל את הרכבל. מחירים שנמצאו נעים בין ~€12 ל-~€20 לפי גיל ומסלול — <b>לאמת באתר לפני</b>.</p>
       <p style="margin:0"><b>הפיצול הטבעי:</b> הגדולות (8–17) לפארק החבלים · סבא, סבתא וההורים עם הפעוטות במסעדה הפנורמית ובטרסה · מי שרוצה עוד תוכן — Bunk’Art 1 באותו יום, הוא ליד תחנת הרכבל.</p>
-      <p style="margin:0"><b>שימו לב:</b> הרכבל סגור בימי שלישי — 15.8 הוא שבת, אז זה בסדר, אבל אם היום זז, לבדוק.</p>
-      <div class="links"><a href="https://dajtiekspres.com/adventure-park/" target="_blank" rel="noopener">פארק ההרפתקאות – אתר רשמי ↖</a><a href="https://dajtiekspres.com" target="_blank" rel="noopener">הרכבל ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Dajti+Ekspres+Cable+Car" target="_blank" rel="noopener">מפה ↖</a></div>
+      <p style="margin:0"><b>שימו לב:</b> הרכבל סגור בימי שלישי. דאיטי מתוכנן ל-<b>16.8, שהוא יום ראשון</b> — בסדר. אבל <b>18.8 הוא יום שלישי</b>, אז אם היום זז לשם, הרכבל סגור.</p>
+      <div class="links"><a href="https://dajtiekspres.com/adventure-park/" target="_blank" rel="noopener">פארק ההרפתקאות – אתר רשמי ↖</a><a href="https://dajtiekspres.com" target="_blank" rel="noopener">הרכבל ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Dajti+Ekspres+Cable+Car" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Dajti+Ekspres+Cable+Car" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -512,9 +538,21 @@
     <div class="meta"><span>📍 מולט (Mullet), ~10 ק״מ דרומית-מזרחית לטירנה · ~1:15 מהוילה</span><span>⏱️ יום / חצי יום</span><span class="pr">מחירים לא אומתו — לתאם מראש לקבוצה</span></div>
     <p class="gist">מתחם נופש עם בית ספר לרכיבה (כ-24 סוסים, גם למתחילים וגם לילדים), אורוות, פארק מים ובריכה, מסעדה ומרחבי דשא.</p>
     <details><summary>למה זו כנראה החלופה הכי טובה ל-16.8</summary>
-      <p style="margin:0">זה המקום היחיד שנמצא שנותן <b>גם סוסים וגם מים באותו מתחם</b>: הגדולות רוכבות, הפעוטות בבריכה, וסבא וסבתא במסעדה — בלי לפצל את החבורה בין שני יעדים ובלי נסיעה שנייה באמצע היום. מולט יושב על הציר הדרומי-מזרחי של טירנה, ליד פטרלה — אפשר לשלב את שניהם באותו יום.</p>
+      <p style="margin:0">זה המקום היחיד שנמצא שנותן <b>גם סוסים וגם מים באותו מתחם</b>: הגדולות רוכבות, הפעוטות בבריכה, וסבא וסבתא במסעדה — בלי לפצל את החבורה בין שני יעדים ובלי נסיעה שנייה באמצע היום. מולט יושב על הציר הדרומי-מזרחי של טירנה, <b>ליד <a href="#north/petrela">פטרלה</a></b> — אפשר לשלב את שניהם באותו יום.</p>
       <p style="margin:0"><b>לפני שסוגרים:</b> לתאם מראש לקבוצה של ~20, ולברר מחירים, שעות, גיל מינימלי לרכיבה ומה כלול בכניסה לפארק המים. שום מחיר לא אומת.</p>
-      <div class="links"><a href="https://equosresort.com/" target="_blank" rel="noopener">EQUOS Resort – אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=EQUOS+Resort+Mullet+Tirana" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a href="https://equosresort.com/" target="_blank" rel="noopener">EQUOS Resort – אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=EQUOS+Resort+Mullet+Tirana" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:EQUOS+Resort+Mullet+Tirana" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
+    </details>
+  </div>
+
+  <div class="card" id="petrela"><h3>🏰 מצודת פטרלה + הזיפליין <a class="anchor" href="#north/petrela" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <div class="tags"><span class="tag t-cult">תרבות</span><span class="tag t-grand">נוף ממסעדה</span><span class="tag t-adv">זיפליין 10+</span></div>
+    <div class="meta"><span>📍 12 ק״מ מטירנה · ~1:10–1:20 מהוילה</span><span>⏱️ חצי יום</span><span class="pr">כניסה למצודה חינם · זיפליין ~€15–25</span></div>
+    <p class="gist">מצודה קטנה על צוק מעל עמק ארזן, עם מסעדה בפנים — וממש לידה הזיפליין הארוך בבלקן. קרובה מספיק לטירנה כדי להשתלב עם <a href="#north/equos">EQUOS</a> או עם <a data-view="tirana">יום בעיר</a> באותו יום.</p>
+    <details><summary>מה יש במצודה, ומה התנאים בזיפליין</summary>
+      <p style="margin:0"><b>🏰 מצודת פטרלה (Kalaja e Petrelës)</b> — הבסיס מהמאה ה-6, המבנה הנוכחי מהמאה ה-15; בתקופת סקנדרבג פיקדה עליה אחותו מאמיצה קסטריוטי. <b>הכניסה חינם</b>, ובתוך המצודה מסעדה ובית קפה עם נוף לעמק, לגבעות ולמטעי הזיתים. עצירת בוקר קצרה ויפה — או ארוחת צהריים.</p>
+      <p style="margin:0"><b>🪂 Zipline Albania</b> — באותו מקום, מעל עמק ארזן. כ-1,250 מ׳, כ-90 שניות, עד ~90 קמ״ש. <b>גיל מינימלי 10</b>, משקל 35–125 ק״ג; מתחת לגיל 10 אפשר בטנדם עם הורה, בכפוף לאישור הצוות. מחיר ~€15–25 לטיסה (מקור אחד: €20). <b>מתאים לגדולות (12, 14, 17) ולמבוגרים בלבד</b> — 6 מהילדות לא עומדות בתנאי הגיל.</p>
+      <p style="margin:0"><b>נגישות:</b> עולים ברכב כמעט עד המצודה, ומשם עלייה קצרה. המסעדה והנוף זמינים בלי לטפס לחלק העליון.</p>
+      <div class="links"><a href="https://www.zipline.al/" target="_blank" rel="noopener">Zipline Albania – אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Petrela+Castle+Albania" target="_blank" rel="noopener">מצודת פטרלה ↖</a><a class="map onmap" href="#map/p:Petrela+Castle+Albania" title="מצודת פטרלה — במפה שלנו" aria-label="מצודת פטרלה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -525,7 +563,7 @@
     <details><summary>למי זה מתאים, ומה לוודא לפני</summary>
       <p style="margin:0">שטח מישורי ופתוח — נוח לעגלות, לסבא וסבתא ולפעוטות שצריכים לרוץ. המסעדה גדולה (מדווחת על קיבולת ~250 מקומות), כך שקבוצה של 20 אינה בעיה. אפשר לשלב עם חוף מפרץ לאלזי באותו אזור.</p>
       <p style="margin:0"><b>לוודא:</b> שעות פתיחה, הזמנה מראש לקבוצה, ומה בדיוק פתוח לביקור-יום (חלק מהתיאורים מתייחסים לאורחים שלנים בבקתות).</p>
-      <div class="links"><a href="https://www.agritourismhuqi.com/" target="_blank" rel="noopener">אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Agriturizem+Huqi+Rade+Manez+Durres" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a href="https://www.agritourismhuqi.com/" target="_blank" rel="noopener">אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Agriturizem+Huqi+Rade+Manez+Durres" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Agriturizem+Huqi+Rade+Manez+Durres" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -535,7 +573,7 @@
     <p class="gist">Blue Magic בקשאר הוא הגדול במדינה — 4 בריכות, 7+ מגלשות, <b>אזור ייעודי לגילאי 0–5</b>, חניה ומיטות בתשלום. יושב על ציר טירנה–דורס, הקרוב מבין השניים.</p>
     <details><summary>המגבלה שכדאי לדעת מראש</summary>
       <p style="margin:0">ב-Blue Magic <b>אסור להכניס אוכל ושתייה מבחוץ</b> — עם 20 איש זה אומר להאכיל את כולם בתוך המתחם במחירי מתחם. לתמחר את זה לפני, במיוחד למי שרגיש לגלוטן ותלוי במה שהביא מהבית.</p>
-      <div class="links"><a href="https://aquapark.com.al" target="_blank" rel="noopener">Blue Magic ↖</a><a href="http://www.aquamania-waterpark.al" target="_blank" rel="noopener">Aqua Mania ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Aquapark+Albania+Blue+Magic+Water+Kashar" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a href="https://aquapark.com.al" target="_blank" rel="noopener">Blue Magic ↖</a><a href="http://www.aquamania-waterpark.al" target="_blank" rel="noopener">Aqua Mania ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Aquapark+Albania+Blue+Magic+Water+Kashar" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Aquapark+Albania+Blue+Magic+Water+Kashar" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -546,7 +584,7 @@
     <details><summary>מגבלת נגישות, והשיקול מול הלילה האחרון</summary>
       <p style="margin:0"><b>נגישות:</b> ריצוף אבן ומדרגות לאורך הבזאר והעלייה למצודה — לא נוח לעגלות ולמי שקשה לו בהליכה. אפשר להשאיר חלק מהחבורה בבתי הקפה למטה.</p>
       <p style="margin:0"><b>שיקול תכנוני:</b> קרויה היא גם אחת האפשרויות ללינה של 21.8, ואז נשאר בוקר שלם שם ב-22.8 לפני הנסיעה לשדה. אם עושים אותה ב-16.8, אין טעם לחזור — ואז עדיף לינה צמודה לשדה. <a data-view="mine">ההשוואה בעמוד משפחת סולומון ←</a></p>
-      <div class="links"><a href="https://muzeumet-kruje.com" target="_blank" rel="noopener">מוזיאון סקנדרבג ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Kruja+Castle" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a href="https://muzeumet-kruje.com" target="_blank" rel="noopener">מוזיאון סקנדרבג ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Kruja+Castle" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Kruja+Castle" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -560,7 +598,7 @@
       <p style="margin:0"><b>עצירה בדרך:</b> <b>אגם בלשי</b> — טיילת מרוצפת ומישורית לחלוטין על שפת האגם, בתי קפה ושירותים. תחנת מתיחת רגליים מצוינת בערך באמצע הדרך, בפרט עם פעוטות. (לוודא במפה שהוא על המסלול שבחרתם — הוא באזור דומרה שליד אלבסן.)</p>
       <p style="margin:0"><b>לנוער:</b> סמוך לבראט <b>קניון אוסום</b> עם רפטינג קליל ומדריכים — יום נפרד, לא באותו יום עם המצודה.</p>
       <p style="margin:0"><b>יציאה:</b> לצאת מהוילה ב-08:30 כדי לעבור את קאפה-פריסקה לפני עומס הבוקר. סה״כ נהיגה ביום הזה מעל 5.5 שעות — זה יום כבד.</p>
-      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Berat+Castle" target="_blank" rel="noopener">מצודת בראט ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Berat+Viewing+Platform" target="_blank" rel="noopener">נקודת התצפית ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Belsh+Lake+Albania" target="_blank" rel="noopener">אגם בלשי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Osum+Canyon+Albania" target="_blank" rel="noopener">קניון אוסום ↖</a></div>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Berat+Castle" target="_blank" rel="noopener">מצודת בראט ↖</a><a class="map onmap" href="#map/p:Berat+Castle" title="מצודת בראט — במפה שלנו" aria-label="מצודת בראט במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Berat+Viewing+Platform" target="_blank" rel="noopener">נקודת התצפית ↖</a><a class="map onmap" href="#map/p:Berat+Viewing+Platform" title="נקודת התצפית — במפה שלנו" aria-label="נקודת התצפית במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Belsh+Lake+Albania" target="_blank" rel="noopener">אגם בלשי ↖</a><a class="map onmap" href="#map/p:Belsh+Lake+Albania" title="אגם בלשי — במפה שלנו" aria-label="אגם בלשי במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Osum+Canyon+Albania" target="_blank" rel="noopener">קניון אוסום ↖</a><a class="map onmap" href="#map/p:Osum+Canyon+Albania" title="קניון אוסום — במפה שלנו" aria-label="קניון אוסום במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -574,7 +612,7 @@
       <p style="margin:0"><b>אפשרות א׳:</b> להשאיר את הרכבים בטירנה או בזאל-הר ולעלות עם <b>שאטל 4×4 מוזמן מראש</b> או טיול מאורגן. זה פותר גם את הכביש וגם את הביטוח.</p>
       <p style="margin:0"><b>אפשרות ב׳:</b> לברר מראש עם בעל הוילה או עם מקומיים מה מצב הכביש בפועל באוגוסט 2026 — הוא משתנה משנה לשנה.</p>
       <div class="alt" style="margin:0"><b>אם מוותרים:</b> ערב יום ההולדת של דניאל מתקיים בוילה (בריכה + על האש), ונוף הררי יש ממילא מהמרפסת. את היום עצמו אפשר להחליף בכל אחת מחלופות 16.8.</div>
-      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bovilla+Lake" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bovilla+Lake" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Bovilla+Lake" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -585,7 +623,7 @@
     <details><summary>איך לבנות את היום, והחלופה היומיומית</summary>
       <p style="margin:0">כשעה וארבעים עד שעתיים לכל כיוון — לכן שווה לעשות אותו <b>פעם אחת כיום שלם</b> (ים בבוקר, אמפיתאטרון וטיילת אחר הצהריים) ולא פעמיים בחצי יום.</p>
       <div class="alt" style="margin:0">לרטיבות יומיומית — <b>הבריכה בוילה</b>. בשביל זה נבחר בית עם בריכה; ברוב הימים היא מחליפה את הים.</div>
-      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Durres+Amphitheatre" target="_blank" rel="noopener">אמפיתאטרון ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Venetian+Tower+Durres" target="_blank" rel="noopener">מגדל ונציאני ↖</a></div>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Durres+Amphitheatre" target="_blank" rel="noopener">אמפיתאטרון ↖</a><a class="map onmap" href="#map/p:Durres+Amphitheatre" title="אמפיתאטרון — במפה שלנו" aria-label="אמפיתאטרון במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Venetian+Tower+Durres" target="_blank" rel="noopener">מגדל ונציאני ↖</a><a class="map onmap" href="#map/p:Venetian+Tower+Durres" title="מגדל ונציאני — במפה שלנו" aria-label="מגדל ונציאני במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -596,7 +634,7 @@
     <details><summary>למה זה שימושי דווקא בימים הראשון והאחרון</summary>
       <p style="margin:0">היא יושבת על הציר שבין שדה התעופה לטירנה, מה שהופך אותה לעצירת אוכל טבעית ב-<b>14.8</b> (אחרי איסוף הרכבים, לפני העלייה לוילה) או ב-<b>22.8</b> (ארוחה אחרונה לפני שנוסעים לטרמינל ב-17:00). שבילי חווה מישוריים ואפשר לסייר בגן ובייקב.</p>
       <p style="margin:0"><b>חובה להזמין מראש</b> לקבוצה של ~20 — זה מקום קטן עם תפריט קבוע, לא מסעדה שנכנסים אליה.</p>
-      <div class="links"><a href="https://ukafarm.com/restaurant/" target="_blank" rel="noopener">אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Uka+Farm+Laknas+Tirana" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a href="https://ukafarm.com/restaurant/" target="_blank" rel="noopener">אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Uka+Farm+Laknas+Tirana" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Uka+Farm+Laknas+Tirana" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -607,7 +645,7 @@
     <div class="note warn" style="margin:9px 0 0"><div class="nh">ההמלצה: לוותר</div>
       5–6 שעות רכב הלוך-חזור ליום אחד, עם שלושה פעוטות ועם סבא וסבתא. במרחק שעה עד שעה וחצי יש קרויה, EQUOS, Huqi ופארק מים — כולם נותנים יום מלא בלי המחיר הזה. אם בכל זאת: רק חובבי הנוף נוסעים, יוצאים מוקדם מאוד, והשאר נשארים בבריכה.</div>
     <details><summary>קישורים</summary>
-      <div class="links" style="margin:0"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Rozafa+Castle+Shkoder" target="_blank" rel="noopener">רוזאפה ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Lake+Shkoder" target="_blank" rel="noopener">האגם ↖</a></div>
+      <div class="links" style="margin:0"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Rozafa+Castle+Shkoder" target="_blank" rel="noopener">רוזאפה ↖</a><a class="map onmap" href="#map/p:Rozafa+Castle+Shkoder" title="רוזאפה — במפה שלנו" aria-label="רוזאפה במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Lake+Shkoder" target="_blank" rel="noopener">האגם ↖</a><a class="map onmap" href="#map/p:Lake+Shkoder" title="האגם — במפה שלנו" aria-label="האגם במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -617,17 +655,25 @@
 <!-- ======================= TIRANA ======================= -->
 <div class="view" id="view-tirana"><div class="wrap pad">
   <a class="back" data-view="home">→ חזרה לבית</a>
-  <div class="region city"><div class="when">יום מומלץ נפרד</div><h2>יום בטריאנה — הבירה</h2>
+  <div class="region city"><div class="when">יום מומלץ נפרד</div><h2>יום בטירנה — הבירה</h2>
     <p>הבירה צבעונית ותוססת ומגיע לה יום משלה, לא רק עצירת קניות. מכאן גם הבונקרים והרכבל לדאיטי.</p>
-    <a class="viewmap" href="#map/tirana">🗺️ מפת טריאנה</a></div>
-
-  <div class="note"><div class="nh">💡 המלצה: לפצל את בראט מערב הפולקלור</div>
-    יום בראט מלא הוא כבר מעל 5.5 שעות נהיגה, ובראט←טריאנה מוסיף עוד ~שעתיים בסופו. עדיף <b>שני ימים נפרדים</b>: יום לבראט, ויום אחר לטריאנה + ערב פולקלור בעיר. גם טריאנה מקבלת זמן הוגן וגם הערב יוצא רגוע.</div>
+    <a class="viewmap" href="#map/tirana">🗺️ מפת טירנה</a></div>
 
   <div class="note q"><div class="nh">❓ ״ערב פולקלור למבוגרים בלבד״ — מי עם הילדים?</div>
     כדאי לסכם מראש. אפשרויות: (א) ארוחת הפולקלור משפחתית, וה״חידון למבוגרים 🔞״ הוא חלק נפרד ומאוחר בוילה; (ב) ערב שבו סבא וסבתא או שמרטף עם הקטנים והמבוגרים יוצאים; (ג) ערב משפחתי לגמרי.</div>
 
-  <h3 style="margin-top:22px">מה לראות בטריאנה</h3>
+  <div class="card" id="tirana-parking"><h3>🅿️ איפה מחנים 5 רכבים בטירנה <a class="anchor" href="#tirana/tirana-parking" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <div class="tags"><span class="tag t-all">רלוונטי לכל יום בעיר</span></div>
+    <div class="meta"><span>📍 סשפרקימי הנֶתוקֶסוֹר, כיכר סקנדרבג</span><span>🕗 פתוח 24 שעות</span><span>🅿️ 303 מקומות + 6 לנכים</span><span class="pr">0–3 ש׳ 200 לק · 3–8 ש׳ 500 לק</span></div>
+    <p class="gist">חניון תת-קרקעי מתחת לכיכר סקנדרבג — נקודת הפתיחה של <a href="#tirana/tirana-walk">מסלול ההליכה</a>, כלומר חונים פעם אחת והולכים ברגל את כל היום. עם שיירה של 5 רכבים זה ההבדל בין להתחיל את היום ברוגע לבין לסובב את המרכז בחיפוש מקום.</p>
+    <details><summary>מחירון, מה יש בחניון, ומה לוודא במקום</summary>
+      <p style="margin:0"><b>מחירון מפורסם:</b> עד 3 שעות 200 לק · 3–8 שעות 500 לק · 8–12 שעות 800 לק · 12–24 שעות 500 לק. <b>שימו לב</b> — המדרגה של 12–24 זולה יותר מזו של 8–12 כפי שזה מופיע באתר; לוודא בכניסה. באלבניה עדיף להניח <b>מזומן</b>.</p>
+      <p style="margin:0"><b>מה יש שם:</b> עמדת טעינה חשמלית אחת בחינם, 10 שירותים ציבוריים (2 לנכים), ומעלית לפני הקרקע (באתר מצוין שהיא בהרצה) — עם עגלות שווה לבדוק שהיא פועלת לפני שיורדים.</p>
+      <div class="links"><a href="https://tiranaparking.al/service/sheshparkimi-nentokesor-sheshi-skenderbej/" target="_blank" rel="noopener">tiranaparking.al – דף החניון ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Sheshparkimi+Nentokesor+Sheshi+Skenderbej+Tirana" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Sheshparkimi+Nentokesor+Sheshi+Skenderbej+Tirana" title="החניון במפה שלנו" aria-label="החניון במפה שלנו">🗺️</a></div>
+    </details>
+  </div>
+
+  <h3 style="margin-top:22px">מה לראות בטירנה</h3>
 
   <div class="card" id="tirana-walk"><h3>🚶 מסלול הליכה במרכז <a class="anchor" href="#tirana/tirana-walk" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-grand">שטח מישורי</span></div>
@@ -638,7 +684,7 @@
       <p style="margin:0"><b>קתדרלת תחיית ישו (Katedralja Ortodokse Ngjallja e Krishtit)</b> — הקתדרלה האורתודוקסית של טירנה, מ-2012, מהגדולות בבלקן. מתחם עם כמה קפלות, מוזיאון קטן וספרייה, כ-5 דקות הליכה מהכיכר. שעות הביקור לא אומתו — לבדוק במקום.</p>
       <p style="margin:0"><b>הפירמידה (Piramida e Tiranës)</b> — מבנה שנבנה כמוזיאון לאנוור הוקסהה ושופץ למרכז טכנולוגי ונוער. אפשר <b>לטפס במדרגות החיצוניות עד למעלה</b> — נוף על העיר, וזה בחינם. המדרגות תלולות ובלי מעקה רציף בחלק מהקטעים; לא לפעוטות בלי יד צמודה.</p>
       <p style="margin:0"><b>Pazari i Ri</b> — שוק מקורה משופץ עם דוכני אוכל ומסעדות מסביב, כולל אופציות ללא גלוטן.</p>
-      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Skanderbeg+Square+Tirana" target="_blank" rel="noopener">כיכר סקנדרבג ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Et+hem+Bej+Mosque+Tirana" target="_blank" rel="noopener">מסגד את׳הם ביי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Resurrection+of+Christ+Orthodox+Cathedral+Tirana" target="_blank" rel="noopener">הקתדרלה ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Pyramid+of+Tirana" target="_blank" rel="noopener">הפירמידה ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Pazari+i+Ri+Tirana" target="_blank" rel="noopener">פאזארי אירי ↖</a></div>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Skanderbeg+Square+Tirana" target="_blank" rel="noopener">כיכר סקנדרבג ↖</a><a class="map onmap" href="#map/p:Skanderbeg+Square+Tirana" title="כיכר סקנדרבג — במפה שלנו" aria-label="כיכר סקנדרבג במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Et+hem+Bej+Mosque+Tirana" target="_blank" rel="noopener">מסגד את׳הם ביי ↖</a><a class="map onmap" href="#map/p:Et+hem+Bej+Mosque+Tirana" title="מסגד את׳הם ביי — במפה שלנו" aria-label="מסגד את׳הם ביי במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Resurrection+of+Christ+Orthodox+Cathedral+Tirana" target="_blank" rel="noopener">הקתדרלה ↖</a><a class="map onmap" href="#map/p:Resurrection+of+Christ+Orthodox+Cathedral+Tirana" title="הקתדרלה — במפה שלנו" aria-label="הקתדרלה במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Pyramid+of+Tirana" target="_blank" rel="noopener">הפירמידה ↖</a><a class="map onmap" href="#map/p:Pyramid+of+Tirana" title="הפירמידה — במפה שלנו" aria-label="הפירמידה במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Pazari+i+Ri+Tirana" target="_blank" rel="noopener">פאזארי אירי ↖</a><a class="map onmap" href="#map/p:Pazari+i+Ri+Tirana" title="פאזארי אירי — במפה שלנו" aria-label="פאזארי אירי במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -649,7 +695,7 @@
     <details><summary>למי זה מתאים ולמי פחות</summary>
       <p style="margin:0">מתאים למבוגרים ולגדולות (12+). התכנים כוללים חדרי חקירות ומעקב של המשטרה החשאית — כבד לילדים קטנים. המרחבים מחניקים וצפופים בחלקם, ומי שסובל מקלסטרופוביה עדיף שיישאר בחוץ.</p>
       <p style="margin:0"><b>סגור בימי שני ושלישי</b> — לתאם עם היום שנבחר.</p>
-      <div class="links"><a href="https://www.bunkart.al" target="_blank" rel="noopener">אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bunk+Art+1+Tirana" target="_blank" rel="noopener">Bunk’Art 1 ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bunk+Art+2+Tirana" target="_blank" rel="noopener">Bunk’Art 2 ↖</a></div>
+      <div class="links"><a href="https://www.bunkart.al" target="_blank" rel="noopener">אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bunk+Art+1+Tirana" target="_blank" rel="noopener">Bunk’Art 1 ↖</a><a class="map onmap" href="#map/p:Bunk+Art+1+Tirana" title="Bunk’Art 1 — במפה שלנו" aria-label="Bunk’Art 1 במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Bunk+Art+2+Tirana" target="_blank" rel="noopener">Bunk’Art 2 ↖</a><a class="map onmap" href="#map/p:Bunk+Art+2+Tirana" title="Bunk’Art 2 — במפה שלנו" aria-label="Bunk’Art 2 במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -658,7 +704,7 @@
     <div class="meta"><span class="pr">בית העלים ~700 לק · מוזיאון לאומי ~500 לק</span><span>⏱️ ~שעה כל אחד</span><span>📍 שניהם במרכז, הליכה קצרה זה מזה</span></div>
     <p class="gist">בית העלים (House of Leaves) — מוזיאון המעקב והמשטרה החשאית בתקופת הוקסהה, בבניין שבו פעל השירות בפועל. המוזיאון הלאומי בכיכר סקנדרבג — סקירה רחבה של ההיסטוריה האלבנית.</p>
     <details><summary>קישורים</summary>
-      <div class="links" style="margin:0"><a class="map" href="https://www.google.com/maps/search/?api=1&query=House+of+Leaves+Museum+Tirana" target="_blank" rel="noopener">בית העלים ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=National+History+Museum+Tirana" target="_blank" rel="noopener">המוזיאון הלאומי ↖</a></div>
+      <div class="links" style="margin:0"><a class="map" href="https://www.google.com/maps/search/?api=1&query=House+of+Leaves+Museum+Tirana" target="_blank" rel="noopener">בית העלים ↖</a><a class="map onmap" href="#map/p:House+of+Leaves+Museum+Tirana" title="בית העלים — במפה שלנו" aria-label="בית העלים במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=National+History+Museum+Tirana" target="_blank" rel="noopener">המוזיאון הלאומי ↖</a><a class="map onmap" href="#map/p:National+History+Museum+Tirana" title="המוזיאון הלאומי — במפה שלנו" aria-label="המוזיאון הלאומי במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -667,11 +713,11 @@
     <div class="meta"><span class="pr free">חינם</span><span>⏱️ כמה שעות</span><span>📍 230 הקטר, דרומית למרכז</span></div>
     <p class="gist">פארק ענק עם אגם, שבילי הליכה מרוצפים, בתי קפה על המים, מתקני שעשועים ומקום לפיקניק. השילוב הטבעי אחרי בוקר במרכז — צל, מרחב לילדים ומקום לשבת.</p>
     <details><summary>קישורים</summary>
-      <div class="links" style="margin:0"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Grand+Park+of+Tirana" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links" style="margin:0"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Grand+Park+of+Tirana" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Grand+Park+of+Tirana" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
-  <section class="talk" data-topic="tirana" aria-label="הערות על טריאנה"></section>
+  <section class="talk" data-topic="tirana" aria-label="הערות על טירנה"></section>
   </div></div>
 
 <!-- ======================= DRIVE ======================= -->
@@ -684,34 +730,33 @@
   <h3 style="margin-top:20px">19.8 · שן-ג׳רג׳ ← קסאמיל</h3>
   <table class="h">
     <tr><th>מסלול</th><th>זמן נטו</th><th>אופי</th><th>למי מתאים</th></tr>
-    <tr><td><b>פנימי מהיר</b> — אלבסן, פייר (A2), טפלנה, ג׳ירוקסטרה</td><td>~5–5.5 ש׳</td><td>כביש רחב וישר, שיפועים מתונים</td><td>פעוטות שנרדמים ברכב, רכב עמוס, שיירה של 5 רכבים</td></tr>
-    <tr><td><b>חופי-נופי</b> — וְלורה, מעבר לוגרה, הימרה</td><td>~5.5–6 ש׳ · באוגוסט עם עצירות 7–8 ש׳</td><td>סרפנטינות רצופות ונוף לים היוני</td><td>חובבי נוף, נסיעה כחוויה</td></tr>
+    <tr><td><b>✅ חופי-נופי</b> — וְלורה, מעבר לוגרה, הימרה, סרנדה</td><td>~5.5–6 ש׳ · באוגוסט עם עצירות 7–8 ש׳</td><td>סרפנטינות רצופות ונוף לים היוני</td><td><b>זה המסלול שנבחר</b> — הנסיעה עצמה חלק מהטיול</td></tr>
+    <tr><td><b>פנימי מהיר</b> — אלבסן, פייר (A2), טפלנה, ג׳ירוקסטרה</td><td>~5–5.5 ש׳</td><td>כביש רחב וישר, שיפועים מתונים</td><td>נשאר בתמונה — זו הדרך <b>חזרה צפונה</b> ב-21.8 וב-22.8</td></tr>
   </table>
 
-  <div class="note warn" style="margin-top:12px"><div class="nh">🚗 השיקול המכריע: מחלת נסיעה</div>
-    שני מקורות נפרדים מגיעים לאותה מסקנה — במסלול החופי, השילוב של <b>סרפנטינות רצופות במעבר לוגרה</b> ושל <b>עומס תנועת חופים כבד באוגוסט</b> הופך את היום לארוך בשעה עד שעתיים ומעלה את סיכון הבחילות אצל ילדים קטנים ואצל מבוגרים. עם שלושה פעוטות ועם סבא וסבתא, <b>המסלול הפנימי הוא הבחירה ההגיונית ל-19.8</b>.</div>
-  <div class="why">אם בכל זאת רוצים את הנוף: לעשות את הלולאה — <b>יורדים דרומה בפנימי</b> ביום נסיעה עמוס, ומי שרוצה יוצא לטיול נפרד לריביירה מקסאמיל. או להפך: יורדים בחופי ועולים ב-21.8 בפנימי דרך העין הכחולה וג׳ירוקסטרה.</div>
+  <div class="note warn" style="margin-top:12px"><div class="nh">🚗 נבחר המסלול החופי — וזה מה שצריך להיערך אליו</div>
+    יורדים דרומה דרך <b>וְלורה וסרנדה</b>. המחיר ידוע מראש: השילוב של <b>סרפנטינות רצופות במעבר לוגרה</b> ושל <b>עומס תנועת חופים כבד באוגוסט</b> מאריך את היום בשעה עד שעתיים ומעלה את סיכון הבחילות אצל ילדים קטנים ואצל מבוגרים. עם שלושה פעוטות וסבא וסבתא זה מתורגם לארבעה דברים: <b>לצאת מוקדם</b> (הכביש מתמלא ככל שהיום מתקדם), תרופה נגד בחילה למי שרגיש — לתת <b>לפני</b> הנסיעה ולא אחרי, ישיבה קדמית ומבט לאופק למי שסובל, ו<b>לשקול את המנהרה בלוגרה</b> אחרי נקודת התצפית במקום את הירידה המפותלת.</div>
+  <div class="why">המסלול הפנימי לא ירד מהשולחן — הוא <b>הדרך חזרה צפונה</b>, ב-21.8 (סולומון) וב-22.8 (שאר המשפחות), דרך העין הכחולה וג׳ירוקסטרה. בפועל זו לולאה: חופי דרומה, פנימי צפונה, ושני הצדדים של המדינה באותו טיול.</div>
 
-  <div class="card" id="stops-inland"><h3>תחנות במסלול הפנימי <a class="anchor" href="#drive/stops-inland" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
-    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-adv">זיפליין 10+</span></div>
-    <p class="gist">שתי עצירות טובות: פטרלה בתחילת הדרך (~30 ד׳ מטירנה), וטפלנה בערך באמצע.</p>
-    <details><summary>פטרלה, טפלנה — מה יש בכל אחת</summary>
-      <p style="margin:0"><b>🏰 מצודת פטרלה (Kalaja e Petrelës)</b> — מצודה קטנה על צוק, 12 ק״מ מטירנה על ציר אלבסן, כלומר <b>ממש בתחילת המסלול הפנימי</b>. הבסיס מהמאה ה-6, המבנה הנוכחי מהמאה ה-15; בתקופת סקנדרבג פיקדה עליה אחותו מאמיצה קסטריוטי. <b>הכניסה חינם</b>, ובתוך המצודה מסעדה ובית קפה עם נוף לעמק ארזן, לגבעות ולמטעי הזיתים. עצירת בוקר קצרה ויפה — או ארוחת צהריים.</p>
-      <p style="margin:0"><b>🪂 Zipline Albania</b> — נמצא באותו מקום, מעל עמק ארזן. הזיפליין הארוך בבלקן: כ-1,250 מ׳, כ-90 שניות, עד ~90 קמ״ש. <b>גיל מינימלי 10</b>, משקל 35–125 ק״ג; מתחת לגיל 10 אפשר בטנדם עם הורה, בכפוף לאישור הצוות. מחיר ~€15–25 לטיסה (מקור אחד: €20). <b>מתאים לגדולות (12, 14, 17) ולמבוגרים בלבד</b> — 6 מהילדות לא עומדות בתנאי הגיל.</p>
-      <p style="margin:0"><b>💧 אוּיִי-פְטוֹהְט, טפלנה (Uji i Ftohtë — ״המים הקרים״)</b> — אזור מעיינות בצד הדרך עם מסעדות שיושבות מעל נחלי הרים, ישיבה מוצלת ומישורית. עצירת צהריים ומנוחה כמעט באמצע הדרך. <b>לא אומת</b> — לוודא במפה שהוא על המסלול שלכם ושיש שם מקום לקבוצה של 20.</p>
-      <div class="links"><a href="https://www.zipline.al/" target="_blank" rel="noopener">Zipline Albania – אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Petrela+Castle+Albania" target="_blank" rel="noopener">מצודת פטרלה ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Uji+i+Ftohte+Tepelene" target="_blank" rel="noopener">אויי-פטוהט טפלנה ↖</a></div>
-    </details>
-  </div>
-
-  <div class="card" id="stops-coastal"><h3>תחנות במסלול החופי <a class="anchor" href="#drive/stops-coastal" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+  <div class="card" id="stops-coastal"><h3>✅ תחנות במסלול החופי — הדרך של 19.8 <a class="anchor" href="#drive/stops-coastal" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <div class="tags"><span class="tag t-cult">תרבות</span><span class="tag t-beach">חופים</span><span class="tag t-grand">נוף ממסעדה</span></div>
-    <p class="gist">וְלורה לצהריים, מעבר לוגרה לנוף, וחופי הריביירה לרענון.</p>
-    <details><summary>איפה בדיוק לעצור בוְלורה, ומה עם המנהרה בלוגרה</summary>
+    <p class="gist">וְלורה לצהריים, מעבר לוגרה לנוף, חופי הריביירה לרענון, וסרנדה כעצירה האחרונה לפני קסאמיל.</p>
+    <details><summary>איפה בדיוק לעצור בוְלורה, מה עם המנהרה בלוגרה, ולמה לעצור בסרנדה</summary>
       <div class="why" style="margin:0"><b>🕌 קוזום באבא (Kuzum Baba) — עצירת הצהריים העדיפה בוְלורה.</b> החניה בעיר עצמה מאתגרת, ובמיוחד עם 5 רכבים. קוזום באבא הוא הגבעה שמעל העיר — טקה בקטאשית, נקודת התצפית הטובה בוְלורה על העיר ועל הים, ולמעלה <b>מסעדה עם טרסה ומתקני משחק לילדים</b>. עולים ברכב, אוכלים בצל עם נוף, ויוצאים — בלי מלחמת חניה בטיילת.</div>
       <p style="margin:0"><b>וְלורה עצמה</b> — כאן הוכרזה עצמאות אלבניה ב-1912; יש טיילת ים ארוכה. אם נכנסים לעיר, לתכנן חניה מראש.</p>
       <p style="margin:0"><b>מעבר לוגרה (1,027 מ׳)</b> — נקודת התצפית הדרמטית של אלבניה. נפתחה מנהרה חדשה, אז יש בחירה: <b>הכביש ההרי</b> (הנוף, אבל הסרפנטינות שמייצרות את הבחילות) או <b>המנהרה</b> (חוסכת זמן ובטן). אפשרות ביניים: לעלות עד נקודת התצפית, לעצור, ולרדת דרך המנהרה.</p>
       <p style="margin:0"><b>חופי הריביירה</b> — דְהֶרְמי, הִימָרָה, מבצר פורטו פלרמו, בורש. טובים לרענון ולשחייה, אבל כל עצירה כזו מוסיפה זמן ליום שכבר ארוך.</p>
-      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Kuzum+Baba+Vlore" target="_blank" rel="noopener">קוזום באבא ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Llogara+Pass" target="_blank" rel="noopener">מעבר לוגרה ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Vlore+Promenade" target="_blank" rel="noopener">טיילת וְלורה ↖</a></div>
+      <p style="margin:0"><b>🌊 סרנדה — העצירה האחרונה לפני קסאמיל</b> (~20–25 ד׳ משם). זו עיר האם של הדרום: סופרים, בתי מרקחת וכספומטים בזמינות שאין בקסאמיל, וגם המסעדות עם מודעות לגלוטן (<a href="#food/restaurants">הרשימה ←</a>). אם מגיעים רעבים — לאכול כאן ולא להיכנס לקסאמיל בשעת השיא. <b>לא לחפש חניה בטיילת</b> אחר הצהריים באוגוסט.</p>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Kuzum+Baba+Vlore" target="_blank" rel="noopener">קוזום באבא ↖</a><a class="map onmap" href="#map/p:Kuzum+Baba+Vlore" title="קוזום באבא — במפה שלנו" aria-label="קוזום באבא במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Llogara+Pass" target="_blank" rel="noopener">מעבר לוגרה ↖</a><a class="map onmap" href="#map/p:Llogara+Pass" title="מעבר לוגרה — במפה שלנו" aria-label="מעבר לוגרה במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Vlore+Promenade" target="_blank" rel="noopener">טיילת וְלורה ↖</a><a class="map onmap" href="#map/p:Vlore+Promenade" title="טיילת וְלורה — במפה שלנו" aria-label="טיילת וְלורה במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Saranda+Promenade+Albania" target="_blank" rel="noopener">טיילת סרנדה ↖</a><a class="map onmap" href="#map/p:Saranda+Promenade+Albania" title="טיילת סרנדה — במפה שלנו" aria-label="טיילת סרנדה במפה שלנו">🗺️</a></div>
+    </details>
+  </div>
+
+  <div class="card" id="stops-inland"><h3>תחנות במסלול הפנימי — הדרך חזרה צפונה <a class="anchor" href="#drive/stops-inland" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <div class="tags"><span class="tag t-all">כולם</span></div>
+    <p class="gist">העצירה הטובה באמצע הדרך היא טפלנה. <b>מצודת פטרלה עברה לאפשרויות הצפון</b> — היא 12 ק״מ מטירנה, כלומר יציאה מהוילה ולא תחנה בדרך דרומה. <a href="#north/petrela">הכרטיס שלה ←</a></p>
+    <details><summary>אויי-פטוהט, טפלנה — מה יש שם</summary>
+      <p style="margin:0"><b>💧 אוּיִי-פְטוֹהְט, טפלנה (Uji i Ftohtë — ״המים הקרים״)</b> — אזור מעיינות בצד הדרך עם מסעדות שיושבות מעל נחלי הרים, ישיבה מוצלת ומישורית. עצירת צהריים ומנוחה כמעט באמצע הדרך. <b>לא אומת</b> — לוודא במפה שהוא על המסלול שלכם ושיש שם מקום לקבוצה של 20.</p>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Uji+i+Ftohte+Tepelene" target="_blank" rel="noopener">אויי-פטוהט טפלנה ↖</a><a class="map onmap" href="#map/p:Uji+i+Ftohte+Tepelene" title="אויי-פטוהט טפלנה — במפה שלנו" aria-label="אויי-פטוהט טפלנה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -727,7 +772,7 @@
       <p style="margin:0"><b>בעין הכחולה:</b> מהחניה עד המעיין ~1.5–2 ק״מ. יש <b>רכבת/עגלה חשמלית ב-~200 לק (~€2) לנוסע</b> — שווה את זה לסבא, לסבתא ולמי שנושא פעוט, במקום ההליכה בחום. חניה ~200 לק. מזומן בלבד.</p>
       <p style="margin:0"><b>בג׳ירוקסטרה:</b> לחנות בחניון במרכז התחתון. סבא וסבתא והפעוטות בארוחה בבזאר התחתון המישורי, ומי שרוצה עולה למצודה. אין צורך שכולם יעלו.</p>
       <p style="margin:0"><b>ארוחת ערב בסוף היום:</b> אם מגיעים לאזור השדה — <b>Uka Farm</b> בלאקנאס היא אופציה טובה (הזמנה מראש). אם לנים בקרויה — הבזאר פתוח בערב.</p>
-      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Blue+Eye+Syri+i+Kalter+Saranda" target="_blank" rel="noopener">העין הכחולה ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Gjirokaster+Castle" target="_blank" rel="noopener">מצודת ג׳ירוקסטרה ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Uka+Farm+Laknas+Tirana" target="_blank" rel="noopener">Uka Farm ↖</a></div>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Blue+Eye+Syri+i+Kalter+Saranda" target="_blank" rel="noopener">העין הכחולה ↖</a><a class="map onmap" href="#map/p:Blue+Eye+Syri+i+Kalter+Saranda" title="העין הכחולה — במפה שלנו" aria-label="העין הכחולה במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Gjirokaster+Castle" target="_blank" rel="noopener">מצודת ג׳ירוקסטרה ↖</a><a class="map onmap" href="#map/p:Gjirokaster+Castle" title="מצודת ג׳ירוקסטרה — במפה שלנו" aria-label="מצודת ג׳ירוקסטרה במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Uka+Farm+Laknas+Tirana" target="_blank" rel="noopener">Uka Farm ↖</a><a class="map onmap" href="#map/p:Uka+Farm+Laknas+Tirana" title="Uka Farm — במפה שלנו" aria-label="Uka Farm במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -749,7 +794,7 @@
     <div class="note q" style="margin:8px 0"><div class="nh">👥 הצ׳ק-אאוט שונה בין המשפחות</div>
       <b>משפחת סולומון מפנה ב-21.8</b> ועולה צפונה לישון באזור השדה. <b>שאר המשפחות נשארות לילה נוסף ומפנות ב-22.8</b> — הן עושות את כל הדרך צפונה ביום הטיסה עצמו. <a data-view="last">התכנית ל-22.8 לשני המסלולים ←</a></div>
     <details><summary>קישורים</summary>
-      <div class="links" style="margin:0"><a href="https://www.booking.com/hotel/al/asters.en-gb.html" target="_blank" rel="noopener">ההזמנה ב-Booking ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Asters+Hotel+Ksamil" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links" style="margin:0"><a href="https://www.booking.com/hotel/al/asters.en-gb.html" target="_blank" rel="noopener">ההזמנה ב-Booking ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Asters+Hotel+Ksamil" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Asters+Hotel+Ksamil" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -762,7 +807,7 @@
     <div class="meta"><span>🚤 סירת שאטל לאיים ~€3–5 הלוך-חזור</span><span class="pr">פדלבוט ~€20/שעה · קיאק ~€25 · סיור סירה קבוצתי מ-~€16 לאדם · סירה פרטית מ-~€130/יום</span></div>
     <p class="gist">חופים בקסאמיל עצמה: Ksamil, Lori, Pulebardha, חוף המנזר. <b>חוף המראה (Pasqyrat) הוא לא בקסאמיל</b> — הוא ~4 ק״מ צפונה, בין קסאמיל לסרנדה, וצריך רכב. מול החוף האיים הטורקיז — מגיעים בסירה קטנה, ב-SUP או בשחייה. יש בתי קפה ומיטות על האיים עצמם.</p>
     <details><summary>קישורים</summary>
-      <div class="links" style="margin:0"><a href="https://ksamil.al" target="_blank" rel="noopener">סירות ופעילויות ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Ksamil+Islands" target="_blank" rel="noopener">האיים ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Mirror+Beach+Ksamil" target="_blank" rel="noopener">חוף המראה ↖</a></div>
+      <div class="links" style="margin:0"><a href="https://ksamil.al" target="_blank" rel="noopener">סירות ופעילויות ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Ksamil+Islands" target="_blank" rel="noopener">האיים ↖</a><a class="map onmap" href="#map/p:Ksamil+Islands" title="האיים — במפה שלנו" aria-label="האיים במפה שלנו">🗺️</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Mirror+Beach+Ksamil" target="_blank" rel="noopener">חוף המראה ↖</a><a class="map onmap" href="#map/p:Mirror+Beach+Ksamil" title="חוף המראה — במפה שלנו" aria-label="חוף המראה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -774,7 +819,7 @@
       <p style="margin:0"><b>התיאטרון העתיק (Butrint Ancient Theatre)</b> הוא מהדברים הראשונים במסלול, קרוב לכניסה ובשטח מישורי — כלומר גם מי שלא הולך רחוק רואה את הפריט המרשים ביותר. מדרגות האבן שמורות היטב.</p>
       <p style="margin:0"><b>הטיפוס לאקרופוליס</b> (המוזיאון בראש הגבעה) הוא החלק התלול. אפשר לוותר עליו ולהסתפק בחלק התחתון.</p>
       <p style="margin:0"><b>חשוב:</b> מעט צל ולכן בוקר מוקדם בלבד. להביא מים ומזומן. עגלה — קשה בחלק מהמסלול (אבן ושורשים).</p>
-      <div class="links"><a href="https://whc.unesco.org/en/list/570/" target="_blank" rel="noopener">דף אונסק״ו ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Butrint+National+Park" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a href="https://whc.unesco.org/en/list/570/" target="_blank" rel="noopener">דף אונסק״ו ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Butrint+National+Park" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Butrint+National+Park" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -786,7 +831,7 @@
       <p style="margin:0"><b>שחייה אסורה רשמית</b> (שמורת טבע) והמים קפואים — כ-10 מעלות. הפיקוח במקום אוכף את זה.</p>
       <p style="margin:0"><b>בפלטפורמה אין מחסום מעל המים</b> — להשגיח על הקטנים בצמוד.</p>
       <p style="margin:0"><b>מתי:</b> לפני 09:00, לפני אוטובוסי התיירים. תחנה טבעית ב-21.8 בדרך צפונה.</p>
-      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Blue+Eye+Syri+i+Kalter+Saranda" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Blue+Eye+Syri+i+Kalter+Saranda" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Blue+Eye+Syri+i+Kalter+Saranda" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -797,7 +842,7 @@
     <details><summary>למה זו העצירה הנכונה לערב של 20.8</summary>
       <p style="margin:0">זו הדרך הזולה ביותר בזמן לתת לכל 20 האנשים חוויה משותפת אחת: הנסיעה קצרה, אין הליכה, יש מקום לשבת, וזה עובד גם לפעוטות וגם לגדולות. החלופה — נסיעה לג׳ירוקסטרה בערב — היא שעה וחצי לכל כיוון אחרי יום חופים, וג׳ירוקסטרה ממילא בתכנית ל-21.8.</p>
       <p style="margin:0">למטה: טיילת סרנדה לטיול ערב נינוח ולמסעדות (ראו <a data-view="food">אוכל &amp; גלוטן ←</a>).</p>
-      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Lekuresi+Castle+Saranda" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a class="map" href="https://www.google.com/maps/search/?api=1&query=Lekuresi+Castle+Saranda" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Lekuresi+Castle+Saranda" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -807,7 +852,7 @@
     <p class="gist">עיר עות׳מאנית מאבן: מצודה ענקית, בזאר מרוצף ובתי אבן היסטוריים. הכי הגיוני לשלב ב-21.8 בדרך צפונה יחד עם העין הכחולה.</p>
     <details><summary>איך מפצלים בין הבזאר למצודה</summary>
       <p style="margin:0">לחנות בחניון הציבורי במרכז התחתון. הבזאר התחתון מישורי יחסית ויש בו מסעדות — שם נשארים סבא, סבתא והפעוטות. העלייה למצודה תלולה ומרוצפת באבן; מי שרוצה עולה ומצטרף חזרה לארוחה.</p>
-      <div class="links"><a href="https://gjirokastra.org/gjirokastra/the-castle/" target="_blank" rel="noopener">אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Gjirokaster+Castle" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links"><a href="https://gjirokastra.org/gjirokastra/the-castle/" target="_blank" rel="noopener">אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Gjirokaster+Castle" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Gjirokaster+Castle" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -816,7 +861,7 @@
     <div class="meta"><span class="pr">סיור צדפות ~€25 (45 ד׳) / ~€44 (2.5 ש׳ עם ארוחה) · סיורי מפרץ משתנים</span></div>
     <p class="gist">שייט לאיי קסאמיל, למפרץ קקומה, למערות ולחוף קרורז עם שנורקלינג. <b>סיור הצדפות</b> על אגם בוטרינט: סירה מסורתית, ביקור בחוות צדפות וטעימה.</p>
     <details><summary>קישורים</summary>
-      <div class="links" style="margin:0"><a href="https://ksamil.al" target="_blank" rel="noopener">אופרטור מקומי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Mussel+House+Ksamil" target="_blank" rel="noopener">בית הצדפות ↖</a></div>
+      <div class="links" style="margin:0"><a href="https://ksamil.al" target="_blank" rel="noopener">אופרטור מקומי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=The+Mussel+House+Ksamil" target="_blank" rel="noopener">בית הצדפות ↖</a><a class="map onmap" href="#map/p:The+Mussel+House+Ksamil" title="בית הצדפות — במפה שלנו" aria-label="בית הצדפות במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -843,12 +888,12 @@
     <details><summary>ארבע אפשרויות לפי מרחק מהשדה — ומה מתאים לאיזו לינה</summary>
       <table class="h" style="margin:0">
         <tr><th>אפשרות</th><th>מרחק לשדה</th><th>מה עושים</th><th>מתי זה הבחירה</th></tr>
-        <tr><td><b>קרויה</b></td><td>25–30 ד׳</td><td>מצודה, מוזיאון סקנדרבג, בזאר עות׳מאני למזכרות אחרונות</td><td><b>אם ישנים בקרויה</b> — יוצאים מהמלון ישר לבזאר, בלי נסיעה בכלל. יציאה לשדה ~16:15.</td></tr>
-        <tr><td><b>טריאנה</b></td><td>~25 ד׳</td><td>כיכר סקנדרבג, הפירמידה, פאזארי אירי, בלוקו לקפה</td><td>אם טריאנה לא נעשתה במהלך השבוע. <a data-view="tirana">המסלול המלא ←</a></td></tr>
-        <tr><td><b>חוף דורס</b></td><td>~40 ד׳</td><td>בוקר אחרון על החוף</td><td>אם רוצים לסיים במים ולא במצודה. לתכנן מקלחת/החלפה — טסים ישר אחרי.</td></tr>
-        <tr><td><b>Uka Farm, לאקנאס</b></td><td>15–20 ד׳</td><td>ארוחת צהריים בחווה אורגנית עם יקב</td><td>הכי קרוב לשדה — <b>עובד כארוחה אחרונה אחרי כל אחת מהאפשרויות למעלה.</b> חובה להזמין מראש. <a href="#north/ukafarm">הכרטיס ←</a></td></tr>
+        <tr><td><b><a href="#north/kruja">קרויה</a></b> <a href="#map/p:Kruja+Castle" title="קרויה במפה שלנו">🗺️</a></td><td>25–30 ד׳</td><td>מצודה, מוזיאון סקנדרבג, בזאר עות׳מאני למזכרות אחרונות</td><td><b>אם ישנים בקרויה</b> — יוצאים מהמלון ישר לבזאר, בלי נסיעה בכלל. יציאה לשדה ~16:15.</td></tr>
+        <tr><td><b><a data-view="tirana">טירנה</a></b> <a href="#map/p:Skanderbeg+Square+Tirana" title="טירנה במפה שלנו">🗺️</a></td><td>~25 ד׳</td><td>כיכר סקנדרבג, הפירמידה, פאזארי אירי, בלוקו לקפה</td><td>אם טירנה לא נעשתה במהלך השבוע. <a data-view="tirana">המסלול המלא ←</a></td></tr>
+        <tr><td><b><a href="#north/durres">חוף דורס</a></b> <a href="#map/p:Durres+Amphitheatre" title="דורס במפה שלנו">🗺️</a></td><td>~40 ד׳</td><td>בוקר אחרון על החוף</td><td>אם רוצים לסיים במים ולא במצודה. לתכנן מקלחת/החלפה — טסים ישר אחרי.</td></tr>
+        <tr><td><b><a href="#north/ukafarm">Uka Farm, לאקנאס</a></b> <a href="#map/p:Uka+Farm+Laknas+Tirana" title="Uka Farm במפה שלנו">🗺️</a></td><td>15–20 ד׳</td><td>ארוחת צהריים בחווה אורגנית עם יקב</td><td>הכי קרוב לשדה — <b>עובד כארוחה אחרונה אחרי כל אחת מהאפשרויות למעלה.</b> חובה להזמין מראש. <a href="#north/ukafarm">הכרטיס ←</a></td></tr>
       </table>
-      <div class="why" style="margin-top:9px"><b>הרכבה מומלצת:</b> בוקר בקרויה או בטריאנה ← צהריים ב-Uka Farm (15 ד׳ מהשדה) ← החזרת רכב ← טרמינל 17:00. זה משאיר באפר אמיתי ולא מסתמך על אף נסיעה ארוכה.</div>
+      <div class="why" style="margin-top:9px"><b>הרכבה מומלצת:</b> בוקר בקרויה או בטירנה ← צהריים ב-Uka Farm (15 ד׳ מהשדה) ← החזרת רכב ← טרמינל 17:00. זה משאיר באפר אמיתי ולא מסתמך על אף נסיעה ארוכה.</div>
       <div class="alt" style="margin-top:8px"><b>אם יש חשק להיפגש עם השאר:</b> אפשר לתאם שכולם נפגשים ב-Uka Farm או בטרמינל — אבל <b>לא לתכנן מפגש שמחייב את הקבוצה מהדרום להגיע בשעה מסוימת</b>. הנסיעה שלהם ארוכה מדי מכדי להתחייב.</div>
     </details>
   </div>
@@ -886,12 +931,15 @@
   <div class="sec-head"><span class="num">🍽️</span><h2>אוכל &amp; ללא גלוטן</h2></div>
   <p class="lead">בסיס המטבח האלבני ידידותי: בשר ודג על הגריל, אורז וריזוטו, סלטים וצדפות. אין באלבניה תקן או סימון לאומי לצליאק, אבל המודעות גדלה — במיוחד באזורי התיירות.</p>
 
-  <a class="viewmap" href="#map/food" style="background:var(--sea); border-color:var(--sea)">🗺️ מפת המסעדות</a>
+  <!-- The restaurant pins, in place. src is set only when this view first opens, so
+       visitors who never reach it don't pay for Leaflet. -->
+  <iframe class="mapembed" data-src="map.html#food" title="מפת המסעדות בתכנית"></iframe>
+  <p style="margin:6px 0 0; font-size:13.5px"><a href="#map/food">לפתוח את המפה במסך מלא ←</a></p>
 
   <div class="note" id="panja" style="margin-top:14px"><div class="nh">🥖 Panja, טירנה — המאפייה הייעודית היחידה ללא גלוטן באלבניה</div>
     מאפייה, קונדיטוריה וחלב צמחי <b>100% ללא גלוטן וללא לקטוז</b>, ברחוב מיהל דורי (Rruga Mihal Duri), כמה דקות מכיכר סקנדרבג. כי כל המוצרים במקום נטולי גלוטן, <b>אין שם סיכון לזיהום צולב</b> — זה המקום היחיד ברשימה שאפשר לסמוך עליו בלי לשאול שאלות.
     <div class="why" style="margin:10px 0 0"><b>לשלב בקנייה הגדולה ב-14.8.</b> הוילה בכפר בלי סופר, וזו ההזדמנות היחידה לקנות לחם, לחמניות ומאפים בטוחים לחמישה ימים בהרים. לבדוק מראש שעות פתיחה ולהתקשר אם קונים כמות גדולה.</div>
-    <div class="links"><a href="https://www.findmeglutenfree.com/biz/panja/6446010366296064" target="_blank" rel="noopener">Panja ב-Find Me Gluten Free ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Panja+Tirana+Gluten+Free+Bakery" target="_blank" rel="noopener">מפה ↖</a></div>
+    <div class="links"><a href="https://www.findmeglutenfree.com/biz/panja/6446010366296064" target="_blank" rel="noopener">Panja ב-Find Me Gluten Free ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Panja+Tirana+Gluten+Free+Bakery" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Panja+Tirana+Gluten+Free+Bakery" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
   </div>
 
   <div class="two" style="margin-top:14px" id="gf-lists">
@@ -917,26 +965,26 @@
   </div>
 
   <div class="card" id="restaurants"><h4>מסעדות לפי אזור <a class="anchor" href="#food/restaurants" title="קישור ישיר">🔗</a></h4>
-    <div class="meta"><span><b>טריאנה</b></span></div>
+    <div class="meta"><span><b>טירנה</b></span></div>
     <div class="links">
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Panja+Tirana+Gluten+Free+Bakery" target="_blank" rel="noopener">Panja (מאפייה GF ייעודית) ↖</a>
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Tonys+American+Restaurant+Tirana" target="_blank" rel="noopener">Tony’s American (תפריט GF) ↖</a>
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Era+Restaurant+Tirana" target="_blank" rel="noopener">Era (סלטים GF) ↖</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Panja+Tirana+Gluten+Free+Bakery" target="_blank" rel="noopener">Panja (מאפייה GF ייעודית) ↖</a><a class="map onmap" href="#map/p:Panja+Tirana+Gluten+Free+Bakery" title="Panja (מאפייה GF ייעודית) — במפה שלנו" aria-label="Panja (מאפייה GF ייעודית) במפה שלנו">🗺️</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Tonys+American+Restaurant+Tirana" target="_blank" rel="noopener">Tony’s American (תפריט GF) ↖</a><a class="map onmap" href="#map/p:Tonys+American+Restaurant+Tirana" title="Tony’s American (תפריט GF) — במפה שלנו" aria-label="Tony’s American (תפריט GF) במפה שלנו">🗺️</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Era+Restaurant+Tirana" target="_blank" rel="noopener">Era (סלטים GF) ↖</a><a class="map onmap" href="#map/p:Era+Restaurant+Tirana" title="Era (סלטים GF) — במפה שלנו" aria-label="Era (סלטים GF) במפה שלנו">🗺️</a>
     </div>
     <div class="meta" style="margin-top:12px"><span><b>בראט</b></span></div>
     <div class="links">
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Taverna+Muzaka+Berat" target="_blank" rel="noopener">Taverna Muzaka ↖</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Taverna+Muzaka+Berat" target="_blank" rel="noopener">Taverna Muzaka ↖</a><a class="map onmap" href="#map/p:Taverna+Muzaka+Berat" title="Taverna Muzaka — במפה שלנו" aria-label="Taverna Muzaka במפה שלנו">🗺️</a>
     </div>
     <div class="meta" style="margin-top:12px"><span><b>סרנדה</b></span></div>
     <div class="links">
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Centrali+Saranda" target="_blank" rel="noopener">Centrali ↖</a>
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Fishbar+Saranda" target="_blank" rel="noopener">Fishbar ↖</a>
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Sophra+Restaurant+Saranda" target="_blank" rel="noopener">Sophra ↖</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Centrali+Saranda" target="_blank" rel="noopener">Centrali ↖</a><a class="map onmap" href="#map/p:Centrali+Saranda" title="Centrali — במפה שלנו" aria-label="Centrali במפה שלנו">🗺️</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Fishbar+Saranda" target="_blank" rel="noopener">Fishbar ↖</a><a class="map onmap" href="#map/p:Fishbar+Saranda" title="Fishbar — במפה שלנו" aria-label="Fishbar במפה שלנו">🗺️</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Sophra+Restaurant+Saranda" target="_blank" rel="noopener">Sophra ↖</a><a class="map onmap" href="#map/p:Sophra+Restaurant+Saranda" title="Sophra — במפה שלנו" aria-label="Sophra במפה שלנו">🗺️</a>
     </div>
     <p style="font-size:13.5px; color:var(--ink-soft); margin:6px 0 0">📍 רק <b>Centrali</b> נמצאת על הטיילת. <b>Fishbar</b> היא ~450 מ׳ פנימה, ו-<b>Sophra</b> יושבת על כביש בוטרינטי כ-2.6 ק״מ מהטיילת — נסיעה, אבל יש לה חניה צמודה ומרפסת עם נוף לים, מה שדווקא נוח לקבוצה גדולה. (Salad Farm ירדה מהרשימה — יש דיווחים שנסגרה.)</p>
     <div class="meta" style="margin-top:12px"><span><b>קסאמיל</b></span></div>
     <div class="links">
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=The+Mussel+House+Ksamil" target="_blank" rel="noopener">The Mussel House ↖</a>
+      <a class="map" href="https://www.google.com/maps/search/?api=1&query=The+Mussel+House+Ksamil" target="_blank" rel="noopener">The Mussel House ↖</a><a class="map onmap" href="#map/p:The+Mussel+House+Ksamil" title="The Mussel House — במפה שלנו" aria-label="The Mussel House במפה שלנו">🗺️</a>
       <a href="https://www.findmeglutenfree.com/al" target="_blank" rel="noopener">מדריך GF מלא לאלבניה ↖</a>
     </div>
     <details><summary>מה בדיוק לבקש בכל אזור, וההבדל בין ״תפריט GF״ ל״מנה בטוחה״</summary>
@@ -960,10 +1008,12 @@
   <a class="back" data-view="home">→ חזרה לבית</a>
   <div class="sec-head"><span class="num">ℹ️</span><h2>מידע פרקטי</h2></div>
   <div class="two" style="margin-top:14px">
-    <div class="card"><h4>💶 כסף</h4><p>המטבע לק (Lek); כספומטים נפוצים. <b>מזומן מלך</b> — הרבה אטרקציות, חניות וכניסות (בוטרינט, העין הכחולה) מזומן בלבד. חלק מקבלים יורו אך בשער גרוע. להחזיק שטרות קטנים.</p></div>
+    <div class="card"><h4>💶 כסף</h4><p>המטבע לק (Lek); כספומטים נפוצים. <b>מזומן מלך</b> — הרבה אטרקציות, חניות וכניסות (בוטרינט, העין הכחולה) מזומן בלבד. חלק מקבלים יורו אך בשער גרוע. להחזיק שטרות קטנים.</p>
+      <div class="fx" id="fx" style="display:none"></div>
+      <p class="src" id="fx-src" style="display:none"></p></div>
     <div class="card"><h4>🚗 נהיגה</h4><p>הנהיגה המקומית עשויה להיות אגרסיבית — נסיעה דפנסיבית. כבישי הרים מפותלים, ובשיירה של 5 רכבים לשמור מרווחים בעיקולים עיוורים. חניה קשה בערים, בוְלורה ובקסאמיל. חגורות לכולם, כיסאות בטיחות לפעוטות.<br><b>דרכים לא סלולות:</b> פוליסת CDW סטנדרטית לא מכסה נזק שנגרם בהן.</p></div>
     <div class="card"><h4>☀️ חום אוגוסט</h4><p>חם מאוד בצהריים. הליכות לבוקר המוקדם, צהריים לים או לצל, ושוב פעילות לעת ערב. הרבה מים, כובעים וקרם הגנה. נעלי ים לחופי הריביירה.</p></div>
-    <div class="card"><h4>👶 עם הקטנטנים</h4><p>עגלה שמישה לעין הכחולה, לטיילות ולפארק בטריאנה; פחות לבוטרינט, לקרויה ולמפל (אבן, עפר ומדרגות) — שם עדיף מנשא. לשמור על שגרת שינה ברכב בימי הנסיעה הארוכים.</p></div>
+    <div class="card"><h4>👶 עם הקטנטנים</h4><p>עגלה שמישה לעין הכחולה, לטיילות ולפארק בטירנה; פחות לבוטרינט, לקרויה ולמפל (אבן, עפר ומדרגות) — שם עדיף מנשא. לשמור על שגרת שינה ברכב בימי הנסיעה הארוכים.</p></div>
     <div class="card"><h4>📶 תקשורת</h4><p>כיסוי טוב באזורים מיושבים. שווה <a href="https://esimdb.com/albania" target="_blank" rel="noopener">eSIM</a> או סים מקומי לניווט. <b>להוריד מפות אופליין</b> — הקליטה בשן-ג׳רג׳ לא אומתה, ובחלק מדרכי הדרום היא חלשה.</p></div>
     <div class="card"><h4>🗓️ תיאום קבוצתי</h4><p>עם ~20 איש ו-5 רכבים: לקבוע מראש נקודות מפגש וזמן יעד יומי, ולשמור קבוצת וואטסאפ אחת. ״תכנית מרכזית + פיצול לפי תגיות״ מוריד הרבה חיכוך.</p></div>
   </div>
@@ -1043,7 +1093,7 @@
       <b>1. לתאם איסוף מהטרמינל.</b> המלון לא מפרסם שאטל קבוע — ביקורות מדווחות על הסעה שמסודרת מול הצוות. נוחתים 22:25, ועם שתי בנות ומזוודות אחרי חצות לא רוצים לגלות בהפתעה ש-1 ק״מ זה ברגל. <b>לכתוב למלון מראש עם שעת הנחיתה ולקבל אישור בכתב.</b><br>
       <b>2. לוודא חדר ל-4.</b> החדר הגדול באתר הוא Superior Double 50 מ״ר ל-4 עם ספה נפתחת.</div>
     <details><summary>קישורים</summary>
-      <div class="links" style="margin:0"><a href="https://www.hotelvilazeus.com/" target="_blank" rel="noopener">Vila Zeus – אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Hotel+Vila+Zeus+Rinas+Tirana" target="_blank" rel="noopener">מפה ↖</a></div>
+      <div class="links" style="margin:0"><a href="https://www.hotelvilazeus.com/" target="_blank" rel="noopener">Vila Zeus – אתר רשמי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Hotel+Vila+Zeus+Rinas+Tirana" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Hotel+Vila+Zeus+Rinas+Tirana" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -1053,7 +1103,7 @@
     <details><summary>ההבדל בפועל בין השתיים</summary>
       <div class="alt" style="margin:0"><b>א׳ — טיול בדרך:</b> יוצאים ב-08:30, עוצרים ב<b>עין הכחולה</b> וב<b>ג׳ירוקסטרה</b>, מגיעים ללינה לקראת הערב. יותר תוכן, פחות בוקר משותף בדרום. <a data-view="drive">לוח הזמנים המלא ←</a></div>
       <div class="why" style="margin:0"><b>ב׳ — עוד חצי יום עם כולם:</b> נשארים בבוקר בדרום (טבילה אחרונה), ואז נוסעים צפונה ללא עצירות. יותר זמן משפחתי, מוותרים על שתי התחנות.</div>
-      <p style="margin:0">בשתי האפשרויות לנים באזור השדה. מכיוון שהטיסה ב-19:55, גם <b>22.8 הוא יום פנוי</b> — כך שאם בוחרים ב׳, עדיין נשאר יום שלם לקרויה או לטריאנה למחרת.</p>
+      <p style="margin:0">בשתי האפשרויות לנים באזור השדה. מכיוון שהטיסה ב-19:55, גם <b>22.8 הוא יום פנוי</b> — כך שאם בוחרים ב׳, עדיין נשאר יום שלם לקרויה או לטירנה למחרת.</p>
     </details>
   </div>
 
@@ -1083,10 +1133,10 @@
       <div class="alt" style="margin-top:10px"><b>הכלל שמכריע:</b> אם נבחר בקרויה כחלופת 16.8 — אין טעם לחזור אליה, ואז צמוד-לשדה מנצח. אם 16.8 יהיה EQUOS או Huqi — קרויה ב-21.8 היא הבחירה הטובה יותר.</div>
       <div class="links">
         <a href="https://hotelpanoramakruje.com/" target="_blank" rel="noopener">Panorama Kruje – אתר ↖</a>
-        <a class="map" href="https://www.google.com/maps/search/?api=1&query=Airport+Garden+Hotel+Rinas+Tirana" target="_blank" rel="noopener">Airport Garden ↖</a>
-        <a class="map" href="https://www.google.com/maps/search/?api=1&query=Hotel+Panorama+Kruje" target="_blank" rel="noopener">Panorama ↖</a>
-        <a class="map" href="https://www.google.com/maps/search/?api=1&query=Rooms+Emiliano+Castle+Of+Kruja" target="_blank" rel="noopener">Emiliano ↖</a>
-        <a class="map" href="https://www.google.com/maps/search/?api=1&query=Vila+Taga+Guesthouse+Kruje" target="_blank" rel="noopener">Vila Taga ↖</a>
+        <a class="map" href="https://www.google.com/maps/search/?api=1&query=Airport+Garden+Hotel+Rinas+Tirana" target="_blank" rel="noopener">Airport Garden ↖</a><a class="map onmap" href="#map/p:Airport+Garden+Hotel+Rinas+Tirana" title="Airport Garden — במפה שלנו" aria-label="Airport Garden במפה שלנו">🗺️</a>
+        <a class="map" href="https://www.google.com/maps/search/?api=1&query=Hotel+Panorama+Kruje" target="_blank" rel="noopener">Panorama ↖</a><a class="map onmap" href="#map/p:Hotel+Panorama+Kruje" title="Panorama — במפה שלנו" aria-label="Panorama במפה שלנו">🗺️</a>
+        <a class="map" href="https://www.google.com/maps/search/?api=1&query=Rooms+Emiliano+Castle+Of+Kruja" target="_blank" rel="noopener">Emiliano ↖</a><a class="map onmap" href="#map/p:Rooms+Emiliano+Castle+Of+Kruja" title="Emiliano — במפה שלנו" aria-label="Emiliano במפה שלנו">🗺️</a>
+        <a class="map" href="https://www.google.com/maps/search/?api=1&query=Vila+Taga+Guesthouse+Kruje" target="_blank" rel="noopener">Vila Taga ↖</a><a class="map onmap" href="#map/p:Vila+Taga+Guesthouse+Kruje" title="Vila Taga — במפה שלנו" aria-label="Vila Taga במפה שלנו">🗺️</a>
       </div>
     </details>
   </div>
@@ -1150,6 +1200,11 @@
 
       if(flashed){ flashed.classList.remove('flash'); flashed = null; }
 
+      /* Mid-page embeds (the restaurant map) load the first time their view opens. */
+      if(views[view]) views[view].querySelectorAll('iframe[data-src]').forEach(function(f){
+        if(!f.getAttribute('src')) f.setAttribute('src', f.dataset.src);
+      });
+
       if(view === 'map'){          // #map/<category> → map.html#<category>, loaded on first visit
         var src = 'map.html' + (anchor ? '#' + anchor : '');
         if(frame.getAttribute('src') !== src) frame.setAttribute('src', src);
@@ -1205,6 +1260,132 @@
   })();
 
   /* ============================================================
+     Weather — Open-Meteo forecast, no key, CORS-open, one request for all four
+     places. Each trip day is shown for the place we sleep that night, because
+     the villa sits ~850 m up and runs 6–8° cooler than Tirana; `elevation`
+     tells the API to downscale instead of handing back the valley's numbers.
+
+     The forecast horizon is ~16 days, so this card is empty most of the year
+     and fills itself as the trip comes into range. Outside that window it falls
+     back to Tirana, which is also the default the family asked for. Any failure
+     leaves the card hidden — a trip page must never show a stale temperature.
+     ============================================================ */
+  (function(){
+    var card = document.getElementById('weather');
+    if(!card || !window.fetch) return;
+
+    var SPOTS = {
+      tirana: {n:'טירנה',     lat:41.3275, lng:19.8187, el:110},
+      rinas:  {n:'אזור השדה', lat:41.4192, lng:19.7142, el:30},
+      villa:  {n:'שן-ג׳רג׳',  lat:41.3376, lng:20.0955, el:850},
+      ksamil: {n:'קסאמיל',    lat:39.7647, lng:19.9967, el:10}
+    };
+    /* where we are meant to be, night by night — mirrors the agenda view */
+    var PLAN = {
+      '2026-08-13':'rinas',  '2026-08-14':'villa',  '2026-08-15':'villa',
+      '2026-08-16':'villa',  '2026-08-17':'villa',  '2026-08-18':'villa',
+      '2026-08-19':'ksamil', '2026-08-20':'ksamil', '2026-08-21':'ksamil',
+      '2026-08-22':'rinas'
+    };
+    var keys = Object.keys(SPOTS);
+    function field(f){ return keys.map(function(k){ return SPOTS[k][f]; }).join(','); }
+
+    /* WMO weather codes → one glyph. Coarse on purpose: the useful signal in
+       August is "sun, cloud, or rain", not the drizzle sub-type. */
+    function icon(c){
+      if(c === 0) return '☀️';
+      if(c <= 2)  return '🌤️';
+      if(c === 3) return '☁️';
+      if(c <= 48) return '🌫️';
+      if(c <= 57) return '🌦️';
+      if(c <= 67) return '🌧️';
+      if(c <= 77) return '❄️';
+      if(c <= 82) return '🌧️';
+      return '⛈️';
+    }
+    function round(t){ return Math.round(t) + '°'; }
+
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + field('lat') +
+      '&longitude=' + field('lng') + '&elevation=' + field('el') +
+      '&daily=temperature_2m_max,temperature_2m_min,weather_code' +
+      '&timezone=Europe%2FTirane&forecast_days=16';
+
+    fetch(url).then(function(r){
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function(res){
+      var daily = {};
+      keys.forEach(function(k, i){ daily[k] = (res[i] || {}).daily; });
+      if(!daily.tirana || !daily.tirana.time.length) return;
+
+      var today = daily.tirana.time[0], days = [], sub;
+      /* Prefer the trip days that the forecast actually reaches. */
+      Object.keys(PLAN).sort().forEach(function(date){
+        var key = PLAN[date], d = daily[key], i = d ? d.time.indexOf(date) : -1;
+        if(i < 0) return;
+        days.push({date:date, spot:SPOTS[key].n, i:d.weather_code[i],
+                   hi:d.temperature_2m_max[i], lo:d.temperature_2m_min[i]});
+      });
+      if(days.length){
+        sub = 'התחזית לימי הטיול, כל יום לפי המקום שבו אמורים להיות.';
+      } else {                         // trip out of range → the default, Tirana
+        var d = daily.tirana;
+        for(var i = 0; i < Math.min(5, d.time.length); i++){
+          days.push({date:d.time[i], spot:SPOTS.tirana.n, i:d.weather_code[i],
+                     hi:d.temperature_2m_max[i], lo:d.temperature_2m_min[i]});
+        }
+        sub = 'הטיול עדיין רחוק מכדי תחזית — בינתיים מזג האוויר בטירנה.';
+      }
+
+      var box = document.getElementById('wx-days');
+      days.forEach(function(x){
+        var parts = x.date.split('-');
+        var el = document.createElement('div');
+        el.className = 'wx-day' + (x.date === today ? ' now' : '');
+        [['d', parts[2] + '.' + Number(parts[1])], ['i', icon(x.i)],
+         ['t', round(x.hi) + ' / ' + round(x.lo)], ['w', x.spot]].forEach(function(pair){
+          var s = document.createElement('div');
+          s.className = pair[0]; s.textContent = pair[1]; el.appendChild(s);
+        });
+        box.appendChild(el);
+      });
+      document.getElementById('wx-sub').textContent = sub;
+      card.style.display = '';
+    }).catch(function(){});           // no forecast is better than a wrong one
+  })();
+
+  /* ============================================================
+     Exchange rate for the כסף card. open.er-api.com is keyless and CORS-open;
+     one EUR-based response gives every pair the family actually needs.
+     Indicative only — an ATM or a bureau will not match it to the lek.
+     ============================================================ */
+  (function(){
+    var box = document.getElementById('fx');
+    if(!box || !window.fetch) return;
+
+    fetch('https://open.er-api.com/v6/latest/EUR').then(function(r){
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function(d){
+      var all = d && d.rates && d.rates.ALL, ils = d && d.rates && d.rates.ILS;
+      if(!all || !ils) return;
+      [['€1', all.toFixed(0) + ' לק'],
+       ['₪1', (all / ils).toFixed(0) + ' לק'],
+       ['1,000 לק', '₪' + (1000 * ils / all).toFixed(0)],
+       ['€1', '₪' + ils.toFixed(2)]].forEach(function(pair){
+        var s = document.createElement('span');
+        s.textContent = pair[0] + ' ≈ ' + pair[1];
+        box.appendChild(s);
+      });
+      var src = document.getElementById('fx-src');
+      src.textContent = 'שער יציג לפי open.er-api.com, עודכן ' +
+        new Date(d.time_last_update_unix * 1000).toLocaleDateString('he-IL') +
+        ' · אינדיקטיבי בלבד — בכספומט ובחלפנים השער יהיה פחות טוב.';
+      box.style.display = ''; src.style.display = '';
+    }).catch(function(){});
+  })();
+
+  /* ============================================================
      Shared boards — comments per view + a links board.
      Storage: Firebase RTDB, path `albania2026` (see repo README).
 
@@ -1257,7 +1438,13 @@
 
     var STORE = 'albania2026_name';
     function savedName(){ try{ return localStorage.getItem(STORE) || ''; }catch(e){ return ''; } }
-    function rememberName(v){ try{ localStorage.setItem(STORE, v); }catch(e){} }
+    /* All 11 boards are built once at load, so remembering the name in storage only
+       helps the *next* visit. Push it into the sibling boards' inputs too, or you
+       retype it on every board in the same session. */
+    function rememberName(v){
+      try{ localStorage.setItem(STORE, v); }catch(e){}
+      document.querySelectorAll('.board-form .who').forEach(function(i){ i.value = v; });
+    }
 
     /* --- transport ------------------------------------------------ */
     var pending = null;                    // all boards share one GET per refresh

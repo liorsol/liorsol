@@ -57,7 +57,7 @@ exactly that above every input box — keep it.
 Two features write there (built Aug 2026, on the user's request):
 
 1. **Comments — one board per view.** `<section class="talk" data-topic="VIEW">` sits at the
-   bottom of all 10 views; the JS builds the form and list.
+   bottom of all 11 non-map views; the JS builds the form and list.
 2. **A links board** in the practical-info view: `<section class="links-board" id="links">`.
 
 ### Storage schema
@@ -80,7 +80,7 @@ The page turns that 401 into a specific message ("הכתיבה נחסמה — כ
 rather than a generic failure, because it is the one error that a page reload will never fix.
 The full rules document lives in the [README](../../README.md#firebase-realtime-database-dynamic-data-sync).
 
-Reads are one shared `GET albania2026.json` for the whole page (all 11 boards slice it
+Reads are one shared `GET albania2026.json` for the whole page (all 12 boards slice it
 client-side — don't reintroduce a fetch per board). Writes `PUT` the entry node, deletes
 `DELETE` it.
 
@@ -123,7 +123,15 @@ EOF
 ```
 
 After folding an entry into the page, delete it so the board doesn't accumulate stale notes:
-`curl -X DELETE ".../albania2026/comments/<view>/<id>.json"`.
+`curl -X DELETE ".../albania2026/comments/<view>/<id>.json"`. Delete **per entry as it lands**, not as
+one sweep at the end — if part of the batch gets deferred, its comment should still be sitting there.
+This cycle ran once already (Aug 2026): 13 comments in, all folded into the page, all deleted. The
+`links/` board is separate and is *not* part of it — those are reference links the family wants kept.
+
+The name box remembers itself in `localStorage` under `albania2026_name`. All 12 boards are built once
+at load, so storing it only helped the *next* visit; `rememberName()` therefore also writes the value
+straight into every other board's `.who` input. Without that you retype your name on each board of the
+same session, which is what the family actually complained about.
 
 ### Security — non-negotiable
 
@@ -194,7 +202,22 @@ scroll positions with `scrollTo({top, behavior:'instant'})`, or the test silentl
 
 ### Per-section maps
 
-`map.html#<category>` shows only that category and fits bounds to it; no hash = all 58 pins. Categories: `lodging, north, tirana, drive, south, food`. Each view's region banner carries a `.viewmap` link to its own slice, `map.html` has filter chips, and the home view has a full-width `.mapbanner` (the plain nav link was too easy to miss).
+`map.html#<category>` shows only that category and fits bounds to it; no hash = all 60 pins. Categories: `lodging, north, tirana, drive, south, food`. Each view's region banner carries a `.viewmap` link to its own slice, `map.html` has filter chips, and the home view has a full-width `.mapbanner` (the plain nav link was too easy to miss).
+
+**Pins and cards point at each other (user's request, Aug 2026 — "links to the internal map next to
+the Google ones", "and on the map, links to what's written on the site").** One identifier does both
+directions, and it already existed: a pin's **`q`**, its Google Maps query string, is the exact token
+the trip page already carries in that place's `מפה ↖` href. So:
+
+- **card → pin:** every `<a class="map" …query=Q>` is followed by `<a class="map onmap" href="#map/p:Q">🗺️</a>`
+  — icon-only, or 60 extra word-chips would drown the link rows. `map.html` resolves `#p:<q>` by
+  lookup, filters to that pin's category, zooms to 14 and opens its popup.
+- **pin → card:** each `PLACES` entry has **`v:'<view>/<card-id>'`**, rendered in the popup as
+  `מידע באתר ←` with **`target="_top"`** — without that the whole site would load inside the iframe.
+
+Both sides are checked by the validator in "Reading the boards back"-style one-liners: every
+`#map/p:Q` in `index.html` must match a pin `q`, and every pin `v` must match a real view + element id.
+Run that check after touching either file — a typo here fails silently, the link just does nothing.
 
 **The map is a view, not a page jump (user's explicit request, Aug 2026 — "make it feel like one page").**
 `#map` / `#map/<category>` selects `view-map`, whose only child is `<iframe class="mapframe">`. `show()`
@@ -211,6 +234,30 @@ back link (the side menu replaces it) and pads its title clear of the ☰ button
 untouched. Its filter chips push onto the joint session history, so Back inside the map undoes the
 last filter before it leaves the map view — coherent, but it means the top-level URL keeps the
 category it was opened with, not the one the chips selected. `#view-map` is hidden in `@media print`.
+
+The same map also appears **mid-page** in the food view (`<iframe class="mapembed" data-src="map.html#food">`)
+because the family asked for the restaurants in place rather than one click away. `show()` sets `src`
+from `data-src` the first time that view opens, so readers who never reach it don't download Leaflet;
+any future mid-page embed gets the same behaviour for free by using `data-src`.
+
+### Live data from public APIs (user's request, Aug 2026)
+
+Two cards fill themselves at load. Both are keyless and `Access-Control-Allow-Origin: *` — verify that
+still holds before touching either, since the page is static GitHub Pages with no proxy to hide behind.
+
+- **Weather, home view** — `api.open-meteo.com`, one request for all four places, each trip date shown
+  at the place we sleep that night. **The `elevation` parameter matters**: Shëngjergj and Tirana land in
+  the same ~11 km grid cell, so without `elevation=…,850,…` the villa reports the valley's 39 °C instead
+  of its real ~31 °C, which would contradict the whole reason the base is up there.
+  The forecast horizon is ~16 days, so the card is empty most of the year and falls back to Tirana
+  (the family's requested default) whenever no trip day is in range.
+- **Exchange rate, practical-info view** — `open.er-api.com/v6/latest/EUR`. ECB-based sources
+  (frankfurter et al.) are useless here: the ECB does not quote **ALL**. One EUR response yields
+  EUR/ALL, ILS/ALL and EUR/ILS.
+
+Both render with `textContent`, both start `display:none`, and **both swallow their errors** — the card
+simply never appears. A trip page showing a stale temperature or a wrong rate is worse than showing
+nothing, and there is no cache to go stale.
 
 ### RTL arrow convention (non-obvious — gets it wrong every time otherwise)
 
@@ -251,10 +298,27 @@ Verify with `python3 -c "import unicodedata as u; print(u.mirrored('→'))"` bef
 | 16.8 | Sun | **Mt. Dajti** (fixed by the user) — cable car + Adventure Park (ropes, age 5+, cable car included in entry) |
 | 17.8 | Mon | **TBD** — open, choose from the catalogue |
 | 18.8 | Tue | **TBD** — open · Daniel's birthday evening, so prefer the shorter of the two days or a no-drive day |
-| 19.8 | Wed | Drive south Shëngjergj→Ksamil. **Inland route recommended** (~5–5.5 h) over coastal/Llogara (~5.5–8 h, switchbacks + August beach traffic → motion sickness). Stops: Petrelë castle/zipline, Tepelenë "Uji i Ftohtë"; coastal alt: **Kuzum Baba** above Vlorë |
+| 19.8 | Wed | Drive south Shëngjergj→Ksamil. **Coastal route — decided by the user (Aug 2026), via Vlorë and Sarandë.** See the note below: this reversed what the page used to recommend |
 | 20.8 | Thu | Ksamil: Butrint (theatre is near the entrance, flat) + beaches + Lëkurësi at sunset |
 | 21.8 | Fri | **The family splits here.** Solomons check out and go north: Blue Eye (**electric cart ~200 ALL** — skips the 1.5–2 km walk) + Gjirokastër → sleep near the airport. Everyone else stays a **second night in Ksamil** |
 | 22.8 | Sat | **Two separate tracks** → both at the terminal by **17:00**, flight 19:55 |
+
+### The 19.8 route was reversed by the user (Aug 2026) — don't re-argue it
+
+The page spent two sourced paragraphs recommending the **inland** route and calling it "the logical
+choice". The user overrode that: **19.8 goes down the coast, through Vlorë and Sarandë.** The
+research wasn't wrong, it was outvoted — the drive is being treated as part of the trip, not as
+transit. So the motion-sickness finding stays on the page, **reframed as the cost being accepted**
+(leave early · medication *before* the drive, not after · front seat for whoever suffers · consider
+the Llogara tunnel on the descent) rather than as an argument for a different road. Don't quietly
+restore the old recommendation because the sources still support it.
+
+Knock-on changes: the inland card is now titled as **the way back north** (21.8 Solomons, 22.8
+everyone else), which makes the trip a loop; **Sarandë** was added as the last stop before Ksamil
+(supermarket, ATM, the GF restaurants — the things Ksamil doesn't have on tap); and **Petrelë moved
+out of the drive entirely**. It is 12 km from Tirana, so it was never a stop on the way south — it is
+now `#north/petrela`, a half-day option in the villa week alongside EQUOS, and its two map pins moved
+from the `drive` layer to `north`.
 
 ### The 22.8 split (user, Aug 2026) — the trip's tightest day
 
@@ -266,7 +330,7 @@ Verify with `python3 -c "import unicodedata as u; print(u.mirrored('→'))"` bef
 ## Open questions
 
 1. **Does the Vila Zeus booking cover all 5 families or only the Solomons?** The page is worded to work either way — pin this down.
-2. **17.8 and 18.8** — both open. Page recommends Berat on 17.8 (the long day, early in the week) and something close on 18.8 for Daniel's birthday evening. EQUOS and Huqi both need advance booking for ~20 and have **no verified prices or hours**.
+2. **17.8 and 18.8** — both open. Page recommends Berat on 17.8 (the long day, early in the week) and something close on 18.8 for Daniel's birthday evening. EQUOS and Huqi both need advance booking for ~20 and have **no verified prices or hours**. ⚠️ **18.8 is a Tuesday**, which rules out the Dajti cable car (closed Tuesdays) and Bunk'Art (closed Mon–Tue). Dajti itself is fine where it sits — it moved to 16.8, a Sunday. Re-check this whenever a day moves; a stale "15.8 is a Saturday, so it's fine" note is exactly how it went wrong the first time.
 3. **Night of 21.8 (Solomons)** — near-airport (Airport Garden 4.7 / Hotel Airport Tirana 4.4 / Airport Holiday 4.3) vs. Krujë (mountain view + bazaar + a full 22.8 morning there). Decider: if Krujë gets used on 17/18.8, don't repeat it → near-airport wins.
 4. **Bovilla** — check the unpaved final stretch with the villa host, or switch to a 4×4 shuttle / drop it.
 5. How many cars does the family actually have, and how many are automatic?
@@ -275,7 +339,9 @@ Verify with `python3 -c "import unicodedata as u; print(u.mirrored('→'))"` bef
 
 ## Map coordinates (validated Aug 2026)
 
-All 58 pins in `map.html` were checked against OpenStreetMap / Wikidata / Wikipedia. **46 were wrong by >300 m and were corrected.** Lessons worth keeping:
+The original 58 pins in `map.html` were checked against OpenStreetMap / Wikidata / Wikipedia. (Two were
+added later — the Sarandë promenade and the Skanderbeg Square underground car park — from the operator's
+own page and OSM respectively; the count is now 60.) **46 were wrong by >300 m and were corrected.** Lessons worth keeping:
 
 - **Never enter a coordinate from memory.** The originals were, and the failure rate was ~75%. Three were in the *wrong municipality*: Villa Maxhaku and Bujtina Tomadhe sat in Bashkia Elbasan / Bërzhitë instead of Shëngjergj, and the **Blue Eye was on the Riviera coast at Lukovë, 15 km from the actual spring**. Osum Canyon was 15 km off (at Bogovë), the Shëngjergj waterfall 10 km, Bunk'Art 1 3.7 km (in Kamëz).
 - **Verify with reverse-geocoding, not just forward search** — `nominatim.openstreetmap.org/reverse?lat=&lon=&format=json&zoom=14` returns the municipality, which is what catches the catastrophic errors. Forward search alone happily returns a same-named place elsewhere.
@@ -337,10 +403,15 @@ The family presentation (`presentation/` — reveal.js, Hebrew RTL, photos + mus
 2. **No boosterish labels.** "האטרקציה שבפתח הדלת", "קלף מנצח", "שווה מאוד", "חוויה מנצחת" — all cut. State the fact that makes it worth doing (distance, price, what's actually there, who it suits) and let the reader conclude.
 3. **High-level by default, detail on demand.** See the `<details>` rule under HTML structure. If a paragraph isn't needed to decide *whether* to go, it belongs inside the disclosure.
 4. **If it's not relevant, delete it** — don't park it in a smaller font.
+5. **Tirana is `טירנה`, never `טריאנה`** (user, Aug 2026). The page had both for a while; there are now
+   zero of the latter across `index.html`, `map.html` and `presentation/index.html`. Note the sweep has
+   to be a byte-level substitution — `perl -CSD` decodes the input but leaves the pattern in the script
+   as raw bytes, so it silently matches nothing and reports success.
 
 Planning principles that still hold:
 
-- Don't cram Berat + folklore evening into one day — split them.
+- Berat and the folklore evening are already split across two days — the week table says so, so the
+  standalone "recommendation: split them" note was removed as redundant. Don't reintroduce it.
 - A day at the villa is a legitimate option, not a fallback.
 - No ~4-hour drive on flight morning — on 21.8 go north and sleep near the airport.
 - Ksamil in August: parking nearly impossible after 09:00.

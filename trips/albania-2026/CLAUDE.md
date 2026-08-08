@@ -12,9 +12,14 @@ This repo is served publicly via GitHub Pages. **Never add personal/private data
 
 - Booking references / confirmation numbers (flights, car hire, hotels, villa)
 - Passport numbers, ID numbers, full birth dates
+- **Passengers' full names**, and anything that identifies a specific traveller on a specific booking — **seat assignments**, frequent-flyer numbers, per-person baggage or meal selections
 - Phone numbers, home addresses, email addresses
 - Payment details, invoices, prices paid for specific bookings
 - Documents, tickets, or screenshots of any of the above
+
+**When the user supplies a screenshot or a booking summary, take only the facts that would be true for anyone on that flight/room/car, and leave everything that identifies a person.** A flight number, a departure time, a terminal and a baggage allowance are schedule data and belong on the page; `LY0000 · seat 1A · FIRSTNAME LASTNAME` is a boarding pass and does not. Do this silently and by default — the user does not have to ask, and "they sent me the screenshot" is not consent to publish what is in it. Say afterwards what was left out, so it is a visible decision rather than a quiet omission. (This came up for real in Aug 2026 with the El Al app screenshots; first names already on the page — Daniel, grandma — are fine, full names on a ticket are not.)
+
+**This file is in the public repo as well.** Don't paste real personal data into it either, not even as an example of what to exclude — invent placeholders.
 
 If the user wants the trip page to reference such details (e.g., car-hire confirmation, flight details): the actual document must live in a **login-protected location (e.g., Google Drive with restricted sharing)**, and the repo may only contain the **link** to it. Before adding such a link, verify with the user that the target is access-restricted (not "anyone with the link").
 
@@ -289,8 +294,8 @@ Verify with `python3 -c "import unicodedata as u; print(u.mirrored('→'))"` bef
   stays out — which needs the rental contract checked for the hour and the driver; (b) two landings 65 min
   apart on 13.8, so decide whether the early group waits airside or walks to Vila Zeus first.
   Israir tickets carry **no checked bag** (0 PCS); El Al's include baggage.
-  **Do not put passenger names, seat numbers or booking references on the page** — the screenshots had
-  them, the repo is public, and only the schedule data went in.
+  The source screenshots also carried passenger names and seat numbers; those were left off the page
+  under the Privacy section's screenshot rule.
 - **Extended family ~20 people**, 5 families: Solomon (2 parents + girls 7, 10) · grandparents · family (2 + baby 1.5) · family (2 + girls 6, 3, 1) · family (2 + girls 8, 12, 14, 17).
 - **Lodging:**
   - **Night of 13.8 (arrival) — ✅ BOOKED: `Hotel Vila Zeus`, Rinas** (told by the user, Aug 2026). The villa starts only on **14.8**, so the landing night is near the airport. Verified facts: 4★, **~1 km / ~12-min walk from the terminal** (the hotel's own site says 3,281 ft — a search snippet claiming 0.2 mi is wrong), **free private parking**, **24h front desk**, coffee shop + bar (not a full restaurant), no pool, Booking ~7.4 from ~1,900 reviews. Largest room listed is a **Superior Double, 50 m², sleeps 4** with sofa bed — no dedicated family rooms.

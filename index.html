@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Repo browser</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📁</text></svg>">
 <script>
   // Applied before the stylesheets load so there's no dark->light flash on a light-mode visit.
   var THEME = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
@@ -27,6 +28,8 @@
   html, body { margin:0; height:100%; }
   body { display:flex; font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; background:var(--bg); color:var(--fg); }
   #side { width:320px; min-width:180px; max-width:60vw; resize:horizontal; overflow:auto; border-right:1px solid var(--line); background:var(--panel); padding:8px; }
+  #repoLink { display:block; padding:6px 8px; margin-bottom:8px; color:var(--fg); text-decoration:none; font-weight:600; border-bottom:1px solid var(--line); }
+  #repoLink:hover { color:var(--accent); }
   #filter { width:100%; padding:6px 8px; margin-bottom:8px; background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:6px; font:inherit; }
   #tree ul { list-style:none; margin:0; padding-left:14px; }
   #tree > ul { padding-left:0; }
@@ -114,6 +117,7 @@
 <body>
 <div id="overlay"></div>
 <nav id="side">
+  <a id="repoLink" href="#" target="_blank" rel="noopener">liorsol/liorsol ↗</a>
   <input id="filter" placeholder="filter…" />
   <div id="tree" class="muted">loading…</div>
 </nav>
@@ -137,6 +141,7 @@ const fmtSize = n => n == null ? '' : n < 1024 ? n + ' B' : n < 1024 ** 2 ? (n /
 
 const REPO = 'liorsol/liorsol';
 const BRANCH = 'main';
+el('#repoLink').href = `https://github.com/${REPO}`;
 const ghEdit = path => `https://github.com/${REPO}/edit/${BRANCH}/${encPath(path)}`;
 const ghTree = path => `https://github.com/${REPO}/tree/${BRANCH}/${encPath(path)}`;
 
@@ -252,7 +257,13 @@ el('#themeBtn').onclick = () => applyTheme(document.documentElement.dataset.them
 
 const pad = n => { const d = document.createElement('div'); d.className = 'pad'; d.append(n); return d; };
 
-function setActions(nodes) { el('#actions').replaceChildren(...nodes); }
+let currentPath = null, htmlSourceMode = false;
+
+function setActions(nodes) {
+  const edit = actionLink('✎', ghEdit(currentPath));
+  edit.title = 'Edit on GitHub';
+  el('#actions').replaceChildren(...nodes, edit);
+}
 function actionBtn(label, onclick) { const b = document.createElement('button'); b.textContent = label; b.onclick = onclick; return b; }
 function actionLink(label, href) { return Object.assign(document.createElement('a'), { textContent: label, href, target: '_blank' }); }
 
@@ -261,8 +272,10 @@ async function show(path) {
   el('header .path').textContent = path;
   view.className = ''; view.replaceChildren();
   closeMenu();
+  if (path !== currentPath) htmlSourceMode = false;
+  currentPath = path;
 
-  const raw = actionLink('raw', path);
+  const raw = actionLink(/\.html?$/i.test(path) ? 'open' : 'raw', path);
   const e = ext(path);
 
   if (BIN.img.test(path) || BIN.svg.test(path)) { setActions([raw]); return showImage(path); }
@@ -401,12 +414,9 @@ function showMarkdown(text) {
 
 function showHtml(path, raw) {
   const view = el('#view');
-  const btn = actionBtn('', () => { btn.dataset.mode = btn.dataset.mode === 'source' ? '' : 'source'; show(path); });
-  const asSource = btn.dataset.mode === 'source';
-  btn.textContent = asSource ? 'render' : 'source';
-  setActions([btn, raw]);
-  if (!asSource) return view.append(Object.assign(document.createElement('iframe'), { src: path }));
-  grab(path).then(async r => showCode(r.ok ? await r.text() : `fetch failed: ${r.status}`, path, raw));
+  const btn = actionBtn(htmlSourceMode ? 'render' : 'source', () => { htmlSourceMode = !htmlSourceMode; show(path); });
+  if (!htmlSourceMode) { setActions([btn, raw]); return view.append(Object.assign(document.createElement('iframe'), { src: path })); }
+  grab(path).then(async r => { showCode(r.ok ? await r.text() : `fetch failed: ${r.status}`, path, raw); setActions([btn, raw]); });
 }
 
 let imgViewer = null; // tracks the current Viewer.js instance so it can be destroyed before the next one is created

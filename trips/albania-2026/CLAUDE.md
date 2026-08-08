@@ -275,7 +275,22 @@ Verify with `python3 -c "import unicodedata as u; print(u.mirrored('→'))"` bef
 
 ## Trip data
 
-- **Flights (rescheduled, Aug 2026):** outbound TLV 20:30 → TIA 22:25 (13.8) · return TIA 19:55 → TLV 23:40 (22.8). The return moved from 10:30 to 19:55, so **22.8 is a near-full day in Albania** and the airport deadline is **17:00**.
+- **Flights — the party is split across two airlines** (user, Aug 2026, from the booking summary and El Al app screenshots):
+
+  | | Outbound 13.8 | Return 22.8 |
+  |---|---|---|
+  | **Israir** | `6H163` TLV **20:30** → TIA **22:25**, **Terminal 1** | `6H170` TIA **19:55** → TLV **23:40** |
+  | **El Al** | `LY5183` TLV **19:10** → TIA **21:20** | `LY5484` TIA **23:30** → TLV **03:10 on 23.8** |
+
+  The return moved from 10:30 to 19:55, so **22.8 is a near-full day in Albania**. **The whole page plans
+  to the 17:00 terminal deadline** — the earlier, binding one; the El Al group's is ~20:30 and they simply
+  gain slack. Two consequences that are on the page and still undecided: (a) the **cars are shared**, so
+  either everyone returns them at 17:00 and the late group waits six hours in the terminal, or one car
+  stays out — which needs the rental contract checked for the hour and the driver; (b) two landings 65 min
+  apart on 13.8, so decide whether the early group waits airside or walks to Vila Zeus first.
+  Israir tickets carry **no checked bag** (0 PCS); El Al's include baggage.
+  **Do not put passenger names, seat numbers or booking references on the page** — the screenshots had
+  them, the repo is public, and only the schedule data went in.
 - **Extended family ~20 people**, 5 families: Solomon (2 parents + girls 7, 10) · grandparents · family (2 + baby 1.5) · family (2 + girls 6, 3, 1) · family (2 + girls 8, 12, 14, 17).
 - **Lodging:**
   - **Night of 13.8 (arrival) — ✅ BOOKED: `Hotel Vila Zeus`, Rinas** (told by the user, Aug 2026). The villa starts only on **14.8**, so the landing night is near the airport. Verified facts: 4★, **~1 km / ~12-min walk from the terminal** (the hotel's own site says 3,281 ft — a search snippet claiming 0.2 mi is wrong), **free private parking**, **24h front desk**, coffee shop + bar (not a full restaurant), no pool, Booking ~7.4 from ~1,900 reviews. Largest room listed is a **Superior Double, 50 m², sleeps 4** with sofa bed — no dedicated family rooms.
@@ -292,7 +307,7 @@ Verify with `python3 -c "import unicodedata as u; print(u.mirrored('→'))"` bef
 
 | Date | Day | Plan |
 |---|---|---|
-| 13.8 | Thu | Landing 22:25 → Hotel Vila Zeus, Rinas — villa only from 14.8 |
+| 13.8 | Thu | Landings **21:20 (El Al) and 22:25 (Israir)** → collect cars → Hotel Vila Zeus, Rinas — villa only from 14.8 |
 | 14.8 | Fri | Collect cars → Tirana + **big supermarket run (incl. Panja GF bakery)** → check in to the villa (Shëngjergj) · grandma's birthday dinner |
 | 15.8 | Sat | **Villa day** (fixed by the user, Aug 2026) — no driving |
 | 16.8 | Sun | **Mt. Dajti** (fixed by the user) — cable car + Adventure Park (ropes, age 5+, cable car included in entry) |
@@ -301,7 +316,7 @@ Verify with `python3 -c "import unicodedata as u; print(u.mirrored('→'))"` bef
 | 19.8 | Wed | Drive south Shëngjergj→Ksamil. **Coastal route — decided by the user (Aug 2026), via Vlorë and Sarandë.** See the note below: this reversed what the page used to recommend |
 | 20.8 | Thu | Ksamil: Butrint (theatre is near the entrance, flat) + beaches + Lëkurësi at sunset |
 | 21.8 | Fri | **The family splits here.** Solomons check out and go north: Blue Eye (**electric cart ~200 ALL** — skips the 1.5–2 km walk) + Gjirokastër → sleep near the airport. Everyone else stays a **second night in Ksamil** |
-| 22.8 | Sat | **Two separate tracks** → both at the terminal by **17:00**, flight 19:55 |
+| 22.8 | Sat | **Two separate tracks, and two flights** → plan to the terminal by **17:00** (Israir 19:55); El Al is 23:30 |
 
 ### The 19.8 route was reversed by the user (Aug 2026) — don't re-argue it
 
@@ -325,11 +340,12 @@ from the `drive` layer to `north`.
 - **Solomons** sleep near the airport on 21.8, so 22.8 is a genuinely free day: Krujë (25–30 min) / Tirana (~25) / Durrës beach (~40), ideally ending with lunch at **Uka Farm** (15–20 min from TIA, book ahead) before returning the cars.
 - **Everyone else** checks out of Ksamil on 22.8 and drives the whole way: **~5–5.5 h net inland, 6.5–7 h realistically in August**, against a 17:00 deadline. That means **leaving Ksamil ~07:30 and taking one planned stop, not two** — Blue Eye *or* Gjirokastër. The page says this plainly; don't soften it.
 - Worth raising with them: leaving Ksamil on 21.8 afternoon instead would buy a calm last day for the cost of half a beach day.
-- **Airport deadline is 17:00** (~3 h before the 19:55 flight), not 17:25 — updated everywhere.
+- **Airport deadline is 17:00** (~3 h before the 19:55 Israir flight), not 17:25 — updated everywhere. Whoever is on the 23:30 El Al flight has ~20:30 instead, but the page keeps 17:00 as the single planning target so there is only one schedule to follow.
 
 ## Open questions
 
 1. **Does the Vila Zeus booking cover all 5 families or only the Solomons?** The page is worded to work either way — pin this down.
+1b. **Who is on which flight?** Two airlines each way (see Trip data). Nothing on the page assigns families to flights, because it isn't known. The 3.5-hour gap on the return makes this a real scheduling input, not a detail — plus the shared-car question it creates.
 2. **17.8 and 18.8** — both open. Page recommends Berat on 17.8 (the long day, early in the week) and something close on 18.8 for Daniel's birthday evening. EQUOS and Huqi both need advance booking for ~20 and have **no verified prices or hours**. ⚠️ **18.8 is a Tuesday**, which rules out the Dajti cable car (closed Tuesdays) and Bunk'Art (closed Mon–Tue). Dajti itself is fine where it sits — it moved to 16.8, a Sunday. Re-check this whenever a day moves; a stale "15.8 is a Saturday, so it's fine" note is exactly how it went wrong the first time.
 3. **Night of 21.8 (Solomons)** — near-airport (Airport Garden 4.7 / Hotel Airport Tirana 4.4 / Airport Holiday 4.3) vs. Krujë (mountain view + bazaar + a full 22.8 morning there). Decider: if Krujë gets used on 17/18.8, don't repeat it → near-airport wins.
 4. **Bovilla** — check the unpaved final stretch with the villa host, or switch to a 4×4 shuttle / drop it.

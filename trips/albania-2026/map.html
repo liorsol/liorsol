@@ -125,22 +125,13 @@ var PLACES = [
   // --- south (Ksamil / Saranda area) ---
   {n:'איי קסאמיל', cat:'south', lat:39.7751, lng:19.9961, q:'Ksamil+Islands', v:'south/ksamil'},
   {n:'חוף המראה (Pasqyrat)', cat:'south', lat:39.8043, lng:20.0053, q:'Mirror+Beach+Ksamil', note:'בין סרנדה לקסאמיל — ~4 ק״מ צפונית לקסאמיל, נסיעה', v:'south/ksamil'},
-  {n:'The Mussel House, קסאמיל', cat:'south', lat:39.7886, lng:20.0114, q:'The+Mussel+House+Ksamil', v:'food/restaurants'},
   {n:'הפארק הלאומי בוטרינט', cat:'south', lat:39.7474, lng:20.0219, q:'Butrint+National+Park', v:'south/butrint'},
   {n:'העין הכחולה (Syri i Kaltër)', cat:'south', lat:39.9238, lng:20.1925, q:'Blue+Eye+Syri+i+Kalter+Saranda', note:'שחייה אסורה, ~10°C', v:'south/blueeye'},
   {n:'סרנדה — הטיילת', cat:'drive', lat:39.8756, lng:20.0053, q:'Saranda+Promenade+Albania', note:'העצירה האחרונה לפני קסאמיל · סופר, כספומט, מסעדות', v:'drive/stops-coastal'},
   {n:'מצודת לקורסי', cat:'south', lat:39.8658, lng:20.0257, q:'Lekuresi+Castle+Saranda', note:'נוף + ארוחת שקיעה', v:'south/lekuresi'},
-  {n:'מצודת ג׳ירוקסטרה', cat:'south', lat:40.0742, lng:20.1389, q:'Gjirokaster+Castle', v:'south/gjirokaster'},
+  {n:'מצודת ג׳ירוקסטרה', cat:'south', lat:40.0742, lng:20.1389, q:'Gjirokaster+Castle', v:'south/gjirokaster'}
 
-  // --- food ---
-  {n:'Panja — מאפייה ללא גלוטן', cat:'food', lat:41.329, lng:19.8126, q:'Panja+Tirana+Gluten+Free+Bakery', note:'⭐ 100% ללא גלוטן ולקטוז — היחידה באלבניה · לקנייה של 14.8', v:'food/panja'},
-  {n:'Taverna Muzaka, בראט', cat:'food', lat:40.70351, lng:19.94869, q:'Taverna+Muzaka+Berat', note:'ברובע גוריצה — אותו מקום כמו Hotel Muzaka', v:'food/restaurants'},
-  {n:'Era Restaurant, טירנה', cat:'food', lat:41.32013, lng:19.81464, q:'Era+Restaurant+Tirana', note:'סניף בלוקו (המקורי) — יש סניף שני בעיר', v:'food/restaurants'},
-  {n:'Tony’s American, טירנה', cat:'food', lat:41.3231, lng:19.8223, q:'Tonys+American+Restaurant+Tirana', v:'food/restaurants'},
-  {n:'Fishbar, סרנדה', cat:'food', lat:39.8774, lng:20.0111, q:'Fishbar+Saranda', note:'~450 מ׳ מהטיילת, לא על המים', v:'food/restaurants'},
-  {n:'Sophra, סרנדה', cat:'food', lat:39.8547, lng:20.0212, q:'Sophra+Restaurant+Saranda', note:'על כביש בוטרינטי, ~2.6 ק״מ מהטיילת — צריך רכב · חניה במקום', v:'food/restaurants'},
-  {n:'Centrali, סרנדה', cat:'food', lat:39.8735, lng:20.0121, q:'Centrali+Saranda', v:'food/restaurants'},
-  {n:'Salad Farm, סרנדה', cat:'food', lat:39.85717, lng:20.02066, q:'Salad+Farm+Saranda', note:'⚠️ ייתכן שנסגר — לבדוק טלפונית לפני', v:'food/restaurants'}
+  // The 🍽️ pins are not here — they come from restaurants.json below.
 ];
 
 var map = L.map('map', {zoomControl:true}).setView([41.0, 19.9], 8);
@@ -153,13 +144,14 @@ var layerGroups = {}, groupBounds = {};
 Object.keys(CATS).forEach(function(k){ layerGroups[k] = L.layerGroup(); groupBounds[k] = []; });
 
 var allBounds = [], byQ = {};
-PLACES.forEach(function(p){
+function addPlaces(){
+  PLACES.forEach(function(p){
   var c = CATS[p.cat];
   var icon = L.divIcon({
     className:'', html:'<div class="pin" style="background:'+c.color+'"><span>●</span></div>',
     iconSize:[26,26], iconAnchor:[13,26], popupAnchor:[0,-24]
   });
-  var mapsUrl = 'https://www.google.com/maps/search/?api=1&query='+p.q;
+  var mapsUrl = p.url || 'https://www.google.com/maps/search/?api=1&query='+p.q;
   /* `v` is the pin's card on the trip page. target=_top because this file is
      normally running inside the trip page's #map view — without it the whole
      site would load into the iframe. Standalone, _top is this window anyway. */
@@ -170,11 +162,12 @@ PLACES.forEach(function(p){
   byQ[p.q] = p;
   groupBounds[p.cat].push([p.lat, p.lng]);
   allBounds.push([p.lat, p.lng]);
-});
+  });
 
-var overlays = {};
-Object.keys(CATS).forEach(function(k){ overlays[CATS[k].label] = layerGroups[k]; });
-L.control.layers(null, overlays, {collapsed:false}).addTo(map);
+  var overlays = {};
+  Object.keys(CATS).forEach(function(k){ overlays[CATS[k].label] = layerGroups[k]; });
+  L.control.layers(null, overlays, {collapsed:false}).addTo(map);
+}
 
 /* Two hash forms, both fed by links on the trip page:
      #<category>  — show just that section's pins (the per-view maps)
@@ -207,20 +200,44 @@ function apply(){
   else if(bounds.length) map.fitBounds(bounds, {padding:[30,30]});
 }
 
-var f = document.getElementById('filters');
-f.innerHTML = '<a href="#" data-cat="">הכל (' + PLACES.length + ')</a>' +
-  Object.keys(CATS).map(function(k){
-    return '<a href="#'+k+'" data-cat="'+k+'">'+CATS[k].label+' ('+groupBounds[k].length+')</a>';
-  }).join('');
-f.querySelector('a[data-cat=""]').addEventListener('click', function(e){
-  e.preventDefault();
-  if(location.hash){ history.pushState(null,'','#'); }   // keep Back working
-  apply();
-});
+function init(){
+  addPlaces();
+  var f = document.getElementById('filters');
+  f.innerHTML = '<a href="#" data-cat="">הכל (' + PLACES.length + ')</a>' +
+    Object.keys(CATS).map(function(k){
+      return '<a href="#'+k+'" data-cat="'+k+'">'+CATS[k].label+' ('+groupBounds[k].length+')</a>';
+    }).join('');
+  f.querySelector('a[data-cat=""]').addEventListener('click', function(e){
+    e.preventDefault();
+    if(location.hash){ history.pushState(null,'','#'); }   // keep Back working
+    apply();
+  });
 
-window.addEventListener('hashchange', apply);
-window.addEventListener('popstate', apply);
-apply();
+  window.addEventListener('hashchange', apply);
+  window.addEventListener('popstate', apply);
+  apply();
+}
+
+/* The 🍽️ pins come from restaurants.json — the same file the trip page's food
+   view renders, so a restaurant is added or corrected in one place and appears
+   in both. Their `q` is the JSON id, which is exactly what the page's 🗺️ chips
+   link to (#p:<id>), so the two sides still need no second identifier.
+   Everything is drawn after the fetch settles; if it fails the rest of the map
+   still comes up, minus the restaurants. */
+var CITY_HE = {tirana:'טירנה', berat:'בראט', saranda:'סרנדה', ksamil:'קסאמיל',
+               gjirokaster:'ג׳ירוקסטרה', durres:'דורס', shkoder:'שקודרה'};
+fetch('restaurants.json').then(function(r){ return r.json(); }).then(function(list){
+  list.forEach(function(r){
+    var facts = [r.type, r.score ? '⭐ ' + r.score : '', r.hours].filter(Boolean).join(' · ');
+    PLACES.push({
+      n: r.name + (CITY_HE[r.city] ? ', ' + CITY_HE[r.city] : ''),
+      cat:'food', lat:r.lat, lng:r.lng,
+      q: r.id, url: r.gmaps,
+      note: facts + (r.note ? '<br>' + r.note : ''),
+      v: r.view || 'food/restaurants'
+    });
+  });
+}).catch(function(){}).then(init);
 </script>
 </body>
 </html>

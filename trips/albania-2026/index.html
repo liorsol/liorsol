@@ -83,6 +83,12 @@
                linear-gradient(160deg,#0a3d47,#0c4b57 42%,#1b8a9e)}
   header.hero h1{position:relative; color:#fff; font-size:clamp(34px,6.5vw,60px); margin:0 0 .12em; text-shadow:0 4px 22px rgba(0,0,0,.55)}
   header.hero .dates{position:relative; font-family:'Heebo',sans-serif; font-weight:700; letter-spacing:.08em; font-size:clamp(15px,2.2vw,19px); color:#ffe1a6; text-shadow:0 2px 12px rgba(0,0,0,.5)}
+  /* Looping hero clip. The still background above stays as the fallback layer —
+     it shows through whenever the video is blocked (low-power mode, save-data). */
+  header.hero video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0}
+  header.hero::after{content:''; position:absolute; inset:0; z-index:1;
+    background:linear-gradient(rgba(7,47,56,.34),rgba(7,47,56,.62))}
+  header.hero h1, header.hero .dates, .hero-wave{z-index:2}
   .hero-wave{position:absolute; bottom:-1px; left:0; width:100%; display:block}
 
   .sec-head{display:flex; align-items:baseline; gap:12px; margin:0 0 4px}
@@ -243,6 +249,17 @@
   table.h th{background:var(--sea); color:#fff; font-family:'Heebo',sans-serif; font-weight:700}
   table.h tr:nth-child(even){background:var(--sand-2)}
   .two{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  /* One restaurant, rendered from restaurants.json. */
+  .rest{padding:11px 0; border-bottom:1px dashed var(--line-soft)}
+  .rest:last-child{border-bottom:0}
+  .rest b{font-family:'Heebo',sans-serif; font-size:16px; color:var(--sea)}
+  .rmeta{font-size:13px; color:var(--ink-soft)}
+  .rnote{font-size:14.5px; margin-top:3px}
+  .rest .links{margin-top:7px}
+  .gfb{display:inline-block; font-family:'Heebo',sans-serif; font-weight:900; font-size:11px;
+    border-radius:6px; padding:1px 6px; margin-inline-start:5px; vertical-align:2px}
+  .gfb.g2{background:#0c5e5a; color:#fff}
+  .gfb.g1{background:#eef6f3; border:1px solid #cfe6dd; color:#0c5e5a}
   .pill-list{list-style:none; padding:0; margin:5px 0 0}
   .pill-list li{padding:6px 0; border-bottom:1px dashed var(--line-soft); font-size:15px}
   .ok{color:#0c5e5a; font-weight:700} .no{color:#a8401f; font-weight:700}
@@ -283,6 +300,7 @@
 <!-- ======================= HOME ======================= -->
 <div class="view" id="view-home">
   <header class="hero">
+    <video src="assets/moving_image.mp4" autoplay muted loop playsinline aria-hidden="true"></video>
     <h1>טיול משפחתי לאלבניה</h1>
     <div class="dates">13–22 באוגוסט 2026</div>
     <svg class="hero-wave" viewBox="0 0 1440 80" preserveAspectRatio="none"><path fill="#f7efe0" d="M0,36 C240,80 480,80 720,50 C960,20 1200,20 1440,50 L1440,80 L0,80 Z"></path></svg>
@@ -870,7 +888,7 @@
     <div class="meta"><span class="pr">סיור צדפות ~€25 (45 ד׳) / ~€44 (2.5 ש׳ עם ארוחה) · סיורי מפרץ משתנים</span></div>
     <p class="gist">שייט לאיי קסאמיל, למפרץ קקומה, למערות ולחוף קרורז עם שנורקלינג. <b>סיור הצדפות</b> על אגם בוטרינט: סירה מסורתית, ביקור בחוות צדפות וטעימה.</p>
     <details><summary>קישורים</summary>
-      <div class="links" style="margin:0"><a href="https://ksamil.al" target="_blank" rel="noopener">אופרטור מקומי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=The+Mussel+House+Ksamil" target="_blank" rel="noopener">בית הצדפות ↖</a><a class="map onmap" href="#map/p:The+Mussel+House+Ksamil" title="בית הצדפות — במפה שלנו" aria-label="בית הצדפות במפה שלנו">🗺️</a></div>
+      <div class="links" style="margin:0"><a href="https://ksamil.al" target="_blank" rel="noopener">אופרטור מקומי ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=The+Mussel+House+Ksamil" target="_blank" rel="noopener">בית הצדפות ↖</a><a class="map onmap" href="#map/p:musselhouse" title="בית הצדפות — במפה שלנו" aria-label="בית הצדפות במפה שלנו">🗺️</a></div>
     </details>
   </div>
 
@@ -949,7 +967,7 @@
   <div class="note" id="panja" style="margin-top:14px"><div class="nh">🥖 Panja, טירנה — המאפייה הייעודית היחידה ללא גלוטן באלבניה</div>
     מאפייה, קונדיטוריה וחלב צמחי <b>100% ללא גלוטן וללא לקטוז</b>, ברחוב מיהל דורי (Rruga Mihal Duri), כמה דקות מכיכר סקנדרבג. כי כל המוצרים במקום נטולי גלוטן, <b>אין שם סיכון לזיהום צולב</b> — זה המקום היחיד ברשימה שאפשר לסמוך עליו בלי לשאול שאלות.
     <div class="why" style="margin:10px 0 0"><b>לשלב בקנייה הגדולה ב-14.8.</b> הוילה בכפר בלי סופר, וזו ההזדמנות היחידה לקנות לחם, לחמניות ומאפים בטוחים לחמישה ימים בהרים. לבדוק מראש שעות פתיחה ולהתקשר אם קונים כמות גדולה.</div>
-    <div class="links"><a href="https://www.findmeglutenfree.com/biz/panja/6446010366296064" target="_blank" rel="noopener">Panja ב-Find Me Gluten Free ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Panja+Tirana+Gluten+Free+Bakery" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:Panja+Tirana+Gluten+Free+Bakery" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
+    <div class="links"><a href="https://www.findmeglutenfree.com/biz/panja/6446010366296064" target="_blank" rel="noopener">Panja ב-Find Me Gluten Free ↖</a><a class="map" href="https://www.google.com/maps/search/?api=1&query=Panja+Tirana+Gluten+Free+Bakery" target="_blank" rel="noopener">מפה ↖</a><a class="map onmap" href="#map/p:panja" title="מפה — במפה שלנו" aria-label="מפה במפה שלנו">🗺️</a></div>
   </div>
 
   <div class="two" style="margin-top:14px" id="gf-lists">
@@ -975,28 +993,14 @@
   </div>
 
   <div class="card" id="restaurants"><h4>מסעדות לפי אזור <a class="anchor" href="#food/restaurants" title="קישור ישיר">🔗</a></h4>
-    <div class="meta"><span><b>טירנה</b></span></div>
-    <div class="links">
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Panja+Tirana+Gluten+Free+Bakery" target="_blank" rel="noopener">Panja (מאפייה GF ייעודית) ↖</a><a class="map onmap" href="#map/p:Panja+Tirana+Gluten+Free+Bakery" title="Panja (מאפייה GF ייעודית) — במפה שלנו" aria-label="Panja (מאפייה GF ייעודית) במפה שלנו">🗺️</a>
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Tonys+American+Restaurant+Tirana" target="_blank" rel="noopener">Tony’s American (תפריט GF) ↖</a><a class="map onmap" href="#map/p:Tonys+American+Restaurant+Tirana" title="Tony’s American (תפריט GF) — במפה שלנו" aria-label="Tony’s American (תפריט GF) במפה שלנו">🗺️</a>
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Era+Restaurant+Tirana" target="_blank" rel="noopener">Era (סלטים GF) ↖</a><a class="map onmap" href="#map/p:Era+Restaurant+Tirana" title="Era (סלטים GF) — במפה שלנו" aria-label="Era (סלטים GF) במפה שלנו">🗺️</a>
-    </div>
-    <div class="meta" style="margin-top:12px"><span><b>בראט</b></span></div>
-    <div class="links">
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Taverna+Muzaka+Berat" target="_blank" rel="noopener">Taverna Muzaka ↖</a><a class="map onmap" href="#map/p:Taverna+Muzaka+Berat" title="Taverna Muzaka — במפה שלנו" aria-label="Taverna Muzaka במפה שלנו">🗺️</a>
-    </div>
-    <div class="meta" style="margin-top:12px"><span><b>סרנדה</b></span></div>
-    <div class="links">
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Centrali+Saranda" target="_blank" rel="noopener">Centrali ↖</a><a class="map onmap" href="#map/p:Centrali+Saranda" title="Centrali — במפה שלנו" aria-label="Centrali במפה שלנו">🗺️</a>
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Fishbar+Saranda" target="_blank" rel="noopener">Fishbar ↖</a><a class="map onmap" href="#map/p:Fishbar+Saranda" title="Fishbar — במפה שלנו" aria-label="Fishbar במפה שלנו">🗺️</a>
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=Sophra+Restaurant+Saranda" target="_blank" rel="noopener">Sophra ↖</a><a class="map onmap" href="#map/p:Sophra+Restaurant+Saranda" title="Sophra — במפה שלנו" aria-label="Sophra במפה שלנו">🗺️</a>
-    </div>
-    <p style="font-size:13.5px; color:var(--ink-soft); margin:6px 0 0">📍 רק <b>Centrali</b> נמצאת על הטיילת. <b>Fishbar</b> היא ~450 מ׳ פנימה, ו-<b>Sophra</b> יושבת על כביש בוטרינטי כ-2.6 ק״מ מהטיילת — נסיעה, אבל יש לה חניה צמודה ומרפסת עם נוף לים, מה שדווקא נוח לקבוצה גדולה. (Salad Farm ירדה מהרשימה — יש דיווחים שנסגרה.)</p>
-    <div class="meta" style="margin-top:12px"><span><b>קסאמיל</b></span></div>
-    <div class="links">
-      <a class="map" href="https://www.google.com/maps/search/?api=1&query=The+Mussel+House+Ksamil" target="_blank" rel="noopener">The Mussel House ↖</a><a class="map onmap" href="#map/p:The+Mussel+House+Ksamil" title="The Mussel House — במפה שלנו" aria-label="The Mussel House במפה שלנו">🗺️</a>
+    <p style="font-size:13.5px; color:var(--ink-soft); margin:2px 0 10px">כל מקום ברשימה מסומן גם במפה למעלה — ה-🗺️ שלידו פותח אותו שם.
+      <span class="gfb g2">GF</span> מטבח ייעודי ללא גלוטן · <span class="gfb g1">GF</span> יש מנה או תפריט ללא גלוטן שאומתו.
+      בכל השאר <b>צריך לשאול</b>. הדירוגים והשעות מגוגל — שעות מסומנות ״שבת״ נבדקו ליום שבת בלבד.</p>
+    <div id="rest-list" class="rnote">טוען את רשימת המסעדות…</div>
+    <div class="links" style="margin-top:12px">
       <a href="https://www.findmeglutenfree.com/al" target="_blank" rel="noopener">מדריך GF מלא לאלבניה ↖</a>
     </div>
+    <p style="font-size:13.5px; color:var(--ink-soft); margin:8px 0 0">Salad Farm בסרנדה ירדה מהרשימה — <b>נסגרה סופית</b> (אומת אוגוסט 2026).</p>
     <details><summary>מה בדיוק לבקש בכל אזור, וההבדל בין ״תפריט GF״ ל״מנה בטוחה״</summary>
       <p style="margin:0"><b>Panja</b> היא היחידה עם מטבח ייעודי לחלוטין. בכל שאר המקומות ברשימה יש <b>מודעות</b> ואפשרות להזמין בבטחה, אבל המטבח משותף — כלומר צריך לומר במפורש ולבקש מחבת/משטח נפרד.</p>
       <p style="margin:0"><b>באגרו-תיירות בכפר (שן-ג׳רג׳, Huqi):</b> לבקש טלה או גדי שלם בתנור, פסטרוגה (טרוטה) על הגריל וסלט כפרי, ולומר במפורש <b>״Pa miell, pa bukë״</b> (בלי קמח, בלי לחם).</p>
@@ -1393,6 +1397,73 @@
         ' · אינדיקטיבי בלבד — בכספומט ובחלפנים השער יהיה פחות טוב.';
       box.style.display = ''; src.style.display = '';
     }).catch(function(){});
+  })();
+
+  /* ============================================================
+     Restaurants — rendered from restaurants.json, which map.html reads too,
+     so a place is added or corrected in exactly one file. Built with
+     textContent + a scheme check on every href: the file is ours, but it is
+     also the one place where a stray character would otherwise become markup.
+     ============================================================ */
+  (function(){
+    var CITY = {tirana:'טירנה', berat:'בראט', saranda:'סרנדה', ksamil:'קסאמיל',
+                gjirokaster:'ג׳ירוקסטרה', durres:'דורס', shkoder:'שקודרה'};
+    var box = document.getElementById('rest-list');
+    if(!box) return;
+
+    function el(tag, cls, txt){
+      var n = document.createElement(tag);
+      if(cls) n.className = cls;
+      if(txt) n.textContent = txt;
+      return n;
+    }
+    function link(href, cls, txt, title){
+      var n = el('a', cls, txt);
+      n.href = href;
+      if(title) n.title = title;
+      if(/^https?:/i.test(href)){ n.target = '_blank'; n.rel = 'noopener'; }
+      return n;
+    }
+
+    function row(r){
+      var d = el('div', 'rest'), h = el('div');
+      h.appendChild(el('b', null, r.name));
+      if(r.gf) h.appendChild(el('span', 'gfb g' + r.gf, 'GF'));
+      var facts = [r.type, r.score ? '⭐ ' + r.score : '', r.hours].filter(Boolean).join(' · ');
+      if(facts) h.appendChild(el('span', 'rmeta', ' — ' + facts));
+      d.appendChild(h);
+      if(r.full && r.full !== r.name) d.appendChild(el('div', 'rmeta', r.full));
+      if(r.note) d.appendChild(el('div', 'rnote', r.note));
+
+      var links = el('div', 'links');
+      if(/^https?:/i.test(r.gmaps || '')) links.appendChild(link(r.gmaps, 'map', 'מפה / ניווט ↖'));
+      links.appendChild(link('#map/p:' + r.id, 'map onmap', '🗺️', r.name + ' — במפה שלנו'));
+      if(r.phone) links.appendChild(link('tel:' + r.phone.replace(/\s/g, ''), null, '☎ ' + r.phone));
+      if(/^https?:/i.test(r.web || '')) links.appendChild(link(r.web, null, 'אתר ↖'));
+      d.appendChild(links);
+      return d;
+    }
+
+    fetch('restaurants.json').then(function(res){ return res.json(); }).then(function(list){
+      box.textContent = '';
+      box.className = '';
+      Object.keys(CITY).forEach(function(city){
+        var here = list.filter(function(r){ return r.city === city; });
+        if(!here.length) return;
+        var head = el('div', 'meta');
+        head.style.marginTop = '14px';
+        head.appendChild(el('b', null, CITY[city]));
+        head.appendChild(el('span', null, here.length === 1 ? 'מקום אחד' : here.length + ' מקומות'));
+        box.appendChild(head);
+        here.forEach(function(r){ box.appendChild(row(r)); });
+      });
+    }).catch(function(){
+      /* The list is a static file next to this page — if it fails to load the
+         page is being opened straight off disk (file://), not from the site. */
+      box.textContent = 'לא הצלחנו לטעון את רשימת המסעדות. ';
+      box.appendChild(link('https://github.com/liorsol/liorsol/blob/main/trips/albania-2026/restaurants.json',
+                           null, 'הרשימה המלאה ↖'));
+    });
   })();
 
   /* ============================================================

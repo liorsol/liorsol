@@ -35,6 +35,7 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
     ├── CLAUDE.md              ← this file (canonical project context)
     ├── index.html             ← ★ source of truth — the trip page. Edit here!
     ├── map.html               ← all locations from the plan on one Leaflet/OSM map, grouped by category (no API key)
+    ├── restaurants.json       ← ★ the restaurant list — read by BOTH index.html and map.html (see below)
     ├── albania-2026.csv       ← original raw planning draft (day table)
     ├── research-gemini.md      ← raw Gemini research report (source doc, broken citations — see below)
     └── presentation/          ← family slide deck (reveal.js, Hebrew RTL)
@@ -207,7 +208,7 @@ scroll positions with `scrollTo({top, behavior:'instant'})`, or the test silentl
 
 ### Per-section maps
 
-`map.html#<category>` shows only that category and fits bounds to it; no hash = all 60 pins. Categories: `lodging, north, tirana, drive, south, food`. Each view's region banner carries a `.viewmap` link to its own slice, `map.html` has filter chips, and the home view has a full-width `.mapbanner` (the plain nav link was too easy to miss).
+`map.html#<category>` shows only that category and fits bounds to it; no hash = all 74 pins (51 hard-coded + 23 restaurants from the JSON). Categories: `lodging, north, tirana, drive, south, food`. Each view's region banner carries a `.viewmap` link to its own slice, `map.html` has filter chips, and the home view has a full-width `.mapbanner` (the plain nav link was too easy to miss).
 
 **Pins and cards point at each other (user's request, Aug 2026 — "links to the internal map next to
 the Google ones", "and on the map, links to what's written on the site").** One identifier does both
@@ -223,6 +224,35 @@ the trip page already carries in that place's `מפה ↖` href. So:
 Both sides are checked by the validator in "Reading the boards back"-style one-liners: every
 `#map/p:Q` in `index.html` must match a pin `q`, and every pin `v` must match a real view + element id.
 Run that check after touching either file — a typo here fails silently, the link just does nothing.
+*Restaurant chips are the exception to "Q is the Maps query": their `q` is the JSON `id` (`#map/p:panja`),
+because both sides are generated from `restaurants.json` and the id is already the shared key.*
+
+### Restaurants live in `restaurants.json`, not in the HTML (user's request, Aug 2026)
+
+The user supplied a gluten-free restaurant list and asked to "leave the list as is in JSON, add the
+JSON to repo, and on the page fetch the list — current page restaurants should be moved to this
+JSON." So `restaurants.json` is the **single source for both surfaces**:
+
+- `index.html` — the `#restaurants` card renders it grouped by city into `#rest-list`. Built with
+  `createElement` + `textContent`, and every `href` passes an `/^https?:/i` test first.
+- `map.html` — the 🍽️ pins are **not** in `PLACES` any more. A `fetch` pushes them in, then `init()`
+  draws everything. **The whole map build is now inside `init()`** — anything added after the pin loop
+  must go there too, or it runs before the restaurants exist. `.catch(…).then(init)` means a failed
+  fetch still yields a working map, minus the restaurants.
+
+Fields: `id` (identity + `#map/p:` target), `name`, `full`, `city`, `lat`/`lng`, `score`, `type`,
+`hours`, `web`, `phone`, `gmaps`, `note`, `gf`, and optional `view` (defaults to `food/restaurants`;
+Panja overrides it to its own card). `gf`: **2** = dedicated GF kitchen (only Panja), **1** = a
+verified GF dish or menu, **0**/absent = ask. Cities render in the order of the `CITY` map — which is
+duplicated in both files, deliberately: seven pairs are cheaper than another fetch.
+
+**Two things were deliberately dropped from the user's source JSON.** The review *counts* were junk —
+only the values 269/188/267 appear across all 21 rows, so they are an extraction artefact, not data;
+the scores were kept, the counts were not. And the `Opening times` field only ever held **Saturday**
+hours, so the page labels them `שבת …` rather than presenting them as daily. Two entries were
+researched separately and do say `כל יום` (Era, The Mussel House).
+
+Adding a restaurant = one object in the JSON. Do **not** add a matching pin to `map.html`.
 
 **The map is a view, not a page jump (user's explicit request, Aug 2026 — "make it feel like one page").**
 `#map` / `#map/<category>` selects `view-map`, whose only child is `<iframe class="mapframe">`. `show()`
@@ -367,7 +397,7 @@ own page and OSM respectively; the count is now 60.) **46 were wrong by >300 m a
 - **Never enter a coordinate from memory.** The originals were, and the failure rate was ~75%. Three were in the *wrong municipality*: Villa Maxhaku and Bujtina Tomadhe sat in Bashkia Elbasan / Bërzhitë instead of Shëngjergj, and the **Blue Eye was on the Riviera coast at Lukovë, 15 km from the actual spring**. Osum Canyon was 15 km off (at Bogovë), the Shëngjergj waterfall 10 km, Bunk'Art 1 3.7 km (in Kamëz).
 - **Verify with reverse-geocoding, not just forward search** — `nominatim.openstreetmap.org/reverse?lat=&lon=&format=json&zoom=14` returns the municipality, which is what catches the catastrophic errors. Forward search alone happily returns a same-named place elsewhere.
 - **A naive OSM/Nominatim lookup is not enough for businesses with branches or generic names.** Era resolved to the wrong branch (Era Vila, not Era Blloku); "Berat Viewing Platform" resolved to Sunrise Point, 102 m from the real platform.
-- Pins still flagged in their own `note` as approximate/unverified: Villa Maxhaku (single source), Salad Farm (**may be permanently closed**), Vlorë promenade (a ~4 km linear feature).
+- Pins still flagged in their own `note` as approximate/unverified: Villa Maxhaku (single source), Vlorë promenade (a ~4 km linear feature).
 - Python's `urllib` fails TLS on this machine (Cisco ZTA interception) — use `curl` with a descriptive User-Agent, and space Nominatim calls ~1.5 s apart.
 
 Facts that came out of the validation and changed the page:

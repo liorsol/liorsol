@@ -8,7 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<!-- Leaflet is vendored, not hotlinked (Aug 2026). The page has to work with no reception,
+     and a CDN that merely *happens* to be reachable when the service worker installs is not
+     an offline guarantee. Both files were downloaded from unpkg and checked against the SRI
+     hashes this file used to carry, so they are byte-identical to leaflet@1.9.4. BSD-2-Clause. -->
+<link rel="stylesheet" href="vendor/leaflet.css">
 <style>
   :root{
     --sea:#0c4b57; --sea-deep:#072f38; --azure:#1b8a9e;
@@ -61,6 +65,10 @@
   .pin{display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50% 50% 50% 0; transform:rotate(45deg); box-shadow:0 2px 6px rgba(0,0,0,.35); border:2px solid #fff}
   .pin span{transform:rotate(-45deg); font-size:13px}
   .leaflet-control-layers{font-family:'Assistant',sans-serif; direction:rtl; text-align:right; font-size:14px}
+  /* shown only when tiles fail — offline, the pins still work */
+  #tilewarn{position:absolute; inset-inline:12px; bottom:12px; z-index:500; transition:opacity .6s;
+    background:rgba(9,58,68,.94); color:#ffe1a6; font-size:13.5px; line-height:1.5;
+    padding:9px 13px; border-radius:12px; border:1.5px solid var(--gold); pointer-events:none}
 </style>
 </head>
 <body>
@@ -74,7 +82,7 @@
 
 <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="vendor/leaflet.js"></script>
 <script>
 /* Coordinates verified Aug 2026 against OpenStreetMap / Wikidata / Wikipedia.
    A few are flagged in their note as unverified or approximate — those, and only
@@ -158,10 +166,23 @@ var PLACES = [
 ];
 
 var map = L.map('map', {zoomControl:true}).setView([41.0, 19.9], 8);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
+
+/* Offline, only the tiles this phone has already viewed are in the service worker's
+   cache; the rest come back as errors and Leaflet just leaves them grey. The pins,
+   popups and filters all keep working, so say that once instead of showing a void. */
+tiles.once('tileerror', function(){
+  if(document.getElementById('tilewarn')) return;
+  var n = document.createElement('div');
+  n.id = 'tilewarn';
+  n.textContent = 'רקע המפה לא נטען (כנראה אין רשת) — הסימונים והמידע עדיין עובדים. ' +
+                  'אזורים שכבר פתחתם במכשיר הזה יוצגו גם בלי רשת.';
+  document.getElementById('map').appendChild(n);
+  setTimeout(function(){ n.style.opacity = '0'; }, 9000);
+});
 
 var layerGroups = {}, groupBounds = {};
 Object.keys(CATS).forEach(function(k){ layerGroups[k] = L.layerGroup(); groupBounds[k] = []; });
@@ -309,7 +330,9 @@ function init(){
    still comes up, minus the restaurants. */
 var CITY_HE = {tirana:'טירנה', berat:'בראט', saranda:'סרנדה', ksamil:'קסאמיל',
                gjirokaster:'ג׳ירוקסטרה', durres:'דורס', shkoder:'שקודרה'};
-fetch('restaurants.json').then(function(r){ return r.json(); }).then(function(list){
+/* 'no-cache' = always revalidate, same as index.html: the browser's heuristic cache
+   will otherwise pin an old list here after the JSON is corrected. */
+fetch('restaurants.json', {cache:'no-cache'}).then(function(r){ return r.json(); }).then(function(list){
   list.forEach(function(r){
     var facts = [r.type, r.score ? '⭐ ' + r.score : '', r.hours].filter(Boolean).join(' · ');
     PLACES.push({

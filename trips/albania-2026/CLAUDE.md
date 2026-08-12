@@ -33,7 +33,13 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
 ├── restaurants.html, app.js, style.css, rest_combined.json ← UNRELATED — do not touch
 └── trips/albania-2026/        ← everything trip-related lives here
     ├── CLAUDE.md              ← this file (canonical project context)
-    ├── index.html             ← ★ source of truth — the trip page. Edit here!
+    ├── index.html             ← ★ source of truth — the trip page (content + CSS). Edit here!
+    ├── trip.js                ← ★ all of the page's behaviour — routing, weather, FX, restaurants, boards
+    ├── sw.js                  ← service worker (offline). **Bump its `V` on every content change** — see below
+    ├── sw.test.js             ← `node sw.test.js` — the only test in the repo; guards the SW's silent failures
+    ├── manifest.webmanifest   ← PWA manifest (installable, RTL, Hebrew)
+    ├── icons/                 ← icon-192, icon-512 (manifest) + apple-touch-icon 180 (iOS home screen)
+    ├── vendor/                ← leaflet 1.9.4 (js/css/images), vendored so the offline map needs no CDN
     ├── map.html               ← all locations from the plan on one Leaflet/OSM map, grouped by category (no API key)
     ├── restaurants.json       ← ★ the restaurant list — read by BOTH index.html and map.html (see below)
     ├── albania-2026.csv       ← original raw planning draft (day table)
@@ -51,6 +57,87 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
 - **Presentation URL:** `https://liorsol.github.io/liorsol/trips/albania-2026/presentation/`
 - Old URL `.../albania-2026.html` at repo root is a redirect stub — keep it.
 - After editing `trips/albania-2026/index.html`: commit + push (ask the user before pushing unless they explicitly requested it).
+
+## Progressive Web App — installable + offline (user's request, Aug 2026)
+
+"Add to my phone home screen and available offline." The family flies with this page and reception
+in Shëngjergj is unverified, so offline is the point, not a nicety.
+
+- `manifest.webmanifest` — `display:standalone`, `dir:rtl`, `lang:he`, `start_url`/`scope` `./`,
+  `theme_color` `#0c4b57` (the `--sea` used by the nav), `background_color` `--sand`.
+- **iOS ignores the manifest's icons.** `<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">`
+  is what actually lands on an iPhone home screen; without it iOS uses a screenshot of the page.
+  The `apple-mobile-web-app-*` metas are what make it open without Safari chrome.
+- Icons were generated locally from the 🇦🇱 emoji (`Apple Color Emoji.ttc` **only has a 160 px strike** —
+  render at 160 and upscale, any other size raises `OSError: invalid pixel size`). The flag sits inside
+  the middle 50% so `purpose:"any maskable"` survives Android's circle crop.
+- `sw.js`: `CORE` (local shell) is precached strictly — a failure fails the install, because a
+  half-cached shell is a broken offline page. `EXTRA` (only the Google Fonts CSS now) is best-effort:
+  a missing font degrades to a fallback face, which is survivable.
+- **Leaflet is vendored in `vendor/`, not hotlinked (Aug 2026).** It used to come from unpkg with SRI.
+  For a page whose entire point is working with no reception, "the CDN was reachable at the moment
+  the service worker installed" is not an offline guarantee — and a missing map *script* is a blank
+  map, not a degraded one. The two files were fetched from unpkg and verified byte-identical against
+  the SRI hashes `map.html` already carried (`sha256-20nQCch…` / `sha256-p4NxAoJ…`), so this is
+  provably leaflet@1.9.4, BSD-2-Clause. 176 KB including the three `images/` that `leaflet.css`
+  references. Upgrading = replace the files and re-check the published hash; there is no CDN to bump.
+  Bonus that matters for maintenance: the in-app preview browser blocks unpkg, so before vendoring
+  the map could not be rendered or verified in this environment at all.
+- **Cache-first for everything except navigations**, which are network-first so a deploy wins.
+- **`V` is the whole update mechanism — bump it whenever `index.html`, `trip.js`, `map.html` or
+  `restaurants.json` changes.** The browser only reinstalls a worker whose *bytes* differ, and
+  cache-first means a corrected restaurant or a fixed drive time is invisible until `V` moves.
+  This is the one way to ship a change that silently does not reach the family.
+- Two traps that cost real debugging time, both already fixed — don't reintroduce them:
+  - Precache requests are built with **`{cache:'reload'}`**. Without it the install fills itself from
+    the *browser's* HTTP cache, so a brand-new cache version can be born holding yesterday's file.
+    Same reason `trip.js` fetches `restaurants.json` with `{cache:'no-cache'}`.
+  - `Cache.put()` **throws on a 206**, and the hero video arrives as range requests. Cache only
+    `status === 200` or an opaque cross-origin response (which reports 0), and `.catch()` the put.
+- **Never cached:** the Firebase path, open-meteo and open.er-api. A cached write would silently lose
+  a comment, and a stale temperature or exchange rate is worse than no card (see "Live data").
+- Offline reality, as the practical-info card tells the family: the plan, the restaurant list and the
+  already-loaded comments work; new comments queue on the device; **the map only shows tiles already
+  viewed on that phone** — for real navigation they download Google Maps offline areas.
+- Verified in-browser: server stopped → reload → all 12 views, all 23 restaurants and all 11 boards
+  render from cache, with the fonts.
+
+### Map tiles offline — do NOT add a "download the map" button
+
+The user asked for the map offline "to some degree, at a zoom that doesn't cost too much storage".
+The answer is a capped runtime cache, and the reason it is not a bulk download is a hard external
+constraint, not a design preference. The [OSMF tile usage policy](https://operations.osmfoundation.org/policies/tiles/)
+says, verbatim: **"Offline use is not permitted on `tile.openstreetmap.org`"**, it defines bulk
+downloading as *"any pre-emptive fetching of tiles other than those a user is actively viewing"*, and
+it warns that prefetch/offline patterns **"will be blocked without notice"**. Caching what a user
+actively views is the behaviour it explicitly asks for. Being blocked mid-trip is a worse outcome
+than having no basemap, and the tile servers are community-funded.
+
+So: `TILES` is a **second cache**, `albania-2026-tiles`, cap `TILE_MAX = 900` (~15–20 MB — opaque
+cross-origin responses carry quota padding, so it bills above the raw PNG bytes), evicted oldest
+first, trimmed every 60th put because `keys()` walks the whole cache.
+
+**It deliberately survives a `V` bump** — `activate` keeps `V` *and* `TILES`. It is not shell, it is
+the areas the family has already primed; wiping it on a content edit would silently un-prime their
+offline map with nothing on screen to explain why. There is a test for exactly this.
+
+A cached tile is never revalidated: it is a picture of a mountain, and not re-asking is what the
+policy wants. `map.html` catches the first `tileerror` and says once that the basemap is missing but
+the pins still work — otherwise offline is an unexplained grey void.
+
+If a real offline basemap is ever wanted, the route is self-hosted vector tiles (Protomaps/PMTiles +
+MapLibre), not more caching — that means replacing the Leaflet raster layer, and a ~30–80 MB asset in
+a public repo. Not worth it for this trip.
+
+### `sw.test.js` — `node sw.test.js`, no deps, no framework
+
+The service worker is the one part of this page that fails **invisibly**: it runs on a phone in
+Albania where nobody will read a console, and the in-app browser used for verification blocks both
+unpkg and the OSM tile host, so its two most important behaviours cannot be exercised there. The test
+stubs the Cache API and asserts: tile routing matches only the real tile hosts (a/b/c + bare, and
+crucially *not* a URL that merely contains that string), `activate` keeps the shell **and** the tile
+cache while dropping older versions, and the cap evicts oldest-first. Mutation-checked — all three
+assertions were confirmed to fail when the corresponding logic is broken.
 
 ## Dynamic data (Firebase)
 
@@ -89,6 +176,42 @@ The full rules document lives in the [README](../../README.md#firebase-realtime-
 Reads are one shared `GET albania2026.json` for the whole page (all 12 boards slice it
 client-side — don't reintroduce a fetch per board). Writes `PUT` the entry node, deletes
 `DELETE` it.
+
+### Offline boards (built Aug 2026 with the PWA — "handle the comments, storing locally and syncing when online again")
+
+The service worker deliberately never touches these requests, so the boards carry their own two
+`localStorage` stores. A cached HTTP response saying "201 created" would lose a comment silently;
+an explicit queue cannot.
+
+| key | holds |
+|---|---|
+| `albania2026_cache` | the last successful whole-DB read — what the boards render with no network |
+| `albania2026_queue` | writes not yet accepted: `[{p:path, m:'PUT'|'DELETE', b:body}]`, oldest first |
+
+- **One code path for online and offline.** `submit(op)` tries the network and falls back to the
+  queue; only a *permanent* rejection (401 `rules`, any 4xx) surfaces as an error. A rejected
+  `fetch()` promise is a dead network and is recoverable — that distinction is the whole design, so
+  keep `send()`'s two-arm `.then(ok, fail)` shape rather than collapsing it into one `.catch`.
+- `overlay()` renders queued writes as if they had landed, tagged `_p` → `li.pend` (dashed gold) and
+  "⏳ ממתין לשליחה". **`_p` exists only in that deep copy** — writes send `op.b`, so it never reaches
+  the DB, where the rules' `$other:false` would 401 it.
+- The queue drains **in order, oldest first** (a comment's `PUT` must precede its `DELETE`), stops at
+  the first network failure, and *drops* anything the server rejects for good — otherwise one bad op
+  blocks every comment behind it forever. Triggered on load and on `window` `online`.
+- Timestamps are stamped when the comment is *written*, not when it syncs, so a comment composed in
+  the mountains keeps its real place in the thread.
+- When a board renders from the cache it says so: `· מוצג מהמכשיר — אין רשת`.
+- Verified in-browser: comment written with the DB unreachable → queued, shown pending, survived a
+  reload → connection restored → flushed to the real DB with its original timestamp, pending marker
+  cleared, queue empty. The test rows were deleted afterwards.
+
+### Links inside comments are links (family request, folded in Aug 2026)
+
+The comment was literally "כשמוסיפים הערה עם לינק - זה צריך להיות לינק". `linkify()` splits the body
+on `(?:https?:\/\/|www\.)[^\s]+`, strips trailing sentence punctuation from the match, and runs every
+candidate through the **same `safeUrl()`** the links board uses — so a `javascript:` payload stays
+literal text and a bare domain is upgraded to `https://`. Text nodes and `a.textContent` only; no
+`innerHTML` anywhere near it. Anything that fails `safeUrl()` is left as plain text, not dropped.
 
 *History: entries were originally one flat key holding a JSON string, because the first
 version of the rules allowed only bool/number/string per key. The rules were widened to
@@ -131,8 +254,15 @@ EOF
 After folding an entry into the page, delete it so the board doesn't accumulate stale notes:
 `curl -X DELETE ".../albania2026/comments/<view>/<id>.json"`. Delete **per entry as it lands**, not as
 one sweep at the end — if part of the batch gets deferred, its comment should still be sitting there.
-This cycle ran once already (Aug 2026): 13 comments in, all folded into the page, all deleted. The
-`links/` board is separate and is *not* part of it — those are reference links the family wants kept.
+This cycle has run twice (Aug 2026). First pass: 13 comments in, all folded, all deleted. Second
+pass: 3 comments — the eSIM picks became links in the `📶 תקשורת` card (tracking params stripped,
+`utm_*`/`fpr`), "a link in a comment should be a link" became `linkify()`, and the restaurant-hours
+request took two rounds. The hours comment was **deliberately left on the board after round one**
+(only 6 of 23 answerable from primary sources); the user then explicitly lowered the sourcing bar,
+round two filled 14 more from aggregators behind an `≈` mark, and only then was it deleted. That is
+the rule working as intended: a partly-folded ask keeps its comment until it is actually done. All
+comment boards are now empty. The `links/` board is separate and is *not* part of this — those are
+reference links the family wants kept.
 
 The name box remembers itself in `localStorage` under `albania2026_name`. All 12 boards are built once
 at load, so storing it only helped the *next* visit; `rememberName()` therefore also writes the value
@@ -144,8 +274,9 @@ same session, which is what the family actually complained about.
 Anyone can write anything to that path, so **everything read back is untrusted input from the
 internet.**
 
-- Render **only** with `textContent`. Never `innerHTML` for stored values. (The five
-  `innerHTML` uses in the page are all `= ''` clears — keep it that way.)
+- Render **only** with `textContent`, or a text node inside a fragment (see `linkify()`). Never
+  `innerHTML` for stored values. (The four `innerHTML` uses in `trip.js` are all `= ''` clears —
+  keep it that way.)
 - **Re-validate every URL at render time**, not just on submit: `new URL()` and accept only
   `http:`/`https:`. Anything else is dropped silently. This blocks `javascript:` and `data:`.
 - Links get `rel="noopener noreferrer nofollow"` and `target="_blank"`.
@@ -159,7 +290,10 @@ DB, and the test rows were removed afterwards.
 
 ## HTML structure (technical)
 
-Single HTML file, SPA, inline CSS+JS. Only external dependency: Google Fonts (Suez One, Assistant, Heebo).
+SPA. `index.html` holds the content and the CSS; **all the JS lives in `trip.js`** (user's request,
+Aug 2026 — the HTML file was 1,760 lines and over a third of it was script). Loaded with `defer`, so
+it still runs against a complete DOM exactly as the end-of-body inline block did. Only external
+dependency: Google Fonts (Suez One, Assistant, Heebo).
 
 - Each section = `div.view` with `id="view-XXX"`. Navigation via elements with `data-view="XXX"`.
 - Existing views: `home, map, agenda, north, tirana, drive, south, last, food, info, checklist, mine`. All but `map` carry a `.talk` board.
@@ -271,10 +405,50 @@ duplicated in both files, deliberately: seven pairs are cheaper than another fet
 **Two things were deliberately dropped from the user's source JSON.** The review *counts* were junk —
 only the values 269/188/267 appear across all 21 rows, so they are an extraction artefact, not data;
 the scores were kept, the counts were not. And the `Opening times` field only ever held **Saturday**
-hours, so the page labels them `שבת …` rather than presenting them as daily. Two entries were
-researched separately and do say `כל יום` (Era, The Mussel House).
+hours, so the page used to label them `שבת …` rather than present them as daily. **No `שבת …` value
+survives** — every entry now carries weekly hours, in the two sourcing tiers described below.
+
+**Panja's hours are settled** (Aug 2026, and an earlier note in this file claiming a conflict was
+wrong — it recorded "Mon–Sat 08:00, Sun 10:00", which is not reproducible from any loadable source).
+RestaurantGuru and Wanderlog independently agree on **Sun 09:00–21:00, Mon–Sat 07:00–21:00**, which
+*confirms* the 07:00 opening the page already had rather than contradicting it. Verified directly,
+not only via the researching agent. 14.8 is a Friday → 07:00–21:00.
+
+**Salad Farm, Sarandë — permanently closed** (verified Aug 2026). Do not re-add it. It appears in
+older sources as a gluten-friendly Sarandë option, so it will keep resurfacing. The page used to
+carry a line saying it had been removed; that line was deleted as change-history the reader does not
+need (content principle 1), which is why the fact lives here instead. It was also still listed on the
+family deck's Sarandë slide until Aug 2026 — check `presentation/index.html` too when a restaurant
+comes off the list, it has its own hard-coded copy.
 
 Adding a restaurant = one object in the JSON. Do **not** add a matching pin to `map.html`.
+**A change here needs a `V` bump in `sw.js`** — the file is precached, so installed phones keep the
+old list otherwise.
+
+### Two sourcing tiers for `hours`, and the `≈` that marks them (user's call, Aug 2026)
+
+The user asked for weekly hours on *all* restaurants, which meant explicitly lowering the bar below
+"the restaurant's own website". The page does not hide that:
+
+- **No prefix = the restaurant's own site.** 8 entries: `tonys, era, bitter, odas, panevino,
+  delibros, sophra, musselhouse`.
+- **`≈ ` prefix = a Google-mirror aggregator** (RestaurantGuru, Wanderlog, evendo, Sluurpy). 14
+  entries. The food card explains the mark in one line — **keep it explained if you touch that copy,
+  or the `≈` becomes a mystery glyph.**
+- `blloku` has no hours and never should: it is a restaurant *district*, not a venue.
+
+Findings worth keeping:
+- **Not one of the 23 has a weekly closing day** on any source. For an Albanian August that is
+  plausible, but it is absence of evidence — the page says so rather than promising "open every day".
+- Where sources disagreed, the value that matched the existing Google-derived Saturday reading won,
+  and the disagreement went into the entry's `note` rather than being silently resolved:
+  **`mkanda`** (two sources say the close is 22:00, not 23:00 — flagged as the weakest number on the
+  page) and **`vrioni`** (Wanderlog lists a different address, so there are probably two branches;
+  the pin and the hours are the Kavaja St one).
+- `smokehouse`: evendo says 12:00–22:30 against RG + Wanderlog's 12:30–23:30 — outlier, discarded.
+- `kerculla`: Sluurpy's "00:00–23:59" is a hotel front-desk scraping artefact, not restaurant hours.
+- RestaurantGuru's main host 503s after ~8 requests; the language subdomains (`de.`, `it.`, `es.`,
+  `nl.`) serve the same JSON-LD and are rate-limited separately. TripAdvisor 403s here.
 
 **The map is a view, not a page jump (user's explicit request, Aug 2026 — "make it feel like one page").**
 `#map` / `#map/<category>` selects `view-map`, whose only child is `<iframe class="mapframe">`. `show()`

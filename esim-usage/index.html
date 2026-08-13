@@ -253,6 +253,9 @@ if (!new URLSearchParams(location.search).has('selftest')) {
   ok(pct(999, 100) === 100, 'pct clamps');
   ok(new Set(ESIMS.map(e => e.iccid)).size === ESIMS.length, 'no duplicate ICCIDs');
   ok(ESIMS.every(e => /^\d{19,20}$/.test(e.iccid)), 'ICCIDs look like ICCIDs');
+  // One batched call carries a single providerCode, so a mixed-route set must fail loudly here
+  // rather than silently querying every eSIM with the first one's route.
+  ok(new Set(ESIMS.map(e => e.providerCode)).size === 1, 'all eSIMs share one providerCode');
   statusEl.textContent = 'selftest passed';
 }
 </script>

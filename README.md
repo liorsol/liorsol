@@ -31,10 +31,24 @@ sprites. Styling follows their success page (`esim-purple #8b5cf6`, `esim-dark #
 `purple-50→blue-50` cards, `purple-500→blue-500` bar fill, cyan game card).
 
 Only ICCIDs are hardcoded — the Stripe `session_id`/`payment_intent` would expose the eSIM QR
-codes, so they stay out of this public repo. Adding an eSIM means one line in `ESIMS` (its name
-and ICCID, which `get-esim?session_id=…` returns for the order) plus the same ICCID in the
-worker's `ICCIDS` allowlist, then a redeploy — the worker URL is unauthenticated, so it only
-answers for known ICCIDs and can't be used to look up anyone else's eSIM.
+codes, so they stay out of this public repo. They live in the order-confirmation emails
+(`esim.dog/success?session_id=…`); keep them there. Everything about an order comes from:
+
+```
+curl -s 'https://esim.dog/.netlify/functions/get-esim?session_id=cs_live_…'          # or
+curl -s 'https://esim.dog/.netlify/functions/get-esim-by-payment-intent?payment_intent_id=pi_…'
+```
+
+Adding an eSIM: take `esim.iccid` from that response, add a `{ name, iccid }` line to `ESIMS`
+in the page, add the same ICCID to the worker's `ICCIDS` allowlist, and redeploy the worker.
+The worker URL is unauthenticated, so that allowlist is what stops it being a usage lookup for
+anyone else's eSIM.
+
+**`providerCode` is per route, and the batched call sends one for all of them.** esim.dog picks
+it from the plan-id prefix — `GREEN_`=1, `YELLOW_`=2, `PINK_`=3, `BLACK_`=4 — and all four
+current eSIMs are `BLACK_AL_12GB_30D`, so `fetchUsage` sends `ESIMS[0].providerCode` for the
+whole `iccidList`. An eSIM on a different route needs its own request; `?selftest=1` fails if
+the codes ever stop matching, rather than letting the page query with the wrong one.
 
 That endpoint is `POST`-only and sends no CORS headers, and every free public proxy forwards as
 `GET` (→ `405`), so the page needs [`proxy.js`](esim-usage/proxy.js) — a ~15-line Cloudflare
@@ -54,9 +68,19 @@ If the bars fail with "Failed to fetch", check whether the network or browser bl
 `*.workers.dev` (Zero Trust, VPN, ad blocker) — opening the worker URL directly should print
 `POST only`.
 
-Checks: `esim-usage/?selftest=1` asserts the byte/percent formatting, and
-`node esim-usage/game.test.mjs` drives the mini-game's frames (a hidden browser tab delivers no
-`requestAnimationFrame`, so the game can only be verified headlessly).
+Rolling the worker back: `npx wrangler rollback --name esim-usage-proxy` (or
+`npx wrangler versions list --name esim-usage-proxy` to pick one). `npx wrangler dev
+esim-usage/proxy.js --name esim-usage-proxy --compatibility-date 2026-01-01 --port 8787`
+runs it locally, which is how the allowlist was tested before deploying.
+
+The mini-game hotlinks esim.dog's sprite sheets (`/mini-game/running_dog_mascot.png`,
+`dying_dog_mascot.png`, `obstacles/{Box1,Box2,Capsule}/N.png`). If they ever move those, the
+game keeps working and falls back to plain purple rectangles.
+
+Checks: `esim-usage/?selftest=1` asserts the byte/percent formatting, that ICCIDs are unique and
+well-formed, and that every eSIM shares one `providerCode`; `node esim-usage/game.test.mjs`
+drives the mini-game's frames (a hidden browser tab delivers no `requestAnimationFrame`, so the
+game can only be verified headlessly).
 
 ## The file browser (`index.html`)
 

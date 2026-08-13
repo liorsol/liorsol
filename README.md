@@ -44,9 +44,15 @@ Worker, deployed with:
 npx wrangler deploy esim-usage/proxy.js --name esim-usage-proxy --compatibility-date 2026-01-01
 ```
 
-Then load the page once with `?proxy=<worker URL>`; it is kept in `localStorage` per device.
-Without it the bars show a "could not reach the usage API" message. Adding an origin (a custom
-domain, another dev port) means editing `ALLOWED` in the worker and redeploying.
+The resulting URL is hardcoded as `ENDPOINT` in the page. That is deliberate: the worker only
+answers for the ICCIDs it knows, so the URL is not a secret, and keeping it in `localStorage`
+per device meant every phone that opened the plain URL got "could not reach the usage API".
+`?proxy=<url>` still overrides it for a different deployment. Adding an origin (a custom domain,
+another dev port) means editing `ALLOWED` in the worker and redeploying.
+
+If the bars fail with "Failed to fetch", check whether the network or browser blocks
+`*.workers.dev` (Zero Trust, VPN, ad blocker) — opening the worker URL directly should print
+`POST only`.
 
 Checks: `esim-usage/?selftest=1` asserts the byte/percent formatting, and
 `node esim-usage/game.test.mjs` drives the mini-game's frames (a hidden browser tab delivers no

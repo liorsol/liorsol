@@ -7,8 +7,7 @@
 // Deploy (free plan, no config file needed):
 //   npx wrangler login
 //   npx wrangler deploy esim-usage/proxy.js --name esim-usage-proxy --compatibility-date 2026-01-01
-// Then open the page once with the worker URL, it is remembered per device:
-//   https://liorsol.github.io/liorsol/esim-usage/?proxy=https://esim-usage-proxy.<subdomain>.workers.dev
+// The deployed URL is hardcoded as ENDPOINT in index.html; ?proxy=<url> overrides it.
 //
 // It holds no secrets: one endpoint, four known ICCIDs, nothing else gets through.
 

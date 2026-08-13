@@ -143,16 +143,13 @@ const ESIMS = [
   ...e,
 }));
 
-const API = 'https://esim.dog/.netlify/functions/check-esim-usage';
-
-// The usage endpoint is POST-only and sends no CORS headers, so the browser cannot
-// call it directly. Public proxies are no help either: they all forward as GET and
-// the function answers 405. Hence proxy.js in this folder — deploy it once, then open
-// this page with ?proxy=https://…workers.dev and the URL sticks in localStorage.
-// ponytail: localStorage instead of hardcoding, so redeploying the worker is a URL change, not a commit.
-const qsProxy = new URLSearchParams(location.search).get('proxy');
-if (qsProxy) localStorage.setItem('esimProxy', qsProxy);
-const ENDPOINT = localStorage.getItem('esimProxy') || API;
+// esim.dog's usage endpoint is POST-only and sends no CORS headers, so the browser
+// cannot call it directly. Public proxies are no help either: they all forward as GET
+// and the function answers 405. So every request goes through proxy.js in this folder.
+// Hardcoded on purpose: the worker only answers for the ICCIDs above, so its URL is not
+// a secret — and requiring ?proxy= per device meant every phone got an error instead.
+const ENDPOINT = new URLSearchParams(location.search).get('proxy')
+  || 'https://esim-usage-proxy.xlllsss.workers.dev';
 
 const GB = 1024 ** 3;
 const fmtGB = b => (b / GB).toFixed(2) + ' GB';
@@ -233,9 +230,8 @@ async function refresh() {
       ' · esim.dog refreshes usage every 2-3 hours';
   } catch (e) {
     statusEl.innerHTML = `<span class="err">Could not reach the usage API (${e.message}).</span>` +
-      (localStorage.getItem('esimProxy') ? '' :
-        `<br>esim.dog blocks cross-origin calls. Deploy <code>esim-usage/proxy.js</code>
-         and reopen this page with <code>?proxy=&lt;worker URL&gt;</code>.`);
+      `<br>If this network or browser blocks <code>*.workers.dev</code> (VPN, Zero Trust,
+       ad blocker), that is the usual cause — the console error says which.`;
   } finally {
     cards.forEach(c => c.classList.remove('loading'));
     btn.classList.remove('loading');

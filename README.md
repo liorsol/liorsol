@@ -13,11 +13,44 @@ dependencies — every page is plain HTML/CSS/JS and can be opened straight from
 | [`savings-calculator.html`](savings-calculator.html) | Monthly portfolio simulator: deposits, withdrawals, fees, capital-gains tax, inflation indexation. Hebrew, RTL. |
 | [`restaurants.html`](restaurants.html) | HTZone restaurant list, sortable/filterable (`app.js` + `rest_combined.json`). |
 | [`car-checklist.html`](car-checklist.html) | Road-trip car checklist, synced across devices via Firebase Realtime Database. |
+| [`esim-usage/`](esim-usage/) | Data-usage bars for the family's esim.dog eSIMs, one refresh button, per-eSIM details. Needs the Cloudflare Worker in [`esim-usage/proxy.js`](esim-usage/proxy.js). |
 | [`trips/albania-2026/`](trips/albania-2026/) | Family trip page (SPA, deep links, shared comment/link boards), Leaflet map, reveal.js slide deck, and the raw research the plan was built from. |
 | [`trips/jerusalem-2026/`](trips/jerusalem-2026/) | Family weekend trip page (SPA with map, trivia, media). |
 
 `albania-2026.html` and `jerusalem-2026.html` at the root are redirect stubs to the moved
 trip pages — keep them, old links point there.
+
+## The eSIM usage page (`esim-usage/`)
+
+One bar per family eSIM, fed by a single batched `POST` to esim.dog's `check-esim-usage`
+function (every ICCID in one `iccidList`). Each bar has its own collapsed **eSIM details**
+panel — ICCID, country, plan, coverage, networks, SM-DP+, APN and that eSIM's two
+troubleshooting links — because a future order may not share the current plan. Below the bars:
+the shared help links and a clone of their score-500 mini-game, drawn with esim.dog's own
+sprites. Styling follows their success page (`esim-purple #8b5cf6`, `esim-dark #1e1b4b`, Inter,
+`purple-50→blue-50` cards, `purple-500→blue-500` bar fill, cyan game card).
+
+Only ICCIDs are hardcoded — the Stripe `session_id`/`payment_intent` would expose the eSIM QR
+codes, so they stay out of this public repo. Adding an eSIM means one line in `ESIMS` (its name
+and ICCID, which `get-esim?session_id=…` returns for the order) plus the same ICCID in the
+worker's `ICCIDS` allowlist, then a redeploy — the worker URL is unauthenticated, so it only
+answers for known ICCIDs and can't be used to look up anyone else's eSIM.
+
+That endpoint is `POST`-only and sends no CORS headers, and every free public proxy forwards as
+`GET` (→ `405`), so the page needs [`proxy.js`](esim-usage/proxy.js) — a ~15-line Cloudflare
+Worker, deployed with:
+
+```
+npx wrangler deploy esim-usage/proxy.js --name esim-usage-proxy --compatibility-date 2026-01-01
+```
+
+Then load the page once with `?proxy=<worker URL>`; it is kept in `localStorage` per device.
+Without it the bars show a "could not reach the usage API" message. Adding an origin (a custom
+domain, another dev port) means editing `ALLOWED` in the worker and redeploying.
+
+Checks: `esim-usage/?selftest=1` asserts the byte/percent formatting, and
+`node esim-usage/game.test.mjs` drives the mini-game's frames (a hidden browser tab delivers no
+`requestAnimationFrame`, so the game can only be verified headlessly).
 
 ## The file browser (`index.html`)
 

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instant eSIM for Travelers | 210+ Countries from $1.32</title>
+<meta name="theme-color" content="#9333ea">
+<link rel="icon" href="https://esim.dog/esimdoglogo-nobg.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* esim.dog's own palette: esim-purple, esim-dark and the Tailwind shades their success page uses. */
+  :root {
+    --purple:#8b5cf6; --purple-500:#a855f7; --purple-600:#9333ea; --purple-800:#6b21a8;
+    --purple-50:#faf5ff; --purple-100:#f3e8ff; --purple-200:#e9d5ff;
+    --blue-50:#eff6ff; --blue-500:#3b82f6;
+    --cyan-50:#ecfeff; --cyan-200:#a5f3fc; --cyan-400:#22d3ee; --cyan-600:#0891b2;
+    --dark:#1e1b4b; --gray-200:#e5e7eb; --gray-500:#6b7280; --gray-600:#4b5563; --gray-700:#374151;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--dark);
+         font:16px/1.5 Inter,system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  main { max-width:28rem; margin:0 auto; padding:2rem 1rem; }
+
+  header { display:flex; align-items:center; gap:.75rem; margin-bottom:2rem; }
+  header img { width:3rem; height:3rem; }
+  h1 { font-size:1.5rem; font-weight:800; margin:0; }
+
+  .esim { background:linear-gradient(to bottom right,var(--purple-50),var(--blue-50));
+          border:2px solid var(--purple-200); border-radius:1rem; padding:1.5rem; margin-bottom:1.5rem; }
+  .esim > .top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.5rem; }
+  .name { font-size:1.125rem; font-weight:700; }
+  .used { font-size:1.5rem; font-weight:700; color:var(--purple-600); font-variant-numeric:tabular-nums; }
+  .of { font-size:.875rem; color:var(--gray-600); }
+  .track { width:100%; height:1rem; background:var(--gray-200); border-radius:999px; overflow:hidden; }
+  .fill { height:1rem; width:0; border-radius:999px; transition:width .5s;
+          background:linear-gradient(to right,var(--purple-500),var(--blue-500)); }
+  .fill.warn { background:linear-gradient(to right,#f59e0b,#f97316); }
+  .fill.hot  { background:linear-gradient(to right,#ef4444,#dc2626); }
+  /* Refreshing: every bar sweeps at once, so it is obvious all four are being re-read. */
+  .esim.loading .track { background:linear-gradient(90deg,var(--gray-200) 25%,var(--purple-200) 50%,var(--gray-200) 75%);
+                         background-size:200% 100%; animation:sweep 1.1s linear infinite; }
+  .esim.loading .fill { opacity:.35; }
+  .esim.loading .used, .esim.loading .of, .esim.loading .under { opacity:.4; }
+  .esim .used, .esim .of, .esim .under, .esim .fill { transition:opacity .2s; }
+  button.refresh.loading .icon { display:inline-block; animation:spin .8s linear infinite; }
+  @keyframes sweep { from { background-position:200% 0 } to { background-position:-200% 0 } }
+  @keyframes spin { to { transform:rotate(360deg) } }
+  @media (prefers-reduced-motion:reduce) {
+    .esim.loading .track, button.refresh.loading .icon { animation:none; }
+  }
+
+  .under { display:flex; justify-content:space-between; align-items:center;
+           margin-top:.5rem; font-size:.875rem; }
+  .under .left { font-weight:600; color:var(--gray-700); }
+  .under .right { color:var(--gray-600); }
+
+  details.sim { margin-top:1rem; }
+  details.sim > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:.375rem;
+                          font-size:.75rem; font-weight:600; color:var(--purple-600); }
+  details.sim > summary::-webkit-details-marker { display:none; }
+  details.sim > summary::after { content:'+'; font-size:1rem; line-height:1; }
+  details.sim[open] > summary::after { content:'−'; }
+  details.sim > summary:hover { color:var(--purple-800); }
+  .fields { margin-top:.75rem; background:rgba(255,255,255,.6); border:1px solid var(--purple-100);
+            border-radius:.75rem; padding:.75rem; display:grid; grid-template-columns:auto 1fr;
+            gap:.5rem .75rem; font-size:.8125rem; }
+  .fields dt { color:var(--gray-500); } .fields dd { margin:0; font-weight:600; text-align:right; }
+  .fields dd.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.75rem; }
+  .simlinks { display:grid; gap:.5rem; margin-top:.75rem; }
+  .simlinks a { font-size:.75rem; font-weight:700; text-decoration:none; color:#fff;
+                padding:.625rem; border-radius:.75rem; text-align:center; }
+  .simlinks a.amber { background:#f59e0b; } .simlinks a.orange { background:#f97316; }
+
+  button.refresh { width:100%; padding:.875rem; font:700 1rem Inter,system-ui,sans-serif; color:#fff;
+                   background:var(--purple); border:0; border-radius:.75rem; cursor:pointer; }
+  button.refresh:hover { background:var(--purple-600); }
+  button.refresh:disabled { opacity:.6; cursor:default; }
+  .status { text-align:center; font-size:.75rem; color:var(--gray-500); min-height:1.125rem; margin:.75rem 0 2rem; }
+  .err { color:#b91c1c; }
+
+  .help { background:#fff; border:1px solid var(--gray-200); border-radius:1rem; overflow:hidden; margin-bottom:1.5rem; }
+  .help > summary { list-style:none; cursor:pointer; background:#f9fafb; padding:1.25rem;
+                    display:flex; align-items:center; gap:.75rem; font-weight:700; }
+  .help > summary::-webkit-details-marker { display:none; }
+  .help > summary .sub { display:block; font-size:.875rem; font-weight:400; color:var(--gray-600); }
+  .help .links { background:#f9fafb; padding:1rem; display:grid; gap:.75rem; border-top:1px solid var(--gray-200); }
+  .help .links a { display:block; padding:.75rem; border-radius:.75rem; text-decoration:none;
+                   font-weight:600; color:var(--dark); text-align:center; }
+  .help .links a.blue { background:var(--blue-50); border:1px solid #bfdbfe; }
+  .help .links a.purple { background:var(--purple-50); border:1px solid var(--purple-200); }
+
+  .game { background:linear-gradient(to bottom right,var(--cyan-50),#e0f2fe);
+          border:2px solid var(--cyan-200); border-radius:1.5rem; padding:1.5rem; text-align:center; }
+  .game h2 { font-size:1.125rem; font-weight:700; margin:0 0 .25rem; }
+  .game .sub { font-size:.875rem; color:var(--gray-500); margin:0 0 1rem; }
+  .game .frame { display:inline-block; border:2px solid var(--cyan-200); border-radius:.75rem;
+                 overflow:hidden; background:#fff; }
+  canvas { display:block; image-rendering:pixelated; max-width:100%; height:auto; touch-action:manipulation; }
+  .game .hint { font-size:.875rem; font-weight:600; color:var(--cyan-600); margin:.75rem 0 0; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <img src="https://esim.dog/esimdoglogo-nobg.png" alt="eSIM.dog">
+  <h1>eSIM Data Usage</h1>
+</header>
+
+<div id="bars"></div>
+
+<button class="refresh" id="refresh"><span class="icon">🔄</span> Refresh all</button>
+<p class="status" id="status"></p>
+
+<details class="help">
+  <summary><span style="font-size:1.5rem">📚</span>
+    <span>Installation Instructions &amp; Help<span class="sub">Guides, FAQ, and troubleshooting</span></span>
+  </summary>
+  <div class="links">
+    <a class="blue" href="https://esim.dog/installation-instructions" target="_blank" rel="noopener">📱 Installation Instructions</a>
+    <a class="purple" href="https://esim.dog/faq" target="_blank" rel="noopener">❓ FAQ</a>
+  </div>
+</details>
+
+<div class="game">
+  <div class="frame"><canvas id="game" width="400" height="200"></canvas></div>
+  <p class="hint" id="gameHint">Tap or press SPACE to jump over obstacles</p>
+</div>
+
+<script>
+// ponytail: ICCIDs are the only identifier check-esim-usage needs — the Stripe
+// session/payment ids stay out of this public repo (they'd expose the eSIM QR codes).
+// Plan fields are per eSIM on purpose: identical today, but a different order won't lie.
+const ESIMS = [
+  { name: 'ליאור', iccid: '8948010010087231980' },
+  { name: 'מור',   iccid: '8948010010087232053' },
+  { name: 'זואי',  iccid: '8948010010087232079' },
+  { name: 'הרצל',  iccid: '8948010010087232699' },
+].map(e => ({
+  country: 'Albania', plan: '12GB - 30 days validity', coverage: 'LTE + 5G',
+  networks: 'One', smdp: 'smdp.io', apn: 'plus', providerCode: 4, // BLACK_AL_12GB_30D
+  ...e,
+}));
+
+const API = 'https://esim.dog/.netlify/functions/check-esim-usage';
+
+// The usage endpoint is POST-only and sends no CORS headers, so the browser cannot
+// call it directly. Public proxies are no help either: they all forward as GET and
+// the function answers 405. Hence proxy.js in this folder — deploy it once, then open
+// this page with ?proxy=https://…workers.dev and the URL sticks in localStorage.
+// ponytail: localStorage instead of hardcoding, so redeploying the worker is a URL change, not a commit.
+const qsProxy = new URLSearchParams(location.search).get('proxy');
+if (qsProxy) localStorage.setItem('esimProxy', qsProxy);
+const ENDPOINT = localStorage.getItem('esimProxy') || API;
+
+const GB = 1024 ** 3;
+const fmtGB = b => (b / GB).toFixed(2) + ' GB';
+const pct = (used, total) => total > 0 ? Math.min(100, used / total * 100) : 0;
+
+const statusEl = document.getElementById('status');
+const btn = document.getElementById('refresh');
+
+document.getElementById('bars').innerHTML = ESIMS.map((e, i) => `
+  <div class="esim">
+    <div class="top">
+      <span class="name">${e.name}</span>
+      <span><span class="used" id="used${i}">—</span> <span class="of" id="of${i}"></span></span>
+    </div>
+    <div class="track"><div class="fill" id="fill${i}"></div></div>
+    <div class="under">
+      <span class="left" id="left${i}">not loaded yet</span>
+      <span class="right" id="right${i}"></span>
+    </div>
+    <details class="sim">
+      <summary>eSIM details</summary>
+      <dl class="fields">
+        <dt>ICCID</dt><dd class="mono">${e.iccid}</dd>
+        <dt>Country</dt><dd>${e.country}</dd>
+        <dt>Plan</dt><dd>${e.plan}</dd>
+        <dt>Coverage</dt><dd>${e.coverage}</dd>
+        <dt>Networks</dt><dd>${e.networks}</dd>
+        <dt>SM-DP+</dt><dd class="mono">${e.smdp}</dd>
+        <dt>APN</dt><dd class="mono">${e.apn}</dd>
+      </dl>
+      <div class="simlinks">
+        <a class="amber" target="_blank" rel="noopener"
+           href="https://esim.dog/cannot-activate-esim?country=${encodeURIComponent(e.country)}&smdp=${encodeURIComponent(e.smdp)}">⚠️ Cannot activate an eSIM?</a>
+        <a class="orange" target="_blank" rel="noopener"
+           href="https://esim.dog/internet-not-working?apn=${encodeURIComponent(e.apn)}&smdp=${encodeURIComponent(e.smdp)}&country=${encodeURIComponent(e.country)}">🌐 Activated, but internet not working?</a>
+      </div>
+    </details>
+  </div>`).join('');
+
+function render(i, u) {
+  const p = pct(u.dataUsage, u.totalData);
+  const fill = document.getElementById('fill' + i);
+  fill.style.width = p + '%';
+  fill.className = 'fill' + (p >= 90 ? ' hot' : p >= 75 ? ' warn' : '');
+  document.getElementById('used' + i).textContent = fmtGB(u.dataUsage);
+  document.getElementById('of' + i).textContent = 'of ' + fmtGB(u.totalData);
+  document.getElementById('left' + i).textContent = p.toFixed(1) + '% used';
+  document.getElementById('right' + i).textContent =
+    `${fmtGB(u.remainingData)} left · ${u.status}` +
+    (u.expiryDate ? ` · expires ${new Date(u.expiryDate).toLocaleDateString()}` : '');
+}
+
+async function fetchUsage() {
+  const r = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ iccidList: ESIMS.map(e => e.iccid), providerCode: ESIMS[0].providerCode }),
+  });
+  const j = await r.json();
+  if (!r.ok || !j.success) throw new Error(j.error || 'HTTP ' + r.status);
+  return j.usage;
+}
+
+async function refresh() {
+  const cards = document.querySelectorAll('.esim');
+  cards.forEach(c => c.classList.add('loading'));
+  btn.classList.add('loading');
+  btn.disabled = true;
+  statusEl.textContent = 'Loading…';
+  try {
+    const usage = await fetchUsage();
+    ESIMS.forEach((e, i) => {
+      const u = usage.find(x => x.iccid === e.iccid);
+      if (u) render(i, u);
+      else document.getElementById('left' + i).textContent = 'no usage data yet';
+    });
+    statusEl.textContent = 'Updated ' + new Date().toLocaleTimeString() +
+      ' · esim.dog refreshes usage every 2-3 hours';
+  } catch (e) {
+    statusEl.innerHTML = `<span class="err">Could not reach the usage API (${e.message}).</span>` +
+      (localStorage.getItem('esimProxy') ? '' :
+        `<br>esim.dog blocks cross-origin calls. Deploy <code>esim-usage/proxy.js</code>
+         and reopen this page with <code>?proxy=&lt;worker URL&gt;</code>.`);
+  } finally {
+    cards.forEach(c => c.classList.remove('loading'));
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+btn.addEventListener('click', refresh);
+
+// ponytail: assert-based self-check, open ?selftest=1 to run it instead of the live fetch.
+if (!new URLSearchParams(location.search).has('selftest')) {
+  refresh();
+} else {
+  const ok = (c, m) => { if (!c) throw new Error('selftest: ' + m); };
+  ok(fmtGB(12884901888) === '12.00 GB', 'fmtGB 12GiB');
+  ok(fmtGB(0) === '0.00 GB', 'fmtGB zero');
+  ok(pct(0, 12884901888) === 0, 'pct zero');
+  ok(pct(6442450944, 12884901888) === 50, 'pct half');
+  ok(pct(99, 0) === 0, 'pct guards divide-by-zero');
+  ok(pct(999, 100) === 100, 'pct clamps');
+  ok(new Set(ESIMS.map(e => e.iccid)).size === ESIMS.length, 'no duplicate ICCIDs');
+  ok(ESIMS.every(e => /^\d{19,20}$/.test(e.iccid)), 'ICCIDs look like ICCIDs');
+  statusEl.textContent = 'selftest passed';
+}
+</script>
+
+<script>
+// Runner clone of the esim.dog mini-game: their sprites, 10 pts/sec, 500 to win.
+(() => {
+  const c = document.getElementById('game'), x = c.getContext('2d');
+  const GROUND = 20, DOG = 72, FLOOR = c.height - GROUND - DOG, WIN = 500;
+  const hint = document.getElementById('gameHint');
+  const sheet = (file, frames) => { const i = new Image(); i.src = 'https://esim.dog/mini-game/' + file; i.frames = frames; return i; };
+  const run = sheet('running_dog_mascot.png', 6), die = sheet('dying_dog_mascot.png', 4);
+  // Same obstacle sheets and scales as the original.
+  const OBS = {
+    box1:    { w: 28 * 1.8, h: 28 * 1.8, dir: 'Box1', n: 5 },
+    box2:    { w: 32 * 1.6, h: 32 * 1.6, dir: 'Box2', n: 3 },
+    capsule: { w: 50 * 1.2, h: 48 * 1.2, dir: 'Capsule', n: 4 },
+  };
+  const TYPES = Object.keys(OBS);
+  for (const t of TYPES) {
+    OBS[t].img = Array.from({ length: OBS[t].n }, (_, k) => {
+      const i = new Image(); i.src = `https://esim.dog/mini-game/obstacles/${OBS[t].dir}/${k + 1}.png`; return i;
+    });
+  }
+  let s, last;
+
+  const reset = () => { s = { y: FLOOR, v: 0, obs: [], speed: 300, t: 0, spawn: 0, dead: 0, won: false, ground: 0 }; };
+  reset();
+  window.__game = () => s; // ponytail: the only way to check the loop without pixel-reading a tainted canvas
+
+  function jump() {
+    if (s.won) return;
+    if (s.dead) { reset(); return; }
+    if (s.y >= FLOOR) s.v = -650;
+  }
+  c.addEventListener('mousedown', e => { e.preventDefault(); jump(); });
+  c.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
+  addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
+  });
+
+  function step(dt) {
+    if (s.dead || s.won) return;
+    s.t += dt;
+    s.ground = (s.ground + s.speed * dt) % 20;
+    s.v += 1800 * dt; s.y += s.v * dt;
+    if (s.y > FLOOR) { s.y = FLOOR; s.v = 0; }
+    s.obs.forEach(o => o.x -= s.speed * dt);
+    s.obs = s.obs.filter(o => o.x > -80);
+    if (s.t - s.spawn > Math.max(0.55, 1 - (s.speed - 300) / 1500) + Math.random() * 0.6) {
+      const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+      s.obs.push({ x: c.width, w: OBS[type].w, h: OBS[type].h, type });
+      s.spawn = s.t;
+    }
+    if (s.speed < 600) s.speed += 5 * dt;
+    const dog = { x: 62, y: s.y + 15, w: DOG - 30, h: DOG - 20 };
+    for (const o of s.obs) {
+      if (dog.x < o.x + o.w * 0.8 && dog.x + dog.w > o.x + o.w * 0.2 &&
+          dog.y + dog.h > c.height - GROUND - o.h) s.dead = 1;
+    }
+    if (Math.floor(s.t * 10) >= WIN) { s.won = true; hint.textContent = '🏆 Beaten! Claim the 10% code on your esim.dog order page'; }
+  }
+
+  const ready = img => img && img.complete && img.naturalWidth > 0;
+
+  function draw() {
+    const score = Math.floor(s.t * 10);
+    x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+
+    x.fillStyle = '#535353';
+    x.fillRect(0, c.height - GROUND, c.width, 2);
+    for (let i = -s.ground; i < c.width; i += 20) x.fillRect(i, c.height - GROUND + 5, 6, 2);
+
+    for (const o of s.obs) {
+      const spec = o.type && OBS[o.type];
+      const img = spec && spec.img[Math.floor(s.t * 8) % spec.n];
+      if (ready(img)) x.drawImage(img, o.x, c.height - GROUND - o.h, o.w, o.h);
+      else { x.fillStyle = '#a855f7'; x.fillRect(o.x, c.height - GROUND - o.h, o.w, o.h); }
+    }
+
+    const dogImg = s.dead ? die : run;
+    const frame = s.dead ? die.frames - 1 : Math.floor(s.t * 12) % run.frames;
+    if (ready(dogImg)) x.drawImage(dogImg, 48 * frame, 0, 48, 48, 50, s.y, DOG, DOG);
+    else { x.fillStyle = '#8b5cf6'; x.fillRect(50, s.y + 10, 62, 52); }
+
+    x.fillStyle = '#535353'; x.font = 'bold 14px monospace'; x.textAlign = 'right';
+    x.fillText(String(score).padStart(5, '0'), c.width - 10, 24);
+    x.textAlign = 'center';
+    if (s.won) {
+      x.fillStyle = '#0891b2'; x.font = 'bold 18px monospace';
+      x.fillText('CONGRATS! YOU WON', c.width / 2, c.height / 2 - 8);
+      x.fillStyle = '#535353'; x.font = '12px monospace';
+      x.fillText('10% off — claim it on esim.dog', c.width / 2, c.height / 2 + 14);
+    } else if (s.dead) {
+      x.font = 'bold 20px monospace'; x.fillText('GAME OVER', c.width / 2, c.height / 2 - 20);
+      x.font = '14px monospace';
+      x.fillText('Score: ' + score, c.width / 2, c.height / 2 + 10);
+      x.fillText('Tap to try again', c.width / 2, c.height / 2 + 35);
+    } else if (s.t === 0) {
+      x.font = 'bold 14px monospace';
+      x.fillText('Tap or press SPACE to start', c.width / 2, c.height / 2 - 20);
+      x.fillText('Score ' + WIN + ' to win!', c.width / 2, c.height / 2 + 5);
+    }
+  }
+
+  requestAnimationFrame(function loop(now) {
+    const dt = last ? Math.min((now - last) / 1000, 0.05) : 0; last = now;
+    if (s.v || s.y < FLOOR || s.obs.length || s.t) step(dt);
+    draw();
+    requestAnimationFrame(loop);
+  });
+})();
+</script>
+</main>
+</body>
+</html>

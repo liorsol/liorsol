@@ -95,6 +95,15 @@
   document.querySelector('.navscrim').addEventListener('click', function(){ drawer(false); });
   nav.addEventListener('click', function(e){ if(e.target.closest('a,.brand')) drawer(false); });
 
+  /* Details-gated embeds (the eSIM usage widget): load only once opened, unlike the
+     map's iframe[data-src] above which loads as soon as its view opens. This one calls
+     a live API on load, so opening the info tab must not fire that request by itself. */
+  document.querySelectorAll('details > iframe[data-embed-src]').forEach(function(f){
+    f.closest('details').addEventListener('toggle', function(){
+      if(this.open && !f.getAttribute('src')) f.setAttribute('src', f.dataset.embedSrc);
+    });
+  });
+
   // print = everything open
   window.addEventListener('beforeprint', function(){
     document.querySelectorAll('details').forEach(function(d){ d.open = true; });

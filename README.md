@@ -24,15 +24,23 @@ trip pages — keep them, old links point there.
 
 One bar per family eSIM, fed by a single batched `POST` to esim.dog's `check-esim-usage`
 function (every ICCID in one `iccidList`). Each bar has its own collapsed **eSIM details**
-panel — ICCID, country, plan, coverage, networks, SM-DP+, APN and that eSIM's two
-troubleshooting links — because a future order may not share the current plan. Below the bars:
-the shared help links and a clone of their score-500 mini-game, drawn with esim.dog's own
-sprites. Styling follows their success page (`esim-purple #8b5cf6`, `esim-dark #1e1b4b`, Inter,
-`purple-50→blue-50` cards, `purple-500→blue-500` bar fill, cyan game card).
+panel — ICCID, country, plan, coverage, networks, SM-DP+, APN, purchase date, purchase email,
+that eSIM's two troubleshooting links, and a `View on esim.dog` link straight to its order page
+(a fallback for whenever the worker or this page can't reach it) — because a future order may
+not share the current plan. Below the bars: the shared help links and a clone of their mini-game
+(1000 points to win — raised from their 500 for a longer run), drawn with esim.dog's own sprites,
+including the death animation: the hit obstacle plays its own break-frame sequence while the dog
+falls, exactly like their bundle. Styling follows their success page (`esim-purple #8b5cf6`,
+`esim-dark #1e1b4b`, Inter, `purple-50→blue-50` cards, `purple-500→blue-500` bar fill, cyan game
+card) — or, with `?theme=albania`, the Albania trip page's palette instead (sand/azure/sea,
+Heebo), for the embed described below.
 
-Only ICCIDs are hardcoded — the Stripe `session_id`/`payment_intent` would expose the eSIM QR
-codes, so they stay out of this public repo. They live in the order-confirmation emails
-(`esim.dog/success?session_id=…`); keep them there. Everything about an order comes from:
+The ICCIDs, purchase dates/emails and order links (`session_id`/`payment_intent`) are all
+hardcoded in `ESIMS`. The order links are the one piece worth thinking twice about: unlike the
+ICCIDs (harmless — they only unlock a usage lookup, gated by the worker's allowlist below), a
+`session_id`/`payment_intent` opens the real esim.dog order page, QR/activation code included.
+They're here because a family member asked for the fallback link explicitly; anyone who reads
+this file's source can use them the same way. Everything about an order comes from:
 
 ```
 curl -s 'https://esim.dog/.netlify/functions/get-esim?session_id=cs_live_…'          # or

@@ -43,18 +43,37 @@ run(2);
 assert.ok(game().obs.length > 0, 'obstacles spawn');
 assert.ok(game().speed > 300, 'speed ramps up');
 
+// The dog never jumped during that run(2), so it may already have collided and even
+// finished dying — clear the whole death state, not just `dead`, before staging ours.
 const s = game();
-s.dead = 0; s.obs = [{ x: 56, w: 34, h: 44 }]; // parked on top of the dog
+Object.assign(s, { dead: 0, over: false, deathFrame: 0, deathTimer: 0, hit: null,
+  obs: [{ x: 56, w: 34, h: 44, type: 'box1' }] }); // parked on top of the dog
 run(0.05);
-assert.equal(game().dead, 1, 'hitting an obstacle ends the run');
+assert.equal(game().dead, 1, 'hitting an obstacle starts the death animation');
+assert.equal(game().over, false, 'game over is not immediate — the dog still falls');
+
+const scoreAtHit = Math.floor(game().t * 10);
+press();
+assert.equal(game().over, false, 'input is ignored mid-death, same as the original');
+assert.equal(Math.floor(game().t * 10), scoreAtHit, 'score stays frozen while dying');
+
+run(1); // fall to the floor + cycle all 4 death frames
+assert.equal(game().over, true, 'landing plus a finished death animation ends the run');
+assert.ok(game().hit.hitFrame > 0, 'the hit obstacle plays its own break-frame animation');
 
 press();
 assert.equal(game().t, 0, 'tap after game over restarts');
+assert.equal(game().over, false, 'and clears the game-over flag');
+
 press();
 run(0.05);
-game().t = 49.95;
+game().t = 99.95;
 run(0.2);
-assert.ok(game().won, 'crossing 500 points wins');
-assert.ok(Math.floor(game().t * 10) >= 500, 'win threshold is 500 points');
+assert.ok(game().won, 'crossing 1000 points wins');
+assert.ok(Math.floor(game().t * 10) >= 1000, 'win threshold is 1000 points');
+const obsAtWin = game().obs.length;
+run(0.5);
+assert.equal(game().obs.length, obsAtWin, 'obstacles freeze once won');
+assert.ok(game().wonT > 0, 'the victory bounce timer runs');
 
 console.log('esim-usage game checks passed');

@@ -80,6 +80,10 @@
   /* the same map, embedded mid-page rather than as a whole view */
   .mapembed{display:block; width:100%; height:min(70vh,460px); border:0; border-radius:14px;
     box-shadow:var(--shadow); background:var(--sand); margin-top:14px}
+  /* the family's eSIM usage widget (liorsol.github.io/liorsol/esim-usage/), themed to match
+     this page — see esim-usage/index.html's ?theme=albania handling */
+  .esimembed{display:block; width:100%; height:min(85vh,900px); border:0; border-radius:14px;
+    box-shadow:var(--shadow); background:var(--sand); margin-top:10px}
 
   /* VIEWS */
   .view{display:none; animation:fade .35s ease}
@@ -1047,7 +1051,13 @@
         <a href="https://esim.dog/regions?region=europe&amp;data=10&amp;validity=30&amp;country=AL" target="_blank" rel="noopener">eSIM אזורי לאירופה כולל אלבניה · 10GB / 30 יום ↖</a>
         <a href="https://esimdb.com/albania" target="_blank" rel="noopener">השוואת כל החבילות ↖</a>
       </div>
-      <p class="src">נפחים ומחירים משתנים — לבדוק שוב לקראת הנסיעה.</p></div>
+      <p class="src">נפחים ומחירים משתנים — לבדוק שוב לקראת הנסיעה.</p>
+      <details>
+        <summary>כמה נתונים כל אחד מה-eSIM-ים של המשפחה כבר ניצל</summary>
+        <iframe class="esimembed" data-embed-src="../../esim-usage/?theme=albania"
+                title="ניצול הנתונים ב-eSIM המשפחתי" loading="lazy"></iframe>
+      </details>
+    </div>
     <div class="card"><h4>📲 להוסיף את העמוד למסך הבית</h4><p>העמוד עובד <b>גם בלי רשת</b>: התכנית, המפה והמסעדות נשמרות במכשיר. <b>לפתוח אותו פעם אחת בבית על wifi</b> לפני הטיסה, ואז הוא זמין גם בהרים ובדרכי הדרום.</p>
       <details><summary>איך מוסיפים אותו למסך הבית, ומה עובד אופליין ומה לא</summary>
         <p style="margin:0"><b>אייפון (Safari):</b> כפתור השיתוף למטה ← ״הוספה למסך הבית״.<br>

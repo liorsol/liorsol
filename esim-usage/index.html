@@ -5,22 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Instant eSIM for Travelers | 210+ Countries from $1.32</title>
 <meta name="theme-color" content="#9333ea">
+<!-- ?theme=albania recolors this page to match trips/albania-2026, for embedding there. -->
+<script>if (new URLSearchParams(location.search).get('theme') === 'albania') document.documentElement.dataset.theme = 'albania';</script>
 <link rel="icon" href="https://esim.dog/esimdoglogo-nobg.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
   /* esim.dog's own palette: esim-purple, esim-dark and the Tailwind shades their success page uses. */
   :root {
+    --font: Inter, system-ui, sans-serif; --page-bg:#fff;
     --purple:#8b5cf6; --purple-500:#a855f7; --purple-600:#9333ea; --purple-800:#6b21a8;
     --purple-50:#faf5ff; --purple-100:#f3e8ff; --purple-200:#e9d5ff;
     --blue-50:#eff6ff; --blue-500:#3b82f6;
     --cyan-50:#ecfeff; --cyan-200:#a5f3fc; --cyan-400:#22d3ee; --cyan-600:#0891b2;
     --dark:#1e1b4b; --gray-200:#e5e7eb; --gray-500:#6b7280; --gray-600:#4b5563; --gray-700:#374151;
   }
+  /* Albania trip page's own palette (trips/albania-2026/index.html) — same variables,
+     different values, so every rule below repaints without a single selector change. */
+  :root[data-theme="albania"] {
+    --font: 'Heebo', system-ui, sans-serif; --page-bg:#f7efe0;
+    --purple:#1b8a9e; --purple-500:#1b8a9e; --purple-600:#0c4b57; --purple-800:#072f38;
+    --purple-50:#fbf6ec; --purple-100:#efe6d4; --purple-200:#e3d8c4;
+    --blue-50:#fffdf8; --blue-500:#2bb8c4;
+    --cyan-50:#fbf6ec; --cyan-200:#e3d8c4; --cyan-400:#2bb8c4; --cyan-600:#0c4b57;
+    --dark:#1d2a2e;
+  }
   * { box-sizing:border-box; }
-  body { margin:0; background:#fff; color:var(--dark);
-         font:16px/1.5 Inter,system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  body { margin:0; background:var(--page-bg); color:var(--dark);
+         font:16px/1.5 var(--font); -webkit-font-smoothing:antialiased; }
   main { max-width:28rem; margin:0 auto; padding:2rem 1rem; }
 
   header { display:flex; align-items:center; gap:.75rem; margin-bottom:2rem; }
@@ -44,12 +57,18 @@
   .esim.loading .fill { opacity:.35; }
   .esim.loading .used, .esim.loading .of, .esim.loading .under { opacity:.4; }
   .esim .used, .esim .of, .esim .under, .esim .fill { transition:opacity .2s; }
-  .icon { display:inline-flex; vertical-align:-3px; }
-  button.refresh.loading .icon { animation:spin .8s linear infinite; }
+  /* Idle: a static arrow icon. Loading: swapped for a spinning ring, like esim.dog's own
+     loading spinner (animate-spin rounded-full border-b-2) — nicer than rotating the arrow. */
+  .icon-idle { display:inline-flex; vertical-align:-3px; }
+  .icon-loading { display:none; width:15px; height:15px; margin-inline-end:.125rem;
+                  border-radius:50%; border:2.5px solid rgba(255,255,255,.35);
+                  border-bottom-color:#fff; vertical-align:-3px; }
+  button.refresh.loading .icon-idle { display:none; }
+  button.refresh.loading .icon-loading { display:inline-block; animation:spin .7s linear infinite; }
   @keyframes sweep { from { background-position:200% 0 } to { background-position:-200% 0 } }
   @keyframes spin { to { transform:rotate(360deg) } }
   @media (prefers-reduced-motion:reduce) {
-    .esim.loading .track, button.refresh.loading .icon { animation:none; }
+    .esim.loading .track, button.refresh.loading .icon-loading { animation:none; }
   }
 
   .under { display:flex; justify-content:space-between; align-items:center;
@@ -73,8 +92,9 @@
   .simlinks a { font-size:.75rem; font-weight:700; text-decoration:none; color:#fff;
                 padding:.625rem; border-radius:.75rem; text-align:center; }
   .simlinks a.amber { background:#f59e0b; } .simlinks a.orange { background:#f97316; }
+  .simlinks a.neutral { color:var(--purple-600); background:rgba(255,255,255,.6); border:1px solid var(--purple-200); }
 
-  button.refresh { width:100%; padding:.875rem; font:700 1rem Inter,system-ui,sans-serif; color:#fff;
+  button.refresh { width:100%; padding:.875rem; font:700 1rem var(--font); color:#fff;
                    background:var(--purple); border:0; border-radius:.75rem; cursor:pointer; }
   button.refresh:hover { background:var(--purple-600); }
   button.refresh:disabled { opacity:.6; cursor:default; }
@@ -111,7 +131,7 @@
 
 <div id="bars"></div>
 
-<button class="refresh" id="refresh"><span class="icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.1-6.8"/><polyline points="21 3 21 9 15 9"/></svg></span> Refresh all</button>
+<button class="refresh" id="refresh"><span class="icon-idle"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.1-6.8"/><polyline points="21 3 21 9 15 9"/></svg></span><span class="icon-loading" aria-hidden="true"></span> Refresh all</button>
 <p class="status" id="status"></p>
 
 <details class="help">
@@ -130,17 +150,25 @@
 </div>
 
 <script>
-// ponytail: ICCIDs are the only identifier check-esim-usage needs — the Stripe
-// session/payment ids stay out of this public repo (they'd expose the eSIM QR codes).
+// ponytail: ICCIDs are the only identifier check-esim-usage strictly needs — but the
+// order link is now stored too (below), at the user's request, as a fallback if the
+// proxy ever breaks. That does put a live esim.dog order link in this public repo: it
+// opens the same page anyone with the confirmation email could already reach, but
+// which shows the QR/activation code, so anyone who finds this file can view it too.
 // Plan fields are per eSIM on purpose: identical today, but a different order won't lie.
 const ESIMS = [
-  { name: 'ליאור', iccid: '8948010010087231980' },
-  { name: 'מור',   iccid: '8948010010087232053' },
-  { name: 'זואי',  iccid: '8948010010087232079' },
-  { name: 'הרצל',  iccid: '8948010010087232699' },
+  { name: 'ליאור', iccid: '8948010010087231980', order: 'payment_intent=pi_3U3hq4P3rsvFckzp0zjmDp7s',
+    purchasedAt: '2026-08-12T19:29:24.000Z' },
+  { name: 'מור',   iccid: '8948010010087232053', order: 'session_id=cs_live_b1OFaJbN2bEMlZ1Si03bze4zXAYMb9x9geolH88VHzKhHdXYTIvuxCRLtR',
+    purchasedAt: '2026-08-12T19:59:43.000Z' },
+  { name: 'זואי',  iccid: '8948010010087232079', order: 'session_id=cs_live_b1OetwN2mN5lIVYrRzKUmgbKNqAV0J6to3EH32Xu81HbGslF9dZAbibRT7',
+    purchasedAt: '2026-08-12T20:05:58.000Z' },
+  { name: 'הרצל',  iccid: '8948010010087232699', order: 'session_id=cs_live_b1NQVFBMocoUDjSUuLHZjZhMQt1VgWAPoLoMWNfHeAs7ERCLRNFhfhUF3P',
+    purchasedAt: '2026-08-13T04:39:09.000Z' },
 ].map(e => ({
   country: 'Albania', plan: '12GB - 30 days validity', coverage: 'LTE + 5G',
   networks: 'One', smdp: 'smdp.io', apn: 'plus', providerCode: 4, // BLACK_AL_12GB_30D
+  purchasedWith: 'xlllsss@gmail.com',
   ...e,
 }));
 
@@ -180,12 +208,17 @@ document.getElementById('bars').innerHTML = ESIMS.map((e, i) => `
         <dt>Networks</dt><dd>${e.networks}</dd>
         <dt>SM-DP+</dt><dd class="mono">${e.smdp}</dd>
         <dt>APN</dt><dd class="mono">${e.apn}</dd>
+        <dt>Purchased</dt><dd>${new Date(e.purchasedAt).toLocaleString(undefined,
+          { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</dd>
+        <dt>Purchased with</dt><dd>${e.purchasedWith}</dd>
       </dl>
       <div class="simlinks">
         <a class="amber" target="_blank" rel="noopener"
            href="https://esim.dog/cannot-activate-esim?country=${encodeURIComponent(e.country)}&smdp=${encodeURIComponent(e.smdp)}">⚠️ Cannot activate an eSIM?</a>
         <a class="orange" target="_blank" rel="noopener"
            href="https://esim.dog/internet-not-working?apn=${encodeURIComponent(e.apn)}&smdp=${encodeURIComponent(e.smdp)}&country=${encodeURIComponent(e.country)}">🌐 Activated, but internet not working?</a>
+        <a class="neutral" target="_blank" rel="noopener"
+           href="https://esim.dog/success?${e.order}">↗ View on esim.dog (if this page can't reach the usage API)</a>
       </div>
     </details>
   </div>`).join('');
@@ -257,38 +290,49 @@ if (!new URLSearchParams(location.search).has('selftest')) {
   // One batched call carries a single providerCode, so a mixed-route set must fail loudly here
   // rather than silently querying every eSIM with the first one's route.
   ok(new Set(ESIMS.map(e => e.providerCode)).size === 1, 'all eSIMs share one providerCode');
+  ok(ESIMS.every(e => /^(session_id|payment_intent)=\S+$/.test(e.order)), 'order links look like esim.dog query strings');
+  ok(ESIMS.every(e => !Number.isNaN(new Date(e.purchasedAt).getTime())), 'purchasedAt parses as a date');
   statusEl.textContent = 'selftest passed';
 }
 </script>
 
 <script>
-// Runner clone of the esim.dog mini-game: their sprites, 10 pts/sec, 500 to win.
+// Runner clone of the esim.dog mini-game: their sprites, 10 pts/sec, 1000 to win.
+// The death/win sequences are copied from their bundle: on a hit, the dog keeps
+// falling under gravity while just the obstacle it hit plays its own break-frame
+// animation (everything else on screen freezes); once it lands, GAME OVER shows.
+// Winning freezes the run and bounces the dog over a gold tint until reset.
 (() => {
   const c = document.getElementById('game'), x = c.getContext('2d');
-  const GROUND = 20, DOG = 72, FLOOR = c.height - GROUND - DOG, WIN = 500;
+  const GROUND = 20, DOG = 72, FLOOR = c.height - GROUND - DOG, WIN = 1000;
   const hint = document.getElementById('gameHint');
   const sheet = (file, frames) => { const i = new Image(); i.src = 'https://esim.dog/mini-game/' + file; i.frames = frames; return i; };
   const run = sheet('running_dog_mascot.png', 6), die = sheet('dying_dog_mascot.png', 4);
-  // Same obstacle art and scales as the original — it only ever draws each type's frame 1.
+  // Same obstacle art, scales and frame counts as the original.
   const OBS = {
-    box1:    { w: 28 * 1.8, h: 28 * 1.8, dir: 'Box1' },
-    box2:    { w: 32 * 1.6, h: 32 * 1.6, dir: 'Box2' },
-    capsule: { w: 50 * 1.2, h: 48 * 1.2, dir: 'Capsule' },
+    box1:    { w: 28 * 1.8, h: 28 * 1.8, dir: 'Box1', n: 5 },
+    box2:    { w: 32 * 1.6, h: 32 * 1.6, dir: 'Box2', n: 3 },
+    capsule: { w: 50 * 1.2, h: 48 * 1.2, dir: 'Capsule', n: 4 },
   };
   const TYPES = Object.keys(OBS);
   for (const t of TYPES) {
-    OBS[t].img = new Image();
-    OBS[t].img.src = `https://esim.dog/mini-game/obstacles/${OBS[t].dir}/1.png`;
+    OBS[t].img = Array.from({ length: OBS[t].n }, (_, k) => {
+      const im = new Image(); im.src = `https://esim.dog/mini-game/obstacles/${OBS[t].dir}/${k + 1}.png`; return im;
+    });
   }
   let s, last;
 
-  const reset = () => { s = { y: FLOOR, v: 0, obs: [], speed: 300, t: 0, spawn: 0, dead: 0, won: false, ground: 0 }; };
+  const reset = () => { s = {
+    y: FLOOR, v: 0, obs: [], speed: 300, t: 0, spawn: 0, ground: 0,
+    dead: 0, over: false, won: false, deathFrame: 0, deathTimer: 0, hit: null, wonT: 0,
+  }; };
   reset();
   window.__game = () => s; // ponytail: the only way to check the loop without pixel-reading a tainted canvas
 
   function jump() {
     if (s.won) return;
-    if (s.dead) { reset(); return; }
+    if (s.over) { reset(); return; }
+    if (s.dead) return; // mid-death animation: input is ignored, same as the original
     if (s.y >= FLOOR) s.v = -650;
   }
   c.addEventListener('mousedown', e => { e.preventDefault(); jump(); });
@@ -297,8 +341,24 @@ if (!new URLSearchParams(location.search).has('selftest')) {
     if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
   });
 
+  function dieStep(dt) {
+    if (s.y < FLOOR) {
+      s.v += 1800 * dt; s.y += s.v * dt;
+      if (s.y > FLOOR) { s.y = FLOOR; s.v = 0; }
+    }
+    s.deathTimer += dt;
+    if (s.deathTimer >= 0.15) { s.deathFrame = Math.min(s.deathFrame + 1, die.frames - 1); s.deathTimer = 0; }
+    if (s.hit) {
+      s.hit.hitTimer += dt;
+      const maxFrame = OBS[s.hit.type].n - 1;
+      if (s.hit.hitTimer >= 0.05 && s.hit.hitFrame < maxFrame) { s.hit.hitFrame++; s.hit.hitTimer = 0; }
+    }
+    if (s.y >= FLOOR && s.deathFrame >= die.frames - 1) s.over = true;
+  }
+
   function step(dt) {
-    if (s.dead || s.won) return;
+    if (s.won) { s.wonT += dt; s.ground = (s.ground + s.speed * 0.3 * dt) % 20; return; }
+    if (s.dead) { dieStep(dt); return; }
     s.t += dt;
     s.ground = (s.ground + s.speed * dt) % 20;
     s.v += 1800 * dt; s.y += s.v * dt;
@@ -314,9 +374,16 @@ if (!new URLSearchParams(location.search).has('selftest')) {
     const dog = { x: 62, y: s.y + 15, w: DOG - 30, h: DOG - 20 };
     for (const o of s.obs) {
       if (dog.x < o.x + o.w * 0.8 && dog.x + dog.w > o.x + o.w * 0.2 &&
-          dog.y + dog.h > c.height - GROUND - o.h) s.dead = 1;
+          dog.y + dog.h > c.height - GROUND - o.h) {
+        s.dead = 1; s.deathFrame = 0; s.deathTimer = 0;
+        o.hitFrame = 0; o.hitTimer = 0; s.hit = o;
+        return;
+      }
     }
-    if (Math.floor(s.t * 10) >= WIN) { s.won = true; hint.textContent = '🏆 Beaten! Claim the 10% code on your esim.dog order page'; }
+    if (Math.floor(s.t * 10) >= WIN) {
+      s.won = true; s.wonT = 0;
+      hint.textContent = '🏆 Beaten! Claim the 10% code on your esim.dog order page';
+    }
   }
 
   const ready = img => img && img.complete && img.naturalWidth > 0;
@@ -330,25 +397,39 @@ if (!new URLSearchParams(location.search).has('selftest')) {
     for (let i = -s.ground; i < c.width; i += 20) x.fillRect(i, c.height - GROUND + 5, 6, 2);
 
     for (const o of s.obs) {
-      const img = o.type && OBS[o.type].img;
+      const spec = o.type && OBS[o.type];
+      const frame = o === s.hit ? o.hitFrame : 0;
+      const img = spec && spec.img[frame];
       if (ready(img)) x.drawImage(img, o.x, c.height - GROUND - o.h, o.w, o.h);
       else { x.fillStyle = '#a855f7'; x.fillRect(o.x, c.height - GROUND - o.h, o.w, o.h); }
     }
 
-    const dogImg = s.dead ? die : run;
-    const frame = s.dead ? die.frames - 1 : Math.floor(s.t * 12) % run.frames;
-    if (ready(dogImg)) x.drawImage(dogImg, 48 * frame, 0, 48, 48, 50, s.y, DOG, DOG);
-    else { x.fillStyle = '#8b5cf6'; x.fillRect(50, s.y + 10, 62, 52); }
+    let dogImg, frame, drawY = s.y;
+    if (s.won) {
+      dogImg = run; frame = Math.floor(s.wonT * 12) % run.frames;
+      drawY = s.y - 5 * Math.sin(4 * s.wonT); // the original's victory bounce
+    } else if (s.dead) {
+      dogImg = die; frame = s.deathFrame;
+    } else {
+      dogImg = run; frame = Math.floor(s.t * 12) % run.frames;
+    }
+    if (ready(dogImg)) x.drawImage(dogImg, 48 * frame, 0, 48, 48, 50, drawY, DOG, DOG);
+    else { x.fillStyle = '#8b5cf6'; x.fillRect(50, drawY + 10, 62, 52); }
 
     x.fillStyle = '#535353'; x.font = 'bold 14px monospace'; x.textAlign = 'right';
     x.fillText(String(score).padStart(5, '0'), c.width - 10, 24);
     x.textAlign = 'center';
     if (s.won) {
-      x.fillStyle = '#0891b2'; x.font = 'bold 18px monospace';
-      x.fillText('CONGRATS! YOU WON', c.width / 2, c.height / 2 - 8);
-      x.fillStyle = '#535353'; x.font = '12px monospace';
-      x.fillText('10% off — claim it on esim.dog', c.width / 2, c.height / 2 + 14);
-    } else if (s.dead) {
+      x.fillStyle = 'rgba(255, 215, 0, 0.2)'; x.fillRect(0, 0, c.width, c.height);
+      x.fillStyle = '#e3a300'; x.font = 'bold 22px monospace';
+      x.fillText('YOU WIN!', c.width / 2, c.height / 2 - 20);
+      x.fillStyle = '#535353'; x.font = 'bold 14px monospace';
+      x.fillText('Score: ' + score, c.width / 2, c.height / 2 + 8);
+      x.fillStyle = '#0891b2'; x.font = '12px monospace';
+      x.fillText('10% off — claim it on esim.dog', c.width / 2, c.height / 2 + 30);
+    } else if (s.over) {
+      x.fillStyle = 'rgba(0, 0, 0, 0.3)'; x.fillRect(0, 0, c.width, c.height);
+      x.fillStyle = '#535353';
       x.font = 'bold 20px monospace'; x.fillText('GAME OVER', c.width / 2, c.height / 2 - 20);
       x.font = '14px monospace';
       x.fillText('Score: ' + score, c.width / 2, c.height / 2 + 10);
@@ -362,7 +443,7 @@ if (!new URLSearchParams(location.search).has('selftest')) {
 
   requestAnimationFrame(function loop(now) {
     const dt = last ? Math.min((now - last) / 1000, 0.05) : 0; last = now;
-    if (s.v || s.y < FLOOR || s.obs.length || s.t) step(dt);
+    if (s.v || s.y < FLOOR || s.obs.length || s.t || s.dead || s.won) step(dt);
     draw();
     requestAnimationFrame(loop);
   });

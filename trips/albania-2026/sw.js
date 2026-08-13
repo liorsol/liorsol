@@ -4,7 +4,7 @@
 
    Bump V whenever index.html / trip.js / map.html change: the browser only
    reinstalls a worker whose bytes differ, and the old cache is keyed by V. */
-var V = 'albania-2026-v1';
+var V = 'albania-2026-v2';
 
 /* Map tiles live in their own cache, and it deliberately SURVIVES a V bump: it is not
    part of the shell, it is whatever areas the family has already looked at, and wiping

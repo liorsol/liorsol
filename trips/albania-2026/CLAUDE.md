@@ -471,6 +471,27 @@ because the family asked for the restaurants in place rather than one click away
 from `data-src` the first time that view opens, so readers who never reach it don't download Leaflet;
 any future mid-page embed gets the same behaviour for free by using `data-src`.
 
+### A second, stricter lazy-load: `data-embed-src` (Aug 2026)
+
+The 📶 תקשורת card in `info` has a `<details>` disclosure embedding the family's eSIM usage
+widget (`../../esim-usage/?theme=albania`, in [`esim-usage/`](../../esim-usage/) — a separate
+top-level project, not part of this trip page). It uses a **different** attribute,
+`data-embed-src`, not `data-src`: that page's own script calls the usage API on load, and
+`data-src`'s trigger (the containing *view* opening) would fire that live request just from
+visiting the info tab, whether or not the disclosure is ever opened. `trip.js` gates
+`data-embed-src` on the `<details>` element's own `toggle` event instead, so the iframe (and the
+API call inside it) loads only once a reader actually opens it. Use `data-src` for anything that
+should load with its view (the map); use `data-embed-src`, inside a `<details>`, for anything
+that fires its own network request on load and should wait for real interest.
+
+`?theme=albania` recolors that page to this one's palette (sand/azure/sea, Heebo) instead of its
+own purple branding — see the `[data-theme="albania"]` block at the top of `esim-usage/index.html`.
+The widget shows each family member's first name, ICCID, and — per that project's own tradeoff,
+documented in the root [README](../../README.md#the-esim-usage-page-esim-usage) — a link to the
+live esim.dog order page. That's more exposure than this file's privacy rule would allow for
+something added directly to this project, but it isn't trip-page content: it's a link to another
+page the family already asked for by name, on the record in the root README, not here.
+
 ### Live data from public APIs (user's request, Aug 2026)
 
 Two cards fill themselves at load. Both are keyless and `Access-Control-Allow-Origin: *` — verify that

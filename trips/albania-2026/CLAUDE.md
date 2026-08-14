@@ -352,6 +352,12 @@ provide. `הכל` toggles everything on, or off if everything is already on, and
 hash is an entry point only (`fromHash()`), because an arbitrary subset has no sensible hash
 form. Clicking any chip clears `pinned` so a `#p:` deep link stops re-zooming on every toggle.
 
+**`render(fit)` — a single chip must not re-frame the map (user, Aug 2026).** Toggling one
+category narrows or widens the selection you are already looking at, so `fitBounds` there throws
+away the area you had panned and zoomed to. Only two things pass `fit`: `fromHash()` (an entry
+point — the map has no meaningful frame yet) and the **הכל** chip, which changes the whole
+selection at once rather than one layer of it. Everything else just adds/removes layer groups.
+
 **One line, always — `fitChips()`.** Seven chips with Hebrew labels do not fit a phone at any
 readable size, so font scaling alone is not enough. It walks three content levels — full →
 counts hidden (`hide-n`) → words hidden too, icon only (`hide-tx`) — and shrinks within each,

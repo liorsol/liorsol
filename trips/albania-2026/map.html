@@ -233,10 +233,15 @@ function fromHash(){
   var cat = pinned ? pinned.cat : h;
   if(CATS[cat]){ setAll(false); shown[cat] = true; }
   else setAll(true);
-  render();
+  render(true);
 }
 
-function render(){
+/* `fit` = re-frame the map on what is showing. It is deliberately NOT the default:
+   a single chip narrows or widens the selection you are already looking at, and
+   zooming on every toggle throws away the area you had panned to (user, Aug 2026).
+   Only an entry point (a hash) and the הכל chip — which changes the whole selection
+   at once, not one layer of it — ask for a new frame. */
+function render(fit){
   var bounds = [], visible = 0;
   CAT_KEYS.forEach(function(k){
     if(shown[k]){
@@ -264,7 +269,7 @@ function render(){
 
   map.invalidateSize();
   if(pinned && shown[pinned.cat]){ map.setView([pinned.lat, pinned.lng], 14); pinned.marker.openPopup(); }
-  else if(bounds.length) map.fitBounds(bounds, {padding:[30,30]});
+  else if(fit && bounds.length) map.fitBounds(bounds, {padding:[30,30]});
 }
 
 /* Seven chips, one line, as large as they will go. Text width is font- and
@@ -312,7 +317,7 @@ function init(){
     var k = b.dataset.cat;
     if(k) shown[k] = !shown[k];
     else  setAll(countOn() < CAT_KEYS.length);   // הכל: all on unless already all on
-    render();
+    render(!k);                                  // only הכל re-frames; a single chip keeps the view
   });
 
   window.addEventListener('hashchange', fromHash);

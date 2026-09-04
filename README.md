@@ -16,9 +16,10 @@ dependencies — every page is plain HTML/CSS/JS and can be opened straight from
 | [`esim-usage/`](esim-usage/) | Data-usage bars for the family's esim.dog eSIMs, one refresh button, per-eSIM details. Needs the Cloudflare Worker in [`esim-usage/proxy.js`](esim-usage/proxy.js). |
 | [`trips/albania-2026/`](trips/albania-2026/) | Family trip page (SPA, deep links, shared comment/link boards), Leaflet map, reveal.js slide deck, and the raw research the plan was built from. |
 | [`trips/jerusalem-2026/`](trips/jerusalem-2026/) | Family weekend trip page (SPA with map, trivia, media). |
+| [`trips/italy-2026/`](trips/italy-2026/) | Two-family trip to Umbria and Rome — same shape as the Albania page (SPA, deep links, offline PWA, shared boards), plus a Leaflet map and the two raw research reports it was merged from. |
 
-`albania-2026.html` and `jerusalem-2026.html` at the root are redirect stubs to the moved
-trip pages — keep them, old links point there.
+`albania-2026.html`, `jerusalem-2026.html` and `italy-2026.html` at the root are redirect
+stubs to the trip pages — keep them, old links point there.
 
 ## The eSIM usage page (`esim-usage/`)
 
@@ -183,10 +184,42 @@ one top-level path per page (a "key"), each with its own rules.
             "$other": { ".validate": false }
           }
         }
+      },
+      "italy2026": {
+        ".read": true,
+        "comments": {
+          ".write": true,
+          "$view": {
+            "$id": {
+              ".validate": "$view.matches(/^[a-z]{2,12}$/) && $id.matches(/^[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.hasChildren(['t','d'])",
+              "n": { ".validate": "newData.isString() && newData.val().length <= 24" },
+              "t": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 800" },
+              "d": { ".validate": "newData.isNumber()" },
+              "$other": { ".validate": false }
+            }
+          }
+        },
+        "links": {
+          ".write": true,
+          "$id": {
+            ".validate": "$id.matches(/^[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.hasChildren(['u','d'])",
+            "n": { ".validate": "newData.isString() && newData.val().length <= 24" },
+            "u": { ".validate": "newData.isString() && newData.val().length <= 500 && (newData.val().beginsWith('https://') || newData.val().beginsWith('http://'))" },
+            "t": { ".validate": "newData.isString() && newData.val().length <= 100" },
+            "d": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        }
       }
     }
   }
   ```
+  `albania2026` and `italy2026` are byte-identical blocks under different names. A
+  `$trip` wildcard validating `$trip.matches(/^(albania|italy)2026$/)` would express it
+  once, and was rejected on purpose: publishing replaces the **whole** document, so a
+  restructure is a live change to the Albania page's boards — which a family is using —
+  in exchange for saving 28 lines in a file. Duplicate the block for the next trip too.
+
   No cap on the number of keys — the Firebase console rejected `numChildren()` in every
   position tried (a live platform quirk, not a syntax mistake; not worth fighting for
   defense-in-depth on top of what's below). Not load-bearing: every key still has to match the
@@ -227,6 +260,31 @@ and `$other: false` to reject unknown fields. A link's URL must literally begin 
 page renders stored values with `textContent` only and re-checks every stored URL's scheme at
 render time rather than trusting the rules to be the only gate. Any future feature reading
 this key must do the same.
+
+### `italy2026` — [`trips/italy-2026/`](trips/italy-2026/)
+
+Same two features as `albania2026`, same shapes, same rules — a comments board on each
+of the 9 non-map views plus a links board in the practical-info section:
+
+```
+italy2026/
+  comments/<view>/<id>   {n: name, t: text,  d: epoch_ms}
+  links/<id>             {n: name, u: url, t: title, d: epoch_ms}
+```
+
+`<view>` is the SPA view name (`arrival`, `base`, `days`, `last`, …) and must match
+`/^[a-z]{2,12}$/`, which the rules enforce — so a new view named with a digit or a dash
+would be rejected at write time, not at review time. `<id>` is `<base36 ms>_<4 random>`.
+
+**The rules above have to be published before the boards work.** Until then every write
+returns **401** and the page says `הכתיבה נחסמה — כללי ה-DB צריכים עדכון`, which is the
+one error a reload never fixes. Publishing is a manual step in the
+[Firebase console](https://console.firebase.google.com/u/0/project/liorsol-github/database/liorsol-github-default-rtdb/rules)
+— paste the complete document from above, since publishing replaces all of it.
+
+Everything in the `albania2026` section about untrusted input applies here verbatim: the
+path is world-writable, so stored values are rendered with `textContent` only and every
+stored URL's scheme is re-checked at render time.
 
 ## Running locally
 

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מפת המסלול · טיול איטליה 2026</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇮🇹</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<!-- Leaflet is vendored, not hotlinked: the page has to work with no reception, and a
+     CDN that merely happens to be reachable when the service worker installs is not an
+     offline guarantee. Copied byte-identical from trips/albania-2026/vendor/, which was
+     itself verified against the published leaflet@1.9.4 SRI hashes. BSD-2-Clause. -->
+<link rel="stylesheet" href="vendor/leaflet.css">
+<style>
+  :root{
+    --sea:#2f5d3a; --sea-deep:#1e3f27; --azure:#4a7c59;
+    --sand:#f6f1e4; --paper:#fffdf7;
+    --terra:#c1613c; --terra-deep:#98452a; --gold:#d9a13a; --olive:#7d8f4f;
+    --ink:#26302a; --ink-soft:#4d5a50; --line:#e2d9c4;
+  }
+  *{box-sizing:border-box}
+  /* Column layout so #map just takes whatever is left — the filter row's height
+     changes when the chips shrink to fit, and a magic-number offset would drift. */
+  html,body{height:100%}
+  body{margin:0; display:flex; flex-direction:column; overflow:hidden;
+    background:var(--sand); color:var(--ink); font-family:'Assistant',sans-serif; font-size:16px}
+  h1,h2{font-family:'Suez One',serif; font-weight:400; color:var(--sea); margin:0}
+  .bar{background:rgba(31,64,40,.97); border-bottom:2px solid var(--gold); padding:12px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap}
+  .bar h1{color:#fff; font-size:19px}
+  .back{background:var(--gold); color:#3a2a08; text-decoration:none; font-family:'Heebo',sans-serif;
+    font-weight:700; font-size:14px; white-space:nowrap; padding:8px 16px; border-radius:999px; transition:.15s}
+  .back:hover{background:#fff}
+  /* Embedded in the trip page's #map view — its side menu replaces this back link,
+     and under 900px its ☰ button floats over this bar, so leave room for it. */
+  .embed .back{display:none}
+  @media (max-width:900px){ .embed .bar h1{padding-inline-start:48px} }
+  /* One row, never wrapping. fitChips() shrinks the font until it fits, so every
+     length here is in em — padding, radius and the count all scale together. */
+  .filters{display:flex; gap:.45em; flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; font-size:13px;
+    padding:9px 12px; background:var(--paper); border-bottom:1px solid var(--line)}
+  .filters button{flex:0 0 auto; font-family:'Heebo',sans-serif; font-weight:700; font-size:1em;
+    line-height:1.15; white-space:nowrap; cursor:pointer; padding:.42em .85em; border-radius:999px;
+    border:1.5px solid var(--line); color:var(--ink-soft); background:#fff; transition:.15s}
+  .filters button:hover{border-color:var(--azure); color:var(--sea)}
+  /* On = the category's own pin colour, which is what a legend would otherwise say. */
+  .filters button.on{background:var(--c,var(--sea)); border-color:var(--c,var(--sea)); color:#fff}
+  .filters button.some{background:#8d9a8e; border-color:#8d9a8e; color:#fff}   /* הכל, partly selected */
+  .filters .n{font-weight:500; opacity:.62; margin-inline-start:.4em}
+  .filters .tx{margin-inline-start:.35em}
+  /* Two steps fitChips() falls back to before shrinking further: drop the counts,
+     then drop the words and let the emoji carry the category (it already does on
+     the pins). הכל keeps its word — three characters, and no emoji says "all". */
+  .filters.hide-n .n{display:none}
+  .filters.hide-tx .tx{display:none}
+  .filters.hide-tx .ic{font-size:1.3em}
+  .filters.hide-tx{gap:.3em}                            /* a lone emoji needs far less around it */
+  .filters.hide-tx button{padding:.34em .5em}
+  #map{flex:1; min-height:0; width:100%}
+  @media print{ body{display:block; overflow:visible} #map{flex:none; height:520px} .bar .back,.filters{display:none} }
+  .leaflet-popup-content{font-family:'Assistant',sans-serif; direction:rtl; text-align:right; font-size:14.5px; line-height:1.5}
+  .leaflet-popup-content b{font-family:'Heebo',sans-serif; color:var(--sea)}
+  .leaflet-popup-content a{color:var(--terra-deep); font-family:'Heebo',sans-serif; font-weight:700; font-size:13px}
+  .pin{display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50% 50% 50% 0; transform:rotate(45deg); box-shadow:0 2px 6px rgba(0,0,0,.35); border:2px solid #fff}
+  .pin span{transform:rotate(-45deg); font-size:13px}
+  /* shown only when tiles fail — offline, the pins still work */
+  #tilewarn{position:absolute; inset-inline:12px; bottom:12px; z-index:500; transition:opacity .6s;
+    background:rgba(31,64,40,.94); color:#f3d79a; font-size:13.5px; line-height:1.5;
+    padding:9px 13px; border-radius:12px; border:1.5px solid var(--gold); pointer-events:none}
+</style>
+</head>
+<body>
+<script>if(window.top !== window.self) document.documentElement.className = 'embed';</script>
+
+<div class="bar">
+  <h1 id="title">🗺️ מפת המסלול — כל המקומות בתכנית</h1>
+  <a class="back" href="index.html">→ חזרה לעמוד הטיול</a>
+</div>
+<div class="filters" id="filters"></div>
+
+<div id="map"></div>
+
+<script src="vendor/leaflet.js"></script>
+<script>
+/* Coordinates verified Sep 2026 against OpenStreetMap (Overpass, exact feature
+   geometry) and confirmed with a Nominatim reverse geocode at zoom 14, which is what
+   catches a same-named place in the wrong province. Anything still approximate says so
+   in its own `note` — those, and only those, need a Maps check before navigating.
+
+   Two coordinates the reverse check caught and corrected, worth not reintroducing:
+   OSM's `place` nodes for **Torgiano** and **Castiglione del Lago** both sit ~700 m
+   outside the actual centro storico, out in the modern town. The pins below are the
+   townhall / Piazza Mazzini instead. */
+/* `label` is the full name, used in the page title. The chips get `ic` + `tx`
+   separately, and fitChips() can drop the words entirely on a phone. */
+var CATS = {
+  lodging: {label:'🛏️ לינה ושדה התעופה', ic:'🛏️', tx:'לינה',   color:'#98452a'},
+  base:    {label:'🏡 הבסיס בדרוטה',      ic:'🏡', tx:'הבסיס',  color:'#2f5d3a'},
+  days:    {label:'⭐ ימי הטיול',          ic:'⭐', tx:'ימים',   color:'#4a7c59'},
+  last:    {label:'🛫 היום האחרון',        ic:'🛫', tx:'אחרון',  color:'#c1613c'},
+  food:    {label:'🍽️ מסעדות וקניות',     ic:'🍽️', tx:'אוכל',   color:'#8a6714'}
+};
+
+var PLACES = [
+  // ---------------- lodging + the airport ----------------
+  {n:'שדה התעופה פיומיצ׳ינו — טרמינל 3', cat:'lodging', lat:41.795574, lng:12.250329, q:'Rome+Fiumicino+Airport+Terminal+3', note:'נחיתה 25.9 ב-00:45 · המראה 30.9 ב-05:30<br>נכנסים בקומת הקרקע · המיניוואן קומה מעלה, מול דלת 4', v:'arrival/meetpoint'},
+  {n:'🅿️ מתחם החזרת הרכבים ב-FCO', cat:'lodging', lat:41.793704, lng:12.253953, q:'Fiumicino+Airport+Car+Rental+Multipiano', note:'החזרה 30.9 ב-02:30 · <b>שלושה חניונים נפרדים — A, B, C</b>, במרחק ~180 מ׳ זה מזה, לפי חברת ההשכרה. הדלפקים ב-Office Tower 2. הפין הוא מרכז המתחם (±150 מ׳) — לאמת את החניון של החברה שלנו', v:'last/carback'},
+  {n:'Il Nido dei Merli — כתובת הצ׳ק-אין', cat:'lodging', lat:41.804394, lng:12.221218, q:'Via+delle+Pinne+74+Fiumicino', note:'✅ ליל 25.9 — הוזמן, 2 דירות באותה קומה<br><b>Via delle Pinne 74, פוצֶ׳נֶה</b> — זו הכתובת שבה מבוצע הצ׳ק-אין לפי ההזמנה, וגם החניון של Parking Blu. ~7 ק״מ / 10 ד׳ מהטרמינל.<br>⚠️ פין ברמת רחוב (±150 מ׳) — הנכס לא קיים ב-OSM', v:'arrival/lodging1'},
+  {n:'Il Nido dei Merli — הכתובת השנייה', cat:'lodging', lat:41.773506, lng:12.233244, q:'Via+delle+Ombrine+58+Fiumicino', note:'⚠️ <b>Via delle Ombrine 58</b> — הכתובת שמופיעה בכותרת ההזמנה, וגם המשרד הרשום של מפעילת ההסעות. <b>שתי הכתובות רחוקות ~7 ק״מ זו מזו ובשני צדדים שונים של השדה</b> — לאמת מול המקום איזו מהן הדירה', v:'arrival/lodging1'},
+  {n:'Country House Le Case Coloniche', cat:'lodging', lat:43.000718, lng:12.421984, q:'Country+House+Le+Case+Coloniche+Deruta', note:'הבסיס · צ׳ק-אין 25.9 · צ׳ק-אאוט 29.9 ב-11:00<br>~190 ק״מ / ~2:15–2:25 מ-FCO', v:'base/house'},
+
+  // ---------------- the base and what is next to it ----------------
+  {n:'דרוטה — Piazza dei Consoli', cat:'base', lat:42.982290, lng:12.419588, q:'Deruta+Perugia+centro+storico', note:'בירת הקרמיקה האומברית · סדנאות לילדים בתיאום מראש', v:'base/deruta'},
+  {n:'טורג׳אנו — המרכז ההיסטורי', cat:'base', lat:43.025599, lng:12.433985, q:'Torgiano+Perugia+centro', note:'כפר יין · ~10 ד׳ · מוזיאון יין ומוזיאון שמן זית', v:'base/around'},
+  {n:'טודי — Piazza del Popolo', cat:'base', lat:42.782293, lng:12.406539, q:'Todi+Piazza+del+Popolo', note:'~20–25 ד׳ · אחת הכיכרות היפות באומבריה · חצי יום', v:'base/around'},
+  {n:'מרשיאנו', cat:'base', lat:42.910512, lng:12.337723, q:'Marsciano+Perugia', note:'~12 ק״מ · לא אתר תיירות — כאן אוכלים המקומיים', v:'base/around'},
+
+  // ---------------- the day-trip catalogue ----------------
+  {n:'אורבייטו — הקתדרלה', cat:'days', lat:42.717008, lng:12.113595, q:'Duomo+di+Orvieto', note:'~55–60 ד׳ · הבחירה הראשונה של שני המקורות', v:'days/orvieto'},
+  {n:'באר סן פטריציו, אורבייטו', cat:'days', lat:42.722537, lng:12.120447, q:'Pozzo+di+San+Patrizio+Orvieto', note:'באר עם שני גרמי מדרגות שאינם נפגשים · מאות מדרגות — לא לעגלה', v:'days/orvieto'},
+  {n:'אורבייטו התת-קרקעית', cat:'days', lat:42.715940, lng:12.113580, q:'Orvieto+Underground+Orvieto+Sotterranea', note:'סיור מודרך בלבד — לבדוק שעות באנגלית והזמנה<br>הפין ±70 מ׳; הקופה ב-Piazza Duomo 23', v:'days/orvieto'},
+  {n:'🚞 פוניקולר אורבייטו — התחנה התחתונה', cat:'days', lat:42.723548, lng:12.126151, q:'Funicolare+Orvieto+Scalo', note:'מכאן עולים לעיר · <b>לא נכנסים ברכב לעיר העליונה — ZTL</b>', v:'days/orvieto'},
+  {n:'🅿️ Campo della Fiera, אורבייטו', cat:'days', lat:42.716759, lng:12.105104, q:'Parcheggio+Campo+della+Fiera+Orvieto', note:'חניון · חלופה לפוניקולר, עם מעליות לעיר', v:'days/orvieto'},
+  {n:'מפלי מרמורה — Belvedere Superiore', cat:'days', lat:42.550025, lng:12.716870, q:'Cascata+delle+Marmore+Belvedere+Superiore', note:'הכניסה העליונה (~372 מ׳ גובה) · חניון צמוד<br>⚠️ <b>לבדוק את לוח הזרמת המים לתאריך</b>', v:'days/marmore'},
+  {n:'מפלי מרמורה — Belvedere Inferiore', cat:'days', lat:42.556701, lng:12.719191, q:'Cascata+delle+Marmore+Belvedere+Inferiore', note:'הכניסה התחתונה והקופה (~220 מ׳ גובה) · <b>כניסה נפרדת לגמרי</b> — 767 מ׳ באוויר, אבל כביש אחר. להחליט מראש לאיזו נוסעים', v:'days/marmore'},
+  {n:'אגם פידילוקו', cat:'days', lat:42.528947, lng:12.765465, q:'Lago+di+Piediluco', note:'~15 ד׳ מהמפלים · טיילת וסירות פדלים · הפין הוא מרכז האגם', v:'days/marmore'},
+  {n:'בזיליקת סן פרנצ׳סקו, אסיזי', cat:'days', lat:43.074849, lng:12.605805, q:'Basilica+di+San+Francesco+Assisi', note:'~30–45 ד׳ · כניסה חופשית · <b>כתפיים וברכיים מכוסות</b>', v:'days/assisi'},
+  {n:'Rocca Maggiore, אסיזי', cat:'days', lat:43.073370, lng:12.615175, q:'Rocca+Maggiore+Assisi', note:'המצודה מעל העיר — עם ילדים היא עושה יותר מכנסייה', v:'days/assisi'},
+  {n:'🅿️ Parcheggio Mojano, אסיזי', cat:'days', lat:43.068361, lng:12.615387, q:'Parcheggio+Mojano+Assisi', note:'חניון תת-קרקעי בתשלום, מחוץ ל-ZTL · יש גם Matteotti ו-Giovanni Paolo II', v:'days/assisi'},
+  {n:'ספלו', cat:'days', lat:42.990945, lng:12.671775, q:'Spello+Perugia', note:'~15 ד׳ מאסיזי · אין בה ״אתר״, וזה היתרון אחרי בוקר עמוס', v:'days/assisi'},
+  {n:'פרוג׳ה — Piazza IV Novembre', cat:'days', lat:43.112045, lng:12.388769, q:'Piazza+IV+Novembre+Perugia', note:'~20–25 ד׳ · מזרקת Fontana Maggiore בכיכר', v:'days/perugia'},
+  {n:'Rocca Paolina, פרוג׳ה', cat:'days', lat:43.108297, lng:12.388130, q:'Rocca+Paolina+Perugia', note:'עיר תת-קרקעית עם דרגנועים · <b>כניסה חופשית</b> · התכנית הטובה ליום גשום', v:'days/perugia'},
+  {n:'🚇 מיני-מטרו — תחנת Pincetto', cat:'days', lat:43.110239, lng:12.390562, q:'Minimetro+Pincetto+Perugia', note:'הדרך לעלות לעיר העליונה בלי להיכנס ל-ZTL', v:'days/perugia'},
+  {n:'Perugina — בית השוקולד', cat:'days', lat:43.080659, lng:12.333708, q:'Casa+del+Cioccolato+Perugina+San+Sisto', note:'⚠️ <b>אלרגיה לבוטנים — לברר אלרגנים מול המפעיל לפני הזמנה</b>', v:'food/peanut'},
+  {n:'Città della Domenica', cat:'days', lat:43.113152, lng:12.343254, q:'Citta+della+Domenica+Perugia', note:'פארק המשפחות הראשון באיטליה · ⚠️ בסוף ספטמבר כנראה סופי שבוע בלבד — <b>לאמת לתאריך</b>', v:'days/perugia'},
+  {n:'UmbriaActivity Park, שקג׳ינו', cat:'days', lat:42.710576, lng:12.840946, q:'UmbriaActivity+Park+Scheggino', note:'~45–50 ד׳ · פארק חבלים ואומגות · ⚠️ מגבלות גיל וגובה, ותיאום מראש<br>הפין ±300 מ׳ — הפארק פרוש על שטח מיוער', v:'days/adventure'},
+  {n:'שקג׳ינו — הכפר', cat:'days', lat:42.712556, lng:12.831366, q:'Scheggino+Perugia', note:'כפר על הנהר, מוכר בפורלים · רפטינג משפחתי בנהר הנרה', v:'days/adventure'},
+  {n:'גובּיו — Piazza Grande', cat:'days', lat:43.353212, lng:12.578868, q:'Piazza+Grande+Gubbio', note:'~50 ד׳ · כיכר הבנויה כמרפסת תלויה מעל העמק', v:'days/gubbio'},
+  {n:'🚡 Funivia Colle Eletto — התחנה התחתונה', cat:'days', lat:43.350676, lng:12.584466, q:'Funivia+Colle+Eletto+Gubbio', note:'רכבל כלובים פתוחים, בעמידה · ⚠️ לאמת גיל מינימלי, שעות ומזג אוויר · חניון צמוד', v:'days/gubbio'},
+  {n:'בזיליקת סנט אובלדו, הר אינג׳ינו', cat:'days', lat:43.356396, lng:12.584835, q:'Basilica+di+SantUbaldo+Gubbio', note:'הפסגה שאליה הרכבל מגיע · יש גם כביש למעלה', v:'days/gubbio'},
+  {n:'Rocca del Leone, קסטיליונה דל לאגו', cat:'days', lat:43.127664, lng:12.056149, q:'Rocca+del+Leone+Castiglione+del+Lago', note:'~40–50 ד׳ · מבצר שמותר להסתובב בו — מה שילדים 3–12 מסכימים עליו', v:'days/trasimeno'},
+  {n:'קסטיליונה דל לאגו — Piazza Mazzini', cat:'days', lat:43.126831, lng:12.050843, q:'Piazza+Mazzini+Castiglione+del+Lago', note:'העיר העתיקה על לשון היבשה', v:'days/trasimeno'},
+  {n:'⛴️ המזח בקסטיליונה דל לאגו', cat:'days', lat:43.123377, lng:12.057098, q:'Traghetti+Castiglione+del+Lago', note:'⚠️ <b>קו הסירות עונתי</b> — בסוף ספטמבר לאמת לוח זמנים לפני שמגיעים למזח', v:'days/trasimeno'},
+  {n:'Isola Maggiore', cat:'days', lat:43.177198, lng:12.088323, q:'Isola+Maggiore+Lago+Trasimeno', note:'אי עם כפר דייגים · שייך לעיריית טואורו, למרות שהסירה יוצאת מקסטיליונה', v:'days/trasimeno'},
+  {n:'מונטפולצ׳אנו — Piazza Grande', cat:'days', lat:43.092728, lng:11.781014, q:'Piazza+Grande+Montepulciano', note:'~1:20–1:45 · היום הארוך · מרתפי יין חצובים בסלע', v:'days/tuscany'},
+  {n:'🅿️ Parcheggio Collazzi, מונטפולצ׳אנו', cat:'days', lat:43.091062, lng:11.778459, q:'Parcheggio+Collazzi+Montepulciano', note:'270 מקומות, <b>חינם</b> · החניון P6 קרוב יותר (170 מ׳ מהכיכר) אך בתשלום', v:'days/tuscany'},
+  {n:'פיינצה — Piazza Pio II', cat:'days', lat:43.076516, lng:11.678872, q:'Piazza+Pio+II+Pienza', note:'~30 ד׳ ממונטפולצ׳אנו · עיירת רנסנס זעירה עם תצפית', v:'days/tuscany'},
+  {n:'קורטונה — Piazza della Repubblica', cat:'days', lat:43.275021, lng:11.985407, q:'Piazza+della+Repubblica+Cortona', note:'חלופה לפיינצה — קרובה יותר לדרוטה, מקצרת את היום', v:'days/tuscany'},
+  {n:'פארק ארכיאולוגי אל סודו, קורטונה', cat:'days', lat:43.281131, lng:11.967424, q:'Parco+Archeologico+del+Sodo+Cortona', note:'קברי טומולוס אטרוסקיים במורד הגבעה', v:'days/tuscany'},
+
+  // ---------------- the last day ----------------
+  {n:'פארק המפלצות, בומרצו', cat:'last', lat:42.490283, lng:12.245940, q:'Parco+dei+Mostri+Bomarzo', note:'⭐ חלופה א׳ · ~1:30 מדרוטה · יער עם פסלי אבן ענקיים מהמאה ה-16, מוצל והליכה חופשית', v:'last/opt-a'},
+  {n:'צ׳יוויטה די באניורג׳ו — הגשר', cat:'last', lat:42.626219, lng:12.109671, q:'Ponte+Civita+di+Bagnoregio', note:'תוספת אופציונלית · ⚠️ <b>עלייה של ממש בגשר, בלי צל, בתשלום</b> — להחליט בשטח', v:'last/opt-a'},
+  {n:'🅿️ חניון באניורג׳ו', cat:'last', lat:42.626000, lng:12.108673, q:'Parcheggio+Civita+di+Bagnoregio', note:'אין חניון גדול אחד — כמה רצועות בתשלום ליד הגשר (±150 מ׳), ועוד חינם ב-Piazza De Gasperi', v:'last/opt-a'},
+  {n:'אוסטיה אנטיקה — הכניסה', cat:'last', lat:41.757915, lng:12.296926, q:'Parco+Archeologico+di+Ostia+Antica', note:'חלופה ב׳ · ~20 ד׳ מ-FCO · עיר רומית שלמה, מרחבים פתוחים, צל חלקי', v:'last/opt-b'},
+  {n:'Parco Leonardo (The Wow Side)', cat:'last', lat:41.798103, lng:12.298421, q:'The+Wow+Side+Parco+Leonardo+Fiumicino', note:'קניון סגור וממוזג, ~7 ד׳ מהשדה · לערב של 22:00–00:30<br>⚠️ שונה שמו ל-The Wow Side · <b>לבדוק שעת סגירה ביום שלישי</b>', v:'last/opt-a'},
+  {n:'טיילת החוף של פיומיצ׳ינו', cat:'last', lat:41.771407, lng:12.230982, q:'Via+della+Torre+Clementina+Fiumicino', note:'חלופה ג׳ · טיילת ומסעדות דגים, דקות מהשדה · הפין הוא אמצע רחוב באורך ~1 ק״מ', v:'last/opt-c'}
+];
+
+var map = L.map('map', {scrollWheelZoom:true}).setView([42.6, 12.4], 8);
+var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom:18, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
+
+/* Offline, only tiles this device has already viewed are in the service worker's
+   cache; the rest come back as errors and Leaflet just leaves them grey. The pins,
+   popups and filters all keep working, so say that once instead of showing a void. */
+tiles.once('tileerror', function(){
+  if(document.getElementById('tilewarn')) return;
+  var n = document.createElement('div');
+  n.id = 'tilewarn';
+  n.textContent = 'רקע המפה לא נטען (כנראה אין רשת) — הסימונים והמידע עדיין עובדים. ' +
+                  'אזורים שכבר פתחתם במכשיר הזה יוצגו גם בלי רשת.';
+  document.getElementById('map').appendChild(n);
+  setTimeout(function(){ n.style.opacity = '0'; }, 9000);
+});
+
+var layerGroups = {}, groupBounds = {};
+Object.keys(CATS).forEach(function(k){ layerGroups[k] = L.layerGroup(); groupBounds[k] = []; });
+
+var byQ = {};
+function addPlaces(){
+  PLACES.forEach(function(p){
+  var c = CATS[p.cat];
+  var icon = L.divIcon({
+    className:'', html:'<div class="pin" style="background:'+c.color+'"><span>●</span></div>',
+    iconSize:[26,26], iconAnchor:[13,26], popupAnchor:[0,-24]
+  });
+  var mapsUrl = p.url || 'https://www.google.com/maps/search/?api=1&query='+p.q;
+  /* `v` is the pin's card on the trip page. target=_top because this file is
+     normally running inside the trip page's #map view — without it the whole
+     site would load inside the iframe. Standalone, _top is this window anyway. */
+  var html = '<b>'+p.n+'</b>' + (p.note ? '<br>'+p.note : '') +
+             '<br><a href="'+mapsUrl+'" target="_blank" rel="noopener">מפה / ניווט ↖</a>' +
+             (p.v ? ' · <a href="index.html#'+p.v+'" target="_top">מידע באתר ←</a>' : '');
+  p.marker = L.marker([p.lat, p.lng], {icon:icon}).bindPopup(html).addTo(layerGroups[p.cat]);
+  byQ[p.q] = p;
+  groupBounds[p.cat].push([p.lat, p.lng]);
+  });
+}
+
+/* The chips are the only filter UI — Leaflet's own layers control is deliberately
+   absent, so each chip wears its category's pin colour to keep the colour↔category
+   key. Categories toggle independently; `shown` is the whole state. */
+var CAT_KEYS = Object.keys(CATS);
+var shown = {}, pinned = null;
+
+function setAll(v){ CAT_KEYS.forEach(function(k){ shown[k] = v; }); }
+function countOn(){ return CAT_KEYS.filter(function(k){ return shown[k]; }).length; }
+
+/* Two hash forms, both fed by links on the trip page:
+     #<category>  — open with just that section's pins showing (the per-view maps)
+     #p:<q>       — zoom to one pin and open its popup. <q> is the pin's Google Maps
+                    query string — or, for restaurants, the restaurants.json id —
+                    which is the same token the trip page already has next to that
+                    place, so the internal link needs no second identifier.
+   No hash, or anything unrecognised, = everything. The hash is only an entry point:
+   toggling chips afterwards changes `shown` and leaves the URL alone, because an
+   arbitrary subset has no sensible hash form. */
+function fromHash(){
+  var h = location.hash.replace(/^#/, '');
+  try{ h = decodeURIComponent(h); }catch(e){}
+  pinned = h.indexOf('p:') === 0 ? byQ[h.slice(2)] : null;
+  var cat = pinned ? pinned.cat : h;
+  if(CATS[cat]){ setAll(false); shown[cat] = true; }
+  else setAll(true);
+  render(true);
+}
+
+/* `fit` = re-frame the map on what is showing. It is deliberately NOT the default:
+   a single chip narrows or widens the selection you are already looking at, and
+   zooming on every toggle throws away the area you had panned to. Only an entry
+   point (a hash) and the הכל chip — which changes the whole selection at once,
+   not one layer of it — ask for a new frame. */
+function render(fit){
+  var bounds = [], visible = 0;
+  CAT_KEYS.forEach(function(k){
+    if(shown[k]){
+      layerGroups[k].addTo(map);
+      bounds = bounds.concat(groupBounds[k]);
+      visible += groupBounds[k].length;
+    } else if(map.hasLayer(layerGroups[k])) map.removeLayer(layerGroups[k]);
+  });
+
+  var on = countOn();
+  var only = on === 1 && CAT_KEYS.filter(function(k){ return shown[k]; })[0];
+  document.getElementById('title').textContent =
+    pinned            ? '📍 ' + pinned.n
+    : on === CAT_KEYS.length ? '🗺️ מפת המסלול — כל ' + PLACES.length + ' המקומות בתכנית'
+    : on === 0        ? '🗺️ מפת המסלול — לא נבחרה אף קטגוריה'
+    : only            ? CATS[only].label + ' — ' + visible + ' נקודות'   /* labels already carry an emoji */
+                      : '🗺️ ' + visible + ' מקומות · ' + on + ' קטגוריות';
+
+  document.querySelectorAll('#filters button').forEach(function(b){
+    var k = b.dataset.cat;
+    b.classList.toggle('on', k ? !!shown[k] : on === CAT_KEYS.length);
+    b.classList.toggle('some', !k && on > 0 && on < CAT_KEYS.length);
+    b.setAttribute('aria-pressed', k ? !!shown[k] : on === CAT_KEYS.length);
+  });
+
+  map.invalidateSize();
+  if(pinned && shown[pinned.cat]){ map.setView([pinned.lat, pinned.lng], 14); pinned.marker.openPopup(); }
+  else if(fit && bounds.length) map.fitBounds(bounds, {padding:[30,30]});
+}
+
+/* Six chips, one line, as large as they will go. Text width is font- and
+   language-dependent, so this measures rather than guesses: start at the size the
+   chips have always been and step down only as far as the row needs. Font size alone
+   is not enough, so it walks three content levels first and only shrinks within each,
+   keeping the type readable instead of fitting it by making it tiny. */
+var CHIP_PX = 13;
+var LEVELS = [                    /* each level's floor: words have to stay readable, icons don't */
+  {cls:'',               min:10},
+  {cls:'hide-n',         min:10},
+  {cls:'hide-n hide-tx', min:7}
+];
+function fitChips(){
+  var f = document.getElementById('filters');
+  if(!f.clientWidth) return;      /* laid out while hidden — measuring would shrink to nothing */
+  for(var i = 0; i < LEVELS.length; i++){
+    f.className = 'filters ' + LEVELS[i].cls;
+    for(var s = CHIP_PX; s >= LEVELS[i].min; s -= 0.5){
+      f.style.fontSize = s + 'px';
+      if(f.scrollWidth <= f.clientWidth) return;
+    }
+  }
+  /* Narrower than six icons will ever go. Shrinking further buys almost nothing —
+     emoji come from a bitmap font that stops tracking font-size — so keep them full
+     size and let .filters scroll, rather than tiny *and* scrolling. */
+  f.style.fontSize = CHIP_PX + 'px';
+}
+
+function init(){
+  addPlaces();
+  var f = document.getElementById('filters');
+  f.innerHTML = '<button type="button" data-cat="">הכל<span class="n">' + PLACES.length + '</span></button>' +
+    CAT_KEYS.map(function(k){
+      return '<button type="button" data-cat="'+k+'" style="--c:'+CATS[k].color+'" title="'+CATS[k].label+'">' +
+             '<span class="ic">' + CATS[k].ic + '</span><span class="tx">' + CATS[k].tx + '</span>' +
+             '<span class="n">' + groupBounds[k].length + '</span></button>';
+    }).join('');
+
+  f.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-cat]');
+    if(!b) return;
+    pinned = null;                       // stop re-zooming to a deep-linked pin
+    var k = b.dataset.cat;
+    if(k) shown[k] = !shown[k];
+    else  setAll(countOn() < CAT_KEYS.length);   // הכל: all on unless already all on
+    render(!k);                                  // only הכל re-frames; a single chip keeps the view
+  });
+
+  window.addEventListener('hashchange', fromHash);
+  window.addEventListener('popstate', fromHash);
+  window.addEventListener('resize', fitChips);
+  fromHash();
+  fitChips();
+}
+
+/* The 🍽️ pins come from restaurants.json — the same file the trip page's food view
+   renders, so a place is added or corrected in one file and appears in both. Their
+   `q` is the JSON id, which is exactly what the page's 🗺️ chips link to (#p:<id>),
+   so the two sides still need no second identifier. Everything is drawn after the
+   fetch settles; if it fails the rest of the map still comes up, minus the food pins.
+   **Anything added to the map build must go inside init()**, or it runs before the
+   restaurants exist. */
+var CITY_HE = {deruta:'דרוטה', perugia:'פרוג׳ה', assisi:'אסיזי', todi:'טודי',
+               orvieto:'אורבייטו', terni:'טרני', trasimeno:'טרסימנו',
+               tuscany:'טוסקנה', gubbio:'גובּיו', fiumicino:'פיומיצ׳ינו'};
+/* 'no-cache' = always revalidate, same as index.html: the browser's heuristic cache
+   will otherwise pin an old list here after the JSON is corrected. */
+fetch('restaurants.json', {cache:'no-cache'}).then(function(r){ return r.json(); }).then(function(list){
+  list.forEach(function(r){
+    var facts = [r.type, r.score ? '⭐ ' + r.score : '', r.hours].filter(Boolean).join(' · ');
+    PLACES.push({
+      n: r.name + (CITY_HE[r.city] ? ', ' + CITY_HE[r.city] : ''),
+      cat:'food', lat:r.lat, lng:r.lng,
+      q: r.id, url: r.gmaps,
+      note: facts + (r.note ? '<br>' + r.note : ''),
+      v: r.view || 'food/restaurants'
+    });
+  });
+}).catch(function(){}).then(init);
+</script>
+</body>
+</html>

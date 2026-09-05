@@ -35,8 +35,8 @@ liorsol/  (github.com/liorsol/liorsol — public, GitHub Pages from root of main
     ├── CLAUDE.md              ← this file (canonical project context)
     ├── index.html             ← ★ source of truth — the trip page (content + CSS). Edit here!
     ├── trip.js                ← ★ all of the page's behaviour — routing, weather, FX, restaurants, boards
-    ├── sw.js                  ← service worker (offline). **Bump its `V` on every content change** — see below
-    ├── sw.test.js             ← `node sw.test.js` — the only test in the repo; guards the SW's silent failures
+    ├── sw.js                  ← thin SW stub: V + TILES + CORE, then imports ../sw-core.js
+    │                            **Bump its `V` on every content change** — see below
     ├── manifest.webmanifest   ← PWA manifest (installable, RTL, Hebrew)
     ├── icons/                 ← icon-192, icon-512 (manifest) + apple-touch-icon 180 (iOS home screen)
     ├── vendor/                ← leaflet 1.9.4 (js/css/images), vendored so the offline map needs no CDN
@@ -71,6 +71,15 @@ in Shëngjergj is unverified, so offline is the point, not a nicety.
 - Icons were generated locally from the 🇦🇱 emoji (`Apple Color Emoji.ttc` **only has a 160 px strike** —
   render at 160 and upscale, any other size raises `OSError: invalid pixel size`). The flag sits inside
   the middle 50% so `purpose:"any maskable"` survives Android's circle crop.
+- **The logic lives in [`trips/sw-core.js`](../sw-core.js), shared with the Italy page (Sep 2026).**
+  This directory keeps only a stub holding `V`, `TILES`, `CORE` and `EXTRA`, which then
+  `importScripts('../sw-core.js')`. The stub has to stay here rather than the whole worker moving
+  to the site root, because a service worker's scope is its own directory and GitHub Pages cannot
+  send `Service-Worker-Allowed` — a single `/sw.js` would take scope `/` and put the file browser,
+  the savings calculator and esim-usage behind a cache-first handler written for a trip page.
+  **⚠️ After editing `sw-core.js`, bump `V` in EVERY trip's stub**: Chrome and Firefox byte-check
+  imported scripts, Safari's behaviour is not worth betting an offline page on, and these pages
+  live on iPhones.
 - `sw.js`: `CORE` (local shell) is precached strictly — a failure fails the install, because a
   half-cached shell is a broken offline page. `EXTRA` (only the Google Fonts CSS now) is best-effort:
   a missing font degrades to a fallback face, which is survivable.
@@ -129,15 +138,28 @@ If a real offline basemap is ever wanted, the route is self-hosted vector tiles 
 MapLibre), not more caching — that means replacing the Leaflet raster layer, and a ~30–80 MB asset in
 a public repo. Not worth it for this trip.
 
-### `sw.test.js` — `node sw.test.js`, no deps, no framework
+### `node trips/sw-core.test.js` — no deps, no framework, covers every trip's worker
 
 The service worker is the one part of this page that fails **invisibly**: it runs on a phone in
 Albania where nobody will read a console, and the in-app browser used for verification blocks both
-unpkg and the OSM tile host, so its two most important behaviours cannot be exercised there. The test
-stubs the Cache API and asserts: tile routing matches only the real tile hosts (a/b/c + bare, and
-crucially *not* a URL that merely contains that string), `activate` keeps the shell **and** the tile
-cache while dropping older versions, and the cap evicts oldest-first. Mutation-checked — all three
-assertions were confirmed to fail when the corresponding logic is broken.
+unpkg and the OSM tile host, so its most important behaviours cannot be exercised there. The test
+discovers every `trips/*/sw.js`, evaluates each one the way a browser would (the stub's own code,
+then whatever it `importScripts`), stubs the Cache API, and asserts per trip:
+
+- **the stub→core contract** — `V`, `TILES` and `CORE` are defined, the core is actually imported,
+  `V` starts with the trip name, and **every precached path is a real file on disk** (a typo there
+  fails `install` on the live site and silently costs the page its offline mode);
+- tile routing matches only the real tile hosts (a/b/c + bare, and crucially *not* a URL that
+  merely contains that string);
+- the Firebase / open-meteo / open.er-api paths are never intercepted;
+- `activate` keeps the shell **and** the tile cache while dropping older versions;
+- the cap evicts oldest-first;
+- and `sw-core.js` refuses to load at all if a stub forgot its config, rather than opening a cache
+  named `undefined` and quietly serving nothing.
+
+Mutation-checked (Sep 2026): removing the `importScripts`, listing a missing file in `CORE`,
+dropping `V`, wiping the tile cache on activate, evicting newest-first, and breaking `live()` were
+each confirmed to fail it.
 
 ## Dynamic data (Firebase)
 

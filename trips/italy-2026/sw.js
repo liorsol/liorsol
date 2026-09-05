@@ -13,7 +13,7 @@
    whose bytes differ, and cache-first means a corrected restaurant or a fixed
    opening time is invisible until V moves. This is the one way to ship a change
    that silently does not reach the family. */
-var V = 'italy-2026-v4';
+var V = 'italy-2026-v5';
 
 /* Tiles get their own cache, and it deliberately SURVIVES a V bump — it is not
    shell, it is the areas the family has already primed. See sw-core.js. */
@@ -34,8 +34,13 @@ var CORE = [
   /* The airport images are strictly precached and not lazy extras. They are the
      picture the family looks at while standing in FCO at 02:00 with a dead eSIM —
      the one moment on this trip when "it will load" is the wrong assumption. The
-     hero rides along because it is the first paint of the page. ~740 KB total. */
-  'assets/fco-t3-shuttle.svg',
+     hero still rides along because it is the first paint of the page. ~750 KB.
+
+     NOT here on purpose: `assets/hero-umbria.mp4` (2.1 MB). A strict precache
+     fails the whole install if one entry fails, and the still above is already
+     the hero's fallback layer — the clip is picked up by the runtime cache
+     instead, when the browser asks for it whole rather than as a range. Same
+     arrangement as the Albania page's clip. */
   'assets/fco-departures-kerb-night.jpg',
   'assets/fco-t3-arrivals-board.jpg',
   'assets/hero-umbria.jpg'

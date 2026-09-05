@@ -55,7 +55,7 @@ trips/italy-2026/
 ├── manifest.webmanifest   ← PWA manifest (installable, RTL, Hebrew)
 ├── icons/                 ← generated from the 🇮🇹 emoji, same method as Albania's
 ├── vendor/                ← leaflet 1.9.4, copied byte-identical from trips/albania-2026/vendor/
-├── assets/                ← the hero + the three airport images · CREDITS.md
+├── assets/                ← the hero still + hero clip + two airport photos · CREDITS.md
 ├── research-gemini.md     ← raw Gemini report (source doc)
 └── research-chatgpt.md    ← raw ChatGPT report (source doc)
 ```
@@ -67,7 +67,9 @@ on port 8812.
 
 `research-chatgpt.md` hotlinks ~50 `images.openai.com` URLs that will rot. Left verbatim on
 purpose — it is a source document, not content, and the same convention as Albania's
-`research-gemini.md`.
+`research-gemini.md`. **Eight of those URLs are now also on the page** as the day-card previews
+(Sep 2026, user's request) — see "Day-card previews" below, including why they are hotlinked
+rather than bundled and how the page survives them rotting.
 
 ## `check-links.py` — run it after touching index.html, map.html or restaurants.json
 
@@ -119,6 +121,78 @@ wildcard. That was deliberate: publishing replaces the entire document, so a res
 change to the Albania page's boards, which a family is actively using, in exchange for saving 28
 lines. **Duplicate the block again for the next trip.**
 
+## The hero clip
+
+`assets/hero-umbria.mp4` — a drone-style pull-back over an Umbrian hill town, **supplied by the
+user** (Sep 2026) as a 10 s / 10.4 MB / 24 fps H.264 file, with two instructions: make it smaller
+by dropping frames, and make it play **forward → reverse → forward**, not cut back to the start.
+
+**It is one file, not a JS effect.** Browsers do not support a negative `playbackRate`, so a
+"boomerang" driven from JS means stepping `currentTime` by hand every frame — jerky, and it
+burns battery on the phone this page is built for. The turnaround is baked into the file
+instead, and the element stays a plain `autoplay muted loop playsinline` video.
+
+```bash
+ffmpeg -i gemini_generated_video.mp4 \
+  -filter_complex "[0:v]fps=12,split[a][b];\
+                   [b]reverse,trim=start_frame=1:end_frame=119,setpts=PTS-STARTPTS[r];\
+                   [a][r]concat=n=2:v=1[v]" \
+  -map "[v]" -an -r 12 -fps_mode cfr -c:v libx264 -profile:v high -level 4.0 \
+  -crf 31 -preset slow -pix_fmt yuv420p -movflags +faststart assets/hero-umbria.mp4
+```
+
+- `fps=12` halves the frames — the camera drifts slowly, so it reads as smooth. **`-r 12
+  -fps_mode cfr` is not optional:** without it the muxer re-inflates the stream to 25 fps by
+  duplicating frames, and the file is bigger than the original for no visible gain. That
+  actually happened on the first attempt.
+- `trim=start_frame=1:end_frame=119` drops **both** duplicate frames at the joins — the reversed
+  segment would otherwise repeat the last forward frame at the turnaround and the first one at
+  the loop point, showing as a twitch twice per cycle. Forward 120 + reversed 118 = **238 frames,
+  19.83 s at 12 fps**. Verified frame-by-frame: 119≠120 at the turn, and frame 237 is one motion
+  step from frame 0, so the `loop` is seamless in both directions.
+- `-an` drops the audio: the element is `muted` and `aria-hidden`, so the track was 128 kb/s of
+  nothing.
+- **10.4 MB → 2.1 MB** at the same 1280×720, and twice as long. CRF 31 is well above the usual
+  23, and it holds up because the clip lives under a `rgba(30,45,32,.3→.66)` scrim.
+
+`@media (prefers-reduced-motion:reduce)` hides the video and lets the still show through — Albania
+has no such rule; this one is not a divergence worth "fixing" back.
+
+**Not in the SW's `CORE`.** A strict precache fails the whole install if one entry fails, and 2.1
+MB is a lot to bet the offline shell on. The still underneath is already the fallback layer, and
+the clip is picked up by the runtime cache when the browser asks for it whole rather than as a
+range (`sw-core.js` refuses to `put()` a 206). Same arrangement as Albania's clip.
+
+**Verifying it in a browser here is not possible:** the Chromium bundled with Playwright is built
+without H.264 (`canPlayType('video/mp4; codecs="avc1.640028"')` → `""`), so *both* trips' clips
+fail with `MEDIA_ERR_SRC_NOT_SUPPORTED` under it. The page wiring was checked by serving a WebM
+re-encode of the same frames under the mp4's URL; the mp4 itself was checked with ffmpeg.
+
+## Day-card previews (`figure.prev`)
+
+Each of the 8 day cards in `#days` that has a matching section in `research-chatgpt.md` carries
+that section's **first image** at the head of the card. The mapping is
+`orvieto←1, marmore←2, assisi←3, perugia←4, adventure←5, trasimeno←6, tuscany←7, rest←8`;
+**`gubbio` has none** because that day came from the Gemini report, not the ChatGPT one.
+
+**They are hotlinked from `images.openai.com`, and that is a compromise, not the plan.** That
+host is unreachable from the environment this was built in, so the images could not be inspected,
+downscaled or bundled — and the URLs are signed and expiring, exactly as the note on
+`research-chatgpt.md` in this file already warned. So the page is written to treat every one of
+them as likely to vanish:
+
+- The `<figure>` ships **`hidden`** and `trip.js` reveals it only on the image's `load` event; an
+  `error` removes the figure outright. A dead link therefore leaves **no empty frame and no
+  broken-image icon** — the card renders exactly as it did before previews existed.
+- They are **eager, not `loading="lazy"`**, and that is deliberate: a lazy image inside a
+  `display:none` figure is never fetched, so it could never reveal itself. Reversing one of these
+  two decisions without the other breaks the previews silently.
+- `referrerpolicy="no-referrer"` is the best guess against a hotlink referer check. Unverified.
+
+**If they turn out to be dead (or wrong — nobody has seen them):** the durable fix is to save the
+images into `assets/`, add them to `CORE`, and credit them, which is also what
+`assets/CREDITS.md` says. Do not spend time hunting for replacement URLs on the same CDN.
+
 ## What differs from the Albania page (and why)
 
 - **Palette re-skinned, variable NAMES kept.** `--sea` is now cypress green `#2f5d3a`, `--sand`
@@ -133,9 +207,12 @@ lines. **Duplicate the block again for the next trip.**
   probability is what decides whether a day is a pool day or a hill-town day. Three spots
   (Perugia, Deruta, Fiumicino); Perugia is the out-of-range fallback. `elevation` is still passed
   explicitly — Deruta sits ~215 m above the Tiber valley.
-- **The hero photo is bundled, not hotlinked** (`assets/hero-umbria.jpg`, Deruta across the Tiber
-  valley, CC BY-SA 4.0). Albania hotlinks its hero; here the image is in the SW's `CORE`, so it
-  survives offline. The gradient is still the last background layer if it ever 404s.
+- **The hero is a clip over a bundled still** (Sep 2026). `assets/hero-umbria.mp4` plays over
+  `assets/hero-umbria.jpg` (Deruta across the Tiber valley, CC BY-SA 4.0) exactly the way
+  Albania's `moving_image.mp4` sits over its hero — same CSS shape, same z-order. Albania
+  *hotlinks* its still; here it is in the SW's `CORE`, so the fallback layer survives offline
+  even though the clip does not. The gradient is still the last background layer if both fail.
+  See "The hero clip" below.
 - **No presentation deck and no eSIM embed.** Neither was asked for. If a deck is ever wanted,
   Albania's `presentation/` is the pattern.
 
@@ -183,7 +260,7 @@ The user supplied the confirmed booking facts; everything around them was verifi
    at the Terminal 1 end. Read off the ADR maps directly.
 6. **⚠️ Door 4 is NOT the airport's official pick-up point** — ADR marks that between Entrances 1
    and 2. Door 4 is the host's private arrangement. That makes Entrance 1/2 the second place to
-   look, and it is on the diagram as a `P` marker for exactly that reason.
+   look, and the page says so in the `<details>` under the steps.
 7. **A TLV arrival should land at T3**, since T3 is the extra-Schengen terminal — the structural
    evidence is that the official T3 arrivals map has a passport-control icon and the T1 map does
    not. This is an inference from ADR's maps, not an explicit ADR statement about Wizz Air, and
@@ -202,22 +279,25 @@ The user supplied the confirmed booking facts; everything around them was verifi
 
 ### The images, and why they are precached
 
-`assets/CREDITS.md` has the licences. Three airport images, all in the SW's `CORE` rather than
+`assets/CREDITS.md` has the licences. The two airport photos are in the SW's `CORE` rather than
 lazy — this is a picture you look at while standing in FCO at 02:00 with a dead eSIM, the one
-moment on this trip when "it will load" is the wrong assumption. ~748 KB of assets total.
+moment on this trip when "it will load" is the wrong assumption. ~750 KB precached.
 
-- **`fco-t3-shuttle.svg` — authored here, not a crop.** ADR's terminal maps are copyrighted, so
-  they were used as *sources* and the diagram was drawn from scratch. It is deliberately almost
-  text-free: two floor bands, the numbered doors with 4 highlighted in both, the minivan, the
-  escalator arrow, and the `P` fallback marker. The prose lives in the HTML `<ol class="steps">`
-  instead. **Two bugs were found and fixed in the browser, don't reintroduce them:**
-  - **In an RTL `<text>`, `text-anchor="end"` anchors the LOGICAL end — the LEFT visual edge.**
-    Anchoring the Hebrew band titles at `x=852` with `end` pushed them clean off the right of the
-    canvas. For RTL text whose *right* edge should sit at `x`, the anchor is **`start`**.
-  - The frontage `<rect>` originally ran the full width, so the strip left of door 7 read as an
-    unlabelled eighth door. It now hugs the doors.
-  - The caption says the diagram is schematic — door *counts* and the escalator position are
-    sourced, the *spacing* is not. Keep that sentence; it is what makes the drawing honest.
+- **The terminal map is a published one, hotlinked — the hand-drawn `fco-t3-shuttle.svg` is
+  gone** (user's call, Sep 2026: *"use map from the net, not create something yourself"*). The
+  SVG was drawn from scratch precisely *because* ADR's terminal maps are copyrighted, and that
+  same reasoning is why its replacement is **not bundled**: the page points at
+  `ontheworldmap.com`'s published T3 map and credits it, rather than redistributing someone
+  else's map from this repo. Consequences, all deliberate:
+  - **It does not work offline**, which is the one thing the rest of this card is built around.
+    The caption therefore tells the family in bold to screenshot it before the flight, and
+    `trip.js` replaces a failed load with a link to the source page (`figure.shot img.net`) so
+    the answer at 02:00 is "open this", never a broken-image icon.
+  - If it ever needs to work offline, the fix is to get permission or find an openly licensed
+    map, put the file in `assets/`, add it to `CORE`, credit it, bump `V`.
+  - The SVG's two RTL-SVG bugs are documented in git history (`git show 0b16716^:trips/italy-2026/assets/fco-t3-shuttle.svg`)
+    if a diagram is ever drawn here again: in an RTL `<text>`, `text-anchor="end"` anchors the
+    *logical* end, i.e. the LEFT visual edge — use `start` for text whose right edge sits at `x`.
 - **`fco-departures-kerb-night.jpg`** — the lucky find: FCO's departures kerb **at night**,
   covered viaduct, terminal frontage lit, taxi rank, and **a white minivan stopped at the kerb**.
   **Public domain** (User:Mattes, 2009). Caveat carried in the caption: it is not identified as

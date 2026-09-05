@@ -99,7 +99,14 @@
                linear-gradient(160deg,#26402c,#2f5d3a 42%,#7d8f4f)}
   header.hero h1{position:relative; color:#fff; font-size:clamp(34px,6.5vw,60px); margin:0 0 .12em; text-shadow:0 4px 22px rgba(0,0,0,.55)}
   header.hero .dates{position:relative; font-family:'Heebo',sans-serif; font-weight:700; letter-spacing:.08em; font-size:clamp(15px,2.2vw,19px); color:#f3d79a; text-shadow:0 2px 12px rgba(0,0,0,.5)}
+  /* Looping hero clip, same shape as the Albania page. The still background above
+     stays as the fallback layer — it shows through whenever the video is blocked
+     (low-power mode, save-data, reduced motion) or has not painted its first frame. */
+  header.hero video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0}
+  header.hero::after{content:''; position:absolute; inset:0; z-index:1;
+    background:linear-gradient(rgba(30,45,32,.3),rgba(30,45,32,.66))}
   header.hero h1, header.hero .dates{z-index:2}
+  @media (prefers-reduced-motion:reduce){ header.hero video{display:none} }
 
   .sec-head{display:flex; align-items:baseline; gap:12px; margin:0 0 4px}
   .sec-head .num{font-family:'Suez One',serif; color:var(--terra); font-size:20px}
@@ -293,6 +300,15 @@
   @media (max-width:640px){ body{font-size:16px} .two{grid-template-columns:1fr} }
   @media print{ nav,.navtoggle,.navscrim{display:none} body{padding-inline-start:0} .view{display:block!important} #view-map{display:none!important} header.hero{padding:24px 0 40px} .card,.region,.note,.tile{box-shadow:none} details summary{display:none} }
 
+  /* PREVIEW — one image at the head of a day card, hotlinked from the CDN of the
+     ChatGPT research doc. That CDN is not ours and its links expire, so trip.js
+     removes the whole figure when one fails: a dead link degrades to the card
+     exactly as it looked before, never to a broken-image icon. */
+  figure.prev{margin:10px 0 12px; border-radius:14px; overflow:hidden; aspect-ratio:16/7;
+    border:1px solid var(--line); background:var(--sand-2)}
+  figure.prev[hidden]{display:none}                  /* until the image has really arrived */
+  figure.prev img{display:block; width:100%; height:100%; object-fit:cover}
+
   /* PHOTO — a figure with a caption, used for the airport meeting point and the
      hero-less views. Bundled in assets/, so it is available with no reception,
      which is the whole point for a picture you look at while standing in FCO. */
@@ -302,6 +318,8 @@
   figure.shot figcaption{padding:9px 15px 11px; font-size:13.5px; color:var(--ink-soft);
     border-top:1px solid var(--line-soft)}
   figure.shot figcaption b{color:var(--sea); font-family:'Heebo',sans-serif}
+  /* Stands in for a hotlinked image that did not load — see trip.js. */
+  figure.shot .netfail{margin:12px 15px; font-size:14.5px; font-style:italic; color:var(--ink-soft)}
   /* A step list for a sequence that has to happen in order at 02:00 in an airport. */
   ol.steps{margin:8px 0 0; padding-inline-start:22px}
   ol.steps li{margin:6px 0; font-size:15.5px}
@@ -341,6 +359,7 @@
 <!-- ======================= HOME ======================= -->
 <div class="view" id="view-home">
   <header class="hero">
+    <video src="assets/hero-umbria.mp4" autoplay muted loop playsinline aria-hidden="true"></video>
     <h1>אומבריה ורומא</h1>
     <div class="dates">25–30 בספטמבר 2026 · שתי משפחות</div>
   </header>
@@ -560,9 +579,14 @@
     </ol>
 
     <figure class="shot">
-      <img src="assets/fco-t3-shuttle.svg" width="900" height="420"
-           alt="תרשים בשתי קומות: למטה רמת הנכנסים של טרמינל 3 עם יציאות ממוספרות 1 עד 6 ויציאה 4 מסומנת, חץ של דרגנוע עולה קומה, ולמעלה רמת היציאות עם שבע כניסות והמיניוואן חונה מול כניסה 4">
-      <figcaption><b>התרשים</b> — קומת הנחיתה למטה, קומת היציאות למעלה, ודלת 4 מסומנת בשתיהן. <b>העיגול הכתום המסומן P</b> ליד כניסות 1–2 הוא נקודת האיסוף <i>הרשמית</i> של השדה — היא לא היעד שלנו, אלא המקום להסתכל בו אם המיניוואן לא נמצא. מספר הכניסות (6 בנכנסים, 7 ביציאות) ומיקום הדרגנוע הם לפי מפות רשות שדות התעופה; המרווחים בתרשים סכמטיים.</figcaption>
+      <img class="net" src="https://ontheworldmap.com/italy/city/rome/fiumicino-airport-terminal-3-map.jpg"
+           data-source="https://ontheworldmap.com/italy/city/rome/fiumicino-airport-terminal-3-map.html"
+           loading="lazy" referrerpolicy="no-referrer"
+           alt="מפת טרמינל 3 בשדה התעופה פיומיצ׳ינו: קומת הנכנסים והיציאות, הכניסות הממוספרות לאורך החזית, ומיקומי הדלפקים והשערים">
+      <figcaption><b>מפת טרמינל 3</b> — מפה שפורסמה של הטרמינל, ולא תרשים שציירנו: הכניסות
+        לאורך החזית ממוספרות, וזה כל מה שצריך כדי למצוא את <b>דלת 4 ברמת היציאות</b>.
+        מקור: <a href="https://ontheworldmap.com/italy/city/rome/fiumicino-airport-terminal-3-map.html" target="_blank" rel="noopener">ontheworldmap.com</a>.
+        <b>שימו לב:</b> המפה נטענת מהאינטרנט ולא נשמרת במכשיר — <b>לצלם אותה למסך לפני הטיסה.</b></figcaption>
     </figure>
 
     <figure class="shot">
@@ -806,6 +830,7 @@
   </div>
 
   <div class="card" id="orvieto"><h3>🥇 אורבייטו — העיר שעל הצוק, ומה שמתחתיה <a class="anchor" href="#days/orvieto" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <figure class="prev" hidden><img src="https://images.openai.com/static-rsc-4/MmqgttSHS1gheYM_Z_W_wigyIRBUB5KmYCuKWh_dEBBr-8PJhba9uzQjp7oCz0ZcHPQLnIHX4EoT6qKiRqQIyER4xEAISdoP9vI_r8CHKawjfWjn1TOvF1fvBtPH3zk2naa6ZJc5iQabNPDr6IPF03V3OjTRtlWKCkdNAHWPUCYPvbafeq4vGDQgmplCD3lg?purpose=fullsize" alt="אורבייטו — העיר על צוק הטוּפָה" referrerpolicy="no-referrer"></figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-adv">הרפתקה וגדולים</span></div>
     <div class="meta"><span>🚗 ~<b>66 דקות</b> · 62 ק״מ</span><span>⭐ הבחירה הראשונה של שני המקורות</span></div>
     <p class="gist">אורבייטו בנויה על גוש סלע טוּפָה געשי, ומתחתיה רשת מנהרות שהאטרוסקים חצבו. השילוב הזה הופך אותה ליום הטוב ביותר עם ילדים באזור: קתדרלה שנראית כמו תיבת תכשיטים, <b>באר עם שני גרמי מדרגות שלא נפגשים</b>, ומערות. אף אחד מהם לא ״עוד כנסייה״.</p>
@@ -856,6 +881,7 @@
   </div>
 
   <div class="card" id="marmore"><h3>🥈 מפלי מרמורה + אגם פידילוקו <a class="anchor" href="#days/marmore" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <figure class="prev" hidden><img src="https://images.openai.com/static-rsc-4/1W8ef9oS5hQWNlUNgNxEVB6bmUnWgpvohjD7XDHZdXS9u9zHDa6Mo3s8I96xJ4cJg4K5Nl_S4M0XWvaBIR2e-8zfwM49TXZIZMnYM34VZ442E1eQEN_GKfB2s4Dg1WSh6OIxrMti05C2ToECzG1KMQJtHMamD8GXGcADQLlwkCY8fCb2YvNtD7qZhlzRLcm-?purpose=fullsize" alt="מפלי מרמורה" referrerpolicy="no-referrer"></figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-adv">הרפתקה וגדולים</span></div>
     <div class="meta"><span>🚗 ~<b>65 דקות</b> · 74 ק״מ</span><span class="pr">€12 · 5–9 ו-70+ €10 · <b>0–4 חינם</b></span><span>⏱️ ~3 שעות באתר</span></div>
     <p class="gist">מפל שהרומאים חצבו לפני 2,200 שנה, ואחד הגבוהים באירופה. הוא גם <b>מפל מבוקר</b>: המים מוסטים לתחנת כוח ומשוחררים בחלונות זמן קבועים. פותחים את הסכר — וקיר מים מופיע. זו התזמורת של היום הזה.</p>
@@ -889,6 +915,7 @@
   </div>
 
   <div class="card" id="assisi"><h3>🥉 אסיזי + ספלו <a class="anchor" href="#days/assisi" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <figure class="prev" hidden><img src="https://images.openai.com/static-rsc-4/5Ihk8fdaTU8lV75n5ouMdoXgbX9WIIsErqB_KklCK3zNYK2WUA1m_hU7iuc8urK3uKHFmL61kj3iNi6_VdDX3fr4sxzclumU17gchKsoQAJbjlx3_t_3Rpam8nXkeqjn4k5e3GZeRH6B9K_DLxT6CV8e-NNvZ5cz275cd1uzeE_UefX-AOAa-JUwV9HgkPd1?purpose=fullsize" alt="אסיזי" referrerpolicy="no-referrer"></figure>
     <div class="tags"><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span><span class="tag t-adv">הרפתקה וגדולים</span></div>
     <div class="meta"><span>🚗 ~31 דקות · 28 ק״מ</span><span class="free">הבזיליקה — חינם, בלי כרטיס</span><span>🏰 Rocca Maggiore €8 · <b>חינם עד גיל 8</b></span></div>
     <p class="gist">היום ה״קלאסי״ של אומבריה. אסיזי היא אתר מורשת עולמית, והבזיליקה של פרנציסקוס הקדוש מכוסה פרסקאות של ג׳וטו. אבל <b>עם ילדים העדיפות הפוכה מהמדריכים</b>: המצודה שמעל העיר (Rocca Maggiore) עושה יותר מכנסייה, כי אפשר לטפס בה, לחפש מעברים ולראות את כל העמק.</p>
@@ -931,6 +958,7 @@
   </div>
 
   <div class="card" id="adventure"><h3>🧗 פארק החבלים בשקג׳ינו + רפטינג בנרה <a class="anchor" href="#days/adventure" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <figure class="prev" hidden><img src="https://images.openai.com/static-rsc-4/wRzLVIXZaqLNG6kL8qWNpMDFLk9NuYOLFEHlqYoj43BoiQUBcuz5ItWPdwuUOVyTbS2yeNoDgHvuE9jbXRle7hCef3aGo8_V5jpxG6jBlNIOCSbIjU3E-NC-gAP8jrtCOaGAZbyO5DTRu8cSMUryYOVcUMvpUHywQPHBlar-s_X8JY1uI6HGjSvm_X7fhXY7?purpose=fullsize" alt="פארק החבלים ורפטינג בעמק הנרה" referrerpolicy="no-referrer"></figure>
     <div class="tags"><span class="tag t-adv">הרפתקה וגדולים</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-all">כולם</span></div>
     <div class="meta"><span>🚗 ~<b>64 דקות</b> · 74 ק״מ</span><span>🎒 פארק 10:00–18:30</span><span class="pr">רפטינג €35 · 3–16 €30</span></div>
     <p class="gist">בעמק הנרה, ליד הכפר שקג׳ינו, יש פארק חבלים גדול עם מסלולים בין צמרות העצים ואומגות — ובנהר עצמו רפטינג משפחתי. זה היום שהגדולים יזכרו, ו<b>הבשורה הטובה: הרפטינג מתאים מגיל 3</b>, כלומר הקטן יכול להשתתף.</p>
@@ -980,6 +1008,7 @@
   </div>
 
   <div class="card" id="trasimeno"><h3>🚣 אגם טרסימנו וקסטיליונה דל לאגו <a class="anchor" href="#days/trasimeno" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <figure class="prev" hidden><img src="https://images.openai.com/static-rsc-4/lhpSkHxQNwQJuV2JBArEd3zCTPVxQsrCkXjOpPqVnNAZjXEo4O4ZyNf8lAsPriZRmsFfEBjRxEybJb56ybGPt2b4y881_diIEccpuAZ3fJgTrw9A0IjkeZD6kuD_PtahXEvKOmj8c9EWIBD523DKWOTO5NQdrQGjaFHGGVYWbuEanHYNe-_WtWH4O03pywPn?purpose=fullsize" alt="אגם טרסימנו" referrerpolicy="no-referrer"></figure>
     <div class="tags"><span class="tag t-beach">מים ורוגע</span><span class="tag t-grand">נגיש ונינוח</span><span class="tag t-all">כולם</span></div>
     <div class="meta"><span>🚗 ~<b>52 דקות</b> · 61 ק״מ</span><span>🏰 Rocca del Leone · <b>יום–יום 09:30–19:00</b></span></div>
     <p class="gist">האגם הרביעי בגודלו באיטליה, וקסטיליונה דל לאגו יושבת עליו על לשון יבשה עם מבצר מדיאבלי. זה <b>היום שמוריד הילוך</b> אחרי יום או שניים אינטנסיביים.</p>
@@ -1009,6 +1038,7 @@
   </div>
 
   <div class="card" id="perugia"><h3>🍫 פרוג׳ה + בית השוקולד <a class="anchor" href="#days/perugia" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <figure class="prev" hidden><img src="https://images.openai.com/static-rsc-4/gUcU93xQ_ZT03bndC-y5jYQZKQKXHCXWxI1sGN7nxCsbCBCWcHQ4LuWQcEnV9zWYQ-wyxHXkq6uuTM35zvfrwvvfNtwaXnJvjCgy3DydgjyFUQWOvZXzR8Fonuo7GBpLcgiLTDVSgVjpr4lKVxJJjU0yPPfxBfH_FSDWNE7dAM4EE2i7RNWd-YGDC8gInvTL?purpose=fullsize" alt="פרוג׳ה" referrerpolicy="no-referrer"></figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span></div>
     <div class="meta"><span>🚗 ~<b>18 דקות</b> · 16 ק״מ</span><span>🚇 מיני-מטרו לעיר העליונה</span><span>☔ עובד גם בגשם</span></div>
     <p class="gist">היום עם הכי מעט נהיגה, ולכן הבחירה הנכונה אחרי יום עמוס או ביום שנראה גשום. פרוג׳ה היא עיר גדולה על גבעה, והדרך לעלות אליה היא <b>מיני-מטרו</b> — קרוניות קטנות אוטומטיות שילדים אוהבים — או דרך <b>רוקה פאולינה</b>, מבצר שהפך לעיר תת-קרקעית עם דרגנועים בתוכה, בכניסה חופשית.</p>
@@ -1087,6 +1117,7 @@
   </div>
 
   <div class="card" id="tuscany"><h3>🍷 טוסקנה — מונטפולצ׳אנו ופיינצה <a class="anchor" href="#days/tuscany" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <figure class="prev" hidden><img src="https://images.openai.com/static-rsc-4/Uhz1plqTEoVYB01BD6mynvHv0TeWCzpzG9yUfuB1vQb_2KGGzdG2qz5AYn7gvf9OKzwQ1N1Y73Qwxz2MOoxMY7g-VIIXAyIQfNCtiD2_PpBh9HpdEj9sxAej7PEcs7xjoYbIL-TcKKCDviQis88IdSavhtWGxNBQgV-rHsJYOPSVWCx1a2FLpRnQoI0gIUJk?purpose=fullsize" alt="מונטפולצ׳אנו ופיינצה שבטוסקנה" referrerpolicy="no-referrer"></figure>
     <div class="tags"><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span></div>
     <div class="meta"><span>🚗 ~1:20–1:45 לכל כיוון</span><span>⏱️ ~3 שעות נהיגה ביום</span></div>
     <p class="gist">היום הארוך והיפה. מונטפולצ׳אנו היא עיירת גבעה טוסקנית איקונית מעל עמק אורצ׳ה, עם מרתפי יין היסטוריים חצובים בסלע מתחת לרחוב הראשי. פיינצה, חצי שעה משם, היא עיירת רנסנס זעירה עם תצפית שהיא הגלויה של טוסקנה.</p>
@@ -1113,6 +1144,7 @@
   </div>
 
   <div class="card" id="rest"><h3>🏺 היום הרגוע — דרוטה, קרמיקה ובריכה <a class="anchor" href="#days/rest" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <figure class="prev" hidden><img src="https://images.openai.com/static-rsc-4/3P2cho_vD1ccCgW-IPvMJQrVKp06iA45BGtcpDT8AQSvibnvYLx0Ij3paDIYJoH21TU_1ZzgWcOAvRcytipRxZLnAn4J-mkShiNpvvphI-97bEjbLDIC3ldkjIBBmcbCKHbYuBR0iGTKCC3OkKviOiUjR3hEH65pbuk3OwO8Pbp0sQGb2P02uP8qyFIS7HYZ?purpose=fullsize" alt="דרוטה" referrerpolicy="no-referrer"></figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-grand">נגיש ונינוח</span></div>
     <div class="meta"><span>🚗 5–15 דקות</span><span>☔ הבחירה הטובה ליום גשום</span></div>
     <p class="gist">אתם ישנים בדרוטה, ואין שום סיבה לנסוע שעה כדי ״לסמן וי״. בוקר בסדנת קרמיקה שבה כל ילד צובע משהו, צהריים במקום מקומי, ואחר הצהריים בריכה וגינה. <b>זו אפשרות אמיתית ולא נפילה</b> — עם חמישה ילדים, זה בהחלט יכול להיות היום שהם יזכרו.</p>

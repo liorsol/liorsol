@@ -16,7 +16,7 @@ dependencies — every page is plain HTML/CSS/JS and can be opened straight from
 | [`esim-usage/`](esim-usage/) | Data-usage bars for the family's esim.dog eSIMs, one refresh button, per-eSIM details. Needs the Cloudflare Worker in [`esim-usage/proxy.js`](esim-usage/proxy.js). |
 | [`trips/albania-2026/`](trips/albania-2026/) | Family trip page (SPA, deep links, shared comment/link boards), Leaflet map, reveal.js slide deck, and the raw research the plan was built from. |
 | [`trips/jerusalem-2026/`](trips/jerusalem-2026/) | Family weekend trip page (SPA with map, trivia, media). |
-| [`trips/italy-2026/`](trips/italy-2026/) | Two-family trip to Umbria and Rome — same shape as the Albania page (SPA, deep links, offline PWA, shared boards), plus a Leaflet map and the two raw research reports it was merged from. |
+| [`trips/italy-2026/`](trips/italy-2026/) | Two-family trip to Umbria and Rome — same shape as the Albania page (SPA, deep links, offline PWA, shared boards, looping hero clip), plus a Leaflet map and the two raw research reports it was merged from. |
 
 `albania-2026.html`, `jerusalem-2026.html` and `italy-2026.html` at the root are redirect
 stubs to the trip pages — keep them, old links point there.

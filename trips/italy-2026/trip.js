@@ -111,6 +111,57 @@
 })();
 
 /* ============================================================
+   Day-card previews: the thumbnails at the head of the cards in the "bank of
+   trip days" are hotlinked from the CDN behind research-chatgpt.md. That CDN is
+   not ours, its URLs are signed and they will eventually stop resolving — so a
+   failed image takes its whole <figure> with it and the card falls back to the
+   layout it had before there were previews. Never a broken-image icon on a page
+   the family reads at a motorway services.
+
+   The bundled way is better and is what to do if these ever go dark: save the
+   images into assets/, add them to the SW's CORE, credit them in CREDITS.md.
+   ============================================================ */
+(function(){
+  /* This file is deferred, so an image can have failed before its listener was
+     attached: a complete image with no intrinsic width is a load that failed. */
+  function onFail(img, fn){
+    img.addEventListener('error', fn);
+    if(img.complete && !img.naturalWidth) fn();
+  }
+
+  /* Each preview starts `hidden` and is revealed only once its bytes really arrived,
+     so a dead link leaves no empty frame behind — the card looks exactly as it did
+     before previews existed. That is also why these are NOT `loading="lazy"`: a lazy
+     image inside a display:none figure is never fetched at all, so it could never
+     reveal itself. */
+  document.querySelectorAll('figure.prev img').forEach(function(img){
+    var fig = img.closest('figure');
+    function show(){ if(fig) fig.hidden = false; }
+    img.addEventListener('load', show);
+    onFail(img, function(){ if(fig) fig.remove(); });
+    if(img.complete && img.naturalWidth) show();
+  });
+
+  /* The arrival card's Terminal 3 map is hotlinked as well — it is published by
+     someone else and bundling it would redistribute it (assets/CREDITS.md). It is
+     also the one picture somebody may be hunting for at 02:00 in FCO, so a failure
+     leaves a way to reach it instead of silence or a broken-image icon. */
+  document.querySelectorAll('figure.shot img.net').forEach(function(img){
+    onFail(img, function(){
+      if(!img.parentNode) return;
+      var p = document.createElement('p'); p.className = 'netfail';
+      p.appendChild(document.createTextNode('המפה לא נטענה — היא נטענת מהאינטרנט. '));
+      var a = document.createElement('a');
+      a.href = img.dataset.source || img.src;
+      a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.textContent = 'לפתוח אותה באתר המקור ↖';
+      p.appendChild(a);
+      img.replaceWith(p);
+    });
+  });
+})();
+
+/* ============================================================
    Weather — Open-Meteo forecast, no key, CORS-open, one request for all three
    places. Each trip day is shown for the place we sleep that night, so the
    four Umbrian nights read Deruta and the last day reads Fiumicino.

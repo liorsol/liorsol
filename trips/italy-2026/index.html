@@ -99,14 +99,17 @@
                linear-gradient(160deg,#26402c,#2f5d3a 42%,#7d8f4f)}
   header.hero h1{position:relative; color:#fff; font-size:clamp(34px,6.5vw,60px); margin:0 0 .12em; text-shadow:0 4px 22px rgba(0,0,0,.55)}
   header.hero .dates{position:relative; font-family:'Heebo',sans-serif; font-weight:700; letter-spacing:.08em; font-size:clamp(15px,2.2vw,19px); color:#f3d79a; text-shadow:0 2px 12px rgba(0,0,0,.5)}
-  /* Looping hero clip, same shape as the Albania page. The still background above
-     stays as the fallback layer — it shows through whenever the video is blocked
-     (low-power mode, save-data, reduced motion) or has not painted its first frame. */
+  /* Looping hero clip — byte-for-byte the same rules as the Albania page. The still
+     background above stays as the fallback layer: it shows through whenever the clip is
+     blocked (low-power mode, save-data) or has not painted its first frame.
+     NO `prefers-reduced-motion` rule here, and do not re-add one: it hid the clip on any
+     phone with iOS "Reduce Motion" on, which is exactly how this hero came to be dead
+     while Albania's played. If reduced motion is ever honoured again it belongs on BOTH
+     trips, and it should freeze the clip on a frame rather than remove it. */
   header.hero video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0}
   header.hero::after{content:''; position:absolute; inset:0; z-index:1;
     background:linear-gradient(rgba(30,45,32,.3),rgba(30,45,32,.66))}
   header.hero h1, header.hero .dates{z-index:2}
-  @media (prefers-reduced-motion:reduce){ header.hero video{display:none} }
 
   .sec-head{display:flex; align-items:baseline; gap:12px; margin:0 0 4px}
   .sec-head .num{font-family:'Suez One',serif; color:var(--terra); font-size:20px}
@@ -312,25 +315,25 @@
   figure.prev{position:relative; margin:10px 0 12px; border-radius:14px; overflow:hidden;
     aspect-ratio:16/7; border:1px solid var(--line); background:var(--sand-2)}
   figure.prev[hidden]{display:none}                  /* until an image has really arrived */
-  figure.prev img{display:block; width:100%; height:100%; object-fit:cover}
-  figure.prev img[hidden]{display:none}              /* the rule above outranks the UA's [hidden] */
-  /* Gallery arrows and counter, added by trip.js only where a card has more than one
-     shot. Physical left/right on purpose: an arrow must point the way it moves, and this
-     page is RTL — so the RIGHT button steps back and the LEFT one steps forward. */
-  figure.prev .prev-btn{position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px;
-    border:none; border-radius:50%; padding:0; cursor:pointer; font-size:22px; line-height:1;
-    font-family:'Heebo',sans-serif; color:var(--sea); background:rgba(255,253,247,.86);
-    box-shadow:0 2px 10px rgba(0,0,0,.28); transition:.15s}
-  figure.prev .prev-btn:hover{background:#fff; color:var(--terra-deep)}
-  figure.prev .prev-btn:focus-visible{outline:2px solid var(--azure); outline-offset:2px}
-  figure.prev .prev-btn.back{right:8px}
-  figure.prev .prev-btn.fwd{left:8px}
+  /* Swipe strip. `direction:ltr` on purpose even though the page is RTL: this is a
+     sequence of pictures, not text, and LTR keeps `scrollLeft` positive and increasing
+     on every engine — RTL horizontal scrolling does not agree across browsers. It also
+     makes the swipe direction match the "2 / 6" counter. */
+  figure.prev .prev-track{display:flex; height:100%; direction:ltr; overflow-x:auto; overflow-y:hidden;
+    scroll-snap-type:x mandatory; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none}
+  figure.prev .prev-track::-webkit-scrollbar{display:none}
+  figure.prev .prev-track:focus-visible{outline:2px solid var(--azure); outline-offset:-2px}
+  /* While a mouse drag is in progress snapping is off, or every pointermove fights it. */
+  figure.prev .prev-track.drag{scroll-snap-type:none; cursor:grabbing}
+  figure.prev img{flex:0 0 100%; width:100%; height:100%; object-fit:cover;
+    scroll-snap-align:center; scroll-snap-stop:always; user-select:none; -webkit-user-drag:none}
   /* physical `left`, not `inset-inline-start`: `direction:ltr` below (so "2 / 6" reads
      left-to-right) would otherwise flip which corner the pill lands in. */
-  figure.prev .prev-count{position:absolute; bottom:8px; left:10px;
+  figure.prev .prev-count{position:absolute; bottom:8px; left:10px; pointer-events:none;
     font-family:'Heebo',sans-serif; font-weight:700; font-size:12px; color:#fff;
     background:rgba(38,48,42,.62); border-radius:999px; padding:2px 9px; direction:ltr}
-  @media print{ figure.prev .prev-btn,figure.prev .prev-count{display:none} }
+  @media print{ figure.prev .prev-count{display:none} }
 
   /* PHOTO — a figure with a caption, used for the airport meeting point and the
      hero-less views. Bundled in assets/, so it is available with no reception,
@@ -854,12 +857,15 @@
 
   <div class="card" id="orvieto"><h3>🥇 אורבייטו — העיר שעל הצוק, ומה שמתחתיה <a class="anchor" href="#days/orvieto" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
-      <img src="https://images.openai.com/static-rsc-4/MmqgttSHS1gheYM_Z_W_wigyIRBUB5KmYCuKWh_dEBBr-8PJhba9uzQjp7oCz0ZcHPQLnIHX4EoT6qKiRqQIyER4xEAISdoP9vI_r8CHKawjfWjn1TOvF1fvBtPH3zk2naa6ZJc5iQabNPDr6IPF03V3OjTRtlWKCkdNAHWPUCYPvbafeq4vGDQgmplCD3lg?purpose=fullsize" alt="אורבייטו — תמונה 1 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/kHw454HUUJ7k3inMMmfbfZj-q7mTsW_g378o6pa0OegCQ9GvfxHLsYejiZiRajJWT7OqAHlrLhp5kV7020Kv7_C1Db1GmQMmW9R20jcSXQncyju4_dkxr4kA-ahvi0207TMKX6NSjuPu36g0vq1YMjS4UFqCMoV4TWX8dIy4vmijixZD3fDiXvR2xIE8OArv?purpose=fullsize" hidden alt="אורבייטו — תמונה 2 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/risQ3glZaBJgpVU6cdGZNfc6HHUzdlEfOxcyzdGZ3XMeKvnhs3GK0HHAobuB7gikAsEjd_G4k9PTQkoMHS5FDKWJ-aeAU6YU6oHttzJxEnKppShyxvVtNekoeY0lCaKM3OnsSkjO_iZ3lYJ4jRvL2q0UFjKhdGbt0bn229eFJ5_tgIyZlg_chC8nT-cs-o3w?purpose=fullsize" hidden alt="אורבייטו — תמונה 3 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/zbR2JHPTje-IIHwRi_pMbdXaOLgTQ-tWG26j2PFwePDl0GBrjGp6AZl656g1kaZpna9iGB7g-xH2hm7QIqkCEil2TvtAhksJn7Yn-Gnibs8y4nl_OusY_VwR0wVb8fCTNceBh27vff3ZWlg4F058YITnK6J9odp7mhP2vIQBi5bA8N0PNmiPjOhUxqxKBvDA?purpose=fullsize" hidden alt="אורבייטו — תמונה 4 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/DYYRgXSCxdUxcEblt4DDhUTgpFl9o8eWk7A05rDGdgspKOCFMeE1V6hXq_5F1GHiQtCw7XGP-gXPNCKDWQNWgYZWCRvKF_DGhVn1gnPKDJ-F7jr2ggBGZrxHvbE4vxNBYq8nVxwtjzLJfuH7v7d2w6wZFvtfl2G02mtZ32c-QNhBr9A4nhlo_IV4Kh1CVpML?purpose=fullsize" hidden alt="אורבייטו — תמונה 5 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/2G3WpommKrQlOQd-WEST5e68Uvegm-4epbdATYp-lVG3qGBsMjAVu88dcycVD83SNtH6MpA5ZkGUybVkegUA-L_bZCPKUWu88R-23CglJBLQz1foGSaufsooEjvFZWUjVBVrPquECy9fiKkiW_Dc5DAKygQku9HAwLn3YT07foJPd7dhn-ab6mKOQguCkWFc?purpose=fullsize" hidden alt="אורבייטו — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
+      <div class="prev-track" tabindex="0" role="group"
+           aria-label="תמונות מהמקום — החליקו הצידה">
+        <img src="https://images.openai.com/static-rsc-4/MmqgttSHS1gheYM_Z_W_wigyIRBUB5KmYCuKWh_dEBBr-8PJhba9uzQjp7oCz0ZcHPQLnIHX4EoT6qKiRqQIyER4xEAISdoP9vI_r8CHKawjfWjn1TOvF1fvBtPH3zk2naa6ZJc5iQabNPDr6IPF03V3OjTRtlWKCkdNAHWPUCYPvbafeq4vGDQgmplCD3lg?purpose=fullsize" alt="אורבייטו — תמונה 1 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/kHw454HUUJ7k3inMMmfbfZj-q7mTsW_g378o6pa0OegCQ9GvfxHLsYejiZiRajJWT7OqAHlrLhp5kV7020Kv7_C1Db1GmQMmW9R20jcSXQncyju4_dkxr4kA-ahvi0207TMKX6NSjuPu36g0vq1YMjS4UFqCMoV4TWX8dIy4vmijixZD3fDiXvR2xIE8OArv?purpose=fullsize" alt="אורבייטו — תמונה 2 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/risQ3glZaBJgpVU6cdGZNfc6HHUzdlEfOxcyzdGZ3XMeKvnhs3GK0HHAobuB7gikAsEjd_G4k9PTQkoMHS5FDKWJ-aeAU6YU6oHttzJxEnKppShyxvVtNekoeY0lCaKM3OnsSkjO_iZ3lYJ4jRvL2q0UFjKhdGbt0bn229eFJ5_tgIyZlg_chC8nT-cs-o3w?purpose=fullsize" alt="אורבייטו — תמונה 3 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/zbR2JHPTje-IIHwRi_pMbdXaOLgTQ-tWG26j2PFwePDl0GBrjGp6AZl656g1kaZpna9iGB7g-xH2hm7QIqkCEil2TvtAhksJn7Yn-Gnibs8y4nl_OusY_VwR0wVb8fCTNceBh27vff3ZWlg4F058YITnK6J9odp7mhP2vIQBi5bA8N0PNmiPjOhUxqxKBvDA?purpose=fullsize" alt="אורבייטו — תמונה 4 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/DYYRgXSCxdUxcEblt4DDhUTgpFl9o8eWk7A05rDGdgspKOCFMeE1V6hXq_5F1GHiQtCw7XGP-gXPNCKDWQNWgYZWCRvKF_DGhVn1gnPKDJ-F7jr2ggBGZrxHvbE4vxNBYq8nVxwtjzLJfuH7v7d2w6wZFvtfl2G02mtZ32c-QNhBr9A4nhlo_IV4Kh1CVpML?purpose=fullsize" alt="אורבייטו — תמונה 5 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/2G3WpommKrQlOQd-WEST5e68Uvegm-4epbdATYp-lVG3qGBsMjAVu88dcycVD83SNtH6MpA5ZkGUybVkegUA-L_bZCPKUWu88R-23CglJBLQz1foGSaufsooEjvFZWUjVBVrPquECy9fiKkiW_Dc5DAKygQku9HAwLn3YT07foJPd7dhn-ab6mKOQguCkWFc?purpose=fullsize" alt="אורבייטו — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
+      </div>
     </figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-adv">הרפתקה וגדולים</span></div>
     <div class="meta"><span>🚗 ~<b>66 דקות</b> · 62 ק״מ</span><span>⭐ הבחירה הראשונה של שני המקורות</span></div>
@@ -912,12 +918,15 @@
 
   <div class="card" id="marmore"><h3>🥈 מפלי מרמורה + אגם פידילוקו <a class="anchor" href="#days/marmore" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
-      <img src="https://images.openai.com/static-rsc-4/1W8ef9oS5hQWNlUNgNxEVB6bmUnWgpvohjD7XDHZdXS9u9zHDa6Mo3s8I96xJ4cJg4K5Nl_S4M0XWvaBIR2e-8zfwM49TXZIZMnYM34VZ442E1eQEN_GKfB2s4Dg1WSh6OIxrMti05C2ToECzG1KMQJtHMamD8GXGcADQLlwkCY8fCb2YvNtD7qZhlzRLcm-?purpose=fullsize" alt="מפלי מרמורה — תמונה 1 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/ZLl-gLktBr6hUkt83cw9eGf52j2XSslEJTCWa3FGVIzd95QeqkO766PnDmgrUvVCqKvu7ZKhjEw9nojbpF5SsJWiyGFFr1gxrVQgRUfhctNDxO4Fzl5aMv1HCKXRdeBThZ3OCOFG52aVKhPEwxIuzVBdB4avlK8cWqPUZjsIBGgPYOPxUQf00p_0b0MlsZtL?purpose=fullsize" hidden alt="מפלי מרמורה — תמונה 2 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/cGhGnSj_yFRay5Jwx4mueP-kbDnCTdgNZSkKHS5Ym1H9mKA6t5FxWAy52jeI0xVilPi9jbF1TA39ykX8l_zXfO1J_MeDuaq2IjtsKscZ-d6rUKN3_YCKvfIpwm_RDRnNsG6GY7NarXQPiVzkvUZvP9KgdiddXJmcUPYJIAbXshIVjs7ujM1kfc683cSY2hgk?purpose=fullsize" hidden alt="מפלי מרמורה — תמונה 3 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/ifPtlZjc4RMonHoOHzNp2mgDORtAE0BKEyAcRQ9RbkxuyJwYC5EvU1Rbjj8legJHj8QuMa9jKmQISypGC0XcjvC4E5ONzk8-_0QkqpX0ROb6c3R6-IT6stRPjlSTxs0PJXeDhtQB7qgpV29Q_0OZf8AbqpAu83QdDJtSMIZwsyZ7gYJ87r0u4AmHaJmL7yG3?purpose=fullsize" hidden alt="מפלי מרמורה — תמונה 4 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/3gkd6pFszz_Koa7h1vbsvirBmKNyfsxMD6FNX_Dc7hNOmIYjuDyPZen8ZQV6xCM524Vs3HfqZQ0fW8UPNiX1NEwwoBDql1UxMU7DF25i9cmnVq4i9tWAHtCr-Y_c36kg5g_j8JlKnkFlPTiH-ZP9kfdVhGibG22PS-yC0Ss7Z-N2ggTIWhFb_hdrNbU2Etxn?purpose=fullsize" hidden alt="מפלי מרמורה — תמונה 5 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/Eg_7tr3luoXkrA2jf0L9BZg4AGF1Amf0eKVA6M379eg7C1Zqn1HpMn0Ue4SHgJ9b84MNdothgVLammRwhtIcL51TuqZ3FwWc_V1_-_3wKJqMFguq9RNDJL_MaGH-KzOPvLzFZDZtNGkPAvzuqs-qrS7rrbzQwfCutL3N84-8pZU6LapKxDjZo5F0iek1XYHb?purpose=fullsize" hidden alt="מפלי מרמורה — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
+      <div class="prev-track" tabindex="0" role="group"
+           aria-label="תמונות מהמקום — החליקו הצידה">
+        <img src="https://images.openai.com/static-rsc-4/1W8ef9oS5hQWNlUNgNxEVB6bmUnWgpvohjD7XDHZdXS9u9zHDa6Mo3s8I96xJ4cJg4K5Nl_S4M0XWvaBIR2e-8zfwM49TXZIZMnYM34VZ442E1eQEN_GKfB2s4Dg1WSh6OIxrMti05C2ToECzG1KMQJtHMamD8GXGcADQLlwkCY8fCb2YvNtD7qZhlzRLcm-?purpose=fullsize" alt="מפלי מרמורה — תמונה 1 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/ZLl-gLktBr6hUkt83cw9eGf52j2XSslEJTCWa3FGVIzd95QeqkO766PnDmgrUvVCqKvu7ZKhjEw9nojbpF5SsJWiyGFFr1gxrVQgRUfhctNDxO4Fzl5aMv1HCKXRdeBThZ3OCOFG52aVKhPEwxIuzVBdB4avlK8cWqPUZjsIBGgPYOPxUQf00p_0b0MlsZtL?purpose=fullsize" alt="מפלי מרמורה — תמונה 2 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/cGhGnSj_yFRay5Jwx4mueP-kbDnCTdgNZSkKHS5Ym1H9mKA6t5FxWAy52jeI0xVilPi9jbF1TA39ykX8l_zXfO1J_MeDuaq2IjtsKscZ-d6rUKN3_YCKvfIpwm_RDRnNsG6GY7NarXQPiVzkvUZvP9KgdiddXJmcUPYJIAbXshIVjs7ujM1kfc683cSY2hgk?purpose=fullsize" alt="מפלי מרמורה — תמונה 3 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/ifPtlZjc4RMonHoOHzNp2mgDORtAE0BKEyAcRQ9RbkxuyJwYC5EvU1Rbjj8legJHj8QuMa9jKmQISypGC0XcjvC4E5ONzk8-_0QkqpX0ROb6c3R6-IT6stRPjlSTxs0PJXeDhtQB7qgpV29Q_0OZf8AbqpAu83QdDJtSMIZwsyZ7gYJ87r0u4AmHaJmL7yG3?purpose=fullsize" alt="מפלי מרמורה — תמונה 4 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/3gkd6pFszz_Koa7h1vbsvirBmKNyfsxMD6FNX_Dc7hNOmIYjuDyPZen8ZQV6xCM524Vs3HfqZQ0fW8UPNiX1NEwwoBDql1UxMU7DF25i9cmnVq4i9tWAHtCr-Y_c36kg5g_j8JlKnkFlPTiH-ZP9kfdVhGibG22PS-yC0Ss7Z-N2ggTIWhFb_hdrNbU2Etxn?purpose=fullsize" alt="מפלי מרמורה — תמונה 5 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/Eg_7tr3luoXkrA2jf0L9BZg4AGF1Amf0eKVA6M379eg7C1Zqn1HpMn0Ue4SHgJ9b84MNdothgVLammRwhtIcL51TuqZ3FwWc_V1_-_3wKJqMFguq9RNDJL_MaGH-KzOPvLzFZDZtNGkPAvzuqs-qrS7rrbzQwfCutL3N84-8pZU6LapKxDjZo5F0iek1XYHb?purpose=fullsize" alt="מפלי מרמורה — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
+      </div>
     </figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-adv">הרפתקה וגדולים</span></div>
     <div class="meta"><span>🚗 ~<b>65 דקות</b> · 74 ק״מ</span><span class="pr">€12 · 5–9 ו-70+ €10 · <b>0–4 חינם</b></span><span>⏱️ ~3 שעות באתר</span></div>
@@ -953,12 +962,15 @@
 
   <div class="card" id="assisi"><h3>🥉 אסיזי + ספלו <a class="anchor" href="#days/assisi" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
-      <img src="https://images.openai.com/static-rsc-4/5Ihk8fdaTU8lV75n5ouMdoXgbX9WIIsErqB_KklCK3zNYK2WUA1m_hU7iuc8urK3uKHFmL61kj3iNi6_VdDX3fr4sxzclumU17gchKsoQAJbjlx3_t_3Rpam8nXkeqjn4k5e3GZeRH6B9K_DLxT6CV8e-NNvZ5cz275cd1uzeE_UefX-AOAa-JUwV9HgkPd1?purpose=fullsize" alt="אסיזי — תמונה 1 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/n_DyEuuriPs9EarJxJoR1-9iNr11fLEKNiTWO0E8avvFiwIapRxlLFbWpW2g0Xymjg0Mga_83sJR0qzAB1RaY9BKm9loTHl4r1ev1k0ABzOjYkEZbzLiB1ZTpmV_e3FEVXZS15mNVbBwAEAbEOFksIf1X9MSx2LT6tfczfm7Gt3SCZtRY6gotPK5bQn6mlnJ?purpose=fullsize" hidden alt="אסיזי — תמונה 2 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/Czwo_B_8LMePZgiQ25GqT9tm2KrILM5ula01pyJbzV2n0kEr1EqprtB2b-gVZVfDBWXCmCcmzRxJ_EjuJKhh7SJFNPSYHX7EjpLtx6eHCWXmX0X3OxmLTkxE_4Rkzvr6OrZwYN6KWWLtYITgpIhdJGk-YY0sXN42gZ_2pso_jU02AojHAUnRIfO2QMQt0fiU?purpose=fullsize" hidden alt="אסיזי — תמונה 3 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/BWCCbzH1-3faMBmNSlvmnMrEJXyBwBm8s0rBC1559wk78STy-2Rlb6iH-r_1K3BSoqJ86clcdhmJt3sG7BYm3OxuZE_-JdUmq64FQZi2sh_mMHT7UcZdKP1sz-vzWicUUYepFdwNuQ79cdOH6qyQe8nm_HtaqZ92Rmsd2lXaVAXegiN_CfLNE59CfU50ihRZ?purpose=fullsize" hidden alt="אסיזי — תמונה 4 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/Mjkex8fdo2yofn8bwPbWp0sbkqi5WZr5XTfZMDX3Khipis4ewMRXbM9orK5toaTBVvYAtU0vOi-u4fVfcEmG3kkVJnRDlSS-1CHV--vzRWufbMYvZbB_hyOMhg4Pbjc80rfNRuck4QHhbMGlCSEE9ZSbWk1yN5ngq9X_CcHcB2cuY_LbkvP6LfIDwEi7XF5J?purpose=fullsize" hidden alt="אסיזי — תמונה 5 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/F9pA5uvLnJjFq4ft3Y8jevTRlVMwaHXIRxampAr3pCuqFKV02l3a7KrZNA_LaWjVXtJL4fnh3S-rApR0wdBTnH_o94gPhkSUyMFmB-P8HzDq0SsNNfwbOCACm9ODejwb8vU7MgXq_DcxYceakKJgSPudRpzSAl2pCjKjhNaEOZdaBYlEqTA1H4PtBl53WvrU?purpose=fullsize" hidden alt="אסיזי — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
+      <div class="prev-track" tabindex="0" role="group"
+           aria-label="תמונות מהמקום — החליקו הצידה">
+        <img src="https://images.openai.com/static-rsc-4/5Ihk8fdaTU8lV75n5ouMdoXgbX9WIIsErqB_KklCK3zNYK2WUA1m_hU7iuc8urK3uKHFmL61kj3iNi6_VdDX3fr4sxzclumU17gchKsoQAJbjlx3_t_3Rpam8nXkeqjn4k5e3GZeRH6B9K_DLxT6CV8e-NNvZ5cz275cd1uzeE_UefX-AOAa-JUwV9HgkPd1?purpose=fullsize" alt="אסיזי — תמונה 1 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/n_DyEuuriPs9EarJxJoR1-9iNr11fLEKNiTWO0E8avvFiwIapRxlLFbWpW2g0Xymjg0Mga_83sJR0qzAB1RaY9BKm9loTHl4r1ev1k0ABzOjYkEZbzLiB1ZTpmV_e3FEVXZS15mNVbBwAEAbEOFksIf1X9MSx2LT6tfczfm7Gt3SCZtRY6gotPK5bQn6mlnJ?purpose=fullsize" alt="אסיזי — תמונה 2 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/Czwo_B_8LMePZgiQ25GqT9tm2KrILM5ula01pyJbzV2n0kEr1EqprtB2b-gVZVfDBWXCmCcmzRxJ_EjuJKhh7SJFNPSYHX7EjpLtx6eHCWXmX0X3OxmLTkxE_4Rkzvr6OrZwYN6KWWLtYITgpIhdJGk-YY0sXN42gZ_2pso_jU02AojHAUnRIfO2QMQt0fiU?purpose=fullsize" alt="אסיזי — תמונה 3 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/BWCCbzH1-3faMBmNSlvmnMrEJXyBwBm8s0rBC1559wk78STy-2Rlb6iH-r_1K3BSoqJ86clcdhmJt3sG7BYm3OxuZE_-JdUmq64FQZi2sh_mMHT7UcZdKP1sz-vzWicUUYepFdwNuQ79cdOH6qyQe8nm_HtaqZ92Rmsd2lXaVAXegiN_CfLNE59CfU50ihRZ?purpose=fullsize" alt="אסיזי — תמונה 4 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/Mjkex8fdo2yofn8bwPbWp0sbkqi5WZr5XTfZMDX3Khipis4ewMRXbM9orK5toaTBVvYAtU0vOi-u4fVfcEmG3kkVJnRDlSS-1CHV--vzRWufbMYvZbB_hyOMhg4Pbjc80rfNRuck4QHhbMGlCSEE9ZSbWk1yN5ngq9X_CcHcB2cuY_LbkvP6LfIDwEi7XF5J?purpose=fullsize" alt="אסיזי — תמונה 5 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/F9pA5uvLnJjFq4ft3Y8jevTRlVMwaHXIRxampAr3pCuqFKV02l3a7KrZNA_LaWjVXtJL4fnh3S-rApR0wdBTnH_o94gPhkSUyMFmB-P8HzDq0SsNNfwbOCACm9ODejwb8vU7MgXq_DcxYceakKJgSPudRpzSAl2pCjKjhNaEOZdaBYlEqTA1H4PtBl53WvrU?purpose=fullsize" alt="אסיזי — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
+      </div>
     </figure>
     <div class="tags"><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span><span class="tag t-adv">הרפתקה וגדולים</span></div>
     <div class="meta"><span>🚗 ~31 דקות · 28 ק״מ</span><span class="free">הבזיליקה — חינם, בלי כרטיס</span><span>🏰 Rocca Maggiore €8 · <b>חינם עד גיל 8</b></span></div>
@@ -1003,12 +1015,15 @@
 
   <div class="card" id="adventure"><h3>🧗 פארק החבלים בשקג׳ינו + רפטינג בנרה <a class="anchor" href="#days/adventure" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
-      <img src="https://images.openai.com/static-rsc-4/wRzLVIXZaqLNG6kL8qWNpMDFLk9NuYOLFEHlqYoj43BoiQUBcuz5ItWPdwuUOVyTbS2yeNoDgHvuE9jbXRle7hCef3aGo8_V5jpxG6jBlNIOCSbIjU3E-NC-gAP8jrtCOaGAZbyO5DTRu8cSMUryYOVcUMvpUHywQPHBlar-s_X8JY1uI6HGjSvm_X7fhXY7?purpose=fullsize" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 1 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/c7N9GBReyI3c2v-WbPZjh61KJ7JWT-wowObrwSyAk_gtmPco9ggGSG6kq9jY-m8TrgBLyzTvFWt-H0Xz1ZxseA-bJAe6ZF1aTjGzXWGNdf0HUtqrHBGvpOda8TsgtbD_zI-5bdUnyMm2oUTZLH7PrTCUKVJn3_tCESUKyg-7Kcd9mpzlsvKVfqYc4uhG0Dqy?purpose=fullsize" hidden alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 2 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/v57NhYtOfhq9Uw8JxJkRlp8DMYEShsXTWEJ_H_0Eo_f_nWjb7GXEHtZSSmaHZw2gkIp96W7U32t_sMCfT4LIZPInMt9YsjeXNKxNTQakQxraLzPxwL8KPgZBcQQt7-h9QPuXMOqyAI1jZltgvVSr8lb0mg6pTnbDf6qIo-PQFPWfshPwm7v9Fzs0uP68ag98?purpose=fullsize" hidden alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 3 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/2XnF58re_3hEr8cXftEr-QX4PS3XI2T5XNREow1iF0ZB0jDzqQS5D6CTGZbl-f5RhIDL1lAg3VZuyWMXfkZtq5V1mtZoyzRY0tg68fYAuJaEXFJ3Rl4AThRqq6O-Nt5Fx7ODlvmlzFiY5OcywF9um_QJyH99QkGpYQbPPRQYx8CWCaC51S0prtv3-70TXh-f?purpose=fullsize" hidden alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 4 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/oY4uiQCYiilChIhSuGLSId568ga2u6dVSc4GCdgaYqeLX5t8UykXVqESbpUUZSazImoAbo7llj4iLUif-JlJ7DozWxVkY0SIqMPLnQMJRqESsgXoc48QhPNHN7LUYtiI0B_ruEEmMco4cTT17Jyq0glKpppmD1rrzAY5nsywLTtsCrqoCmLVVt4Gfyko8-Pv?purpose=fullsize" hidden alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 5 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/bf3gPQ16UcutfLEiGkzA_UZw0kquGvPThysUbccUg12bqkTQxqBtjnOwiYn78_3Lh3XhIfQrqWFloxBc_N6wk0smK2V7lJnQzeEHkPebkeSsHpJiC4CIvEAoARQxwuG49IJ4v4_Yy2D4iyZJpp3HB9BvEuMmF4bfQ-wvCkdeifN8UlDfMGQx14W_14dGcMPq?purpose=fullsize" hidden alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
+      <div class="prev-track" tabindex="0" role="group"
+           aria-label="תמונות מהמקום — החליקו הצידה">
+        <img src="https://images.openai.com/static-rsc-4/wRzLVIXZaqLNG6kL8qWNpMDFLk9NuYOLFEHlqYoj43BoiQUBcuz5ItWPdwuUOVyTbS2yeNoDgHvuE9jbXRle7hCef3aGo8_V5jpxG6jBlNIOCSbIjU3E-NC-gAP8jrtCOaGAZbyO5DTRu8cSMUryYOVcUMvpUHywQPHBlar-s_X8JY1uI6HGjSvm_X7fhXY7?purpose=fullsize" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 1 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/c7N9GBReyI3c2v-WbPZjh61KJ7JWT-wowObrwSyAk_gtmPco9ggGSG6kq9jY-m8TrgBLyzTvFWt-H0Xz1ZxseA-bJAe6ZF1aTjGzXWGNdf0HUtqrHBGvpOda8TsgtbD_zI-5bdUnyMm2oUTZLH7PrTCUKVJn3_tCESUKyg-7Kcd9mpzlsvKVfqYc4uhG0Dqy?purpose=fullsize" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 2 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/v57NhYtOfhq9Uw8JxJkRlp8DMYEShsXTWEJ_H_0Eo_f_nWjb7GXEHtZSSmaHZw2gkIp96W7U32t_sMCfT4LIZPInMt9YsjeXNKxNTQakQxraLzPxwL8KPgZBcQQt7-h9QPuXMOqyAI1jZltgvVSr8lb0mg6pTnbDf6qIo-PQFPWfshPwm7v9Fzs0uP68ag98?purpose=fullsize" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 3 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/2XnF58re_3hEr8cXftEr-QX4PS3XI2T5XNREow1iF0ZB0jDzqQS5D6CTGZbl-f5RhIDL1lAg3VZuyWMXfkZtq5V1mtZoyzRY0tg68fYAuJaEXFJ3Rl4AThRqq6O-Nt5Fx7ODlvmlzFiY5OcywF9um_QJyH99QkGpYQbPPRQYx8CWCaC51S0prtv3-70TXh-f?purpose=fullsize" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 4 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/oY4uiQCYiilChIhSuGLSId568ga2u6dVSc4GCdgaYqeLX5t8UykXVqESbpUUZSazImoAbo7llj4iLUif-JlJ7DozWxVkY0SIqMPLnQMJRqESsgXoc48QhPNHN7LUYtiI0B_ruEEmMco4cTT17Jyq0glKpppmD1rrzAY5nsywLTtsCrqoCmLVVt4Gfyko8-Pv?purpose=fullsize" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 5 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/bf3gPQ16UcutfLEiGkzA_UZw0kquGvPThysUbccUg12bqkTQxqBtjnOwiYn78_3Lh3XhIfQrqWFloxBc_N6wk0smK2V7lJnQzeEHkPebkeSsHpJiC4CIvEAoARQxwuG49IJ4v4_Yy2D4iyZJpp3HB9BvEuMmF4bfQ-wvCkdeifN8UlDfMGQx14W_14dGcMPq?purpose=fullsize" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
+      </div>
     </figure>
     <div class="tags"><span class="tag t-adv">הרפתקה וגדולים</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-all">כולם</span></div>
     <div class="meta"><span>🚗 ~<b>64 דקות</b> · 74 ק״מ</span><span>🎒 פארק 10:00–18:30</span><span class="pr">רפטינג €35 · 3–16 €30</span></div>
@@ -1060,13 +1075,16 @@
 
   <div class="card" id="trasimeno"><h3>🚣 אגם טרסימנו וקסטיליונה דל לאגו <a class="anchor" href="#days/trasimeno" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
-      <img src="https://images.openai.com/static-rsc-4/lhpSkHxQNwQJuV2JBArEd3zCTPVxQsrCkXjOpPqVnNAZjXEo4O4ZyNf8lAsPriZRmsFfEBjRxEybJb56ybGPt2b4y881_diIEccpuAZ3fJgTrw9A0IjkeZD6kuD_PtahXEvKOmj8c9EWIBD523DKWOTO5NQdrQGjaFHGGVYWbuEanHYNe-_WtWH4O03pywPn?purpose=fullsize" alt="אגם טרסימנו — תמונה 1 מתוך 7" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/8mjyD7PiP7fbLRJyd8wuO-BqLQ_z5o_5seh5Ghl3vG28kBFXDuouFJoCANGb0ChCQMTeQ-HbSVFfXsfmXiqB2rxOSjq0z7fXNK0AWRTEEbmmGF3QIaRpiEIpd8qXtcvaiIWiAU87O2exAmsrlt1FdBQ6RkYNF0Fgm9AZr1G7TkhMf0EiErd0rdW3A-DFilg2?purpose=fullsize" hidden alt="אגם טרסימנו — תמונה 2 מתוך 7" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/MhBe4YnH7AVdUTTT6hLPC2IRL6LvxOG9r7kP9um-S5S_bP2N4G30zFlMCc4hCyBDNY4LVxeqh12pS-w1bVmcVJgTfN35ksJB3m7LKtItT_H2pn407aBd4DX09H6Gy5HKsDNii_vC6_MWPaGGM_b6lEng_ixQHvnaVJXpmm4C3rWlVJd6Z4RTeW7VqSO7eXql?purpose=fullsize" hidden alt="אגם טרסימנו — תמונה 3 מתוך 7" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/8sh2ue4abB7SzlrHb4PU1hxuAcUhapY16C2eomH1YNJp01H2Mg9RpweZaNwInKKbfnlc8cbSZPGBNICnIGdFo3NTUGG6_EdiHsKivLVLdCYAyln_ES_mvQgqw_pTwtSGv26dauno321fDYpX7jKsa4peT7yd5gR72nqP6y8agKzTSe4hrHQDH7ic0r5JkPcD?purpose=fullsize" hidden alt="אגם טרסימנו — תמונה 4 מתוך 7" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/eAKfWz-fIgfZpUh9C51DDK6d0nt-K4NtkbPKfBCCbmNVKxKNS88OJuTdomfFN9Gx9znSuSGO3S7TJmUCrr-trmwN0Aa_kSI0zHB_8xSOeh3HJdWesPECWgDOnc-R9WRUPWY8vNrynSMzN0kSg5_B3_rvoJjIug1YL9WVVTJKIcvH-ri5T9WeB2_y6XkCBcbm?purpose=fullsize" hidden alt="אגם טרסימנו — תמונה 5 מתוך 7" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/zYeUxBWks7zLNbF6zPnz-Z3XSx2USFEKy1Yyvkt6tWYPLZYigBhqyB7LNK5yVexBnR-UyDiKTdJsfeyeInk0CRI2vNF-qPf9ZlJJxCOX_jxRdm6U4w5ZdmpeMZRBIbbGHlIkcEugHoOqGxEJG22aZghgx91smVMcP_AhEpFiMkx4dB03wCkcLsgiaXfatwfa?purpose=fullsize" hidden alt="אגם טרסימנו — תמונה 6 מתוך 7" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/fFkdiD4qvsAQg3hAsn4bDkBTfUGFF6WsyfGTQbbsDFSoZuy-XaLCNTmu-duQ8dJNV1F7LJ2khs3wJo-fG7v2IfYRiBqyhlWjwGIpyn09ERhL7VHFC_w5TMeGGxMKKuNBrU7HXoCRNMDQiEEaqPDvRC0u1oSsMOSSPDKoDsN6uENGSl6NJepI9sBJfKFjeOH_?purpose=fullsize" hidden alt="אגם טרסימנו — תמונה 7 מתוך 7" referrerpolicy="no-referrer">
+      <div class="prev-track" tabindex="0" role="group"
+           aria-label="תמונות מהמקום — החליקו הצידה">
+        <img src="https://images.openai.com/static-rsc-4/lhpSkHxQNwQJuV2JBArEd3zCTPVxQsrCkXjOpPqVnNAZjXEo4O4ZyNf8lAsPriZRmsFfEBjRxEybJb56ybGPt2b4y881_diIEccpuAZ3fJgTrw9A0IjkeZD6kuD_PtahXEvKOmj8c9EWIBD523DKWOTO5NQdrQGjaFHGGVYWbuEanHYNe-_WtWH4O03pywPn?purpose=fullsize" alt="אגם טרסימנו — תמונה 1 מתוך 7" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/8mjyD7PiP7fbLRJyd8wuO-BqLQ_z5o_5seh5Ghl3vG28kBFXDuouFJoCANGb0ChCQMTeQ-HbSVFfXsfmXiqB2rxOSjq0z7fXNK0AWRTEEbmmGF3QIaRpiEIpd8qXtcvaiIWiAU87O2exAmsrlt1FdBQ6RkYNF0Fgm9AZr1G7TkhMf0EiErd0rdW3A-DFilg2?purpose=fullsize" alt="אגם טרסימנו — תמונה 2 מתוך 7" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/MhBe4YnH7AVdUTTT6hLPC2IRL6LvxOG9r7kP9um-S5S_bP2N4G30zFlMCc4hCyBDNY4LVxeqh12pS-w1bVmcVJgTfN35ksJB3m7LKtItT_H2pn407aBd4DX09H6Gy5HKsDNii_vC6_MWPaGGM_b6lEng_ixQHvnaVJXpmm4C3rWlVJd6Z4RTeW7VqSO7eXql?purpose=fullsize" alt="אגם טרסימנו — תמונה 3 מתוך 7" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/8sh2ue4abB7SzlrHb4PU1hxuAcUhapY16C2eomH1YNJp01H2Mg9RpweZaNwInKKbfnlc8cbSZPGBNICnIGdFo3NTUGG6_EdiHsKivLVLdCYAyln_ES_mvQgqw_pTwtSGv26dauno321fDYpX7jKsa4peT7yd5gR72nqP6y8agKzTSe4hrHQDH7ic0r5JkPcD?purpose=fullsize" alt="אגם טרסימנו — תמונה 4 מתוך 7" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/eAKfWz-fIgfZpUh9C51DDK6d0nt-K4NtkbPKfBCCbmNVKxKNS88OJuTdomfFN9Gx9znSuSGO3S7TJmUCrr-trmwN0Aa_kSI0zHB_8xSOeh3HJdWesPECWgDOnc-R9WRUPWY8vNrynSMzN0kSg5_B3_rvoJjIug1YL9WVVTJKIcvH-ri5T9WeB2_y6XkCBcbm?purpose=fullsize" alt="אגם טרסימנו — תמונה 5 מתוך 7" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/zYeUxBWks7zLNbF6zPnz-Z3XSx2USFEKy1Yyvkt6tWYPLZYigBhqyB7LNK5yVexBnR-UyDiKTdJsfeyeInk0CRI2vNF-qPf9ZlJJxCOX_jxRdm6U4w5ZdmpeMZRBIbbGHlIkcEugHoOqGxEJG22aZghgx91smVMcP_AhEpFiMkx4dB03wCkcLsgiaXfatwfa?purpose=fullsize" alt="אגם טרסימנו — תמונה 6 מתוך 7" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/fFkdiD4qvsAQg3hAsn4bDkBTfUGFF6WsyfGTQbbsDFSoZuy-XaLCNTmu-duQ8dJNV1F7LJ2khs3wJo-fG7v2IfYRiBqyhlWjwGIpyn09ERhL7VHFC_w5TMeGGxMKKuNBrU7HXoCRNMDQiEEaqPDvRC0u1oSsMOSSPDKoDsN6uENGSl6NJepI9sBJfKFjeOH_?purpose=fullsize" alt="אגם טרסימנו — תמונה 7 מתוך 7" referrerpolicy="no-referrer">
+      </div>
     </figure>
     <div class="tags"><span class="tag t-beach">מים ורוגע</span><span class="tag t-grand">נגיש ונינוח</span><span class="tag t-all">כולם</span></div>
     <div class="meta"><span>🚗 ~<b>52 דקות</b> · 61 ק״מ</span><span>🏰 Rocca del Leone · <b>יום–יום 09:30–19:00</b></span></div>
@@ -1098,11 +1116,14 @@
 
   <div class="card" id="perugia"><h3>🍫 פרוג׳ה + בית השוקולד <a class="anchor" href="#days/perugia" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
-      <img src="https://images.openai.com/static-rsc-4/gUcU93xQ_ZT03bndC-y5jYQZKQKXHCXWxI1sGN7nxCsbCBCWcHQ4LuWQcEnV9zWYQ-wyxHXkq6uuTM35zvfrwvvfNtwaXnJvjCgy3DydgjyFUQWOvZXzR8Fonuo7GBpLcgiLTDVSgVjpr4lKVxJJjU0yPPfxBfH_FSDWNE7dAM4EE2i7RNWd-YGDC8gInvTL?purpose=fullsize" alt="פרוג׳ה — תמונה 1 מתוך 5" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/kHFRaO7NDFCvDL-x6Y3chpKQ5f4gbj9kV0GDCfjWe6T_9eXUa4iwEMK-8J-lhqI-IS8VAWefa6Ab8ma4KTTDBVmKQq8He2PlWL0Jk5Wf18kL04c1WJGVPg5RUy1JaMPwqtrv_1KVMd6K97k1gp6tIPYoucaRRDwlh55wpw4K2kJIPDAm-PIYzb9PXX0kn0J4?purpose=fullsize" hidden alt="פרוג׳ה — תמונה 2 מתוך 5" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/_Lb-IfSf4Rbfkj5bAd3XxKtC_6oOPs4aHBPGCPw8pKWK32S69IMoXekc57u5L4aE9Kjz42-PClwzzIKs3J0n5wHJG9D0NkC4r0ZO6xpORhWe0soQJMQIPO3Fxv6GDo6T2j6r2m-we5IpLKDoiBnGj2OFT-E3y6X702EmKmHBKaybYq0A9VYye9SuJ3Ja-PUt?purpose=fullsize" hidden alt="פרוג׳ה — תמונה 3 מתוך 5" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/pe4sJu-xXFUc0ckMT7NoHW4KuUT78upwyXMVS2FbCVpEi6wxgto8Swfex364gR2vhwitNBzSBQfw7AH64OVzudkHbzRR7HPwNjBrh9wcVVr0BqeZV5mFYyAqOACeLs6WXGikLsIIdYHAQ_oXT0lUqFHNH4BvXEqXnOWDMCoCNRUSiMPXXEQHPire1ECy32On?purpose=fullsize" hidden alt="פרוג׳ה — תמונה 4 מתוך 5" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/9-zm7qmCPWbFMLA-KFPBcSn1snk9saFGMmj_c-D-s7WudTINFaA-zzF50Y89Vm4ekDXl_NHcz2Lqe4-JQ2ql8pdJbADPEIac1feJSCRZc894rOXBeIgGNisA_hkgMOjLY20QoIwQVPBjB61R7qCXKIDE2YPK7F82nBV20otc84ZdXVChTm43v3M1u3Em0hI2?purpose=fullsize" hidden alt="פרוג׳ה — תמונה 5 מתוך 5" referrerpolicy="no-referrer">
+      <div class="prev-track" tabindex="0" role="group"
+           aria-label="תמונות מהמקום — החליקו הצידה">
+        <img src="https://images.openai.com/static-rsc-4/gUcU93xQ_ZT03bndC-y5jYQZKQKXHCXWxI1sGN7nxCsbCBCWcHQ4LuWQcEnV9zWYQ-wyxHXkq6uuTM35zvfrwvvfNtwaXnJvjCgy3DydgjyFUQWOvZXzR8Fonuo7GBpLcgiLTDVSgVjpr4lKVxJJjU0yPPfxBfH_FSDWNE7dAM4EE2i7RNWd-YGDC8gInvTL?purpose=fullsize" alt="פרוג׳ה — תמונה 1 מתוך 5" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/kHFRaO7NDFCvDL-x6Y3chpKQ5f4gbj9kV0GDCfjWe6T_9eXUa4iwEMK-8J-lhqI-IS8VAWefa6Ab8ma4KTTDBVmKQq8He2PlWL0Jk5Wf18kL04c1WJGVPg5RUy1JaMPwqtrv_1KVMd6K97k1gp6tIPYoucaRRDwlh55wpw4K2kJIPDAm-PIYzb9PXX0kn0J4?purpose=fullsize" alt="פרוג׳ה — תמונה 2 מתוך 5" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/_Lb-IfSf4Rbfkj5bAd3XxKtC_6oOPs4aHBPGCPw8pKWK32S69IMoXekc57u5L4aE9Kjz42-PClwzzIKs3J0n5wHJG9D0NkC4r0ZO6xpORhWe0soQJMQIPO3Fxv6GDo6T2j6r2m-we5IpLKDoiBnGj2OFT-E3y6X702EmKmHBKaybYq0A9VYye9SuJ3Ja-PUt?purpose=fullsize" alt="פרוג׳ה — תמונה 3 מתוך 5" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/pe4sJu-xXFUc0ckMT7NoHW4KuUT78upwyXMVS2FbCVpEi6wxgto8Swfex364gR2vhwitNBzSBQfw7AH64OVzudkHbzRR7HPwNjBrh9wcVVr0BqeZV5mFYyAqOACeLs6WXGikLsIIdYHAQ_oXT0lUqFHNH4BvXEqXnOWDMCoCNRUSiMPXXEQHPire1ECy32On?purpose=fullsize" alt="פרוג׳ה — תמונה 4 מתוך 5" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/9-zm7qmCPWbFMLA-KFPBcSn1snk9saFGMmj_c-D-s7WudTINFaA-zzF50Y89Vm4ekDXl_NHcz2Lqe4-JQ2ql8pdJbADPEIac1feJSCRZc894rOXBeIgGNisA_hkgMOjLY20QoIwQVPBjB61R7qCXKIDE2YPK7F82nBV20otc84ZdXVChTm43v3M1u3Em0hI2?purpose=fullsize" alt="פרוג׳ה — תמונה 5 מתוך 5" referrerpolicy="no-referrer">
+      </div>
     </figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span></div>
     <div class="meta"><span>🚗 ~<b>18 דקות</b> · 16 ק״מ</span><span>🚇 מיני-מטרו לעיר העליונה</span><span>☔ עובד גם בגשם</span></div>
@@ -1183,12 +1204,15 @@
 
   <div class="card" id="tuscany"><h3>🍷 טוסקנה — מונטפולצ׳אנו ופיינצה <a class="anchor" href="#days/tuscany" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
-      <img src="https://images.openai.com/static-rsc-4/Uhz1plqTEoVYB01BD6mynvHv0TeWCzpzG9yUfuB1vQb_2KGGzdG2qz5AYn7gvf9OKzwQ1N1Y73Qwxz2MOoxMY7g-VIIXAyIQfNCtiD2_PpBh9HpdEj9sxAej7PEcs7xjoYbIL-TcKKCDviQis88IdSavhtWGxNBQgV-rHsJYOPSVWCx1a2FLpRnQoI0gIUJk?purpose=fullsize" alt="מונטפולצ׳אנו ופיינצה — תמונה 1 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/QZANSUBhMuWWRz6A3hzFAIdTPc08jorhQ31jUxgGUS-TOiUCdA_ojRdB2p-ywAxx63twwHP_6ADB3MHJxdpe4GG3NX55PYcfK4TbyeU9JfUwSu42MSO70EAAPIEhGWkbjBi-urrSs3SYQLT9wQFa4vLffeCvq2lxKS72gLqXCnaaOYe9t05MCBOvzJU-9Wu-?purpose=fullsize" hidden alt="מונטפולצ׳אנו ופיינצה — תמונה 2 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/W0xy4gtNGCch6gJxBxndqV0jH8I2y1VV-X3szpQ267xw6YjQaUhe3Br44ITxFz_nd_vD7z7vEv8PCSdA7K-Oe6utbXOBtAJ0rw6YFC_ojQN20mhDMX2ggsAoPyahacZtlt8pkjj5khy3HJZKGsre3SroCozlO8P2t3tus83E5oPLMlZMBkiBOjEur8JRgvu5?purpose=fullsize" hidden alt="מונטפולצ׳אנו ופיינצה — תמונה 3 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/NQbRbTOxLfLgobX_slf_kdCWPCpJeo_d6a4a9XFIYzXcvV1U9IRMTIAKndSDLXeO1vwTJm9tGD3ZdqvXH79-BSI5zGtOTTT08Y2GxrRHDh08Qcwn389tJtcdU6jpEZK88FCCAK8FvOAscQSd6icobwE_6zmLbcqtxqeowbwCxtrsTmDFpoMF3BGDbnjgpSC0?purpose=fullsize" hidden alt="מונטפולצ׳אנו ופיינצה — תמונה 4 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/J-Sq5L5xzoDx49j5CiZNWJHsFVJsAHvGX6RF4x5p8tCaXr0aHEMf9cEAvKh3Rrs1zdvXurNDUTnCHIXeI6Twl_fxigQUUOQ6w0G3H_EDN_Awts0W45_GOBWop-vI1bO5AIgP_krhizr2GXuuPahboHShdcpm1-Rq8kiHGA26kR-8qFsFqUK00LLtExTSEiFX?purpose=fullsize" hidden alt="מונטפולצ׳אנו ופיינצה — תמונה 5 מתוך 6" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/0QDWL62bbQWg1sgv0IqGlmYAispfTFAhDbO-Xu_6flVyMxHe8eElNuszx3RxxbEypphR2WgrtqLViihFrYWJ194aGDmNxW4SlDINeg92MflrT8kNGJ9JLmY9aKMGOeEgBWcg32z1arMV7ZIf6qArJlmPm8JbCNs3qbqm3AWX_pfOg6ZUaIhHeF-OEAvye03Z?purpose=fullsize" hidden alt="מונטפולצ׳אנו ופיינצה — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
+      <div class="prev-track" tabindex="0" role="group"
+           aria-label="תמונות מהמקום — החליקו הצידה">
+        <img src="https://images.openai.com/static-rsc-4/Uhz1plqTEoVYB01BD6mynvHv0TeWCzpzG9yUfuB1vQb_2KGGzdG2qz5AYn7gvf9OKzwQ1N1Y73Qwxz2MOoxMY7g-VIIXAyIQfNCtiD2_PpBh9HpdEj9sxAej7PEcs7xjoYbIL-TcKKCDviQis88IdSavhtWGxNBQgV-rHsJYOPSVWCx1a2FLpRnQoI0gIUJk?purpose=fullsize" alt="מונטפולצ׳אנו ופיינצה — תמונה 1 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/QZANSUBhMuWWRz6A3hzFAIdTPc08jorhQ31jUxgGUS-TOiUCdA_ojRdB2p-ywAxx63twwHP_6ADB3MHJxdpe4GG3NX55PYcfK4TbyeU9JfUwSu42MSO70EAAPIEhGWkbjBi-urrSs3SYQLT9wQFa4vLffeCvq2lxKS72gLqXCnaaOYe9t05MCBOvzJU-9Wu-?purpose=fullsize" alt="מונטפולצ׳אנו ופיינצה — תמונה 2 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/W0xy4gtNGCch6gJxBxndqV0jH8I2y1VV-X3szpQ267xw6YjQaUhe3Br44ITxFz_nd_vD7z7vEv8PCSdA7K-Oe6utbXOBtAJ0rw6YFC_ojQN20mhDMX2ggsAoPyahacZtlt8pkjj5khy3HJZKGsre3SroCozlO8P2t3tus83E5oPLMlZMBkiBOjEur8JRgvu5?purpose=fullsize" alt="מונטפולצ׳אנו ופיינצה — תמונה 3 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/NQbRbTOxLfLgobX_slf_kdCWPCpJeo_d6a4a9XFIYzXcvV1U9IRMTIAKndSDLXeO1vwTJm9tGD3ZdqvXH79-BSI5zGtOTTT08Y2GxrRHDh08Qcwn389tJtcdU6jpEZK88FCCAK8FvOAscQSd6icobwE_6zmLbcqtxqeowbwCxtrsTmDFpoMF3BGDbnjgpSC0?purpose=fullsize" alt="מונטפולצ׳אנו ופיינצה — תמונה 4 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/J-Sq5L5xzoDx49j5CiZNWJHsFVJsAHvGX6RF4x5p8tCaXr0aHEMf9cEAvKh3Rrs1zdvXurNDUTnCHIXeI6Twl_fxigQUUOQ6w0G3H_EDN_Awts0W45_GOBWop-vI1bO5AIgP_krhizr2GXuuPahboHShdcpm1-Rq8kiHGA26kR-8qFsFqUK00LLtExTSEiFX?purpose=fullsize" alt="מונטפולצ׳אנו ופיינצה — תמונה 5 מתוך 6" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/0QDWL62bbQWg1sgv0IqGlmYAispfTFAhDbO-Xu_6flVyMxHe8eElNuszx3RxxbEypphR2WgrtqLViihFrYWJ194aGDmNxW4SlDINeg92MflrT8kNGJ9JLmY9aKMGOeEgBWcg32z1arMV7ZIf6qArJlmPm8JbCNs3qbqm3AWX_pfOg6ZUaIhHeF-OEAvye03Z?purpose=fullsize" alt="מונטפולצ׳אנו ופיינצה — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
+      </div>
     </figure>
     <div class="tags"><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span></div>
     <div class="meta"><span>🚗 ~1:20–1:45 לכל כיוון</span><span>⏱️ ~3 שעות נהיגה ביום</span></div>
@@ -1217,15 +1241,18 @@
 
   <div class="card" id="rest"><h3>🏺 היום הרגוע — דרוטה, קרמיקה ובריכה <a class="anchor" href="#days/rest" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
-      <img src="https://images.openai.com/static-rsc-4/3P2cho_vD1ccCgW-IPvMJQrVKp06iA45BGtcpDT8AQSvibnvYLx0Ij3paDIYJoH21TU_1ZzgWcOAvRcytipRxZLnAn4J-mkShiNpvvphI-97bEjbLDIC3ldkjIBBmcbCKHbYuBR0iGTKCC3OkKviOiUjR3hEH65pbuk3OwO8Pbp0sQGb2P02uP8qyFIS7HYZ?purpose=fullsize" alt="דרוטה — תמונה 1 מתוך 9" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/yAbX3M8A4YU1J31tvVSkNnbAdnBy7FS7lTOLSLtYSBxh-z1IhZVeDIbQ1kxyiU5p_FoEwFRhIzIUv9u9cJSfzs3VkW6xidEL59aKrKsT0MYFH5h639Xpy2jhYFG6fFPBO5QJlID23VsTvcavEdOFFxb55cd3Bk3MwT38ksGAG0Rla8TTDbHn47zzlzBqFkeY?purpose=fullsize" hidden alt="דרוטה — תמונה 2 מתוך 9" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/fsz7q7D6P2xi4mZWTclIt-aGCOQA39Rln-iUC5dSNyewZWt9oaEILiYivzSWP_uJ-gpmEx6hdoEG5sXlq1iawZYynWY-bhuhTfpCIsB-KGNvLxWqgBenuJXozC3PrnDCVI612PrK8v7whW3Q2EBf0kD981Slzk3Cepo7cbZfXoRq2SrNMn0eyCbFQEJmu2b5?purpose=fullsize" hidden alt="דרוטה — תמונה 3 מתוך 9" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/x--FbmBZYzdwq0PevNovKUSPOKhdInzeqyVTSBCqqCc1gkMDiEFqniC8aq17oay9dIsxLyMbrhWjk2C06rfRtVnwtiWTZGhmPw4XjeNmIsiwcGC9GgNji5nL6IMB6jrAYhQsy3aawvi-kYKFdZPWwscfT0fDMt9c5LZo5I16_eFVtc4SQot0-3CkZrokTIhJ?purpose=fullsize" hidden alt="דרוטה — תמונה 4 מתוך 9" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/z97yJx_VpLzQL04WhGy3mlhof6whU6--ZOL-CbG7rxU8uqeNCIIFkzlZd5SCCiIaArO6mU8Llk4xJ-F2OouR2iIoV5L7sNYJT57ab876o5uqM_CYjAB5JwE-TAreaKUEguw-xW-ZvXLGIHwrfnLZpvOJkNsMOqYNguSJyBjohk0XVT4IA-JCB0zOYAVW1WsK?purpose=fullsize" hidden alt="דרוטה — תמונה 5 מתוך 9" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/OeVm5XULEaboGQcxwTZdGdwB4TIZgLK6cVcydxJgvotmUktILphQ4ohV0KzmZGv8u5M02ddrTQ2EM6P2BnJ0r9fUj1O3e_hzoRNhSLeFl50fkzSG--oiqSTqQgljGjdYiIniLJVdY_NnWisijTkJ9yArxo6vSkIjNfljfkWT9MAy0Zfcb9LchuAg3Ths42dz?purpose=fullsize" hidden alt="דרוטה — תמונה 6 מתוך 9" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/T3oc-47haon_-6dClE-3ZobvOgZ2LGWd-jVIuf_sTBWh6FvhEF8VQrIQ2j_0gbMGkgw897O5EbfGZ2HRqvCXi5h9kwB5sSlMui8t8MVf5LzTCK6nmy6TfjV2EFbgQ6LunPUGB6VFXWk6PIg7-uKkJ8tyvnlfAY-_2-38tE2gFm7EQj84KO4t5mbWyLk5Extk?purpose=fullsize" hidden alt="דרוטה — תמונה 7 מתוך 9" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/Hun8t1ie0H5RXSYMwdWgGkErlcqvQch5VoJ-l5VvCA43pgHHcWOohzQcPGkdqj0Oz7gc5wm6_hg4mRwqYX5mAIrw6LVYLJiKVmTN_K0INht0rlBayj9U-e-WfLYZyNxe3aRzAdMVzKF8KwmnXRM578oS94L96KyfLswlDCl5JyUd79hykzgZmmcMkG8UEFxe?purpose=fullsize" hidden alt="דרוטה — תמונה 8 מתוך 9" referrerpolicy="no-referrer">
-      <img data-src="https://images.openai.com/static-rsc-4/hlqVSF-OhsbuhiSEXLTtWLETwbzSOth5oIDzQZDI6akXrhIA66fjwcZaX2KXSPX5cJaX01SwZaFyoRLbPMOmUwIcnitnhDlArpt-l-oy9tuBjwVJQbKryf4DgOoL6js4blI3dScK4g-NbEeI-Lf_qMJw9WaS2izH8E7uDA7VSKCfXXgesQkzKvvCzU1ZXOiS?purpose=fullsize" hidden alt="דרוטה — תמונה 9 מתוך 9" referrerpolicy="no-referrer">
+      <div class="prev-track" tabindex="0" role="group"
+           aria-label="תמונות מהמקום — החליקו הצידה">
+        <img src="https://images.openai.com/static-rsc-4/3P2cho_vD1ccCgW-IPvMJQrVKp06iA45BGtcpDT8AQSvibnvYLx0Ij3paDIYJoH21TU_1ZzgWcOAvRcytipRxZLnAn4J-mkShiNpvvphI-97bEjbLDIC3ldkjIBBmcbCKHbYuBR0iGTKCC3OkKviOiUjR3hEH65pbuk3OwO8Pbp0sQGb2P02uP8qyFIS7HYZ?purpose=fullsize" alt="דרוטה — תמונה 1 מתוך 9" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/yAbX3M8A4YU1J31tvVSkNnbAdnBy7FS7lTOLSLtYSBxh-z1IhZVeDIbQ1kxyiU5p_FoEwFRhIzIUv9u9cJSfzs3VkW6xidEL59aKrKsT0MYFH5h639Xpy2jhYFG6fFPBO5QJlID23VsTvcavEdOFFxb55cd3Bk3MwT38ksGAG0Rla8TTDbHn47zzlzBqFkeY?purpose=fullsize" alt="דרוטה — תמונה 2 מתוך 9" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/fsz7q7D6P2xi4mZWTclIt-aGCOQA39Rln-iUC5dSNyewZWt9oaEILiYivzSWP_uJ-gpmEx6hdoEG5sXlq1iawZYynWY-bhuhTfpCIsB-KGNvLxWqgBenuJXozC3PrnDCVI612PrK8v7whW3Q2EBf0kD981Slzk3Cepo7cbZfXoRq2SrNMn0eyCbFQEJmu2b5?purpose=fullsize" alt="דרוטה — תמונה 3 מתוך 9" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/x--FbmBZYzdwq0PevNovKUSPOKhdInzeqyVTSBCqqCc1gkMDiEFqniC8aq17oay9dIsxLyMbrhWjk2C06rfRtVnwtiWTZGhmPw4XjeNmIsiwcGC9GgNji5nL6IMB6jrAYhQsy3aawvi-kYKFdZPWwscfT0fDMt9c5LZo5I16_eFVtc4SQot0-3CkZrokTIhJ?purpose=fullsize" alt="דרוטה — תמונה 4 מתוך 9" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/z97yJx_VpLzQL04WhGy3mlhof6whU6--ZOL-CbG7rxU8uqeNCIIFkzlZd5SCCiIaArO6mU8Llk4xJ-F2OouR2iIoV5L7sNYJT57ab876o5uqM_CYjAB5JwE-TAreaKUEguw-xW-ZvXLGIHwrfnLZpvOJkNsMOqYNguSJyBjohk0XVT4IA-JCB0zOYAVW1WsK?purpose=fullsize" alt="דרוטה — תמונה 5 מתוך 9" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/OeVm5XULEaboGQcxwTZdGdwB4TIZgLK6cVcydxJgvotmUktILphQ4ohV0KzmZGv8u5M02ddrTQ2EM6P2BnJ0r9fUj1O3e_hzoRNhSLeFl50fkzSG--oiqSTqQgljGjdYiIniLJVdY_NnWisijTkJ9yArxo6vSkIjNfljfkWT9MAy0Zfcb9LchuAg3Ths42dz?purpose=fullsize" alt="דרוטה — תמונה 6 מתוך 9" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/T3oc-47haon_-6dClE-3ZobvOgZ2LGWd-jVIuf_sTBWh6FvhEF8VQrIQ2j_0gbMGkgw897O5EbfGZ2HRqvCXi5h9kwB5sSlMui8t8MVf5LzTCK6nmy6TfjV2EFbgQ6LunPUGB6VFXWk6PIg7-uKkJ8tyvnlfAY-_2-38tE2gFm7EQj84KO4t5mbWyLk5Extk?purpose=fullsize" alt="דרוטה — תמונה 7 מתוך 9" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/Hun8t1ie0H5RXSYMwdWgGkErlcqvQch5VoJ-l5VvCA43pgHHcWOohzQcPGkdqj0Oz7gc5wm6_hg4mRwqYX5mAIrw6LVYLJiKVmTN_K0INht0rlBayj9U-e-WfLYZyNxe3aRzAdMVzKF8KwmnXRM578oS94L96KyfLswlDCl5JyUd79hykzgZmmcMkG8UEFxe?purpose=fullsize" alt="דרוטה — תמונה 8 מתוך 9" referrerpolicy="no-referrer">
+        <img src="https://images.openai.com/static-rsc-4/hlqVSF-OhsbuhiSEXLTtWLETwbzSOth5oIDzQZDI6akXrhIA66fjwcZaX2KXSPX5cJaX01SwZaFyoRLbPMOmUwIcnitnhDlArpt-l-oy9tuBjwVJQbKryf4DgOoL6js4blI3dScK4g-NbEeI-Lf_qMJw9WaS2izH8E7uDA7VSKCfXXgesQkzKvvCzU1ZXOiS?purpose=fullsize" alt="דרוטה — תמונה 9 מתוך 9" referrerpolicy="no-referrer">
+      </div>
     </figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-grand">נגיש ונינוח</span></div>
     <div class="meta"><span>🚗 5–15 דקות</span><span>☔ הבחירה הטובה ליום גשום</span></div>

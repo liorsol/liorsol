@@ -157,21 +157,32 @@ ffmpeg -i gemini_generated_video.mp4 \
 - **10.4 MB → 2.1 MB** at the same 1280×720, and twice as long. CRF 31 is well above the usual
   23, and it holds up because the clip lives under a `rgba(30,45,32,.3→.66)` scrim.
 
-`@media (prefers-reduced-motion:reduce)` hides the video and lets the still show through — Albania
-has no such rule; this one is not a divergence worth "fixing" back.
+### It did not play, and the cause was a rule added right here (Sep 2026)
 
-### It did not play, and there were two separate reasons (Sep 2026)
+The user reported the clip dead on this page while Albania's played, and asked what the
+difference was. **There was exactly one, and it was self-inflicted:** this page carried
+`@media (prefers-reduced-motion:reduce){ header.hero video{display:none} }` and Albania did not.
+On any phone with iOS **Settings → Accessibility → Motion → Reduce Motion** switched on, that rule
+hid the clip — it kept playing, invisibly, behind a `display:none`. Demonstrated in the browser
+before removing it: with `prefers-reduced-motion: reduce`, Italy's video reported
+`display=none, height=0` while Albania's reported `display=block, height=337`.
 
-The user reported the clip simply not running. The file was fine — `ftyp/moov/free/mdat`, so
-faststart, H.264 High, yuv420p, 12 fps. Both fixes live in shared code, so **both trips got
-them**; the long version is in the
-[Albania `CLAUDE.md`](../albania-2026/CLAUDE.md#the-hero-clip-needs-js-to-keep-running-sep-2026):
+**Do not re-add it.** If reduced motion is ever honoured here it belongs on *both* trips, and it
+should freeze the clip on a frame rather than remove it, so the hero still looks deliberate.
 
-1. **`trip.js` re-asserts playback — `autoplay` alone cannot work in this SPA.** Every `.view` is
-   `display:none` while the document is parsed (`.active` lands only once the deferred file runs)
-   and Safari will not autoplay a video that was hidden then; switching views hides it again,
-   which *pauses* it with nothing to resume it. `show()` now calls `playClips(view)`, and
-   `visibilitychange`/`pageshow` cover a tab return or a bfcache back-navigation.
+The file was never the problem, and neither was the markup: `ftyp/moov/free/mdat` (faststart),
+H.264 High, yuv420p — and the only differences from Albania's clip are 12 fps vs 24, no audio
+track vs a 128 kb/s AAC one, and 19.8 s vs 10 s. None of those can stop a browser playing an mp4.
+
+Two further fixes went in while hunting this, both real, both in shared code, so **both trips
+have them** (details in the
+[Albania `CLAUDE.md`](../albania-2026/CLAUDE.md#the-hero-clip-needs-js-to-keep-running-sep-2026)):
+
+1. **`trip.js` re-asserts playback.** Every `.view` is `display:none` while the document is parsed
+   (`.active` lands only once the deferred file runs) and Safari will not autoplay a video that
+   was hidden then; switching views hides it again, which *pauses* it with nothing to resume it.
+   `show()` calls `playClips(view)`, and `visibilitychange`/`pageshow` cover a tab return or a
+   bfcache back-navigation.
 2. **`sw-core.js` no longer intercepts media** (`media(req)`, next to `live(url)`): a cached full
    200 was being handed back for a byte-range request, which Safari reads as a broken stream.
 
@@ -188,39 +199,45 @@ re-encode of the same frames under the mp4's URL; the mp4 itself was checked wit
 ## Day-card galleries (`figure.prev`)
 
 Each of the 8 day cards in `#days` that has a matching section in `research-chatgpt.md` carries
-**all of that section's images** — 5 to 9 each, 51 in total — at the head of the card, with arrows
-to step through them (user's request, Sep 2026: *"I want to be able to swap between different
-pictures of the locations"*). The mapping is
+**all of that section's shots** — 5 to 9 each, 51 in total — as a strip you **swipe sideways**
+(user's request, Sep 2026: *"swipe left right with swipe animation, and all images should be
+cached on load"*). The mapping is
 `orvieto←1, marmore←2, assisi←3, perugia←4, adventure←5, trasimeno←6, tuscany←7, rest←8`;
 **`gubbio` has none** because that day came from the Gemini report, not the ChatGPT one.
 
-**They are hotlinked from `images.openai.com`, and that is a compromise, not the plan.** That
-host is unreachable from the environment this was built in, so the images could not be inspected,
-downscaled or bundled — and the URLs are signed and expiring, exactly as the note on
-`research-chatgpt.md` in this file already warned. So the page is written to treat every one of
-them as likely to vanish:
+**The gesture is the browser's, not ours.** A flex strip inside `overflow-x:auto` with
+`scroll-snap-type:x mandatory` and `scroll-snap-stop:always` gives native momentum, rubber-banding
+and snap animation on every touch device, for no JS and no library. `trip.js` only keeps the
+counter in step, removes dead shots, and lends a **mouse** the same gesture (pointer drag, with
+snapping switched off for the duration or every `pointermove` fights it back). There are **no
+arrow buttons** — they were replaced on request.
 
-- The `<figure>` ships **`hidden`** and `trip.js` reveals it only once an image's `load` event
-  fired. A shot that errors is spliced out of the rotation and the counter follows; the last one
-  failing takes the figure with it. A dead CDN therefore leaves **no empty frame and no
-  broken-image icon** — the card renders exactly as it did before previews existed.
-- **Only the lead shot carries `src`**; the rest carry `data-src` and are fetched the first time
-  they are actually shown. Neither can be `loading="lazy"`: a lazy image inside a `display:none`
-  figure is never fetched at all, so it could never reveal itself. Reversing one of these two
-  decisions without the other breaks the galleries silently.
-- **Failure probing is bounded at two extra shots per card while nothing has loaded yet.** A card
-  whose lead has expired still finds the rest of its gallery, but a CDN that has gone dark costs
-  24 requests instead of walking all 51 — which matters on the bad connection where it would be
-  competing with `restaurants.json` and the boards.
-- Arrows use **physical** `left`/`right`, not logical properties: an arrow must point the way it
-  moves, and in this RTL page the right button (`›`) steps back while the left one (`‹`) steps
-  forward. Same reason the `2 / 6` counter is pinned with `left` — its own `direction:ltr` would
-  otherwise flip which corner `inset-inline-start` resolves to.
+- **`direction:ltr` on the track, in an RTL page, on purpose.** It is a sequence of pictures, not
+  text, and LTR keeps `scrollLeft` positive and increasing on every engine — RTL horizontal
+  scrolling does not agree across browsers, and the counter would read backwards. Same reason the
+  `2 / 6` pill is pinned with a physical `left`.
+- **The strip is the source of truth for "which shot".** `tally()` derives the index from
+  `scrollLeft / clientWidth` on every scroll event; nothing tracks it in a variable, or a native
+  swipe and the counter drift apart.
+- **All 51 shots carry a real `src` and are fetched on load** — that is what "cached on load"
+  means here, and it is verified: `sw-core.js` stores cross-origin images as **opaque** responses
+  (checked in-browser against a second local origin: `opaque status=0` sitting in the version
+  cache), so the strip keeps swiping with no reception. Caveats worth knowing: the *first* visit
+  fetches them before the worker controls the page, so it is the second visit that fills that
+  cache, and a `V` bump throws them away and re-downloads.
+- **The `<figure>` ships `hidden`** and is revealed once a shot has really arrived. A shot that
+  errors is spliced out of the strip and the counter follows; the last one failing takes the
+  figure with it. A dead CDN therefore leaves **no empty frame and no broken-image icon** — the
+  card renders exactly as it did before galleries existed.
 - `referrerpolicy="no-referrer"` is the best guess against a hotlink referer check. Unverified.
 
-**If they turn out to be dead (or wrong — nobody has seen them):** the durable fix is to save the
-images into `assets/`, add them to `CORE`, and credit them, which is also what
-`assets/CREDITS.md` says. Do not spend time hunting for replacement URLs on the same CDN.
+**They are hotlinked from `images.openai.com`, and that is a compromise, not the plan.** That host
+is unreachable from the environment this was built in, so the images could not be inspected,
+downscaled or bundled — and the URLs are signed and expiring, exactly as the note on
+`research-chatgpt.md` above already warned. **If they turn out to be dead (or wrong — nobody here
+has seen them):** the durable fix is to save the images into `assets/`, add them to `CORE`, and
+credit them, which is also what `assets/CREDITS.md` says. Do not spend time hunting for
+replacement URLs on the same CDN.
 
 ## What differs from the Albania page (and why)
 

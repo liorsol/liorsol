@@ -137,12 +137,12 @@
 
 /* ============================================================
    Day-card galleries: every card in the "bank of trip days" carries the shots of
-   that place from research-chatgpt.md — 5 to 9 each — with arrows to step through
-   them. They are hotlinked from that doc's CDN, which is not ours: the URLs are
-   signed and will eventually stop resolving, so a failed image is dropped from the
-   rotation and the last failure takes the whole <figure> with it. The card then
-   falls back to the layout it had before there were previews. Never a broken-image
-   icon on a page the family reads at a motorway services.
+   that place from research-chatgpt.md — 5 to 9 each, 51 in all — as a strip you
+   swipe sideways. They are hotlinked from that doc's CDN, which is not ours: the
+   URLs are signed and will eventually stop resolving, so a failed shot is removed
+   from the strip and the last failure takes the whole <figure> with it. The card
+   then falls back to the layout it had before there were previews. Never a
+   broken-image icon on a page the family reads at a motorway services.
 
    The bundled way is better and is what to do if these ever go dark: save the
    images into assets/, add them to the SW's CORE, credit them in CREDITS.md.
@@ -155,73 +155,82 @@
     if(img.complete && !img.naturalWidth) fn();
   }
 
-  /* One card, several shots of the place, arrows to step through them (user's request,
-     Sep 2026). Rules that hold the whole thing together:
-       - a figure starts `hidden` and is revealed only once an image has really arrived,
-         so a dead CDN leaves no empty frame — the card looks as it did before previews;
-       - the first shot carries `src` and is fetched eagerly, the rest carry `data-src`
-         and are fetched the first time they are shown. Neither can be `loading="lazy"`:
-         a lazy image inside a display:none figure is never fetched at all, so it could
-         never reveal itself;
-       - an image that fails is spliced out of the rotation, and the last one failing
-         takes the figure with it. The counter therefore counts *living* shots. */
+  /* One card, the whole set of shots of that place, swiped sideways (user's request,
+     Sep 2026: "swipe left right with swipe animation, and all images should be cached
+     on load"). The gesture is the browser's own — a flex strip with `scroll-snap-type:
+     x mandatory` — so the animation, the momentum and the rubber-banding are native
+     and cost no JS. This code only keeps the counter honest, drops dead shots, and
+     lends a mouse the same gesture. Two rules that hold it together:
+       - the figure starts `hidden` and is revealed once an image has really arrived,
+         so a dead CDN leaves no empty frame — the card looks as it did before;
+       - every shot carries a real `src` and is fetched on load. That is also what gets
+         them cached: sw-core.js stores cross-origin images as opaque responses (verified
+         in-browser: `opaque status=0` in the version cache), so swiping keeps working
+         with no reception. Note the very first visit fetches them before the worker is
+         controlling the page, so it is the second visit that fills that cache; the
+         browser's own HTTP cache covers the gap. */
   document.querySelectorAll('figure.prev').forEach(function(fig){
-    var shots = [].slice.call(fig.querySelectorAll('img'));
-    var at = 0, count = null, live = false, probes = 0;
+    var track = fig.querySelector('.prev-track');
+    var shots = [].slice.call(track.querySelectorAll('img'));
+    if(!shots.length){ fig.remove(); return; }
 
-    function paint(){
-      shots.forEach(function(img, i){ img.hidden = i !== at; });
-      var img = shots[at];
-      if(!img.getAttribute('src') && img.dataset.src) img.src = img.dataset.src;   // on demand
-      if(img.complete && img.naturalWidth) reveal();
-      if(count) count.textContent = (at + 1) + ' / ' + shots.length;
+    var count = document.createElement('span');
+    count.className = 'prev-count';
+    fig.appendChild(count);
+
+    /* The strip is the source of truth for "which shot" — read it, never track it in a
+       variable, or a native swipe and the counter drift apart. */
+    function tally(){
+      var w = Math.max(1, track.clientWidth);
+      var at = Math.min(shots.length - 1, Math.max(0, Math.round(track.scrollLeft / w)));
+      count.textContent = (at + 1) + ' / ' + shots.length;
+      count.hidden = shots.length < 2;
     }
-    function reveal(){ live = true; fig.hidden = false; }
+    function reveal(){ fig.hidden = false; tally(); }
     function drop(img){
       var i = shots.indexOf(img);
       if(i < 0) return;
       shots.splice(i, 1);
-      img.remove();
+      img.remove();                       // and with it the slide, so the strip closes up
       if(!shots.length){ fig.remove(); return; }
-      if(at >= shots.length) at = 0;
-      if(count && shots.length === 1){          // one shot left: the arrows are noise
-        fig.querySelectorAll('.prev-btn,.prev-count').forEach(function(el){ el.remove(); });
-        count = null;
-      }
-      /* Reach for the next surviving shot — a card whose lead has expired should still
-         show the rest of its gallery. But give up after two tries while nothing has
-         ever loaded: when the CDN goes dark for good, walking all 51 shots would mean
-         51 hanging requests on every page load, competing with the restaurant list and
-         the boards on exactly the bad connection where that hurts. */
-      if(live || probes++ < 2) paint();
-      else fig.remove();
+      tally();
     }
-    function step(d){ at = (at + d + shots.length) % shots.length; paint(); }
-
-    shots.forEach(function(img){
-      img.addEventListener('load', function(){ if(shots[at] === img) reveal(); });
-      img.addEventListener('error', function(){ drop(img); });
-    });
-
-    if(shots.length > 1){
-      var button = function(cls, glyph, label, d){
-        var b = document.createElement('button');
-        b.type = 'button'; b.className = 'prev-btn ' + cls; b.textContent = glyph;
-        b.title = label; b.setAttribute('aria-label', label);
-        b.addEventListener('click', function(e){ e.preventDefault(); step(d); });
-        return b;
-      };
-      fig.appendChild(button('back', '\u203a', 'התמונה הקודמת', -1));
-      fig.appendChild(button('fwd',  '\u2039', 'התמונה הבאה',   1));
-      count = document.createElement('span'); count.className = 'prev-count';
-      fig.appendChild(count);
-    }
-    paint();
-    /* Deferred file: the eager first shot may already have failed before its listener
-       existed. Iterate a copy — drop() mutates the array and can remove the figure. */
     shots.slice().forEach(function(img){
-      if(img.getAttribute('src') && img.complete && !img.naturalWidth) drop(img);
+      img.addEventListener('load', reveal);
+      img.addEventListener('error', function(){ drop(img); });
+      /* Deferred file: an image may have finished — or failed — before these listeners
+         existed. A complete image with no intrinsic width is a load that failed. */
+      if(img.complete){ if(img.naturalWidth) reveal(); else drop(img); }
     });
+    track.addEventListener('scroll', tally, {passive:true});
+    tally();
+
+    /* Touch and trackpad already swipe this natively. A mouse cannot, so it gets the
+       same gesture by dragging. Snapping is switched off for the duration, or every
+       pointermove would fight it back to the current slide. */
+    var from = null;
+    track.addEventListener('pointerdown', function(e){
+      if(e.pointerType !== 'mouse' || shots.length < 2) return;
+      from = {x:e.clientX, left:track.scrollLeft};
+      track.classList.add('drag');
+      track.setPointerCapture(e.pointerId);
+    });
+    track.addEventListener('pointermove', function(e){
+      if(!from) return;
+      e.preventDefault();
+      track.scrollLeft = from.left - (e.clientX - from.x);
+    });
+    function settle(){
+      if(!from) return;
+      from = null;
+      var w = Math.max(1, track.clientWidth);
+      track.scrollTo({left: Math.round(track.scrollLeft / w) * w, behavior:'smooth'});
+      /* Keep snapping off until that smooth scroll has landed — restoring `mandatory`
+         mid-animation cancels it and the strip jumps instead of gliding. */
+      setTimeout(function(){ track.classList.remove('drag'); }, 400);
+    }
+    track.addEventListener('pointerup', settle);
+    track.addEventListener('pointercancel', settle);
   });
 
   /* The arrival card's Terminal 3 map is hotlinked as well — it is published by

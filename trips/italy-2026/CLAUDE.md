@@ -49,8 +49,8 @@ trips/italy-2026/
 ├── trip.js                ← all behaviour: routing, weather, FX, restaurants, boards
 ├── map.html               ← 46 verified pins + the restaurants, one Leaflet/OSM map
 ├── restaurants.json       ← ★ read by BOTH index.html and map.html
-├── sw.js                  ← service worker (offline). **Bump `V` on every content change**
-├── sw.test.js             ← `node sw.test.js`
+├── sw.js                  ← thin SW stub: V + TILES + CORE, then imports ../sw-core.js
+│                            **Bump `V` on every content change — and on every sw-core.js change**
 ├── check-links.py         ← `python3 check-links.py` — the structural test, see below
 ├── manifest.webmanifest   ← PWA manifest (installable, RTL, Hebrew)
 ├── icons/                 ← generated from the 🇮🇹 emoji, same method as Albania's
@@ -81,17 +81,30 @@ both confirmed to fail it.
 
 Current state: **47 cards, 10 views, 9 boards, 60 map pins (46 hard-coded + 14 restaurants), all cross-links resolve.**
 
-## ⚠️ The DB rules are NOT published yet — the boards return 401 until they are
+The other check is `node ../sw-core.test.js`, which covers both trips' workers — see the
+[root README](../../README.md#the-trip-pages-tripsalbania-2026-tripsitaly-2026).
 
-The page uses the reserved key **`italy2026`**. The complete rules document, `albania2026`'s block
-duplicated under the new name, is in the [README](../../README.md#firebase-realtime-database-dynamic-data-sync).
+## Dynamic data (Firebase) — `italy2026`, live since Sep 2026
 
-**Verified in-browser Sep 2026: `GET albania2026.json` → 200, `GET italy2026.json` → 401.** The
-boards degrade correctly (the form renders, the list says it could not load), but they do not
-work. **Publishing is a manual step in the Firebase console** — paste the whole document, since
-publishing replaces all of it — and it is a server-side mutation, so it is the user's action, not
-an agent's. Until it happens every write also returns 401 and the page says
-`הכתיבה נחסמה — כללי ה-DB צריכים עדכון`.
+The page uses the reserved key **`italy2026`**. The complete rules document — `albania2026`'s
+block duplicated under the new name — is in the
+[README](../../README.md#firebase-realtime-database-dynamic-data-sync), and **the user published
+it on 5 Sep 2026.**
+
+Verified against the live DB the same day, with the test rows deleted afterwards:
+
+| check | result |
+|---|---|
+| `GET italy2026.json` | **200** |
+| valid comment `PUT` | **200** |
+| comment carrying an unknown field | **401** — `$other:false` is enforcing |
+| link with a `javascript:` URL | **401** — the scheme validation is enforcing |
+| valid link `PUT`, then `DELETE` both | **200 / 200**, DB back to `null` |
+
+So the boards work, and the rules are the real per-field ones rather than a permissive
+placeholder. **Everything in the Albania `CLAUDE.md` about untrusted input still applies**: that
+path is world-writable, so stored values render with `textContent` only and every stored URL's
+scheme is re-checked at render time rather than trusting the rules to be the only gate.
 
 The rules block is byte-identical to `albania2026`'s rather than being folded into a `$trip`
 wildcard. That was deliberate: publishing replaces the entire document, so a restructure is a live
@@ -136,7 +149,15 @@ The user supplied the confirmed booking facts; everything around them was verifi
    third-party transfer. Their published numbers are on the page as the fallback:
    `+39 393 910 9572` (also WhatsApp), `+39 06 9970 5998`, `+39 06 6508 0252`,
    `informazioni@parkingblu.it`.
-2. **⚠️ The property has two addresses, 7 km apart, on opposite sides of the airport.** Booking's
+2. **✅ SETTLED 5 Sep 2026 — the family reached the owner: check-in happens inside the shuttle,
+   and they go straight to the rooms.** That closes the two biggest worries in this section at
+   once: the official 12:00–23:00 check-in window no longer matters, and neither does which of the
+   two addresses the apartments are at, because the driver takes them there. The page now says so
+   and keeps only the practical residue — have passports and a credit card to hand in the van, and
+   keep both addresses saved in case a taxi is ever needed. **Don't reinstate the old "confirm the
+   arrival time in writing" warning; it is answered.**
+3. **The property has two addresses, 7 km apart, on opposite sides of the airport.** Still true,
+   still worth having both in a phone, but no longer blocking. Booking's
    header says **Via delle Ombrine 58** (which is Parking Blu's *registered office*); Booking's
    fine print says **"Check-in at Via delle Pinne 74"** (which is their Fiumicino car park, in the
    Focene frazione). Booking's own auto-generated blurb — "Focene Beach is about a 17-minute walk"
@@ -144,31 +165,31 @@ The user supplied the confirmed booking facts; everything around them was verifi
    an inference.** Both are pinned on the map with the ambiguity spelled out, and the page tells
    the family to get written confirmation. It matters because a taxi fallback at 02:00 needs the
    right one.
-3. **The walk is trivial, and that was the single most useful finding.** T3 is arrivals on the
+4. **The walk is trivial, and that was the single most useful finding.** T3 is arrivals on the
    *ground* floor and departures on the *first* floor, and **ADR's own T3 maps mark an escalator
    up to Departures immediately outside Arrivals Entrance 4** — with the matching down-escalator
    on the departures kerb between Entrances 4 and 5. So: exit arrivals at Entrance 4 → escalator →
    you are metres from departures door 4. One to two minutes. The page says this explicitly,
    because "go up a level and find door 4" sounds like a trek otherwise.
-4. **T3 departures has seven numbered entrances (1–7); T3 arrivals has six (1–6).** Entrance 1 is
+5. **T3 departures has seven numbered entrances (1–7); T3 arrivals has six (1–6).** Entrance 1 is
    at the Terminal 1 end. Read off the ADR maps directly.
-5. **⚠️ Door 4 is NOT the airport's official pick-up point** — ADR marks that between Entrances 1
+6. **⚠️ Door 4 is NOT the airport's official pick-up point** — ADR marks that between Entrances 1
    and 2. Door 4 is the host's private arrangement. That makes Entrance 1/2 the second place to
    look, and it is on the diagram as a `P` marker for exactly that reason.
-6. **A TLV arrival should land at T3**, since T3 is the extra-Schengen terminal — the structural
+7. **A TLV arrival should land at T3**, since T3 is the extra-Schengen terminal — the structural
    evidence is that the official T3 arrivals map has a passport-control icon and the T1 map does
    not. This is an inference from ADR's maps, not an explicit ADR statement about Wizz Air, and
    secondary sources disagree with each other. T1 and T3 are joined by a pedestrian walkway
    (~420 m, ~10 min), so the page treats a T1 arrival as a nuisance, not a crisis, and says the
    boarding pass is the final answer.
-7. **Check-in is officially 12:00–23:00, check-out 10:00**, and the property requires advance
-   notice of the arrival time. Guest reviews confirm late arrivals are accommodated. The page
-   insists on written confirmation of "landing 00:45, at the apartments ~02:30, 8 people".
-8. **9 apartments, each max 4 guests**, kitchenette, A/C, balcony, free parking, lift, washing
+8. ~~Check-in is officially 12:00–23:00 and needs advance notice.~~ **Superseded — see 2.** The
+   check-out is still **10:00**, and the morning shuttle leaves at 08:00, so packing happens the
+   night before.
+9. **9 apartments, each max 4 guests**, kitchenette, A/C, balcony, free parking, lift, washing
    machine, 24h front desk + private check-in, free cot for 0–3. Rating 8.6 from 90 Booking
    reviews. **Two units × 4 = exactly 8 — so 9 people does not fit**, which is why the headcount
    question is on the page.
-9. Distances measured, not guessed: T3 → Via delle Pinne **7.3 km / ~10 min** · T3 → Via delle
+10. Distances measured, not guessed: T3 → Via delle Pinne **7.3 km / ~10 min** · T3 → Via delle
    Ombrine 3.7 km / ~6 min · property → Deruta **~190 km / ~2:15–2:25**.
 
 ### The images, and why they are precached
@@ -216,9 +237,14 @@ or take `thumburl` straight from the API. Send a descriptive User-Agent with a c
   | | `W4 6044` TLV **21:00 ‡** → FCO **00:45**, Fri 25.9 | `W4 6041` FCO **05:30** → TLV **~09:15 ‡**, Wed 30.9 |
 
   ‡ = derived from flight duration, **not from the ticket** — flagged as such on the page.
-- **The party: 8 or 9?** The research was written for **9** (4 adults + 5 children incl. a
-  3-year-old); the shuttle was confirmed for **8**, and two apartments of 4 hold exactly 8. **This
-  is open question #1** and it is on the page. Do not silently resolve it either way.
+- **The party is 9, and the bookings say 8 on purpose** (user, 5 Sep 2026). 4 adults + 5 children;
+  the 3-year-old sleeps in her parents' bed, and — the actual reason — **most places don't even
+  appear in search results when you ask for a room for 5**, so they search for rooms that fit 4.
+  That reasoning is sound for a *room*. It is **not** sound for a *vehicle*, which is the one place
+  the page now flags: nine bodies need nine seats, and Italian law requires a restraint for a child
+  under 150 cm even on a ten-minute ride, so a minivan booked for 8 may simply be an 8-seater. That
+  is now the only open question on the home view. **Don't re-open the room question — it is
+  decided.**
 - **One child is coeliac and one has a peanut allergy.** This is a first-class constraint, not a
   footnote — it drives the whole `food` view.
 - **Lodging:** night of 25.9 Il Nido dei Merli (✅ booked) · **25→29.9 Country House Le Case
@@ -529,8 +555,8 @@ Orvieto 07:00–19:00 on 25–27 September**, which is a reason to shift Orvieto
 
 ## Open questions
 
-1. **8 or 9 people?** The shuttle is confirmed for 8 and two apartments of 4 hold exactly 8; the
-   research assumed 9. On the page as the first open question.
+1. **Does the minivan seat nine?** The room booking for 8 is settled and correct (see Trip data);
+   the vehicle is the part that does not follow from it. One phone call.
 2. **Which rental company, and what does the contract say about a 02:30 return?** Everything about
    the last night hangs on it: whether an out-of-hours return is permitted at all, whether there is
    a fee, which Multipiano to drive to, and where that company's key box is. Also: **are both
@@ -539,9 +565,8 @@ Orvieto 07:00–19:00 on 25–27 September**, which is a reason to shift Orvieto
    Half the "come back in the afternoon" logic depends on the pool. Also ask for the quiet hours
    and, if possible, a later check-out on 29.9 — two extra hours that morning is worth more than
    any attraction added to the last day.
-4. **Which apartment address** — Via delle Pinne 74 or Via delle Ombrine 58 (see above).
-5. **The day-use room for 29.9** is not booked. It is the load-bearing piece of the last day.
-6. **Advance bookings not yet made:** the Deruta ceramics workshop · the rope park and Nera
+4. **The day-use room for 29.9** is not booked. It is the load-bearing piece of the last day.
+5. **Advance bookings not yet made:** the Deruta ceramics workshop · the rope park and Nera
    rafting (**and the minimum age/height for the 3-year-old, asked with the real ages, not "is it
    suitable for children"**) · Perugina's allergen answer · Orvieto Underground's English tour
    times.

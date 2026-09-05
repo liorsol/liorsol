@@ -21,6 +21,33 @@ dependencies — every page is plain HTML/CSS/JS and can be opened straight from
 `albania-2026.html`, `jerusalem-2026.html` and `italy-2026.html` at the root are redirect
 stubs to the trip pages — keep them, old links point there.
 
+## The trip pages (`trips/albania-2026`, `trips/italy-2026`)
+
+Both are the same machine: a Hebrew RTL single-page app with deep-linkable cards, a vendored
+Leaflet map, shared comment boards on Firebase, and an installable offline PWA. Each has its own
+`CLAUDE.md` — **read it before editing anything under `trips/`.**
+
+### The service worker is shared: [`trips/sw-core.js`](trips/sw-core.js)
+
+All the offline logic lives in one file. Each trip keeps only a stub at `trips/<trip>/sw.js`
+holding `V`, `TILES`, `CORE` and `EXTRA`, which then `importScripts('../sw-core.js')`.
+
+**The stub cannot be collapsed into a single root worker**, and this is the whole reason for the
+shape: a service worker's default scope is its own directory, and GitHub Pages cannot send the
+`Service-Worker-Allowed` header that would change it. A single `/sw.js` registered from
+`/trips/italy-2026/` would take scope `/` and put the file browser's GitHub API calls, the savings
+calculator and `esim-usage`'s live API behind a cache-first handler written for a trip page.
+
+**⚠️ After editing `sw-core.js`, bump `V` in every trip's stub.** The browser reinstalls a worker
+whose bytes differ; Chrome and Firefox also byte-check imported scripts, but Safari's behaviour
+here is not worth betting an offline page on, and these pages live on iPhones. Bumping `V` changes
+the registered script's own bytes and forces the update on every engine.
+
+```bash
+node trips/sw-core.test.js      # every trip's worker: stub contract, routing, cache retention
+python3 trips/italy-2026/check-links.py   # that page's cross-links, ids, boards and pins
+```
+
 ## The eSIM usage page (`esim-usage/`)
 
 One bar per family eSIM, fed by a single batched `POST` to esim.dog's `check-esim-usage`
@@ -276,11 +303,17 @@ italy2026/
 `/^[a-z]{2,12}$/`, which the rules enforce — so a new view named with a digit or a dash
 would be rejected at write time, not at review time. `<id>` is `<base36 ms>_<4 random>`.
 
-**The rules above have to be published before the boards work.** Until then every write
-returns **401** and the page says `הכתיבה נחסמה — כללי ה-DB צריכים עדכון`, which is the
-one error a reload never fixes. Publishing is a manual step in the
-[Firebase console](https://console.firebase.google.com/u/0/project/liorsol-github/database/liorsol-github-default-rtdb/rules)
-— paste the complete document from above, since publishing replaces all of it.
+**Published 5 Sep 2026, and verified against the live DB** (test rows deleted afterwards): a
+valid comment and a valid link both `PUT` **200**; a comment carrying an unknown field and a
+link with a `javascript:` URL both **401**. So the per-field validation is enforcing, not a
+permissive placeholder.
+
+Publishing is a manual step in the
+[Firebase console](https://console.firebase.google.com/u/0/project/liorsol-github/database/liorsol-github-default-rtdb/rules),
+and it **replaces the whole document** — paste the complete rules from above, every path
+together, or the other keys lose their rules. Before it was published every write returned
+**401** and the page said `הכתיבה נחסמה — כללי ה-DB צריכים עדכון`, which is the one error a
+reload never fixes; that message is still the signal that the rules and the page have drifted.
 
 Everything in the `albania2026` section about untrusted input applies here verbatim: the
 path is world-writable, so stored values are rendered with `textContent` only and every
@@ -298,7 +331,8 @@ file browser, which needs `fetch` over http.
 ## Conventions
 
 - Everything is self-contained: one HTML file per page, inline CSS and JS, CDN only where a
-  library genuinely earns its place.
+  library genuinely earns its place. The trip pages are the exception that proves it — they
+  vendor Leaflet rather than hotlink it, because their whole point is working with no reception.
 - Trip directories carry their own `CLAUDE.md` with project context — read it before editing
   anything under `trips/`.
 - No private data in this repo (it is public): link to access-restricted locations instead.

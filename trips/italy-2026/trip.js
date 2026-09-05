@@ -36,9 +36,29 @@
   window.addEventListener('pagehide', stamp);       // leaving to map.html by any route
 
   var flashed = null, frame = document.querySelector('.mapframe');
+  var current = 'home';
+
+  /* Hero clips need re-asserting, they do not just run. Two reasons, both real:
+     every `.view` is `display:none` while the document is parsed — `.active` lands
+     only once this deferred file runs — and Safari will not autoplay a video that
+     was hidden at that moment; and switching views hides the clip again, which
+     pauses it with nothing to resume it. So entering a view (re)starts its clip.
+     `play()` rejects under iOS Low Power Mode and data-saver: that is what the
+     still background layer is for, so the rejection is swallowed, not logged. */
+  function playClips(view){
+    if(!views[view]) return;
+    views[view].querySelectorAll('video[autoplay]').forEach(function(v){
+      if(!v.paused) return;
+      var p = v.play();
+      if(p && p.catch) p.catch(function(){});
+    });
+  }
+
   function show(view, anchor, restoreY){
+    current = view;
     Object.keys(views).forEach(function(n){ views[n].classList.toggle('active', n === view); });
     document.querySelectorAll('nav a[data-view]').forEach(function(a){ a.classList.toggle('on', a.dataset.view === view); });
+    playClips(view);
 
     if(flashed){ flashed.classList.remove('flash'); flashed = null; }
 
@@ -88,6 +108,11 @@
   window.addEventListener('hashchange', render);
   render();
 
+  /* Returning to the tab, or back-navigating in from the bfcache, can leave a clip
+     paused with no event of its own — so re-assert it there too. */
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) playClips(current); });
+  window.addEventListener('pageshow', function(){ playClips(current); });
+
   /* Side menu: a fixed rail on desktop, a drawer under 900px. */
   var nav = document.getElementById('nav'), tog = document.querySelector('.navtoggle');
   function drawer(open){ nav.classList.toggle('open', open); tog.setAttribute('aria-expanded', open); }
@@ -111,12 +136,13 @@
 })();
 
 /* ============================================================
-   Day-card previews: the thumbnails at the head of the cards in the "bank of
-   trip days" are hotlinked from the CDN behind research-chatgpt.md. That CDN is
-   not ours, its URLs are signed and they will eventually stop resolving — so a
-   failed image takes its whole <figure> with it and the card falls back to the
-   layout it had before there were previews. Never a broken-image icon on a page
-   the family reads at a motorway services.
+   Day-card galleries: every card in the "bank of trip days" carries the shots of
+   that place from research-chatgpt.md — 5 to 9 each — with arrows to step through
+   them. They are hotlinked from that doc's CDN, which is not ours: the URLs are
+   signed and will eventually stop resolving, so a failed image is dropped from the
+   rotation and the last failure takes the whole <figure> with it. The card then
+   falls back to the layout it had before there were previews. Never a broken-image
+   icon on a page the family reads at a motorway services.
 
    The bundled way is better and is what to do if these ever go dark: save the
    images into assets/, add them to the SW's CORE, credit them in CREDITS.md.
@@ -129,17 +155,73 @@
     if(img.complete && !img.naturalWidth) fn();
   }
 
-  /* Each preview starts `hidden` and is revealed only once its bytes really arrived,
-     so a dead link leaves no empty frame behind — the card looks exactly as it did
-     before previews existed. That is also why these are NOT `loading="lazy"`: a lazy
-     image inside a display:none figure is never fetched at all, so it could never
-     reveal itself. */
-  document.querySelectorAll('figure.prev img').forEach(function(img){
-    var fig = img.closest('figure');
-    function show(){ if(fig) fig.hidden = false; }
-    img.addEventListener('load', show);
-    onFail(img, function(){ if(fig) fig.remove(); });
-    if(img.complete && img.naturalWidth) show();
+  /* One card, several shots of the place, arrows to step through them (user's request,
+     Sep 2026). Rules that hold the whole thing together:
+       - a figure starts `hidden` and is revealed only once an image has really arrived,
+         so a dead CDN leaves no empty frame — the card looks as it did before previews;
+       - the first shot carries `src` and is fetched eagerly, the rest carry `data-src`
+         and are fetched the first time they are shown. Neither can be `loading="lazy"`:
+         a lazy image inside a display:none figure is never fetched at all, so it could
+         never reveal itself;
+       - an image that fails is spliced out of the rotation, and the last one failing
+         takes the figure with it. The counter therefore counts *living* shots. */
+  document.querySelectorAll('figure.prev').forEach(function(fig){
+    var shots = [].slice.call(fig.querySelectorAll('img'));
+    var at = 0, count = null, live = false, probes = 0;
+
+    function paint(){
+      shots.forEach(function(img, i){ img.hidden = i !== at; });
+      var img = shots[at];
+      if(!img.getAttribute('src') && img.dataset.src) img.src = img.dataset.src;   // on demand
+      if(img.complete && img.naturalWidth) reveal();
+      if(count) count.textContent = (at + 1) + ' / ' + shots.length;
+    }
+    function reveal(){ live = true; fig.hidden = false; }
+    function drop(img){
+      var i = shots.indexOf(img);
+      if(i < 0) return;
+      shots.splice(i, 1);
+      img.remove();
+      if(!shots.length){ fig.remove(); return; }
+      if(at >= shots.length) at = 0;
+      if(count && shots.length === 1){          // one shot left: the arrows are noise
+        fig.querySelectorAll('.prev-btn,.prev-count').forEach(function(el){ el.remove(); });
+        count = null;
+      }
+      /* Reach for the next surviving shot — a card whose lead has expired should still
+         show the rest of its gallery. But give up after two tries while nothing has
+         ever loaded: when the CDN goes dark for good, walking all 51 shots would mean
+         51 hanging requests on every page load, competing with the restaurant list and
+         the boards on exactly the bad connection where that hurts. */
+      if(live || probes++ < 2) paint();
+      else fig.remove();
+    }
+    function step(d){ at = (at + d + shots.length) % shots.length; paint(); }
+
+    shots.forEach(function(img){
+      img.addEventListener('load', function(){ if(shots[at] === img) reveal(); });
+      img.addEventListener('error', function(){ drop(img); });
+    });
+
+    if(shots.length > 1){
+      var button = function(cls, glyph, label, d){
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'prev-btn ' + cls; b.textContent = glyph;
+        b.title = label; b.setAttribute('aria-label', label);
+        b.addEventListener('click', function(e){ e.preventDefault(); step(d); });
+        return b;
+      };
+      fig.appendChild(button('back', '\u203a', 'התמונה הקודמת', -1));
+      fig.appendChild(button('fwd',  '\u2039', 'התמונה הבאה',   1));
+      count = document.createElement('span'); count.className = 'prev-count';
+      fig.appendChild(count);
+    }
+    paint();
+    /* Deferred file: the eager first shot may already have failed before its listener
+       existed. Iterate a copy — drop() mutates the array and can remove the figure. */
+    shots.slice().forEach(function(img){
+      if(img.getAttribute('src') && img.complete && !img.naturalWidth) drop(img);
+    });
   });
 
   /* The arrival card's Terminal 3 map is hotlinked as well — it is published by

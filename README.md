@@ -33,6 +33,13 @@ rather than destroy), and an installable offline PWA. Each has its own
 All the offline logic lives in one file. Each trip keeps only a stub at `trips/<trip>/sw.js`
 holding `V`, `TILES`, `CORE` and `EXTRA`, which then `importScripts('../sw-core.js')`.
 
+Two things are deliberately **never** intercepted: the live paths (`live(url)` — the Firebase
+boards, open-meteo, er-api), because a cached write would lose a comment; and **media**
+(`media(req)`), because a `<video>` fetches byte ranges, `Cache.put()` refuses a 206, and
+`caches.match()` ignores the Range header — so a cached full 200 gets handed back for a range
+request and Safari reads that as a broken stream, which is exactly how the Italy hero clip
+stopped playing. `trips/sw-core.test.js` guards both predicates.
+
 **The stub cannot be collapsed into a single root worker**, and this is the whole reason for the
 shape: a service worker's default scope is its own directory, and GitHub Pages cannot send the
 `Service-Worker-Allowed` header that would change it. A single `/sw.js` registered from

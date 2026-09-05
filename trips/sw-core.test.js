@@ -98,6 +98,18 @@ function run(stubPath){
   ].forEach(function(u){ assert.strictEqual(ctx.live(u), true, 'must stay live: ' + u); });
   assert.strictEqual(ctx.live('https://example.com/restaurants.json'), false);
 
+  /* 2b. Media is never intercepted either: a cached full 200 would be handed back for a
+         byte-range request, which Safari reads as a broken stream — the hero clip stops. */
+  [{url:'https://x/trips/italy-2026/assets/hero-umbria.mp4', destination:''},
+   {url:'https://x/trips/albania-2026/assets/moving_image.mp4', destination:''},
+   {url:'https://x/assets/clip.webm?v=2', destination:''},
+   {url:'https://x/stream', destination:'video'}
+  ].forEach(function(r){ assert.strictEqual(ctx.media(r), true, 'must bypass: ' + r.url); });
+  [{url:'https://x/index.html', destination:'document'},
+   {url:'https://x/assets/hero-umbria.jpg', destination:'image'},
+   {url:'https://x/trip.js', destination:'script'}
+  ].forEach(function(r){ assert.strictEqual(ctx.media(r), false, 'must be cached: ' + r.url); });
+
   /* 3. Activate keeps the shell AND the tile cache, drops every older version.
         Regression guard: wiping tiles on a V bump silently un-primes the offline map. */
   store[ctx.V] = new FakeCache();
@@ -143,6 +155,6 @@ console.log('service workers:');
 TRIPS.reduce(function(p, t){ return p.then(function(){ return run(t); }); }, Promise.resolve())
   .then(checkGuard)
   .then(function(){
-    console.log('all checks passed (stub contract, tile routing, live bypass, cache retention, eviction cap)');
+    console.log('all checks passed (stub contract, tile routing, live + media bypass, cache retention, eviction cap)');
   })
   .catch(function(e){ console.error('FAILED:', e.message); process.exit(1); });

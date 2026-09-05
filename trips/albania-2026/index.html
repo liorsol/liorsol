@@ -205,6 +205,11 @@
   .board-list a.lnk{font-family:'Heebo',sans-serif; font-weight:700; font-size:15px;
     color:var(--terra-deep); overflow-wrap:anywhere}
   .board-empty{color:var(--ink-soft); font-size:14.5px; font-style:italic; margin:12px 0 0}
+  /* Text that is NOT inside a box used to sit flush against the page's 20px gutter,
+     while every boxed paragraph starts 34–43px in — on a phone that reads as letters
+     touching the screen edge (user's report, Sep 2026). This pulls the loose text into
+     the same column as the boxed text; the boxes keep their own edges. */
+  .talk h3,.links-board h3,.board-sub,.board-empty,.wrap > p{padding-inline:15px}
   /* written with no reception and still waiting in the device's queue */
   .board-list li.pend{border-style:dashed; border-color:var(--gold); background:#fffaf0}
   /* every board shows every comment — the chip says which section it was written on */

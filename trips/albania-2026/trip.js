@@ -36,9 +36,29 @@
   window.addEventListener('pagehide', stamp);       // leaving to map.html by any route
 
   var flashed = null, frame = document.querySelector('.mapframe');
+  var current = 'home';
+
+  /* Hero clips need re-asserting, they do not just run. Two reasons, both real:
+     every `.view` is `display:none` while the document is parsed — `.active` lands
+     only once this deferred file runs — and Safari will not autoplay a video that
+     was hidden at that moment; and switching views hides the clip again, which
+     pauses it with nothing to resume it. So entering a view (re)starts its clip.
+     `play()` rejects under iOS Low Power Mode and data-saver: that is what the
+     still background layer is for, so the rejection is swallowed, not logged. */
+  function playClips(view){
+    if(!views[view]) return;
+    views[view].querySelectorAll('video[autoplay]').forEach(function(v){
+      if(!v.paused) return;
+      var p = v.play();
+      if(p && p.catch) p.catch(function(){});
+    });
+  }
+
   function show(view, anchor, restoreY){
+    current = view;
     Object.keys(views).forEach(function(n){ views[n].classList.toggle('active', n === view); });
     document.querySelectorAll('nav a[data-view]').forEach(function(a){ a.classList.toggle('on', a.dataset.view === view); });
+    playClips(view);
 
     if(flashed){ flashed.classList.remove('flash'); flashed = null; }
 
@@ -87,6 +107,11 @@
 
   window.addEventListener('hashchange', render);
   render();
+
+  /* Returning to the tab, or back-navigating in from the bfcache, can leave a clip
+     paused with no event of its own — so re-assert it there too. */
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) playClips(current); });
+  window.addEventListener('pageshow', function(){ playClips(current); });
 
   /* Side menu: a fixed rail on desktop, a drawer under 900px. */
   var nav = document.getElementById('nav'), tog = document.querySelector('.navtoggle');

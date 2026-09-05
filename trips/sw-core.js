@@ -49,6 +49,19 @@ function live(url){
   return /firebasedatabase\.app|api\.open-meteo\.com|open\.er-api\.com/.test(url);
 }
 
+/* Media is never intercepted either, and this one is a correctness fix rather than a
+   policy: a <video> fetches byte RANGES. `Cache.put()` refuses a 206, so only a full
+   200 can ever be stored — and `caches.match()` ignores the Range header, so the first
+   ranged request made after a full copy landed in the cache is answered with that whole
+   200. Safari treats a 200 where it asked for a 206 as a broken stream and the hero clip
+   just stops. Letting the network answer directly is also cheap: the browser's own HTTP
+   cache handles ranges properly, and each trip precaches its hero *still* as the offline
+   fallback, so nothing is lost when the clip is unavailable. */
+function media(req){
+  return req.destination === 'video' || req.destination === 'audio' ||
+         /\.(mp4|m4v|mov|webm|ogv|m4a|mp3)(\?|$)/i.test(req.url);
+}
+
 /* `cache:'reload'` on every precache request: without it the install is allowed to
    fill itself from the browser's HTTP cache, and a freshly deployed index.html or
    restaurants.json can be baked into a brand-new version — stale for a whole
@@ -110,7 +123,7 @@ function trimTiles(){
 
 self.addEventListener('fetch', function(e){
   var req = e.request;
-  if(req.method !== 'GET' || live(req.url)) return;
+  if(req.method !== 'GET' || live(req.url) || media(req)) return;
 
   /* Navigation: network first so an updated page wins, cache as the offline answer.
      The final fallback is index.html itself — a deep link like #days/orvieto is the

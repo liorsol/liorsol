@@ -376,6 +376,12 @@ the rule working as intended: a partly-folded ask keeps its comment until it is 
 comment boards are now empty. The `links/` board is separate and is *not* part of this — those are
 reference links the family wants kept.
 
+**Loose text is indented to the boxed column** (Sep 2026, user's report: the letters were too
+close to the screen edge). At 390 px, text inside a card started 43 px in and a board's own boxes
+33–36 px, while the board heading, `.board-sub`, `.board-empty` and any `.wrap > p` sat flush at
+the 20 px page gutter. One rule — `padding-inline:15px` on exactly those — puts them at 35 px, in
+the same column as everything else. The boxes keep their own edges. Both trips carry it.
+
 The name box remembers itself in `localStorage` under `albania2026_name`. All 12 boards are built once
 at load, so storing it only helped the *next* visit; `rememberName()` therefore also writes the value
 straight into every other board's `.who` input. Without that you retype your name on each board of the
@@ -420,6 +426,27 @@ dependency: Google Fonts (Suez One, Assistant, Heebo).
 - Group tags (for splitting up): `t-beach` sea & chill · `t-cult` culture · `t-adv` adventure & teens · `t-grand` "נגיש" accessible & relaxed (CSS class kept as `t-grand`; label renamed from "סבא-סבתא" — covers strollers too, less offensive) · `t-all` everyone.
 - The hash update is wrapped in try/catch (sandboxed-iframe fix) — do not remove.
 - **No HANDOFF comment.** It used to duplicate this file at the top of `index.html`; it was deleted (Aug 2026). **This file is the only canonical context** — don't re-add a research dump to the HTML.
+
+### The hero clip needs JS to keep running (Sep 2026)
+
+`autoplay muted loop playsinline` is not enough in this SPA and the markup alone will leave a dead
+hero. Two things had to change, both shared with the Italy page:
+
+- **`show()` calls `playClips(view)`.** Every `.view` is `display:none` while the document is
+  parsed — `.active` only lands once the deferred `trip.js` runs — and Safari will not autoplay a
+  video that was hidden at that moment. Switching views hides it again, which *pauses* it with
+  nothing to resume it, so leaving home and coming back left a still frame. `visibilitychange`
+  and `pageshow` re-assert it too, for a tab return or a bfcache back-navigation. The `play()`
+  rejection is swallowed deliberately: under iOS Low Power Mode it always rejects and the still
+  background layer is the fallback.
+- **`sw-core.js` never intercepts media** (`media(req)`, beside `live(url)`): a `<video>` asks for
+  byte ranges, `Cache.put()` refuses a 206 so only a full 200 can be stored, and `caches.match()`
+  ignores the Range header — so a cached full copy gets handed back for a range request, which
+  Safari reads as a broken stream. Guarded by `sw-core.test.js`.
+
+Reported against the Italy page; the same latent bug was here, so `moving_image.mp4` got the fix
+at the same time. Verified in headless Chromium on both trips — served as a WebM twin, because
+Playwright's Chromium has no H.264 and *both* trips' clips fail under it.
 
 ### Deep links (user's explicit request, Aug 2026)
 

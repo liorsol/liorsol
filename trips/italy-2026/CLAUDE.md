@@ -160,6 +160,21 @@ ffmpeg -i gemini_generated_video.mp4 \
 `@media (prefers-reduced-motion:reduce)` hides the video and lets the still show through — Albania
 has no such rule; this one is not a divergence worth "fixing" back.
 
+### It did not play, and there were two separate reasons (Sep 2026)
+
+The user reported the clip simply not running. The file was fine — `ftyp/moov/free/mdat`, so
+faststart, H.264 High, yuv420p, 12 fps. Both fixes live in shared code, so **both trips got
+them**; the long version is in the
+[Albania `CLAUDE.md`](../albania-2026/CLAUDE.md#the-hero-clip-needs-js-to-keep-running-sep-2026):
+
+1. **`trip.js` re-asserts playback — `autoplay` alone cannot work in this SPA.** Every `.view` is
+   `display:none` while the document is parsed (`.active` lands only once the deferred file runs)
+   and Safari will not autoplay a video that was hidden then; switching views hides it again,
+   which *pauses* it with nothing to resume it. `show()` now calls `playClips(view)`, and
+   `visibilitychange`/`pageshow` cover a tab return or a bfcache back-navigation.
+2. **`sw-core.js` no longer intercepts media** (`media(req)`, next to `live(url)`): a cached full
+   200 was being handed back for a byte-range request, which Safari reads as a broken stream.
+
 **Not in the SW's `CORE`.** A strict precache fails the whole install if one entry fails, and 2.1
 MB is a lot to bet the offline shell on. The still underneath is already the fallback layer, and
 the clip is picked up by the runtime cache when the browser asks for it whole rather than as a
@@ -170,10 +185,12 @@ without H.264 (`canPlayType('video/mp4; codecs="avc1.640028"')` → `""`), so *b
 fail with `MEDIA_ERR_SRC_NOT_SUPPORTED` under it. The page wiring was checked by serving a WebM
 re-encode of the same frames under the mp4's URL; the mp4 itself was checked with ffmpeg.
 
-## Day-card previews (`figure.prev`)
+## Day-card galleries (`figure.prev`)
 
 Each of the 8 day cards in `#days` that has a matching section in `research-chatgpt.md` carries
-that section's **first image** at the head of the card. The mapping is
+**all of that section's images** — 5 to 9 each, 51 in total — at the head of the card, with arrows
+to step through them (user's request, Sep 2026: *"I want to be able to swap between different
+pictures of the locations"*). The mapping is
 `orvieto←1, marmore←2, assisi←3, perugia←4, adventure←5, trasimeno←6, tuscany←7, rest←8`;
 **`gubbio` has none** because that day came from the Gemini report, not the ChatGPT one.
 
@@ -183,12 +200,22 @@ downscaled or bundled — and the URLs are signed and expiring, exactly as the n
 `research-chatgpt.md` in this file already warned. So the page is written to treat every one of
 them as likely to vanish:
 
-- The `<figure>` ships **`hidden`** and `trip.js` reveals it only on the image's `load` event; an
-  `error` removes the figure outright. A dead link therefore leaves **no empty frame and no
+- The `<figure>` ships **`hidden`** and `trip.js` reveals it only once an image's `load` event
+  fired. A shot that errors is spliced out of the rotation and the counter follows; the last one
+  failing takes the figure with it. A dead CDN therefore leaves **no empty frame and no
   broken-image icon** — the card renders exactly as it did before previews existed.
-- They are **eager, not `loading="lazy"`**, and that is deliberate: a lazy image inside a
-  `display:none` figure is never fetched, so it could never reveal itself. Reversing one of these
-  two decisions without the other breaks the previews silently.
+- **Only the lead shot carries `src`**; the rest carry `data-src` and are fetched the first time
+  they are actually shown. Neither can be `loading="lazy"`: a lazy image inside a `display:none`
+  figure is never fetched at all, so it could never reveal itself. Reversing one of these two
+  decisions without the other breaks the galleries silently.
+- **Failure probing is bounded at two extra shots per card while nothing has loaded yet.** A card
+  whose lead has expired still finds the rest of its gallery, but a CDN that has gone dark costs
+  24 requests instead of walking all 51 — which matters on the bad connection where it would be
+  competing with `restaurants.json` and the boards.
+- Arrows use **physical** `left`/`right`, not logical properties: an arrow must point the way it
+  moves, and in this RTL page the right button (`›`) steps back while the left one (`‹`) steps
+  forward. Same reason the `2 / 6` counter is pinned with `left` — its own `direction:ltr` would
+  otherwise flip which corner `inset-inline-start` resolves to.
 - `referrerpolicy="no-referrer"` is the best guess against a hotlink referer check. Unverified.
 
 **If they turn out to be dead (or wrong — nobody has seen them):** the durable fix is to save the

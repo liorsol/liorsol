@@ -26,7 +26,7 @@ work offline and can break without warning:
 
 | Where | What | Why not bundled |
 |---|---|---|
-| The 8 day cards in `#days` | one preview image each, from the CDN behind `research-chatgpt.md` | Signed, expiring URLs on a CDN we don't control. `trip.js` deletes the whole `<figure>` when one fails, so the card degrades to its previous layout rather than showing a broken image. |
+| The 8 day cards in `#days` | that place's whole set of shots (5–9 each, 51 total) from the CDN behind `research-chatgpt.md`, with arrows to step through them | Signed, expiring URLs on a CDN we don't control. `trip.js` splices a failed shot out of the rotation and deletes the `<figure>` once none is left, so a card degrades to its previous layout rather than showing a broken image. |
 | The arrival card in `#arrival` | the published Terminal 3 map | `ontheworldmap.com` publishes it under its own copyright — bundling it would redistribute it from this repo. The caption tells the family to screenshot it before the flight, since it will not be there at 02:00 with no signal. |
 
 If either becomes a problem, the fix is the same: put the file in this folder, add it to

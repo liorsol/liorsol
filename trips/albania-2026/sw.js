@@ -11,7 +11,7 @@
    whose bytes differ, and cache-first means a corrected restaurant or a fixed
    drive time is invisible until V moves. This is the one way to ship a change
    that silently does not reach the family. */
-var V = 'albania-2026-v6';
+var V = 'albania-2026-v7';
 
 /* Tiles get their own cache, and it deliberately SURVIVES a V bump — it is not
    shell, it is the areas the family has already primed. See sw-core.js. */

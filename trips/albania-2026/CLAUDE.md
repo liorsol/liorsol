@@ -250,9 +250,12 @@ comment itself is never rewritten) and lives on the ↺ button, only on archived
   [write rules cascade and a child cannot revoke a parent's grant](https://firebase.google.com/docs/database/security/core-syntax),
   so the guard had to replace `.write: true` rather than sit under it, and
   [`.validate` is skipped when the new value is null](https://firebase.google.com/docs/rules/data-validation),
-  so it could not have been a `.validate`. **These rules are not published yet** — until they
-  are, ✕ returns 401 and says `הכתיבה נחסמה — כללי ה-DB צריכים עדכון`. Writing comments and
-  managing links are unaffected.
+  so it could not have been a `.validate`. **Published 5 Sep 2026.** Not re-verified against the
+  live DB from here — that host is unreachable from the build environment — so the check
+  sequence lives in the [README](../../README.md#firebase-realtime-database-dynamic-data-sync)
+  for whoever can run it. If ✕ ever answers 401 (`הכתיבה נחסמה — כללי ה-DB צריכים עדכון`), the
+  published document has drifted from the one in the README; nothing else on the boards breaks
+  when it does.
 - **It is not access control.** The path has no auth, so "only a backend process or the AI
   removes comments" really means "nobody can remove a comment that hasn't been archived first".
   Anyone with the URL can archive-then-delete in two curls. What it does buy: a family member's

@@ -244,11 +244,28 @@ one top-level path per page (a "key"), each with its own rules.
     }
   }
   ```
-  > ⚠️ **NOT PUBLISHED YET (Sep 2026).** The `comments` blocks above are the *new* ones —
-  > `a` (the archive stamp) and the delete guard. Until someone pastes this document into the
-  > console, archiving a comment returns **401** and both trip pages say
-  > `הכתיבה נחסמה — כללי ה-DB צריכים עדכון`. Writing a new comment and deleting a link are
-  > unaffected, so the pages keep working meanwhile; only the ✕ (archive) button is dead.
+  > **Published 5 Sep 2026** by the owner, in the same console session that this document was
+  > written for — `a` (the archive stamp) and the delete guard included. The enforcement checks
+  > below have **not been re-run against the live DB since**, because the environment this was
+  > built in cannot reach `firebasedatabase.app` at all. If the boards ever start answering 401
+  > on ✕ (`הכתיבה נחסמה — כללי ה-DB צריכים עדכון`), the published document has drifted from this
+  > one, and that message is the only symptom you get.
+  >
+  > ```bash
+  > DB=https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app
+  > K=italy2026; ID=mtest01_ab12                      # throwaway, under the `home` view
+  > curl -s -o/dev/null -w '%{http_code} write        (want 200)\n' -XPUT \
+  >   -d '{"n":"test","t":"rules check","d":1757000000000}' "$DB/$K/comments/home/$ID.json"
+  > curl -s -o/dev/null -w '%{http_code} delete live  (want 401)\n' -XDELETE "$DB/$K/comments/home/$ID.json"
+  > curl -s -o/dev/null -w '%{http_code} archive      (want 200)\n' -XPATCH \
+  >   -d '{"a":1757000001000}' "$DB/$K/comments/home/$ID.json"
+  > curl -s -o/dev/null -w '%{http_code} delete arch  (want 200)\n' -XDELETE "$DB/$K/comments/home/$ID.json"
+  > curl -s "$DB/$K/comments/home/$ID.json"           # want: null
+  > ```
+  >
+  > The **401 on the second call is the load-bearing one** — a 200 there means `.write: true` is
+  > still sitting on `comments` and cascading over the guard on `$id`. Repeat with
+  > `K=albania2026`. The test row is visible on the live boards for the seconds it exists.
 
   **A comment node can no longer be destroyed while it is live** (Sep 2026, the user's request
   that "deleting" should archive). Two things make that hold:
@@ -350,8 +367,9 @@ would be rejected at write time, not at review time. `<id>` is `<base36 ms>_<4 r
 **Published 5 Sep 2026, and verified against the live DB** (test rows deleted afterwards): a
 valid comment and a valid link both `PUT` **200**; a comment carrying an unknown field and a
 link with a `javascript:` URL both **401**. So the per-field validation is enforcing, not a
-permissive placeholder. That was the *previous* document — the `a` field and the delete guard
-above are **not published yet**, and archiving 401s until they are.
+permissive placeholder. That table covers the *previous* document; the `a` field and the delete
+guard were published on **5 Sep 2026** as well, and the checks for those are in the rules section
+above rather than repeated here.
 
 Publishing is a manual step in the
 [Firebase console](https://console.firebase.google.com/u/0/project/liorsol-github/database/liorsol-github-default-rtdb/rules),

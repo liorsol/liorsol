@@ -168,7 +168,7 @@
     background:var(--gold); color:#3a2a08; padding:8px 16px; border-radius:999px}
   @media (max-width:640px){ .mapbanner{flex-wrap:wrap} .mapbanner .go{width:100%; text-align:center} }
 
-  /* SHARED BOARDS (Firebase) — comments per view + a links board */
+  /* SHARED BOARDS (Firebase) — one comment thread shown on every view + a links board */
   .talk,.links-board{margin:26px 0 0; padding-top:16px; border-top:2px dashed var(--line)}
   .talk h3,.links-board h3{font-size:19px; margin:0 0 2px}
   .board-sub{color:var(--ink-soft); font-size:14px; margin:0 0 10px}
@@ -207,6 +207,16 @@
   .board-empty{color:var(--ink-soft); font-size:14.5px; font-style:italic; margin:12px 0 0}
   /* written with no reception and still waiting in the device's queue */
   .board-list li.pend{border-style:dashed; border-color:var(--gold); background:#fffaf0}
+  /* every board shows every comment — the chip says which section it was written on */
+  .board-list .chip{font-family:'Heebo',sans-serif; font-weight:700; font-size:11.5px;
+    color:var(--ink-soft); background:var(--sand); border:1px solid var(--line);
+    border-radius:999px; padding:1px 9px}
+  .board-list li.own .chip{background:var(--sea); border-color:var(--sea); color:#fff}
+  /* archived — kept in the DB, hidden until the 🗄️ toggle asks for it */
+  .board-list .chip.archived{background:var(--paper); border-color:var(--terra); color:var(--terra-deep)}
+  .board-list li.arch{background:var(--sand-2); border-style:dashed; opacity:.75}
+  .board-list li.arch .body{text-decoration:line-through}
+  .arch-toggle{margin-inline-start:auto}
   @media print{ .board-form,.board-warn,.board-list .del{display:none} }
 
   /* DISCLOSURE — high-level by default, detail on demand */

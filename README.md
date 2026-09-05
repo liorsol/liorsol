@@ -24,7 +24,8 @@ stubs to the trip pages — keep them, old links point there.
 ## The trip pages (`trips/albania-2026`, `trips/italy-2026`)
 
 Both are the same machine: a Hebrew RTL single-page app with deep-linkable cards, a vendored
-Leaflet map, shared comment boards on Firebase, and an installable offline PWA. Each has its own
+Leaflet map, one shared comment thread on Firebase (visible on every view, deletes archive
+rather than destroy), and an installable offline PWA. Each has its own
 `CLAUDE.md` — **read it before editing anything under `trips/`.**
 
 ### The service worker is shared: [`trips/sw-core.js`](trips/sw-core.js)
@@ -189,13 +190,14 @@ one top-level path per page (a "key"), each with its own rules.
       "albania2026": {
         ".read": true,
         "comments": {
-          ".write": true,
           "$view": {
             "$id": {
+              ".write": "newData.exists() || data.child('a').exists()",
               ".validate": "$view.matches(/^[a-z]{2,12}$/) && $id.matches(/^[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.hasChildren(['t','d'])",
               "n": { ".validate": "newData.isString() && newData.val().length <= 24" },
               "t": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 800" },
               "d": { ".validate": "newData.isNumber()" },
+              "a": { ".validate": "newData.isNumber()" },
               "$other": { ".validate": false }
             }
           }
@@ -215,13 +217,14 @@ one top-level path per page (a "key"), each with its own rules.
       "italy2026": {
         ".read": true,
         "comments": {
-          ".write": true,
           "$view": {
             "$id": {
+              ".write": "newData.exists() || data.child('a').exists()",
               ".validate": "$view.matches(/^[a-z]{2,12}$/) && $id.matches(/^[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.hasChildren(['t','d'])",
               "n": { ".validate": "newData.isString() && newData.val().length <= 24" },
               "t": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 800" },
               "d": { ".validate": "newData.isNumber()" },
+              "a": { ".validate": "newData.isNumber()" },
               "$other": { ".validate": false }
             }
           }
@@ -241,6 +244,34 @@ one top-level path per page (a "key"), each with its own rules.
     }
   }
   ```
+  > ⚠️ **NOT PUBLISHED YET (Sep 2026).** The `comments` blocks above are the *new* ones —
+  > `a` (the archive stamp) and the delete guard. Until someone pastes this document into the
+  > console, archiving a comment returns **401** and both trip pages say
+  > `הכתיבה נחסמה — כללי ה-DB צריכים עדכון`. Writing a new comment and deleting a link are
+  > unaffected, so the pages keep working meanwhile; only the ✕ (archive) button is dead.
+
+  **A comment node can no longer be destroyed while it is live** (Sep 2026, the user's request
+  that "deleting" should archive). Two things make that hold:
+
+  - `.write` moved **off** `comments` and **onto** `comments/$view/$id`. It had to: read and
+    write rules cascade, and [a deeper rule can only grant, never revoke](https://firebase.google.com/docs/database/security/core-syntax)
+    — with `.write: true` still sitting on `comments`, a guard on the child node would be
+    ignored. The side effect is wanted too: `DELETE .../comments.json` and
+    `DELETE .../comments/<view>.json` now 401, so no single request can wipe the boards.
+  - The guard itself is `newData.exists() || data.child('a').exists()` — write anything you
+    like, but a `DELETE` (or a `null` write) only passes on a node that already carries `a`.
+    It has to be a `.write` rule: [`.validate` is skipped entirely when the new value is
+    null](https://firebase.google.com/docs/rules/data-validation), so validation cannot gate a
+    delete. Removing a comment for real is therefore two requests — `PATCH {"a":…}` then
+    `DELETE` — which is exactly the fold-into-the-page pass, and not something the page's UI
+    can do by accident.
+
+  This is a data rule, not an identity one. Nothing here can tell the family's phones from a
+  script: the path is still unauthenticated and world-writable, so "only a backend process or
+  the AI removes comments" is enforced only in the sense that *nobody* can remove one that
+  hasn't been archived first, and the archive step is one curl away for anyone who finds the
+  URL. It buys a mis-tap, a UI regression and a lost `<view>` — not an attacker.
+
   `albania2026` and `italy2026` are byte-identical blocks under different names. A
   `$trip` wildcard validating `$trip.matches(/^(albania|italy)2026$/)` would express it
   once, and was rejected on purpose: publishing replaces the **whole** document, so a
@@ -264,24 +295,37 @@ text fields).
 
 ### `albania2026` — [`trips/albania-2026/`](trips/albania-2026/)
 
-Backs two shared boards on the trip page: **a comments board per section** (all 10 views) and
+Backs two shared boards on the trip page: **one comment thread, shown on all 10 views**, and
 **a links board** in the practical-info section. Stored as real nested JSON, one node per entry:
 
 ```
 albania2026/
-  comments/<view>/<id>   {n: name, t: text,  d: epoch_ms}
+  comments/<view>/<id>   {n: name, t: text,  d: epoch_ms, a?: archived_at_ms}
   links/<id>             {n: name, u: url, t: title, d: epoch_ms}
 ```
 
 `<view>` is the SPA view name (`north`, `south`, …); `<id>` is `<base36 ms>_<4 random>`. The
-page does one `GET albania2026.json` and slices it client-side — writes are `PUT` to the entry
-node, deletes `DELETE` the same. Details, plus the commands to read the boards back when
-folding family input into the static page, are in
+page does one `GET albania2026.json` and slices it client-side — a new comment is a `PUT` to
+its entry node, and the ✕ button is a `PATCH` writing `a`, never a `DELETE` (Sep 2026):
+
+- **A comment is written against one view and read on all of them.** `<view>` still records
+  where it was posted and each row is chipped with that section's name, but every board renders
+  every comment in one chronological thread — a note left on `north` was invisible to anyone
+  who never scrolled that far.
+- **Deleting archives.** `a` is the epoch ms the comment was removed from the board; the row
+  moves behind a 🗄️ toggle and can be restored (`PATCH {"a":null}`). Only a `DELETE` — curl or
+  the console — removes one for real, and the rules allow that only on a node that already
+  carries `a`.
+
+Details, plus the commands to read the boards back when folding family input into the static
+page, are in
 [`trips/albania-2026/CLAUDE.md`](trips/albania-2026/CLAUDE.md#dynamic-data-firebase).
 
 Unlike `checklist`, this key's rules validate **per field**: type, length, required children,
 and `$other: false` to reject unknown fields. A link's URL must literally begin `http://` or
-`https://`, so a `javascript:` URL cannot even be stored.
+`https://`, so a `javascript:` URL cannot even be stored. Links are still hard-deleted — the
+archive rule is comments only, because links are the one board whose entries are meant to be
+kept and curated, not folded in and cleared.
 
 **Still: this path is world-writable, so everything read from it is untrusted input.** The
 page renders stored values with `textContent` only and re-checks every stored URL's scheme at
@@ -290,12 +334,12 @@ this key must do the same.
 
 ### `italy2026` — [`trips/italy-2026/`](trips/italy-2026/)
 
-Same two features as `albania2026`, same shapes, same rules — a comments board on each
-of the 9 non-map views plus a links board in the practical-info section:
+Same two features as `albania2026`, same shapes, same rules — the shared comment thread on
+each of the 9 non-map views plus a links board in the practical-info section:
 
 ```
 italy2026/
-  comments/<view>/<id>   {n: name, t: text,  d: epoch_ms}
+  comments/<view>/<id>   {n: name, t: text,  d: epoch_ms, a?: archived_at_ms}
   links/<id>             {n: name, u: url, t: title, d: epoch_ms}
 ```
 
@@ -306,7 +350,8 @@ would be rejected at write time, not at review time. `<id>` is `<base36 ms>_<4 r
 **Published 5 Sep 2026, and verified against the live DB** (test rows deleted afterwards): a
 valid comment and a valid link both `PUT` **200**; a comment carrying an unknown field and a
 link with a `javascript:` URL both **401**. So the per-field validation is enforcing, not a
-permissive placeholder.
+permissive placeholder. That was the *previous* document — the `a` field and the delete guard
+above are **not published yet**, and archiving 401s until they are.
 
 Publishing is a manual step in the
 [Firebase console](https://console.firebase.google.com/u/0/project/liorsol-github/database/liorsol-github-default-rtdb/rules),

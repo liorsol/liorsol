@@ -91,6 +91,14 @@ block duplicated under the new name — is in the
 [README](../../README.md#firebase-realtime-database-dynamic-data-sync), and **the user published
 it on 5 Sep 2026.**
 
+> **The rules moved again the same month and are NOT published yet.** Comments gained `a` (the
+> archive stamp) and `.write` moved onto `comments/$view/$id` to guard deletes — see
+> [One thread, and deleting archives](../albania-2026/CLAUDE.md#one-thread-and-deleting-archives-users-request-sep-2026)
+> in the Albania `CLAUDE.md`, which is canonical for the boards and applies here verbatim: every
+> board renders every comment with a chip naming the view it was written on, and ✕ archives
+> instead of deleting. Until the document below is republished, ✕ returns **401** and the board
+> says `הכתיבה נחסמה — כללי ה-DB צריכים עדכון`. Posting a comment and managing links still work.
+
 Verified against the live DB the same day, with the test rows deleted afterwards:
 
 | check | result |

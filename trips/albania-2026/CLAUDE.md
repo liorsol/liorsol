@@ -171,8 +171,10 @@ exactly that above every input box — keep it.
 
 Two features write there (built Aug 2026, on the user's request):
 
-1. **Comments — one board per view.** `<section class="talk" data-topic="VIEW">` sits at the
-   bottom of all 11 non-map views; the JS builds the form and list.
+1. **Comments — one thread, a board on every view.** `<section class="talk" data-topic="VIEW">`
+   sits at the bottom of all 11 non-map views; the JS builds the form and list. `data-topic` is
+   where a comment written on that board is *stored*; every board **renders all of them** (Sep
+   2026 — see below).
 2. **A links board** in the practical-info view: `<section class="links-board" id="links">`.
 
 ### Storage schema
@@ -181,12 +183,14 @@ Real nested JSON, one node per entry:
 
 ```
 albania2026/
-  comments/<view>/<id>   {n: name, t: text,  d: epoch_ms}
+  comments/<view>/<id>   {n: name, t: text,  d: epoch_ms, a?: archived_at_ms}
   links/<id>             {n: name, u: url, t: title, d: epoch_ms}
 ```
 
 `<view>` is the SPA view name; `<id>` is `Date.now().toString(36) + '_' + 4 random base36`
-(13 chars today, and the timestamp stays 8 chars until 2059).
+(13 chars today, and the timestamp stays 8 chars until 2059). `a` is the archive stamp — see
+"One thread, and deleting archives" below; absent on every comment written before Sep 2026, so
+treat missing as live and never assume it exists.
 
 **The rules and this shape must change together.** The rules validate per field — type,
 length, required children, and `$other: false` rejecting unknown keys — so adding a field to
@@ -196,8 +200,75 @@ rather than a generic failure, because it is the one error that a page reload wi
 The full rules document lives in the [README](../../README.md#firebase-realtime-database-dynamic-data-sync).
 
 Reads are one shared `GET albania2026.json` for the whole page (all 12 boards slice it
-client-side — don't reintroduce a fetch per board). Writes `PUT` the entry node, deletes
-`DELETE` it.
+client-side — don't reintroduce a fetch per board). A new entry is a `PUT` to its node;
+archiving and restoring a comment are `PATCH`es of `a`; `DELETE` is used by the links board and,
+for comments, only by the fold-in pass over curl.
+
+### One thread, and deleting archives (user's request, Sep 2026)
+
+Two changes to the same feature, asked for together: *"comments should still be page related,
+but all comments should be visible in all pages"* and *"deleting comments should stay in the DB
+as archived (only backend process or AI should be able to remove them)"*.
+
+**Every board shows every comment.** `allComments()` flattens `comments/*/*` into one list
+sorted by `d`, and all 11 boards render the same list — the per-view slice is gone. Storage did
+**not** change: a comment still lands under the `data-topic` of the board it was written on,
+and each row carries a chip with that view's label, pulled from the nav (`nav a[data-view]`
+→ text) so the chip reads "טירנה", not `tirana`. Rows from the board you are standing on get
+`li.own` (the chip goes solid `--sea`). Don't "simplify" this by dropping `<view>` — the fold-in
+pass reads it to know which card a note is about, and the DB rules still validate it.
+
+Consequences that are easy to miss:
+
+- A write made on one board has to re-render **all** of them, so every write path ends in
+  `refreshAll()` (one forced `GET`, then every registered refresher). The old `refresh(true)`
+  per board would have left the other ten stale — and firing it on all of them would have been
+  11 GETs for one comment.
+- The heading is now the same on every board (`💬 הערות — כל הסעיפים`); the section's own
+  `aria-label` is no longer used for it. The sub-line is what says where a *new* comment lands
+  (`מה שתכתבו כאן ישויך ל"…"`). Keep that sentence — without it the board looks global and the
+  chip on your own comment comes as a surprise.
+- `initTalk()` **rewrites the section's `aria-label`** to `הערות — כל הסעיפים · כתיבה לסעיף X`,
+  because the one in the HTML ("הערות על הצפון") now describes a board that no longer exists.
+  The HTML attribute stays as the no-JS fallback; don't delete it, and don't bother editing the
+  20 of them by hand — the JS is the single place that gets this right for both trips.
+
+**✕ archives, it does not delete.** It `PATCH`es `{a: Date.now()}`; the row leaves the live list
+and reappears, struck through with a `🗄️ הוסר · <date>` chip, behind the `🗄️ הצגת הערות שהוסרו (n)`
+toggle in the board's footer. The toggle is per board, in-memory, and hidden while nothing is
+archived. Restoring is `PATCH {a: null}` (RTDB treats a null child as "remove this field", so the
+comment itself is never rewritten) and lives on the ↺ button, only on archived rows.
+
+- **The count line** reads `12 הערות · 3 בארכיון` — live count first, archive tally second, and
+  the offline caveat still last.
+- **`overlay()` learned PATCH**: it merges into the queued/stored node instead of replacing it
+  (and honours a `null` field as a removal), so an archive done with no reception hides the row
+  immediately and survives a reload, like every other queued write.
+- **The rules enforce it too, and this is the part with teeth**: `.write` moved off `comments`
+  onto `comments/$view/$id` as `newData.exists() || data.child('a').exists()`, so a `DELETE`
+  passes only on a node that already carries `a`. Both halves are load-bearing —
+  [write rules cascade and a child cannot revoke a parent's grant](https://firebase.google.com/docs/database/security/core-syntax),
+  so the guard had to replace `.write: true` rather than sit under it, and
+  [`.validate` is skipped when the new value is null](https://firebase.google.com/docs/rules/data-validation),
+  so it could not have been a `.validate`. **These rules are not published yet** — until they
+  are, ✕ returns 401 and says `הכתיבה נחסמה — כללי ה-DB צריכים עדכון`. Writing comments and
+  managing links are unaffected.
+- **It is not access control.** The path has no auth, so "only a backend process or the AI
+  removes comments" really means "nobody can remove a comment that hasn't been archived first".
+  Anyone with the URL can archive-then-delete in two curls. What it does buy: a family member's
+  mis-tap is undoable, and no bug in this page can destroy a comment.
+- Links keep hard `DELETE` — that board is curated reference material, not input to fold in.
+
+**Verified in headless Chromium against a fake RTDB held in the test process** (both trips, the
+real `index.html` + `trip.js` over `python3 -m http.server`, every write intercepted and asserted):
+all 11 (Albania) / 9 (Italy) boards render the same thread; the chips carry the nav labels and
+`li.own` appears only on the board a comment was written on; ✕ pressed on the `tirana` board for a
+comment written on `north` issues exactly one `PATCH comments/north/<id> {a:<number>}` and **no**
+`DELETE`, the stored text is untouched, and the row disappears from all the other boards; the
+toggle brings it back struck through with ↺; ↺ issues `PATCH {a:null}`; with the network refused,
+an archive queues a `PATCH`, hides the row immediately, counts in the toggle, and lands on the DB
+after an `online` event; the links board still issues a plain `DELETE`. Not exercised against the
+live DB — the rules above are unpublished, so today ✕ there answers 401, which is the point.
 
 ### Offline boards (built Aug 2026 with the PWA — "handle the comments, storing locally and syncing when online again")
 
@@ -208,7 +279,7 @@ an explicit queue cannot.
 | key | holds |
 |---|---|
 | `albania2026_cache` | the last successful whole-DB read — what the boards render with no network |
-| `albania2026_queue` | writes not yet accepted: `[{p:path, m:'PUT'|'DELETE', b:body}]`, oldest first |
+| `albania2026_queue` | writes not yet accepted: `[{p:path, m:'PUT'|'PATCH'|'DELETE', b:body}]`, oldest first |
 
 - **One code path for online and offline.** `submit(op)` tries the network and falls back to the
   queue; only a *permanent* rejection (401 `rules`, any 4xx) surfaces as an error. A rejected
@@ -217,9 +288,10 @@ an explicit queue cannot.
 - `overlay()` renders queued writes as if they had landed, tagged `_p` → `li.pend` (dashed gold) and
   "⏳ ממתין לשליחה". **`_p` exists only in that deep copy** — writes send `op.b`, so it never reaches
   the DB, where the rules' `$other:false` would 401 it.
-- The queue drains **in order, oldest first** (a comment's `PUT` must precede its `DELETE`), stops at
-  the first network failure, and *drops* anything the server rejects for good — otherwise one bad op
-  blocks every comment behind it forever. Triggered on load and on `window` `online`.
+- The queue drains **in order, oldest first** (a comment's `PUT` must precede the `PATCH` that
+  archives it), stops at the first network failure, and *drops* anything the server rejects for
+  good — otherwise one bad op blocks every comment behind it forever. Triggered on load and on
+  `window` `online`.
 - Timestamps are stamped when the comment is *written*, not when it syncs, so a comment composed in
   the mountains keeps its real place in the thread.
 - When a board renders from the cache it says so: `· מוצג מהמכשיר — אין רשת`.
@@ -240,9 +312,9 @@ version of the rules allowed only bool/number/string per key. The rules were wid
 proper nested objects in Aug 2026 and the two links that existed by then were migrated —
 `l_<id>` became `links/<id>` with the original name and timestamp preserved.*
 
-**Two dead legacy keys remain at the root** (`l_msjia2rm_x6k6`, `l_msjiciov_e3yr`). The new
-rules grant `.write` only under `comments` and `links`, so a root-level key is readable but
-**not deletable over REST** — `DELETE` returns 401. They are harmless: the page reads only
+**Two dead legacy keys remain at the root** (`l_msjia2rm_x6k6`, `l_msjiciov_e3yr`). The rules
+grant `.write` only under `comments/$view/$id` and `links/$id`, so a root-level key is readable
+but **not deletable over REST** — `DELETE` returns 401. They are harmless: the page reads only
 `comments` and `links`, so they never render. To actually remove them, delete the two nodes
 in the Firebase console. (The alternative is a rule permitting deletion of string-valued root
 keys only — `"$legacy": {".write": "data.isString() && !newData.exists()"}` — which cannot
@@ -267,15 +339,30 @@ rows += [("link", "-", i, r) for i, r in (d.get("links") or {}).items()]
 for kind, view, i, r in sorted(rows, key=lambda x: x[3].get("d", 0)):
     when = dt.datetime.fromtimestamp(r.get("d", 0) / 1000).strftime("%Y-%m-%d %H:%M")
     path = "comments/%s/%s" % (view, i) if kind == "comment" else "links/%s" % i
-    print("[%s/%s] %s  %s: %s %s" % (kind, view, when, r.get("n") or "anon",
-                                     r.get("t", ""), r.get("u", "")))
-    print("    delete: %s" % path)
+    mark = " [ARCHIVED]" if r.get("a") else ""
+    print("[%s/%s]%s %s  %s: %s %s" % (kind, view, mark, when, r.get("n") or "anon",
+                                       r.get("t", ""), r.get("u", "")))
+    print("    path: %s" % path)
 EOF
 ```
 
-After folding an entry into the page, delete it so the board doesn't accumulate stale notes:
-`curl -X DELETE ".../albania2026/comments/<view>/<id>.json"`. Delete **per entry as it lands**, not as
-one sweep at the end — if part of the batch gets deferred, its comment should still be sitting there.
+`[ARCHIVED]` rows are ones the family already removed from the board — still worth reading (that
+is the point of keeping them), but they have usually been dealt with.
+
+After folding an entry into the page, **archive it** — the same thing the ✕ button does, so it
+leaves the board without leaving the DB:
+
+```bash
+curl -X PATCH -d "{\"a\": $(date +%s)000}" \
+  "https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/albania2026/comments/<view>/<id>.json"
+```
+
+Archive **per entry as it lands**, not as one sweep at the end — if part of the batch gets
+deferred, its comment should still be on the board. Actually *removing* a comment is a separate,
+rarer decision (pruning, or a note that should never have been written): the rules allow
+`DELETE` only on a node that already carries `a`, so it is archive-then-delete, in that order,
+and there is no undo. The board no longer accumulates stale notes on its own — archived ones are
+behind the toggle.
 This cycle has run twice (Aug 2026). First pass: 13 comments in, all folded, all deleted. Second
 pass: 3 comments — the eSIM picks became links in the `📶 תקשורת` card (tracking params stripped,
 `utm_*`/`fpr`), "a link in a comment should be a link" became `linkify()`, and the restaurant-hours

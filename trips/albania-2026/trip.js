@@ -308,17 +308,29 @@
 })();
 
 /* ============================================================
-   Shared boards — comments per view + a links board.
+   Shared boards — a comments board on every view + a links board.
    Storage: Firebase RTDB, path `albania2026` (see repo README).
 
    Real nested JSON, one node per entry:
 
-     albania2026/comments/<view>/<id> = {n, t, d}
+     albania2026/comments/<view>/<id> = {n, t, d, a?}
      albania2026/links/<id>           = {n, u, t, d}
 
    <id> is `<ts36>_<rnd4>`. The DB rules validate each field's type and
    length server-side and reject unknown fields, so the shapes below and
    the published rules must be changed together.
+
+   ONE CONVERSATION, EVERY BOARD (user's request, Sep 2026): a comment is
+   still written against the view it was posted from — that is what `<view>`
+   is for, and the chip on each row says which — but every board renders
+   *all* of them, in one chronological thread. A note left on `north` used to
+   be invisible to anyone who never scrolled that far.
+
+   DELETING IS ARCHIVING (same request): ✕ writes `a` = epoch ms instead of
+   removing the node, and the row moves behind the 🗄️ toggle. Nothing the
+   family can press destroys a comment; removal is the fold-into-the-page
+   pass (curl or the console). The rules back that up — a comment node may
+   only be DELETEd once it carries `a`. See the README.
 
    OFFLINE: the page is installable and is meant to work on a phone with no
    reception, so the boards keep their own two stores in localStorage — a copy
@@ -390,6 +402,16 @@
     return frag;
   }
 
+  /* Every board shows every comment, so each row needs to say which section it
+     belongs to — in the nav's own wording ("טירנה", not "tirana"). A view with no
+     nav entry, or a stale one left in the DB, falls back to its raw key; that key
+     is stored data, so it is clipped and rendered as text like everything else. */
+  var LABELS = {};
+  document.querySelectorAll('nav a[data-view]').forEach(function(a){
+    LABELS[a.dataset.view] = a.textContent.trim();
+  });
+  function label(view){ return LABELS[view] || clip(view, LIM.name); }
+
   var STORE = 'albania2026_name';
   function savedName(){ try{ return localStorage.getItem(STORE) || ''; }catch(e){ return ''; } }
   /* All 11 boards are built once at load, so remembering the name in storage only
@@ -410,8 +432,10 @@
   function queue(){ var q = readJson(QUEUE, []); return Array.isArray(q) ? q : []; }
 
   /* Show the queued writes as if they had landed, so a comment written in the
-     mountains is visible immediately and stays visible across reloads. `_p`
-     marks them pending and never leaves this copy — writes send `op.b`. */
+     mountains is visible immediately and stays visible across reloads — and so an
+     archive done with no reception hides the row at once. `_p` marks them pending
+     and never leaves this copy — writes send `op.b`. PUT replaces the node, PATCH
+     merges into it (a null field clears it), exactly like the DB's own semantics. */
   function overlay(data){
     var q = queue();
     if(!q.length) return data;
@@ -425,8 +449,11 @@
       }
       k = parts[0];
       if(op.m === 'DELETE'){ delete node[k]; return; }
-      var rec = {_p:1};
-      Object.keys(op.b).forEach(function(f){ rec[f] = op.b[f]; });
+      var rec = (op.m === 'PATCH' && node[k] && typeof node[k] === 'object') ? node[k] : {};
+      Object.keys(op.b).forEach(function(f){
+        if(op.b[f] === null) delete rec[f]; else rec[f] = op.b[f];
+      });
+      rec._p = 1;
       node[k] = rec;
     });
     return copy;
@@ -457,7 +484,7 @@
   /* 401 = the DB rules are older than this page, the one error a reload never fixes.
      A rejected promise from fetch() itself is a dead network, which is recoverable. */
   function send(op){
-    var init = op.m === 'DELETE' ? {method:'DELETE'} : {method:'PUT', body:JSON.stringify(op.b)};
+    var init = op.m === 'DELETE' ? {method:'DELETE'} : {method:op.m, body:JSON.stringify(op.b)};
     return fetch(DB + '/' + op.p + '.json', init).then(function(r){
       if(r.status === 401) throw new Error('rules');
       if(!r.ok) throw new Error('HTTP ' + r.status);
@@ -475,9 +502,9 @@
   function enqueue(op){ var q = queue(); q.push(op); writeJson(QUEUE, q); }
 
   var flushing = false;
-  /* Drain the queue oldest-first, in order: a comment's PUT must precede its
-     DELETE. Stops at the first network failure and keeps the rest; drops an op
-     the server rejects for good, because retrying it forever would block
+  /* Drain the queue oldest-first, in order: a comment's PUT must precede the PATCH
+     that archives it. Stops at the first network failure and keeps the rest; drops
+     an op the server rejects for good, because retrying it forever would block
      everything behind it. Resolves true if the queue moved. */
   function flush(){
     if(flushing) return Promise.resolve(false);
@@ -502,7 +529,8 @@
   }
   function okMsg(how, sent, queued){ return how === 'queued' ? queued : sent; }
 
-  /* Turn a stored node into a record, dropping anything malformed. */
+  /* Turn a stored node into a record, dropping anything malformed. `a` is the
+     archive stamp: present = removed from the board, kept in the DB. */
   function rows(node, extra){
     var out = [];
     Object.keys(node || {}).forEach(function(id){
@@ -510,9 +538,20 @@
       if(!r || typeof r !== 'object') return;                 // ignore junk
       if(typeof r.d !== 'number') return;
       out.push({id:id, n:clip(r.n, LIM.name), t:clip(r.t, extra === 'link' ? LIM.title : LIM.text),
-                u:r.u, d:r.d, p:!!r._p});
+                u:r.u, d:r.d, a:(typeof r.a === 'number' && r.a > 0) ? r.a : 0, p:!!r._p});
     });
     return out;
+  }
+
+  /* Every comment on the page, from every view, oldest first — one thread that
+     reads the same on all 11 boards. `v` is the view it was written on. */
+  function allComments(data){
+    var out = [], node = (data && data.comments) || {};
+    Object.keys(node).forEach(function(view){
+      if(!node[view] || typeof node[view] !== 'object') return;
+      rows(node[view]).forEach(function(rec){ rec.v = view; out.push(rec); });
+    });
+    return out.sort(function(a, b){ return a.d - b.d; });
   }
 
   /* --- shared chrome -------------------------------------------- */
@@ -546,7 +585,7 @@
     el.appendChild(form);
 
     var list = document.createElement('ul'); list.className = 'board-list'; el.appendChild(list);
-    return {form:form, who:who, send:send, msg:msg, count:count, list:list, extraEl:extraEl};
+    return {form:form, who:who, send:send, msg:msg, count:count, foot:foot, list:list, extraEl:extraEl};
   }
   function say(ui, text, kind){
     ui.msg.textContent = text; ui.msg.className = 'board-msg' + (kind ? ' ' + kind : '');
@@ -557,37 +596,71 @@
     var p = document.createElement('p'); p.className = 'board-empty';
     p.textContent = text; ui.list.appendChild(p);
   }
-  /* One place to say "n items", plus the offline caveat when the numbers came
-     from the device rather than the DB. */
-  function counted(ui, n, one, many){
-    ui.count.textContent = (n ? (n === 1 ? one : n + ' ' + many) : '') +
-      (stale ? (n ? ' · ' : '') + 'מוצג מהמכשיר — אין רשת' : '');
+  /* One place to say "n items", plus the archive tally and the offline caveat when
+     the numbers came from the device rather than the DB. */
+  function counted(ui, n, one, many, extra){
+    var parts = [];
+    if(n) parts.push(n === 1 ? one : n + ' ' + many);
+    if(extra) parts.push(extra);
+    if(stale) parts.push('מוצג מהמכשיר — אין רשת');
+    ui.count.textContent = parts.join(' · ');
   }
-  function entry(rec, onDelete){
+  /* One list row. `act` is the single button on the right: ✕ archive, ↺ restore,
+     ✕ delete on the links board — every caller passes exactly one. */
+  function entry(rec, act, chip){
     var li = document.createElement('li');
-    if(rec.p) li.className = 'pend';
+    var cls = [];
+    if(rec.p) cls.push('pend');
+    if(rec.a) cls.push('arch');
+    if(chip && chip.own) cls.push('own');
+    li.className = cls.join(' ');
     var head = document.createElement('div'); head.className = 'head';
     var w = document.createElement('span'); w.className = 'who';
     w.textContent = rec.n || 'אנונימי';                        // untrusted → textContent
     var t = document.createElement('span'); t.className = 'when';
     t.textContent = when(rec.d) + (rec.p ? ' · ⏳ ממתין לשליחה' : '');
+    head.appendChild(w); head.appendChild(t);
+    if(chip){
+      var c = document.createElement('span'); c.className = 'chip';
+      c.textContent = chip.text;                               // stored view key → textContent
+      head.appendChild(c);
+    }
+    if(rec.a){
+      var ar = document.createElement('span'); ar.className = 'chip archived';
+      ar.textContent = '🗄️ הוסר · ' + when(rec.a);
+      head.appendChild(ar);
+    }
     var x = document.createElement('button');
-    x.className = 'del'; x.type = 'button'; x.textContent = '✕';
-    x.title = 'מחיקה'; x.setAttribute('aria-label', 'מחיקה');
-    x.addEventListener('click', onDelete);
-    head.appendChild(w); head.appendChild(t); head.appendChild(x);
+    x.className = 'del'; x.type = 'button'; x.textContent = act.icon;
+    x.title = act.title; x.setAttribute('aria-label', act.title);
+    x.addEventListener('click', act.run);
+    head.appendChild(x);
     li.appendChild(head);
     return li;
   }
 
-  var refreshers = [];      // every board, so a completed sync updates all of them
+  var refreshers = [];      // every board, so one write updates all of them
+
+  /* A write lands on a board other than the one it was made from — every board
+     shows every comment — so re-read once and re-render the lot. */
+  function refreshAll(){
+    loadAll(true);
+    return Promise.all(refreshers.map(function(r){ return r(); }));
+  }
 
   /* --- comments -------------------------------------------------- */
   function initTalk(el){
     var view = el.dataset.topic;
+    var showArch = false;
+    /* The HTML's aria-label ("הערות על הצפון") described a board that only held its own
+       section's notes. Every board now holds the whole thread, so name the region for what
+       still makes it distinct: the section a comment written here is filed under. */
+    el.setAttribute('aria-label', 'הערות — כל הסעיפים · כתיבה לסעיף ' + label(view));
     var ui = build(el, {
-      heading: '💬 ' + el.getAttribute('aria-label'),
-      sub: 'מקום להערות, שאלות והצעות על הסעיף הזה. משותף לכל מי שנכנס לעמוד. אפשר להוסיף גם בלי רשת — זה יישלח כשהחיבור יחזור.',
+      heading: '💬 הערות — כל הסעיפים',
+      sub: 'כל ההערות מכל חלקי העמוד מופיעות כאן, לפי סדר הכתיבה, עם תווית הסעיף שאליו נכתבו. ' +
+           'מה שתכתבו כאן ישויך ל"' + label(view) + '". ' +
+           'הלוח משותף לכל מי שנכנס לעמוד; אפשר לכתוב גם בלי רשת — זה יישלח כשהחיבור יחזור.',
       submit: 'שליחה',
       extra: function(row, form){
         var ta = document.createElement('textarea');
@@ -599,19 +672,61 @@
     });
     var ta = ui.extraEl;
 
+    /* Archived comments are hidden, not gone. This shows them in place, struck
+       through, each with ↺ to bring it back. */
+    var archBtn = document.createElement('button');
+    archBtn.type = 'button'; archBtn.className = 'btn ghost arch-toggle'; archBtn.hidden = true;
+    archBtn.addEventListener('click', function(){
+      showArch = !showArch;
+      refresh();                       // already-loaded data, no fetch
+    });
+    ui.foot.appendChild(archBtn);
+
+    function archive(rec){
+      return function(){
+        if(!confirm('להסיר את ההערה מהלוח? היא תישמר בארכיון ותמיד אפשר להחזיר אותה.')) return;
+        submit({p:'comments/' + rec.v + '/' + rec.id, m:'PATCH', b:{a:Date.now()}})
+          .then(function(how){
+            say(ui, okMsg(how, 'הועבר לארכיון ✓', 'נשמר במכשיר — יישלח כשתהיה רשת ⏳'), 'ok');
+            return refreshAll();
+          })
+          .catch(function(err){ say(ui, failMsg(err), 'err'); });
+      };
+    }
+    /* `a:null` removes just that field — the comment itself was never touched. */
+    function restore(rec){
+      return function(){
+        submit({p:'comments/' + rec.v + '/' + rec.id, m:'PATCH', b:{a:null}})
+          .then(function(how){
+            say(ui, okMsg(how, 'הוחזר ללוח ✓', 'נשמר במכשיר — יישלח כשתהיה רשת ⏳'), 'ok');
+            return refreshAll();
+          })
+          .catch(function(err){ say(ui, failMsg(err), 'err'); });
+      };
+    }
+
     function render(all){
-      var mine = rows(((all.comments || {})[view]) || {})
-                   .sort(function(a, b){ return a.d - b.d; });
+      var list = allComments(all);
+      var live = list.filter(function(rec){ return !rec.a; });
+      var archived = list.length - live.length;
+      var shown = showArch ? list : live;
+
       ui.list.innerHTML = '';
-      counted(ui, mine.length, 'הערה אחת', 'הערות');
-      if(!mine.length){ empty(ui, 'אין עדיין הערות על הסעיף הזה.'); return; }
-      mine.forEach(function(rec){
-        var li = entry(rec, function(){
-          if(!confirm('למחוק את ההערה?')) return;
-          submit({p:'comments/' + view + '/' + rec.id, m:'DELETE'})
-            .then(function(){ return refresh(true); })
-            .catch(function(err){ say(ui, failMsg(err), 'err'); });
-        });
+      counted(ui, live.length, 'הערה אחת', 'הערות', archived ? archived + ' בארכיון' : '');
+      archBtn.hidden = !archived;
+      archBtn.textContent = (showArch ? '🗄️ הסתרת הערות שהוסרו' : '🗄️ הצגת הערות שהוסרו') +
+                            ' (' + archived + ')';
+      archBtn.setAttribute('aria-pressed', showArch ? 'true' : 'false');
+
+      if(!shown.length){
+        empty(ui, archived ? 'כל ההערות הועברו לארכיון. הכפתור שמעל מציג אותן.'
+                           : 'אין עדיין הערות. כתבו את הראשונה.');
+        return;
+      }
+      shown.forEach(function(rec){
+        var li = entry(rec, rec.a ? {icon:'↺', title:'החזרה ללוח', run:restore(rec)}
+                                  : {icon:'✕', title:'הסרה לארכיון', run:archive(rec)},
+                       {text:label(rec.v), own:rec.v === view});
         var b = document.createElement('div'); b.className = 'body';
         b.appendChild(linkify(rec.t));            // untrusted → textContent + safeUrl
         li.appendChild(b); ui.list.appendChild(li);
@@ -633,7 +748,7 @@
       submit({p:'comments/' + view + '/' + id, m:'PUT', b:{n:nm, t:text, d:Date.now()}}).then(function(how){
         ta.value = '';
         say(ui, okMsg(how, 'נשלח ✓', 'נשמר במכשיר — יישלח כשתהיה רשת ⏳'), 'ok');
-        return refresh(true);
+        return refreshAll();
       }).catch(function(err){
         say(ui, failMsg(err), 'err');
       }).then(function(){ ui.send.disabled = false; });
@@ -672,12 +787,12 @@
         var href = safeUrl(rec.u);     // re-validate: stored value is untrusted
         if(!href) return;              // silently drop anything not http(s)
         shown++;
-        var li = entry(rec, function(){
+        var li = entry(rec, {icon:'✕', title:'מחיקה', run:function(){
           if(!confirm('למחוק את הקישור?')) return;
           submit({p:'links/' + rec.id, m:'DELETE'})
-            .then(function(){ return refresh(true); })
+            .then(function(){ return refreshAll(); })
             .catch(function(err){ say(ui, failMsg(err), 'err'); });
-        });
+        }});
         var a = document.createElement('a');
         a.className = 'lnk'; a.href = href;
         a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
@@ -707,7 +822,7 @@
         .then(function(how){
           url.value = ''; title.value = '';
           say(ui, okMsg(how, 'נוסף ✓', 'נשמר במכשיר — יישלח כשתהיה רשת ⏳'), 'ok');
-          return refresh(true);
+          return refreshAll();
         }).catch(function(err){
           say(ui, failMsg(err), 'err');
         }).then(function(){ ui.send.disabled = false; });
@@ -723,7 +838,7 @@
      queue actually moved, so a quiet flush costs nothing. */
   function sync(){
     flush().then(function(moved){
-      if(moved) refreshers.forEach(function(r){ r(true); });
+      if(moved) refreshAll();
     });
   }
   window.addEventListener('online', sync);

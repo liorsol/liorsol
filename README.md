@@ -389,6 +389,64 @@ Everything in the `albania2026` section about untrusted input applies here verba
 path is world-writable, so stored values are rendered with `textContent` only and every
 stored URL's scheme is re-checked at render time.
 
+## Cloudflare Workers: the account is the quota
+
+More than one page here leans on a Worker (the eSIM usage page today, the car-charging
+dashboard next). They all draw on **one shared account budget**, so the limits and the guarding
+rules live here once instead of being rediscovered per page.
+
+### Free-plan limits ([docs](https://developers.cloudflare.com/workers/platform/limits/))
+
+| | Workers Free |
+|---|---|
+| Requests | **100,000/day — per account, not per Worker**, resets midnight UTC |
+| Over the limit | Error 1027 |
+| CPU time | 10 ms per request (network waiting doesn't count) |
+| Subrequests | 50 per request |
+
+The daily budget is **shared by every Worker on the account**. One abused, looping or
+scraped Worker exhausts it for all of them — a hammered eSIM proxy takes the charging
+dashboard down with it, on the same day, for free. Treat the quota as a shared resource and
+assume any public URL will eventually be found.
+
+### Guarding a Worker
+
+Weakest first. Note where the cost is actually paid:
+
+| | Protects data | Protects quota |
+|---|---|---|
+| 1. Unpublished URL — security by obscurity, not a control | ✗ | ✗ |
+| 2. `Origin` allowlist — trivially forged outside a browser; stops other people's *pages*, not scripts | partly | ✗ |
+| 3. Input allowlist inside the Worker (what [`esim-usage/proxy.js`](esim-usage/proxy.js) does with ICCIDs) | ✓ | ✗ — the Worker still ran |
+| 4. WAF rate limiting — rejected before the Worker runs | partly | ✓ |
+| 5. **Cloudflare Access** — authenticated at the edge; unauthenticated requests never invoke the Worker | ✓ | ✓ |
+
+**Only 4 and 5 stop someone burning the quota**, because 1–3 all reject *inside* the Worker,
+by which point the request is already billed. Anything holding a secret or worth money should
+be on 5. Access is free for up to 50 users and takes Google as an identity provider
+([pricing](https://www.cloudflare.com/plans/zero-trust-services/)).
+
+**⚠️ `workers.dev` is a separate hostname and a separate way in.** Access applies per
+application/hostname, so an Access policy on a custom domain does **not** cover
+`<name>.<subdomain>.workers.dev`. Leaving it enabled leaves an unauthenticated door open next
+to the locked one. Either disable it (`workers_dev = false` in wrangler config) or add a
+second Access application covering it
+([docs](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/)).
+
+### Access and pages hosted on GitHub
+
+Access can only gate hostnames that sit behind Cloudflare. **GitHub Pages does not**, so a page
+served from `liorsol.github.io` cannot be put behind Access, and a cross-origin `fetch` from it
+to an Access-protected Worker fails — the interactive Google login is a redirect, which `fetch`
+cannot follow. Two ways out, and they trade off against each other:
+
+- **Serve the UI from Cloudflare too** (Pages, built from this repo) so UI and Worker are one
+  origin behind one Access application. Source still lives here; only the hosting moves.
+  Unauthenticated traffic never reaches the Worker. ← the only option that protects the quota
+- **Keep the UI on GitHub Pages and verify a Google ID token inside the Worker.** Works
+  cross-origin and needs no Access, but every unauthenticated request still costs a Worker
+  invocation, so the quota stays exposed.
+
 ## Running locally
 
 ```bash
@@ -406,3 +464,6 @@ file browser, which needs `fetch` over http.
 - Trip directories carry their own `CLAUDE.md` with project context — read it before editing
   anything under `trips/`.
 - No private data in this repo (it is public): link to access-restricted locations instead.
+- Before deploying or changing any Worker, read [Cloudflare Workers: the account is the
+  quota](#cloudflare-workers-the-account-is-the-quota) — the free tier is shared account-wide,
+  so one unguarded Worker can take the others down.

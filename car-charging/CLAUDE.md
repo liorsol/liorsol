@@ -49,14 +49,21 @@ and endpoints out of a public repo is the point.
 If a change can't be described without naming the provider, it belongs in the iCloud notes, not
 in this repo.
 
+## Status
+
+Nothing is built yet. This folder is documentation only: the goal, the auth decision, and a
+pointer to the private notes. The data source is already mapped and a working CLI exists — both
+in the iCloud folder above. Next session starts at step 1 of the decision below.
+
 ## What gets built here
 
-Following the existing `esim-usage/` pattern in this repo — Worker as a secret-holding proxy,
-static page on GitHub Pages:
+Worker as a secret-holding proxy plus a static page, following the existing `esim-usage/`
+pattern in this repo — but see the auth decision below: the page is served by Cloudflare Pages,
+**not** GitHub Pages:
 
 ```
 car-charging/proxy.js     Cloudflare Worker: holds credentials, returns sanitised JSON
-car-charging/index.html   dashboard, served from GitHub Pages
+car-charging/index.html   dashboard, served by Cloudflare Pages behind Access
 ```
 
 Deploy the same bare way:
@@ -92,18 +99,29 @@ cannot follow.
 | **A. UI on Cloudflare Pages, Access over UI + Worker** | ✓ Access, Google IdP, one click | ✓ rejected at the edge, Worker never runs | Cloudflare (source still in this repo) |
 | **B. UI on GitHub Pages, Worker verifies a Google ID token** | ✓ Google Identity Services in the page | ✗ every anonymous request still costs an invocation | GitHub Pages |
 
-**Recommendation: A.** It's the only one that actually satisfies goal 2, it makes Google auth a
-configuration checkbox instead of JWT-verification code, and it costs nothing — Access is free
-to 50 users. "UI on GitHub" still holds in the sense that matters: the source stays in this
-repo and Cloudflare Pages builds from it. Only the serving moves.
+### ✅ Decided: option A — serve from Cloudflare (2026-09-07)
 
-Pick B only if serving from GitHub Pages is a hard requirement. Then the Worker must verify the
-Google ID token itself — validate the signature against Google's JWKS, and check both `aud`
-(my OAuth client ID) and `email`. Reject before any upstream call, and put WAF rate limiting in
-front, since that's the only thing left protecting the quota.
+**Agreed, not yet implemented.** Deferred to a later session; nothing has been built or
+deployed. Option B is rejected: it cannot satisfy goal 2, because a Worker that checks a token
+in its own code has already paid for the request by the time it says no.
 
-Either way: disable `workers.dev` (`workers_dev = false`), or it's an unauthenticated door
-straight to the Worker regardless of which option is chosen.
+"UI on GitHub" still holds in the sense that matters — the source stays in this repo and
+Cloudflare Pages builds from it. Only the serving moves.
+
+**When picking this up, in order:**
+
+1. Cloudflare Pages project building this repo, `car-charging/` as the output — replaces
+   GitHub Pages for *this page only*; the rest of the site stays where it is.
+2. Custom hostname on Cloudflare, one Access application covering both the page and the
+   Worker route, Google as the identity provider, policy narrowed to my address.
+3. `workers_dev = false` — otherwise the Worker keeps an unauthenticated door open beside the
+   locked one, and option A's whole benefit evaporates.
+4. Only then `proxy.js`: `UPSTREAM_BASE` + `API_TOKEN` as Wrangler secrets, narrow read-only
+   routes, personal fields stripped before anything reaches the browser.
+5. `index.html` last, once there's an authenticated endpoint to call.
+
+Verify at the end by opening the Worker URL in a private window: it must land on Google
+sign-in, not on data. If it returns JSON, the gate isn't on.
 
 Credentials expire and cannot renew themselves unattended; the recovery procedure is in the
 iCloud notes. The Worker should surface expiry explicitly (`503` + a clear banner) rather than

@@ -8,9 +8,18 @@ session was actually delivering power.
 **Now:** a private dashboard showing charge history — sessions over time, energy, cost, and
 how much of each session was actually delivering power versus sitting suspended.
 
+Electricity here is **time-of-use, not flat** (confirmed 2026-09-10): an evening peak window
+priced ~2.8× the rest of the day. So a session's cost depends on *when* its kWh landed, and
+two numbers matter equally — how much of the session actually delivered power, and how much
+of it was deferred into the cheap window. Deferring is usually correct; the dashboard's job is
+to show which sessions were held for price and which were merely throttled.
+
 **Later:** starting and stopping a charge from the same dashboard. That turns it from a
 read-only view into something that acts on hardware, so it raises the bar on auth: a leaked
 URL would stop being an information leak and start being physical control.
+
+Remote **start** is understood as of 2026-09-10 and works from the CLI. Remote **stop** is not,
+and is not going to be guessed — see the private notes.
 
 **Access model:** signed in with my Google account, only me. The personal credential for the
 upstream data source never reaches the browser — it lives in a proxy function. Everything
@@ -25,7 +34,8 @@ repo.** They live in iCloud:
 ~/Library/Mobile Documents/com~apple~CloudDocs/car-charging-api/
 ├── CLAUDE.md     ← start here: current state, next steps, house rules
 ├── API-NOTES.md  ← full data-source reference
-├── charge.sh     ← CLI: auth, token refresh, fetch history
+├── charge.sh     ← CLI: auth, token refresh, history, live status, remote start
+├── *.har         ← app captures; the source of truth for request schemas
 └── .token.json   ← credential, chmod 600
 ```
 
@@ -51,9 +61,14 @@ in this repo.
 
 ## Status
 
-Nothing is built yet. This folder is documentation only: the goal, the auth decision, and a
-pointer to the private notes. The data source is already mapped and a working CLI exists — both
-in the iCloud folder above. Next session starts at step 1 of the decision below.
+Nothing is built yet **in this repo**. This folder is documentation only: the goal, the auth
+decision, and a pointer to the private notes. The data source is mapped and the CLI does
+history, live status and remote start — all in the iCloud folder above. Next session starts at
+step 1 of the decision below.
+
+The read-only route set below is still the right shape, but it now needs a third thing: the
+live **tariff calendar**, since without it the dashboard cannot say whether a suspended session
+is saving money or just losing time.
 
 ## What gets built here
 

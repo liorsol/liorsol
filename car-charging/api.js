@@ -116,6 +116,36 @@ export function getInvoices() {
   return request('/api/invoices');
 }
 
+// ── What counts as a live session — one definition, three readers ──
+//
+// The projection puts a stop timestamp, a stop reason and a completed flag on *every* row it
+// emits into `state.sessions`, including the one that has just ended: a stopped session lingers
+// upstream for a few seconds, which is the entire reason the settle poll below exists. So "there
+// is a row" never means "a charge is running".
+//
+// Three modules need that judgement and each had written its own. The one holding the contactor
+// had written none at all — any row carrying an id was the live session — so a single ended row
+// made the page disable Start, leave Stop enabled and send a dead id to the charger.
+//
+// The union of the stop marks, not the smallest test that passes: the live-state rows carry
+// `completed` and the timestamp is `stoppedAt`/`stoppedLocal`, the history rows carry no
+// `completed` at all, and the pre-projection spellings are still accepted because a row that
+// has ended must read as ended under every shape this page has ever been handed. Any mark, in
+// any spelling, ends it.
+//
+// It lives in this module because this module already owns the wire shape, and it is exported
+// rather than copied because three modules agreeing today is three modules drifting later.
+// Import it; do not re-spell it. `test/controls.test.mjs` fails on a second spelling.
+export function isLiveSession(session) {
+  if (!session || session.completed === true) return false;
+  return !(
+    session.stoppedAt ||
+    session.stoppedLocal ||
+    session.deviceStopDate ||
+    session.deviceLocalStopDate
+  );
+}
+
 // ── Refresh — user-pressed only ──
 // The only call that forces an upstream fetch regardless of cache age. Wire it to a button and
 // to nothing else.

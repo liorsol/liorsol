@@ -22,6 +22,7 @@
 import {
   TOKEN_EXPIRED,
   SETTLE_MAX_ATTEMPTS,
+  isLiveSession,
   start,
   stop,
   pollSettle,
@@ -81,9 +82,15 @@ const SEVEN_STATES = [
   'faulted',
 ];
 
+// The one row this panel may act on: live by the shared definition *and* carrying an id, because
+// the only thing this module does with it is name it in a stop command. A row that has ended is
+// a normal thing to find here — it is what the list holds for a few seconds after a stop — and
+// picking it would disable Start, leave Stop enabled and send a dead id to the contactor.
 const liveSession = (view) => {
   const sessions = view?.state?.sessions;
-  const session = Array.isArray(sessions) ? sessions.find((s) => s && s.sessionId) : null;
+  const session = Array.isArray(sessions)
+    ? sessions.find((s) => isLiveSession(s) && s.sessionId)
+    : null;
   return session || null;
 };
 

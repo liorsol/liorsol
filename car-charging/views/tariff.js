@@ -10,6 +10,11 @@
 //
 // liveSlice(), nextSlice() and classifySuspension() are pure: no DOM, no module state.
 
+// The one definition of a live session, shared with views/history.js and views/controls.js.
+// A row that has ended stays in state.sessions for a few seconds after it stops, so "there is
+// a row" is not the question — see the comment on the predicate in api.js.
+import { isLiveSession } from '../api.js';
+
 const DAY_MS = 86400000;
 const DAY_MIN = 1440;
 
@@ -414,7 +419,7 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   el.appendChild(tariffStrip(slices, nowMs));
 
   const sessions = (Array.isArray(payload.sessions) && payload.sessions) || [];
-  const live = sessions.filter((s) => s && !s.stoppedAt && !s.completed);
+  const live = sessions.filter(isLiveSession);
   const heading = spaced(h('h3', 'panel__title', 'Live session'), 5);
   el.appendChild(heading);
 

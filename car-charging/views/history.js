@@ -9,6 +9,11 @@
 // effectiveKw() and shekelAvoided() are pure — no DOM, no clock, no module state —
 // so the metric can be asserted in node without a browser.
 
+// The one definition of a live session, shared with views/tariff.js and views/controls.js —
+// this table used to carry its own, a third spelling of the same judgement. See the comment on
+// the predicate in api.js for why a row that has ended is a normal thing to find.
+import { isLiveSession } from '../api.js';
+
 // ── pure metrics ────────────────────────────────────────────────────────────
 
 function num(v) {
@@ -181,8 +186,6 @@ function durationText(secs) {
   return Math.floor(s / 3600) + ' h ' + pad2(Math.floor((s % 3600) / 60)) + ' m';
 }
 
-const isLive = (row) => !(row.stoppedAt || row.stoppedLocal || row.deviceStopDate || row.deviceLocalStopDate);
-
 const cell = (tag, text, numeric) => h(tag, numeric ? 'num' : null, text);
 
 function emptyBlock(title, hint, isError) {
@@ -267,7 +270,7 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   const tbody = h('tbody');
   for (const row of rows) {
     const tr = h('tr');
-    if (isLive(row)) tr.className = 'is-live';
+    if (isLiveSession(row)) tr.className = 'is-live';
     tr.appendChild(cell('td', whenText(row)));
     tr.appendChild(cell('td', durationText(row.durationInSeconds)));
     tr.appendChild(cell('td', (num(row.totalEnergy) || 0).toFixed(2), true));

@@ -101,13 +101,16 @@ It is idempotent (`CREATE TABLE IF NOT EXISTS`), so re-running it is safe.
 ### Check
 
 ```bash
-node --test car-charging/test/authz.test.mjs
+node --test car-charging/test/*.test.mjs
 ```
 
-No dependencies, no network. It asserts the one property this directory can prove offline:
-a request carrying no identity header is a caller class that no route in the table admits, so
-it gets `403` on every route. It iterates the route table, so a new route is covered the day
-it is added.
+No dependencies, no network, a few seconds. Two properties, both of which can be proved offline
+and both of which fail silently in production if they break:
+
+- a request carrying no identity header is a caller class that no route in the table admits, so
+  it gets `403` on every route — iterated from the route table, so a new route is covered the
+  day it is added;
+- the settle poll stops on the first completed sample instead of spending its whole cap.
 
 **One writer per table, and this is a hard rule:** the private upstream service owns `cache`,
 this Function owns `comments`. Neither ever writes the other's table.

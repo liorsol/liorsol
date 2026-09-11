@@ -184,6 +184,11 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// The server nests the settle flag under `session`. Read both shapes: the loop's exit
+// condition is the whole point of the cap being a cap rather than a schedule, and a field
+// that silently reads `undefined` spends every one of the attempts, every time.
+const settled = (data) => (data?.session?.completed ?? data?.completed) === true;
+
 export async function pollSettle(sessionId, onSample) {
   if (!stopPressedThisPageSession) return fail('settle_not_armed');
 
@@ -191,7 +196,7 @@ export async function pollSettle(sessionId, onSample) {
   for (let attempt = 1; attempt <= SETTLE_MAX_ATTEMPTS; attempt++) {
     last = await settle(sessionId);
     if (onSample) onSample(last, attempt);
-    if (last.ok && last.data?.completed === true) return last;
+    if (last.ok && settled(last.data)) return last;
     if (last.error === TOKEN_EXPIRED) return last;
     if (attempt < SETTLE_MAX_ATTEMPTS) await wait(SETTLE_INTERVAL_MS);
   }

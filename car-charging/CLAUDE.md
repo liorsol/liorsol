@@ -112,26 +112,36 @@ exposes personal details and closes a contactor on real hardware.
 Read [Cloudflare Workers: the account is the quota](../README.md#cloudflare-workers-the-account-is-the-quota)
 before designing this. Two goals here pull against each other:
 
-1. sign in with Google, only me
+1. exactly one identity can reach the dashboard — mine
 2. an unauthenticated caller must not be able to burn the account's shared Worker quota
 3. the UI lives on GitHub
 
 **All three cannot hold at once.** Cloudflare Access gates only hostnames behind Cloudflare;
 `liorsol.github.io` is not one. And a cross-origin `fetch` from GitHub Pages to an
-Access-protected Worker fails, because the Google login is an interactive redirect that `fetch`
-cannot follow.
+Access-protected Worker fails, because the gate answers an unauthenticated call with an
+interactive sign-in redirect — cross-origin, and one a `fetch` cannot follow.
 
-| | Google sign-in | Quota safe | UI hosted on |
+| | One identity only | Quota safe | UI hosted on |
 |---|---|---|---|
-| **A. UI on Cloudflare Pages, Access over UI + Worker** | ✓ Access, Google IdP, one click | ✓ rejected at the edge, Worker never runs | Cloudflare (source still in this repo) |
-| **B. UI on GitHub Pages, Worker verifies a Google ID token** | ✓ Google Identity Services in the page | ✗ every anonymous request still costs an invocation | GitHub Pages |
+| **A. UI on Cloudflare Pages, Access over UI + Worker** | ✓ the gate decides at the edge, before any code of ours runs | ✓ rejected at the edge, Worker never runs | Cloudflare (source still in this repo) |
+| **B. UI on GitHub Pages, Worker verifies an identity token itself** | ✓ an identity check written into the page and the Worker | ✗ every anonymous request still costs an invocation | GitHub Pages |
 
 ### ✅ Decided: option A — serve from Cloudflare (2026-09-07)
 
 Option B is rejected: it cannot satisfy goal 2, because a Worker that checks a token in its own
-code has already paid for the request by the time it says no. Goal 1 is now stated as "one
-identity, mine" — **which** sign-in method the Access application uses is a dashboard setting,
-deliberately not named anywhere in this repo (see *Access model* above).
+code has already paid for the request by the time it says no. Goal 1 is met as a property of the
+hostname rather than of any page code: the access gate admits exactly one identity and enforces
+it at the edge.
+
+**Which** sign-in method that gate uses is a dashboard setting and is named nowhere in this repo
+— not here, not in the page, not in the Function, not in the deploy (see *Access model* above).
+Two reasons, and both still hold. It is reconnaissance: the sign-in page renders to anonymous
+visitors, so naming the factor that guards the dashboard hands a passer-by the one fact worth
+having. And it has already changed once since this decision was written — a doc that names a
+method is a doc that goes stale and misleads the next session into building against a model that
+is no longer there. Nothing in this repo reads it, branches on it, or has to change when it
+changes again; if you need to know what is configured today, read the dashboard or the private
+notes.
 
 "UI on GitHub" still holds in the sense that matters — the source stays in this repo and
 Cloudflare Pages builds from it. Only the serving moves.

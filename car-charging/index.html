@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Charging</title>
+<link rel="stylesheet" href="style.css">
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<!--
+  Markup shell only. Every panel body below is empty and carries a stable id; app.js fills it
+  by mounting a view module into it. No markup here knows what any view renders.
+
+  Three things this file must never grow, each of which the shipped CSP blocks outright and
+  silently (it reads as a layout bug, not as an error): an inline <script>, an inline <style>,
+  and a style="..." attribute. Set a custom property from JS instead -- el.style.setProperty().
+
+  No remote asset of any kind: no favicon fetch, no font link, no analytics. Same-origin
+  relative paths only, so moving this page to another hostname stays a DNS change.
+-->
+<div class="shell">
+
+  <header class="shell__header">
+    <div class="shell__header-inner">
+      <h1 class="shell__title">Charging</h1>
+      <p class="updated" data-age="fresh">
+        <span class="updated__abs">No data yet</span>
+        <span class="updated__age">&mdash;</span>
+      </p>
+      <button class="btn btn--small" type="button" id="refresh">&#8635; Refresh</button>
+    </div>
+  </header>
+
+  <!-- The expiry banner's mount. Left empty on purpose: views/controls.js creates the .expiry
+       block inside it while the credential is expired and removes it again when it is healthy.
+       Absent from the DOM, not hidden -- a hidden credential field fails the security test. -->
+  <div id="expiry"></div>
+
+  <main class="shell__main">
+
+    <section class="panel">
+      <div class="panel__head"><h2 class="panel__title">Price right now</h2></div>
+      <div class="panel__body" id="tariff"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__head"><h2 class="panel__title">Controls</h2></div>
+      <div class="panel__body" id="controls"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__head"><h2 class="panel__title">Sessions</h2></div>
+      <div class="panel__body panel__body--flush" id="history"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__head"><h2 class="panel__title">Charger &amp; invoices</h2></div>
+      <div class="panel__body panel__body--flush" id="account"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel__head"><h2 class="panel__title">Notes</h2></div>
+      <div class="panel__body" id="comments"></div>
+    </section>
+
+  </main>
+
+  <footer class="shell__footer">
+    <div class="shell__footer-inner">
+      Private dashboard. Nothing here reloads on its own &mdash; the data only moves when you
+      press Refresh.
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

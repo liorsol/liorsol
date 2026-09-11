@@ -1,0 +1,21 @@
+# Response headers for every path this project serves. Pages reads this file natively:
+# no build step, no dependency, and it cannot be forgotten at deploy time the way a
+# header set in code can.
+#
+# The one that earns its place is `frame-ancestors 'none'`. This page can stop a charge,
+# the owner is by definition signed in while looking at it, and a framed page plus one
+# baited click is a hardware action. X-Frame-Options repeats it for anything that predates
+# the CSP directive.
+#
+# `form-action 'none'`: nothing here posts a form, and the page carries a credential field
+# in one state -- so the value of a stray or injected <form> submitting anywhere is zero.
+#
+# Everything is same-origin: no CDN, no font host, no analytics, no inline <script> and no
+# inline <style>. If a view ever needs a `style="..."` attribute in markup it will be blocked
+# -- set the property through the element's style object or add a class instead, rather than
+# loosening this to 'unsafe-inline'.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff

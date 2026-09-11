@@ -4,8 +4,11 @@
 // Mount contract (PLAN §7.10): render(el, state, ctx) with
 //   { state, history, invoices, expired, fetchedAt, stale }; any payload may be null.
 //
-// Nothing here hardcodes a window, a price or a VAT rate: the calendar arrives in
-// state.pricingSlices and carries its own prices, boundaries and vat (PLAN §8/D5).
+// Nothing here hardcodes a window, a price, a VAT rate or a slice name: the calendar
+// arrives in state.pricingSlices and carries its own prices, boundaries, vat and names
+// (PLAN §8/D5). That includes the two Hebrew names the owner reads off the legend,
+// פסגה and שפל — they are values that came down the wire, not copy this file owns, and
+// a tariff reform that renames or re-times them changes nothing here.
 // There is no timer in this module — the "now" marker moves when the page re-renders.
 //
 // liveSlice(), nextSlice() and classifySuspension() are pure: no DOM, no module state.
@@ -14,6 +17,7 @@
 // A row that has ended stays in state.sessions for a few seconds after it stops, so "there is
 // a row" is not the question — see the comment on the predicate in api.js.
 import { isLiveSession } from '../api.js';
+import { duration, ils, n, relative, statusLabel, time } from './he.js';
 
 const DAY_MS = 86400000;
 const DAY_MIN = 1440;
@@ -123,9 +127,13 @@ function suspensionWindow(session, nowMs) {
   return to === null ? null : { from, to };
 }
 
-const statusOf = (session) =>
-  String((session && (session.status || session.connectorStatusDuringSuspension)) || '')
-    .toLowerCase();
+// The charger's own word for what it is doing. Kept raw here and lower-cased only where a
+// comparison needs it: the raw spelling is what gets shown beside the Hebrew label, because
+// "SuspendedEVSE" is the thing the owner quotes when they ask why nothing is charging.
+const rawStatusOf = (session) =>
+  String((session && (session.status || session.connectorStatusDuringSuspension)) || '');
+
+const statusOf = (session) => rawStatusOf(session).toLowerCase();
 
 /**
  * Which of the two identical-looking suspensions this is.
@@ -184,16 +192,6 @@ function h(tag, cls, text) {
 function spaced(node, step) {
   node.style.setProperty('margin-block-start', 'var(--sp-' + (step || 4) + ')');
   return node;
-}
-
-const clock = (ms) => (Number.isFinite(ms)
-  ? new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-  : '—');
-
-function inWords(deltaMs) {
-  const mins = Math.max(0, Math.round(deltaMs / 60000));
-  if (mins < 90) return 'in ' + mins + ' min';
-  return 'in ' + Math.floor(mins / 60) + ' h ' + String(mins % 60).padStart(2, '0') + ' m';
 }
 
 function emptyBlock(title, hint, isError) {
@@ -263,8 +261,12 @@ function tariffStrip(slices, nowMs) {
     if (p === null || seen.has(p)) continue;
     seen.add(p);
     const name = s.name ? ' — ' + String(s.name) : '';
+    // ils() is Intl's he-IL currency output, which carries its own directional marks, so the
+    // figure survives sitting in front of Hebrew without a wrapper of its own. "kWh" stays the
+    // Latin SI symbol here and in every table header and tile: one spelling of the unit across
+    // the page beats a second Hebrew one that has to be kept in step with it.
     legend.appendChild(h('span', 'tariff__key tariff__key--' + (top !== null && p === top ? 'peak' : 'offpeak'),
-      '₪ ' + p.toFixed(4) + ' / kWh excl. VAT' + name));
+      ils(p, 4) + ' ל־kWh, לפני מע״מ' + name));
   }
   if (legend.childNodes.length) box.appendChild(legend);
 
@@ -276,32 +278,34 @@ function tariffStrip(slices, nowMs) {
 function flipLine(slices, nowMs, top) {
   const line = h('p', 'tariff__flip');
   if (!slices.length) {
-    line.textContent = 'No tariff calendar in the last response, so the next flip time is unknown.';
+    line.textContent = 'התשובה האחרונה לא כללה לוח תעריפים, ולכן מועד ההחלפה הבא אינו ידוע.';
     return line;
   }
   const live = liveSlice(slices, nowMs);
   const next = nextSlice(slices, nowMs);
   if (!live) {
-    line.textContent = 'No slice covers right now — the published calendar has run out, '
-      + 'so the next flip is not known yet.';
+    line.textContent = 'אף פרוסה אינה מכסה את הרגע הזה — הלוח שפורסם נגמר, '
+      + 'ולכן מועד ההחלפה הבא עדיין לא ידוע.';
     return line;
   }
   const price = num(live.price);
   line.appendChild(document.createTextNode(
-    (top === null ? 'One price in the calendar now'
-      : price !== null && price === top ? 'Dearest slice now' : 'Cheapest slice now')
+    (top === null ? 'כרגע יש מחיר אחד בלוח'
+      : price !== null && price === top ? 'כרגע הפרוסה היקרה' : 'כרגע הפרוסה הזולה')
     + (live.name ? ' (' + String(live.name) + ')' : '')
-    + (price === null ? '' : ' at ₪ ' + price.toFixed(4) + ' / kWh excl. VAT')
+    + (price === null ? '' : ', ' + ils(price, 4) + ' ל־kWh לפני מע״מ')
     + ' — '));
   if (next) {
     const at = toMs(next.from);
     line.appendChild(document.createTextNode(
-      'flips to ' + (next.name ? String(next.name) + ' ' : '') + 'at '));
-    line.appendChild(h('strong', null, clock(at)));
-    line.appendChild(document.createTextNode(', ' + inWords(at - nowMs) + '.'));
+      'מתחלף' + (next.name ? ' ל' + String(next.name) : '') + ' בשעה '));
+    // The clock goes in a <strong>, which the stylesheet gives its own bidi paragraph, so
+    // "23:00" cannot be pulled apart by the Hebrew on either side of it.
+    line.appendChild(h('strong', null, time(at)));
+    line.appendChild(document.createTextNode(', ' + relative(at - nowMs) + '.'));
   } else {
-    line.appendChild(document.createTextNode('no next slice has been published; this one ends at '));
-    line.appendChild(h('strong', null, clock(toMs(live.to))));
+    line.appendChild(document.createTextNode('לא פורסמה פרוסה הבאה; הנוכחית מסתיימת בשעה '));
+    line.appendChild(h('strong', null, time(toMs(live.to))));
     line.appendChild(document.createTextNode('.'));
   }
   return line;
@@ -309,14 +313,22 @@ function flipLine(slices, nowMs, top) {
 
 // ── the live session ────────────────────────────────────────────────────────
 
+// The raw upstream state, in the prose rather than only in a title. The Hebrew label is what the
+// badge says, but the owner asking "why is nothing charging" needs the charger's own word for it,
+// and a title attribute is not reachable on a phone — which is where this panel is read.
+function reported(session) {
+  const raw = rawStatusOf(session);
+  return raw ? ' (המצב המדווח: ' + raw + ')' : '';
+}
+
 function explainer(session, slices, nowMs) {
   const verdict = classifySuspension({ session, slices, nowMs });
 
   if (verdict === 'ev-refused') {
-    // Established, and neither of the two SuspendedEVSE cases. It gets its own words.
+    // Established, and neither of the two charger-side cases. It gets its own words.
     return h('p', 'suspend__detail',
-      'The car is not drawing power — that is the car\'s decision, not the charger\'s. '
-      + 'The charger reports itself ready and is withholding nothing for price.');
+      'הרכב אינו מושך חשמל — זו החלטה של הרכב, לא של העמדה. '
+      + 'העמדה מדווחת שהיא מוכנה ואינה מעכבת דבר בגלל מחיר.' + reported(session));
   }
   if (verdict === 'not-suspended') return null;
 
@@ -333,35 +345,37 @@ function explainer(session, slices, nowMs) {
     const gapEx = top - (low === null ? top : low);
     const gapInc = vat === null ? null : gapEx * (1 + vat / 100);
 
-    body.appendChild(h('p', 'suspend__title', 'Held for price'));
+    body.appendChild(h('p', 'suspend__title', 'מעוכב בגלל המחיר'));
     const detail = h('p', 'suspend__detail');
     detail.appendChild(document.createTextNode(
-      'The charger is deliberately withholding across the dearest window'
-      + (next ? ', until ' + (next.name ? String(next.name) + ' at ' : '') + clock(toMs(next.from)) : '')
-      + '. Every kWh it waits for is '));
+      'העמדה מעכבת במכוון לאורך החלון היקר'
+      + (next ? ', עד ' + (next.name ? String(next.name) + ' בשעה ' : 'השעה ') + time(toMs(next.from)) : '')
+      + '. כל kWh שהיא ממתינה לו זול ב־'));
+    // .suspend__amount is one of the boxes the sheet gives its own bidi paragraph, so the
+    // figure and its unit stay together and in order inside the Hebrew sentence.
     detail.appendChild(h('span', 'suspend__amount',
-      '₪ ' + (gapInc === null ? gapEx : gapInc).toFixed(2) + ' / kWh'));
+      ils(gapInc === null ? gapEx : gapInc) + ' ל־kWh'));
     detail.appendChild(document.createTextNode(
       gapInc === null
-        ? ' cheaper, excl. VAT — no VAT rate in the payload.'
-        : ' cheaper, incl. VAT (₪ ' + gapEx.toFixed(2) + ' excl. VAT). That is the money this wait is worth.'));
+        ? ', לפני מע״מ — אין שיעור מע״מ בנתונים.' + reported(session)
+        : ', כולל מע״מ (' + ils(gapEx) + ' לפני מע״מ). זה הכסף ששווה ההמתנה הזו.' + reported(session)));
     body.appendChild(detail);
     return box;
   }
 
   if (verdict === 'panel-throttled') {
-    body.appendChild(h('p', 'suspend__title', 'Throttled by the building panel'));
+    body.appendChild(h('p', 'suspend__title', 'מרוסן על ידי לוח החשמל בבניין'));
     body.appendChild(h('p', 'suspend__detail',
-      'Not a price decision — pure delay, and no money saved. The cheapest slice is already '
-      + 'running, so waiting buys nothing but time.'));
+      'זו אינה החלטת מחיר — זה עיכוב בלבד, ולא נחסך כסף. הפרוסה הזולה כבר רצה, '
+      + 'ולכן ההמתנה קונה זמן ותו לא.' + reported(session)));
     return box;
   }
 
-  body.appendChild(h('p', 'suspend__title', 'Withholding — cause not established'));
+  body.appendChild(h('p', 'suspend__title', 'מעכב — הסיבה לא הוכחה'));
   body.appendChild(h('p', 'suspend__detail',
-    'The charger is withholding, but the published calendar does not cover this window or '
-    + 'offers a single flat price, so price and panel cannot be told apart. Not enough to '
-    + 'call it either one.'));
+    'העמדה מעכבת, אבל הלוח שפורסם אינו מכסה את החלון הזה או שיש בו מחיר אחיד יחיד, '
+    + 'ולכן אי אפשר להבחין בין מחיר לבין לוח החשמל. זה לא מספיק כדי לקבוע אחד מהם.'
+    + reported(session)));
   return box;
 }
 
@@ -377,23 +391,27 @@ function sessionBlock(session, slices, nowMs) {
   const box = h('div');
   const status = session.status ? String(session.status) : null;
   if (status) {
-    box.appendChild(h('span', 'status status--' + status.toLowerCase(), status));
+    // Hebrew on the badge, the protocol's own spelling on the title: the colour and the label
+    // are for reading at a glance, the raw value is for saying out loud to whoever can fix it.
+    const badge = h('span', 'status status--' + status.toLowerCase(), statusLabel(status));
+    badge.title = status;
+    box.appendChild(badge);
   }
 
   const grid = spaced(h('div', 'stat-grid'), 3);
   const energy = num(session.totalEnergy);
-  grid.appendChild(tile(energy === null ? '—' : energy.toFixed(1), 'kWh', 'Delivered this session'));
+  grid.appendChild(tile(n(energy, 1), 'kWh', 'נמסר בטעינה הזו'));
   const secs = num(session.durationInSeconds);
-  grid.appendChild(tile(
-    secs === null ? '—' : Math.floor(secs / 3600) + 'h ' + String(Math.floor((secs % 3600) / 60)).padStart(2, '0') + 'm',
-    null, 'Plugged in for'));
+  grid.appendChild(tile(duration(secs), null, 'מחובר כבר'));
   const inc = num(session.totalCost);
   const ex = num(session.cost);
+  // The tile keeps the bare figure and lets .stat__unit carry the ₪, so a column of tiles
+  // lines up; ils() is for prose, where the symbol has to travel with the number.
   grid.appendChild(tile(
-    inc === null ? (ex === null ? '—' : ex.toFixed(2)) : inc.toFixed(2), '₪',
-    inc === null ? 'Cost so far — excl. VAT'
-      : ex === null ? 'Cost so far — incl. VAT'
-        : 'Cost so far — incl. VAT (' + ex.toFixed(2) + ' ₪ excl. VAT)'));
+    inc === null ? n(ex) : n(inc), '₪',
+    inc === null ? 'עלות עד כה — לפני מע״מ'
+      : ex === null ? 'עלות עד כה — כולל מע״מ'
+        : 'עלות עד כה — כולל מע״מ (' + n(ex) + ' ₪ לפני מע״מ)'));
   box.appendChild(grid);
 
   const note = explainer(session, slices, nowMs);
@@ -411,8 +429,8 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   el.replaceChildren();
 
   if (!payload) {
-    el.appendChild(emptyBlock('Could not load the tariff',
-      'No charger state has arrived yet. Press refresh to try again.', true));
+    el.appendChild(emptyBlock('לא ניתן לטעון את המחיר',
+      'עדיין לא הגיע מצב עמדה. לחצו רענון כדי לנסות שוב.', true));
     return;
   }
 
@@ -420,12 +438,12 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
 
   const sessions = (Array.isArray(payload.sessions) && payload.sessions) || [];
   const live = sessions.filter(isLiveSession);
-  const heading = spaced(h('h3', 'panel__title', 'Live session'), 5);
+  const heading = spaced(h('h3', 'panel__title', 'טעינה פעילה'), 5);
   el.appendChild(heading);
 
   if (!live.length) {
-    el.appendChild(emptyBlock('Nothing plugged in',
-      'No session is in progress. The tariff strip above still applies when one starts.'));
+    el.appendChild(emptyBlock('שום דבר לא מחובר',
+      'אין טעינה בעיצומה. רצועת התעריפים שלמעלה תקפה גם כשתתחיל אחת.'));
     return;
   }
   for (const session of live) el.appendChild(spaced(sessionBlock(session, slices, nowMs), 3));

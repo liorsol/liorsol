@@ -102,15 +102,15 @@ test('a cold load while signed out says sign in, on every panel and the banner',
     'the notes board to finish its own round'
   );
 
-  assert.match(text(authBanner()), /Session expired/i, 'no signed-out banner on a cold load');
-  assert.match(text(authBanner()), /sign in again/i);
+  assert.match(text(authBanner()), /ההתחברות הסתיימה/, 'no signed-out banner on a cold load');
+  assert.match(text(authBanner()), /טענו את הדף מחדש כדי להתחבר שוב/);
 
   for (const id of [...PANELS, 'comments']) {
     const painted = text(panel(id));
-    assert.match(painted, /sign in again/i, `#${id} did not name the one action that can work`);
+    assert.match(painted, /טענו את הדף מחדש כדי להתחבר שוב/, `#${id} did not name the one action that can work`);
     assert.doesNotMatch(
       painted,
-      /press refresh/i,
+      /לחצו רענון/,
       `#${id} told a signed-out viewer to press refresh, which cannot reach anything`
     );
   }
@@ -123,7 +123,7 @@ test('signing back in clears the banner and mounts the panels', async () => {
   await refresh().handlers.click();
 
   assert.equal(authBanner().children.length, 0, 'the banner outlived the state it reports');
-  assert.equal(button(panel('controls'), 'Stop').disabled, false, 'a running session did not reach the controls');
+  assert.equal(button(panel('controls'), 'עצירה').disabled, false, 'a running session did not reach the controls');
   assert.match(text(panel('history')), /\S/);
 });
 
@@ -155,10 +155,10 @@ test('a session that ends mid-visit is announced, and the controls stop being li
     before,
     'a failed round rewrote a mounted panel instead of leaving it alone'
   );
-  assert.match(text(authBanner()), /sign in again/i, 'a mid-visit sign-out rendered no banner at all');
+  assert.match(text(authBanner()), /טענו את הדף מחדש כדי להתחבר שוב/, 'a mid-visit sign-out rendered no banner at all');
 
-  assert.equal(button(panel('controls'), 'Stop').disabled, true, 'Stop stayed live for a signed-out viewer');
-  assert.equal(button(panel('controls'), 'Start charging').disabled, true, 'Start stayed live for a signed-out viewer');
+  assert.equal(button(panel('controls'), 'עצירה').disabled, true, 'Stop stayed live for a signed-out viewer');
+  assert.equal(button(panel('controls'), 'התחלת טעינה').disabled, true, 'Start stayed live for a signed-out viewer');
 
   // The stale rule is present too -- but it is what an unplugged cable looks like, which is why
   // it is not evidence of anything on its own.

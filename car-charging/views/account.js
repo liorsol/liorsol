@@ -9,6 +9,8 @@
 // Mount contract (PLAN §7.10): render(el, state, ctx) with
 //   { state, history, invoices, expired, fetchedAt, stale }; any payload may be null.
 
+import { date, dayTime, n, statusLabel } from './he.js';
+
 function num(v) {
   if (v === null || v === undefined || v === '') return null;
   const n = Number(v);
@@ -48,10 +50,7 @@ function inset(root, node, top) {
 function stamp(iso, withTime) {
   const ms = toMs(iso);
   if (!Number.isFinite(ms)) return iso ? String(iso) : '—';
-  const opts = withTime
-    ? { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }
-    : { day: 'numeric', month: 'short', year: 'numeric' };
-  return new Date(ms).toLocaleString(undefined, opts);
+  return withTime ? dayTime(ms) : date(ms);
 }
 
 function emptyBlock(title, hint, isError) {
@@ -90,36 +89,45 @@ function chargerBlock(charger, root) {
   const box = h('div');
   const head = h('div');
   head.appendChild(charger.ocppConnected === true
-    ? h('span', 'chip chip--ok', 'Link online')
+    ? h('span', 'chip chip--ok', 'החיבור פעיל')
     : charger.ocppConnected === false
-      ? h('span', 'chip chip--bad', 'Link offline')
-      : h('span', 'chip', 'Link state unknown'));
-  head.appendChild(spaced(h('p', null, 'Off-peak plan, as the charger reports it: '
+      ? h('span', 'chip chip--bad', 'החיבור מנותק')
+      : h('span', 'chip', 'מצב החיבור לא ידוע'));
+  // The value itself is an upstream string of unknown length and is NOT translated: it is what
+  // the charger says its own schedule is, and a guess at the Hebrew for a word this page has
+  // never seen is worse than the word.
+  head.appendChild(spaced(h('p', null, 'תוכנית שעות השפל, כפי שהעמדה מדווחת אותה: '
     + (charger.offPeakState === null || charger.offPeakState === undefined
-      ? 'not reported' : String(charger.offPeakState))), 2));
+      ? 'לא מדווח' : String(charger.offPeakState))), 2));
   box.appendChild(inset(root || box, head, true));
 
   const connectors = Array.isArray(charger.connectors) ? charger.connectors : [];
   if (!connectors.length) {
-    box.appendChild(spaced(emptyBlock('No connectors reported',
-      'The charger state carried no connector list.')));
+    box.appendChild(spaced(emptyBlock('לא דווחו מחברים',
+      'מצב העמדה לא כלל רשימת מחברים.')));
     return box;
   }
 
-  const { wrap, tbody } = table([['Connector', true], ['State', false], ['Ready', false], ['Reported', false]]);
+  const { wrap, tbody } = table([['מחבר', true], ['מצב', false], ['מוכן', false], ['עודכן', false]]);
   for (const c of connectors) {
     const tr = h('tr');
     tr.appendChild(cell('td', c.connectorId === undefined || c.connectorId === null ? '—' : String(c.connectorId), true));
     const stateCell = h('td');
     const status = c.status ? String(c.status) : null;
-    stateCell.appendChild(status
-      ? h('span', 'status status--' + status.toLowerCase(), status)
-      : h('span', 'chip', 'Unknown'));
+    if (status) {
+      // Hebrew label, protocol spelling on the title — the same split the controls panel and the
+      // session table make, so one state never reads as two different things on one page.
+      const badge = h('span', 'status status--' + status.toLowerCase(), statusLabel(status));
+      badge.title = status;
+      stateCell.appendChild(badge);
+    } else {
+      stateCell.appendChild(h('span', 'chip', 'לא ידוע'));
+    }
     tr.appendChild(stateCell);
     const readyCell = h('td');
     readyCell.appendChild(c.canCharge === true
-      ? h('span', 'chip chip--ok', 'Yes')
-      : c.canCharge === false ? h('span', 'chip chip--warn', 'No') : h('span', 'chip', '—'));
+      ? h('span', 'chip chip--ok', 'כן')
+      : c.canCharge === false ? h('span', 'chip chip--warn', 'לא') : h('span', 'chip', '—'));
     tr.appendChild(readyCell);
     tr.appendChild(cell('td', stamp(c.updated, true)));
     tbody.appendChild(tr);
@@ -132,20 +140,20 @@ function chargerBlock(charger, root) {
 
 function invoiceBlock(invoices) {
   if (!invoices) {
-    return emptyBlock('Could not load billed periods',
-      'No billing data has arrived yet. Press refresh to try again.', true);
+    return emptyBlock('לא ניתן לטעון את תקופות החיוב',
+      'עדיין לא הגיעו נתוני חיוב. לחצו רענון כדי לנסות שוב.', true);
   }
   const rows = (Array.isArray(invoices.invoices) && invoices.invoices)
     || (Array.isArray(invoices.rows) && invoices.rows) || [];
   if (!rows.length) {
-    return emptyBlock('Nothing billed yet',
-      'No monthly period has closed, so there is no bill to show. This is the expected '
-      + 'state until the first one does.');
+    return emptyBlock('עדיין לא חויב דבר',
+      'אף תקופה חודשית לא נסגרה, ולכן אין חשבון להציג. זה המצב הצפוי '
+      + 'עד שתיסגר הראשונה.');
   }
 
   const { wrap, tbody } = table([
-    ['Period', false], ['State', false], ['kWh', true],
-    ['₪ excl. VAT', true], ['₪ incl. VAT', true],
+    ['תקופה', false], ['מצב', false], ['אנרגיה (kWh)', true],
+    ['₪ לפני מע״מ', true], ['₪ כולל מע״מ', true],
   ]);
   for (const r of rows) {
     const tr = h('tr');
@@ -155,8 +163,7 @@ function invoiceBlock(invoices) {
     stateCell.appendChild(h('span', 'chip', state ? String(state) : '—'));
     tr.appendChild(stateCell);
     for (const key of ['totalEnergy', 'totalCostExcVat', 'totalCostIncVat']) {
-      const v = num(r[key]);
-      tr.appendChild(cell('td', v === null ? '—' : v.toFixed(2), true));
+      tr.appendChild(cell('td', n(num(r[key])), true));
     }
     tbody.appendChild(tr);
   }
@@ -171,12 +178,12 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   el.replaceChildren();
 
   if (!payload || !payload.charger) {
-    el.appendChild(emptyBlock('Could not load charger status',
-      'No charger state has arrived yet. Press refresh to try again.', true));
+    el.appendChild(emptyBlock('לא ניתן לטעון את מצב העמדה',
+      'עדיין לא הגיע מצב עמדה. לחצו רענון כדי לנסות שוב.', true));
   } else {
     el.appendChild(chargerBlock(payload.charger, el));
   }
 
-  el.appendChild(inset(el, spaced(h('h3', 'panel__title', 'Billed periods'), 5)));
+  el.appendChild(inset(el, spaced(h('h3', 'panel__title', 'תקופות חיוב'), 5)));
   el.appendChild(spaced(invoiceBlock(app.invoices), 3));
 }

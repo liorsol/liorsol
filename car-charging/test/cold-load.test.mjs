@@ -100,7 +100,7 @@ test('an empty cache renders the banner and invents nothing to put under it', as
     'the first round to finish'
   );
 
-  assert.match(text(expiryBanner()), /Credential expired/i, 'no expiry banner on a cold load');
+  assert.match(text(expiryBanner()), /פג תוקף ההרשאה/, 'no expiry banner on a cold load');
   assert.ok(
     all(expiryBanner()).some((n) => n.tagName === 'input'),
     'the banner came up without the field that fixes it'
@@ -120,7 +120,7 @@ test('the cached row rides out with the 503 and is painted under the banner', as
   cacheWarm = true;
   await refresh().handlers.click();
 
-  assert.match(text(expiryBanner()), /Credential expired/i, 'the banner went down while still expired');
+  assert.match(text(expiryBanner()), /פג תוקף ההרשאה/, 'the banner went down while still expired');
   assert.equal(signedOutBanner().children.length, 0, 'an expired credential was reported as a sign-out');
 
   for (const id of DATA) {
@@ -139,11 +139,11 @@ test('the cached row rides out with the 503 and is painted under the banner', as
   // The age is the ROW's, not the round's: a page that printed "now" here would claim data is
   // fresh because the request that failed to refresh it was recent.
   const age = all(dom.get('.updated')).find((n) => n.className === 'updated__age');
-  assert.match(age.textContent, /3 h ago/, 'the header aged the failed round, not the data on screen');
+  assert.match(age.textContent, /לפני 3 שעות/, 'the header aged the failed round, not the data on screen');
 
   // Distinct from the other two states, and it has to stay that way: the controls are held
   // because the credential is expired, and the reason says which of the three this is.
-  assert.equal(button(panel('controls'), 'Stop').disabled, true);
-  assert.match(text(panel('controls')), /credential is expired/i);
-  assert.doesNotMatch(text(panel('controls')), /sign-in has ended/i);
+  assert.equal(button(panel('controls'), 'עצירה').disabled, true);
+  assert.match(text(panel('controls')), /פג תוקף ההרשאה מול העמדה/);
+  assert.doesNotMatch(text(panel('controls')), /ההתחברות לדף הסתיימה/);
 });

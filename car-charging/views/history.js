@@ -13,6 +13,7 @@
 // this table used to carry its own, a third spelling of the same judgement. See the comment on
 // the predicate in api.js for why a row that has ended is a normal thing to find.
 import { isLiveSession } from '../api.js';
+import { dayTime, dayTimeUtc, duration, n, stopReasonKey, stopReasonLabel } from './he.js';
 
 // ── pure metrics ────────────────────────────────────────────────────────────
 
@@ -117,9 +118,10 @@ const STOP_CHIP = {
   emergencystop: 'chip--bad',
 };
 
+// The same normaliser the Hebrew labels are keyed on, so a reason cannot pick up a colour here
+// and a label there — or worse, a colour and no label.
 function stopChip(reason) {
-  const key = String(reason || '').toLowerCase().replace(/[^a-z]/g, '');
-  const mod = STOP_CHIP[key];
+  const mod = STOP_CHIP[stopReasonKey(reason)];
   return mod === undefined ? 'chip' : ('chip ' + mod).trim();
 }
 
@@ -150,8 +152,6 @@ function inset(root, node, top) {
   return node;
 }
 
-const pad2 = (n) => String(n).padStart(2, '0');
-
 // Some upstream stamps carry no zone designator at all. Every one of them is UTC, but
 // JS parses a naked date-time as *viewer-local*, which silently shifts it by the whole
 // UTC offset. Pin the zone before parsing.
@@ -167,23 +167,9 @@ function whenText(row) {
   const local = row.startedLocal || row.deviceLocalStartDate;
   if (local) {
     const ms = toMs(local);
-    if (Number.isFinite(ms)) {
-      return new Date(ms).toLocaleString(undefined, {
-        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
-      });
-    }
+    if (Number.isFinite(ms)) return dayTimeUtc(ms);
   }
-  const ms = toMs(row.startedAt || row.deviceStartDate);
-  if (!Number.isFinite(ms)) return '—';
-  return new Date(ms).toLocaleString(undefined, {
-    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-  });
-}
-
-function durationText(secs) {
-  const s = num(secs);
-  if (s === null || s < 0) return '—';
-  return Math.floor(s / 3600) + ' h ' + pad2(Math.floor((s % 3600) / 60)) + ' m';
+  return dayTime(toMs(row.startedAt || row.deviceStartDate));
 }
 
 const cell = (tag, text, numeric) => h(tag, numeric ? 'num' : null, text);
@@ -214,15 +200,15 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   el.replaceChildren();
 
   if (!hist) {
-    el.appendChild(emptyBlock('Could not load sessions',
-      'No session list has arrived yet. Press refresh to try again.', true));
+    el.appendChild(emptyBlock('לא ניתן לטעון את הטעינות',
+      'עדיין לא הגיעה רשימת טעינות. לחצו רענון כדי לנסות שוב.', true));
     return;
   }
 
   const rows = (Array.isArray(hist.sessions) && hist.sessions)
     || (Array.isArray(hist.rows) && hist.rows) || [];
   if (!rows.length) {
-    el.appendChild(emptyBlock('No sessions yet', 'Nothing has been recorded for this period.'));
+    el.appendChild(emptyBlock('אין עדיין טעינות', 'לא נרשם דבר בתקופה הזו.'));
     return;
   }
 
@@ -238,18 +224,18 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   const avoidedInc = withVat(avoidedEx, rate);
 
   const grid = h('div', 'stat-grid');
-  grid.appendChild(tile(String(rows.length), null, 'Sessions'));
-  grid.appendChild(tile(kwh.toFixed(1), 'kWh', 'Energy delivered'));
+  grid.appendChild(tile(n(rows.length, 0), null, 'טעינות'));
+  grid.appendChild(tile(n(kwh, 1), 'kWh', 'אנרגיה שנמסרה'));
   grid.appendChild(tile(
-    (paidInc || paidEx).toFixed(2), '₪',
-    paidInc ? 'Paid — incl. VAT' : 'Paid — excl. VAT'));
+    n(paidInc || paidEx), '₪',
+    paidInc ? 'שולם — כולל מע״מ' : 'שולם — לפני מע״מ'));
   // Both bases, always, and the basis of each in words: the inc-VAT figure is the one
   // that shows up on a bill, the ex-VAT one is what the arithmetic is done in.
   grid.appendChild(tile(
-    (avoidedInc === null ? avoidedEx : avoidedInc).toFixed(2), '₪',
+    n(avoidedInc === null ? avoidedEx : avoidedInc), '₪',
     avoidedInc === null
-      ? 'Avoided by deferring — excl. VAT (no VAT rate in the payload)'
-      : 'Avoided by deferring — incl. VAT (' + avoidedEx.toFixed(2) + ' ₪ excl. VAT)',
+      ? 'נחסך בזכות דחייה — לפני מע״מ (אין שיעור מע״מ בנתונים)'
+      : 'נחסך בזכות דחייה — כולל מע״מ (' + n(avoidedEx) + ' ₪ לפני מע״מ)',
     true));
   el.appendChild(inset(el, grid, true));
 
@@ -257,13 +243,16 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   const table = h('table', 'table');
   const thead = h('thead');
   const hrow = h('tr');
-  hrow.appendChild(cell('th', 'Started'));
-  hrow.appendChild(cell('th', 'Duration'));
-  hrow.appendChild(cell('th', 'kWh', true));
-  hrow.appendChild(cell('th', '₪ incl. VAT', true));
-  hrow.appendChild(cell('th', 'Eff. kW', true));
-  hrow.appendChild(cell('th', 'Avoided ₪ ' + (rate === null ? 'excl. VAT' : 'incl. VAT'), true));
-  hrow.appendChild(cell('th', 'Stopped by'));
+  // Every mixed header opens in Hebrew and carries its Latin unit in brackets at the end.
+  // .num gives these cells their own bidi paragraph taking direction from the first strong
+  // character, so a header starting "kWh" would lay itself out left to right mid-table.
+  hrow.appendChild(cell('th', 'התחלה'));
+  hrow.appendChild(cell('th', 'משך'));
+  hrow.appendChild(cell('th', 'אנרגיה (kWh)', true));
+  hrow.appendChild(cell('th', 'עלות (₪ כולל מע״מ)', true));
+  hrow.appendChild(cell('th', 'הספק ממוצע (kW)', true));
+  hrow.appendChild(cell('th', 'נחסך (₪ ' + (rate === null ? 'לפני מע״מ' : 'כולל מע״מ') + ')', true));
+  hrow.appendChild(cell('th', 'סיבת עצירה'));
   thead.appendChild(hrow);
   table.appendChild(thead);
 
@@ -272,21 +261,24 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
     const tr = h('tr');
     if (isLiveSession(row)) tr.className = 'is-live';
     tr.appendChild(cell('td', whenText(row)));
-    tr.appendChild(cell('td', durationText(row.durationInSeconds)));
-    tr.appendChild(cell('td', (num(row.totalEnergy) || 0).toFixed(2), true));
-    const paid = num(row.totalPaymentCostIncVat);
-    tr.appendChild(cell('td', paid === null ? '—' : paid.toFixed(2), true));
-    tr.appendChild(cell('td', effectiveKw(row).toFixed(2), true));
+    tr.appendChild(cell('td', duration(num(row.durationInSeconds))));
+    tr.appendChild(cell('td', n(num(row.totalEnergy) || 0), true));
+    tr.appendChild(cell('td', n(num(row.totalPaymentCostIncVat)), true));
+    tr.appendChild(cell('td', n(effectiveKw(row)), true));
     // Same basis as the header and the tile — mixing the two inside one panel is how a
     // saving quietly reads 18% low.
     const avoidedEx = shekelAvoided(row, slices);
     const avoided = rate === null ? avoidedEx : withVat(avoidedEx, rate);
-    tr.appendChild(cell('td', avoided.toFixed(2), true));
+    tr.appendChild(cell('td', n(avoided), true));
 
     const td = h('td');
     const reason = row.stopReason;
-    td.appendChild(h('span', reason ? stopChip(reason) : 'chip',
-      reason ? String(reason) : 'In progress'));
+    // Hebrew in the chip, the protocol's own spelling on the title. The chip is nowrap and a
+    // table cell wide, so the raw value rides along rather than sitting beside it.
+    const chip = h('span', reason ? stopChip(reason) : 'chip',
+      reason ? stopReasonLabel(reason) : 'בעיצומה');
+    if (reason) chip.title = String(reason);
+    td.appendChild(chip);
     tr.appendChild(td);
     tbody.appendChild(tr);
   }

@@ -9,15 +9,18 @@
 // loop in the whole page lives in api.js and is entered from the stop handler below, after a
 // real click, and from nowhere else.
 //
-// Three things are deliberately and permanently absent from this panel: any control that
-// forces the charger on at once, bypassing the cheap-window schedule; any toggle for the
-// off-peak setting itself; and any readout implying the car reports how full its battery is.
-// The first two would be upstream calls whose shape has never been captured — guessing one
-// closes a contactor on real hardware and buys energy at 2.79x the cheap rate. The third is a
-// figure this page has no channel for. See PLAN.md §8 D1/D2.
+// Three things are deliberately and permanently absent from this panel, and they are named here
+// plainly because a reader who cannot tell "not built" from "broken" files the wrong bug:
 //
-// The wording above avoids the literal field and feature names on purpose: a guard greps this
-// tree for them, and naming them here reads exactly like the feature being present.
+//   1. a force-charge-now button, which would override the cheap-window schedule
+//   2. a toggle for the off-peak schedule itself
+//   3. a state-of-charge readout — how full the car's battery is
+//
+// The first two are upstream calls whose request shape has never been captured. Guessing one
+// closes a contactor on real hardware and buys energy at 2.79x the cheap rate, so they wait for
+// a capture rather than for a confident guess. The third is a figure that never reaches this
+// page at all: the payload does not carry it and no route here can ask for it, so a readout
+// would be an invention with a number in it. See PLAN.md §8 D1/D2.
 
 import {
   TOKEN_EXPIRED,
@@ -29,6 +32,7 @@ import {
   installToken,
   getState,
 } from '../api.js';
+import { statusLabel } from './he.js';
 
 // ── tiny DOM helpers ──
 // Text always goes in as text. There is no HTML-parsing sink anywhere in this module.
@@ -129,11 +133,15 @@ function paint() {
   // bare .status rather than a class invented from an unrecognised string.
   if (status) {
     const suffix = String(status).toLowerCase();
+    // Hebrew is the label; the protocol's own spelling rides on the title. The owner needs to
+    // be able to read "SuspendedEVSE" off the badge when something is wrong, and the tariff
+    // panel names the same raw state in its prose for the phone, where a title is unreachable.
     const badge = make(
       'span',
       SEVEN_STATES.includes(suffix) ? 'status status--' + suffix : 'status',
-      String(status)
+      statusLabel(status)
     );
+    badge.title = String(status);
     frag.append(badge);
   }
 
@@ -148,32 +156,32 @@ function paint() {
   if (authRequired) {
     startOff = true;
     stopOff = true;
-    reasons.push('Controls are disabled because your sign-in has ended. Reload the page to sign in again — refreshing will not bring it back.');
+    reasons.push('השליטה נעולה כי ההתחברות לדף הסתיימה. טענו את הדף מחדש כדי להתחבר שוב — רענון לא יחזיר אותה.');
   } else if (expired) {
     startOff = true;
     stopOff = true;
-    reasons.push('Controls are disabled while the credential is expired. Install a replacement in the banner above.');
+    reasons.push('השליטה נעולה כל עוד פג תוקף ההרשאה מול העמדה. התקינו הרשאה חלופית בהודעה שלמעלה.');
   } else if (!loaded) {
     startOff = true;
     stopOff = true;
-    reasons.push('Charger state has not loaded, so start and stop are disabled. Press refresh.');
+    reasons.push('מצב העמדה לא נטען, ולכן התחלה ועצירה נעולות. לחצו רענון.');
   } else if (session) {
     startOff = true;
     if (session.stoppable === false) {
       stopOff = true;
-      reasons.push('A session is running, so start is disabled; the charger reports it cannot be stopped remotely right now.');
+      reasons.push('טעינה רצה, ולכן ההתחלה נעולה; העמדה מדווחת שאי אפשר לעצור אותה מרחוק כרגע.');
     } else {
-      reasons.push('A session is already running, so start is disabled.');
+      reasons.push('טעינה כבר רצה, ולכן ההתחלה נעולה.');
     }
   } else {
     stopOff = true;
-    reasons.push('Stop is disabled because no session is running.');
+    reasons.push('העצירה נעולה כי אין טעינה שרצה.');
   }
 
   const row = make('div', 'btn-row');
-  const startBtn = make('button', 'btn btn--primary', 'Start charging');
+  const startBtn = make('button', 'btn btn--primary', 'התחלת טעינה');
   startBtn.type = 'button';
-  const stopBtn = make('button', 'btn btn--danger', 'Stop');
+  const stopBtn = make('button', 'btn btn--danger', 'עצירה');
   stopBtn.type = 'button';
 
   startBtn.disabled = startOff || ui.busy !== null;
@@ -187,7 +195,7 @@ function paint() {
   row.append(startBtn, stopBtn);
   frag.append(row);
 
-  if (ui.busy) reasons.push('A charge command is in flight; both controls stay disabled until it answers.');
+  if (ui.busy) reasons.push('פקודת טעינה בדרך; שתי הפקודות נעולות עד שתתקבל תשובה.');
   for (const reason of reasons) frag.append(make('p', 'btn-note', reason));
 
   // Bounded settle progress. --pct is a bare number and must be set through the style object:
@@ -195,7 +203,7 @@ function paint() {
   // layout bug rather than as a blocked attribute.
   if (ui.settle) {
     const bar = make('div', 'settle');
-    bar.append(make('span', null, ui.settle.done ? 'Settled' : 'Settling…'));
+    bar.append(make('span', null, ui.settle.done ? 'הסתכם' : 'מסכם…'));
     const track = make('div', 'settle__bar');
     const fill = make('div', 'settle__fill');
     const pct = ui.settle.done
@@ -203,7 +211,10 @@ function paint() {
       : Math.min(100, Math.round((ui.settle.attempt / ui.settle.max) * 100));
     fill.style.setProperty('--pct', String(pct));
     track.append(fill);
-    bar.append(track, make('span', 'num', ui.settle.attempt + 's'));
+    // Hebrew first inside a .num box: the sheet gives it its own bidi paragraph taking its
+    // direction from the first strong character, and "45 שנ׳" opening with a digit would be
+    // resolved left to right and land the unit on the wrong side of the figure.
+    bar.append(track, make('span', 'num', ui.settle.attempt + ' שנ׳'));
     frag.append(bar);
   }
 
@@ -213,7 +224,7 @@ function paint() {
     make(
       'p',
       'btn-note',
-      'Scheduling a charge into the cheap window is not offered here: the request has never been captured and guessing it would switch the charger on at peak price.'
+      'תזמון טעינה אל תוך החלון הזול אינו מוצע כאן: הבקשה מעולם לא נלכדה, וניחוש שלה היה מדליק את העמדה במחיר השיא.'
     )
   );
 
@@ -246,15 +257,15 @@ async function onStart() {
   if (!mount || ui.busy) return;
   const { ctx } = mount;
   ui.busy = 'start';
-  ui.busyLabel = 'Starting…';
+  ui.busyLabel = 'מתחיל…';
   ui.note = null;
   ui.settle = null;
   paint();
 
   const result = await start();
   ui.note = result.ok
-    ? { kind: 'ok', text: 'Start accepted. The charger takes a few seconds to report it.' }
-    : { kind: 'bad', text: failureText(result, 'Start failed.') };
+    ? { kind: 'ok', text: 'ההתחלה התקבלה. לוקח לעמדה כמה שניות לדווח עליה.' }
+    : { kind: 'bad', text: failureText(result, 'ההתחלה נכשלה.') };
   paint(); // say what happened; the controls stay held until fresh state is on screen
   await release(ctx, result.ok);
 }
@@ -269,7 +280,7 @@ async function onStop() {
   const session = liveSession(view);
 
   ui.busy = 'stop';
-  ui.busyLabel = 'Stopping…';
+  ui.busyLabel = 'עוצר…';
   ui.note = null;
   ui.settle = null;
   paint();
@@ -279,13 +290,13 @@ async function onStop() {
   if (!result.ok) {
     // 409 "nothing to stop" collapses to a generic http_error in the client. It is a failure,
     // never a stop that worked. Nothing was commanded, so there is nothing to reload for.
-    ui.note = { kind: 'bad', text: failureText(result, 'Stop failed. Nothing was stopped.') };
+    ui.note = { kind: 'bad', text: failureText(result, 'העצירה נכשלה. שום דבר לא נעצר.') };
     await release(ctx, false);
     return;
   }
 
   const sessionId = result.data?.session?.sessionId ?? session?.sessionId ?? null;
-  ui.note = { kind: 'ok', text: 'Stop accepted.' };
+  ui.note = { kind: 'ok', text: 'העצירה התקבלה.' };
 
   if (!sessionId) {
     paint();
@@ -296,7 +307,7 @@ async function onStop() {
   // Both controls stay held for the whole settle window. The contactor is still opening and the
   // totals are still landing; offering "start charging" into that is offering to actuate
   // hardware against a state the page cannot yet read.
-  ui.busyLabel = 'Settling…';
+  ui.busyLabel = 'מסכם…';
   ui.settle = { attempt: 0, max: SETTLE_MAX_ATTEMPTS, done: false };
   paint();
 
@@ -312,14 +323,14 @@ async function onStop() {
   ui.settle = { attempt: ui.settle.attempt, max: SETTLE_MAX_ATTEMPTS, done: settled };
 
   if (settled) {
-    ui.note = { kind: 'ok', text: 'Stopped and settled.' };
+    ui.note = { kind: 'ok', text: 'נעצרה והסתכמה.' };
   } else if (final.error === TOKEN_EXPIRED) {
-    ui.note = { kind: 'bad', text: 'Stopped, but the credential expired before the session settled.' };
+    ui.note = { kind: 'bad', text: 'נעצרה, אבל תוקף ההרשאה מול העמדה פג לפני שהטעינה הסתכמה.' };
   } else {
     // Running the cap out is not a failure. The charge is stopped; the totals are still landing.
     ui.note = {
       kind: 'ok',
-      text: 'Stopped. Still settling — stopped checking after ' + SETTLE_MAX_ATTEMPTS + ' samples. Press refresh later for the final totals.',
+      text: 'נעצרה. עדיין מסתכמת — הבדיקה הופסקה אחרי ' + SETTLE_MAX_ATTEMPTS + ' דגימות. לחצו רענון מאוחר יותר כדי לראות את הסיכום הסופי.',
     };
   }
   paint();
@@ -328,10 +339,13 @@ async function onStop() {
 
 // Error names are a closed set and the status is only detail. No server wording reaches the DOM.
 function failureText(result, prefix) {
-  if (result.error === 'auth_required') return prefix + ' The sign-in expired — reload the page.';
-  if (result.error === 'network') return prefix + ' The request never completed.';
-  if (result.error === TOKEN_EXPIRED) return prefix + ' The credential expired.';
-  return prefix + ' The charger did not accept the command.';
+  // The three outcomes stay three, in Hebrew as in English: an ended sign-in says reload, a
+  // transport failure says the request never arrived, and an expired credential says so by name.
+  // Two of them would otherwise collapse into "try again", which is true of exactly one.
+  if (result.error === 'auth_required') return prefix + ' ההתחברות לדף הסתיימה — טענו את הדף מחדש.';
+  if (result.error === 'network') return prefix + ' הבקשה לא הושלמה מעולם.';
+  if (result.error === TOKEN_EXPIRED) return prefix + ' פג תוקף ההרשאה מול העמדה.';
+  return prefix + ' העמדה לא קיבלה את הפקודה.';
 }
 
 // ── S6 — the expiry banner and the credential field ──
@@ -357,16 +371,16 @@ export function renderExpiry(el, state, ctx) {
 
   const inner = make('div', 'expiry__inner');
   inner.append(
-    make('p', 'expiry__title', 'Credential expired'),
+    make('p', 'expiry__title', 'פג תוקף ההרשאה מול העמדה'),
     make(
       'p',
       'expiry__text',
-      'The dashboard cannot reach the charger. Refresh the credential in the charger’s own app, then paste the replacement below.'
+      'הלוח לא מצליח להגיע לעמדה. חדשו את ההרשאה באפליקציה של העמדה עצמה, ואז הדביקו כאן את החלופה.'
     ),
     make(
       'p',
       'expiry__text',
-      'The value you paste is sent upstream to be checked before it is stored, so a mispaste transmits the wrong secret to a third party. Confirm it before installing.'
+      'הערך שתדביקו נשלח לבדיקה במעלה הזרם לפני שהוא נשמר, ולכן הדבקה שגויה משדרת סוד אחר לצד שלישי. ודאו אותו לפני ההתקנה.'
     )
   );
 
@@ -376,7 +390,7 @@ export function renderExpiry(el, state, ctx) {
   // submission anywhere on this page.
   const form = make('div', 'expiry__form');
   const field = make('div', 'field');
-  const label = make('label', 'field__label', 'Replacement credential');
+  const label = make('label', 'field__label', 'הרשאה חלופית');
   label.htmlFor = FIELD_ID;
   const input = make('input', 'input');
   input.id = FIELD_ID;
@@ -385,7 +399,7 @@ export function renderExpiry(el, state, ctx) {
   input.spellcheck = false;
   field.append(label, input);
 
-  const install = make('button', 'btn btn--primary', 'Install');
+  const install = make('button', 'btn btn--primary', 'התקנה');
   install.type = 'button';
   form.append(field, install);
   inner.append(form);
@@ -408,11 +422,11 @@ async function onInstall(el, inner, input, button, ctx) {
   if (button.disabled) return;
 
   if (!input.value.trim()) {
-    setResult(inner, 'expiry__error', 'Paste the replacement credential first.');
+    setResult(inner, 'expiry__error', 'הדביקו קודם את ההרשאה החלופית.');
     return;
   }
 
-  setBusy(button, 'Installing…');
+  setBusy(button, 'מתקין…');
   setResult(inner, null, null);
 
   const result = await installToken(input.value);
@@ -421,7 +435,7 @@ async function onInstall(el, inner, input, button, ctx) {
   // attribute above is necessary and not sufficient: Safari and Firefox restore field values on
   // back/forward and on session restore, and an uncleared field survives both.
   input.value = '';
-  clearBusy(button, 'Install');
+  clearBusy(button, 'התקנה');
 
   if (!result.ok) {
     // Rejected. The field stays open so the owner can paste again — unless the install never
@@ -431,23 +445,23 @@ async function onInstall(el, inner, input, button, ctx) {
       inner,
       'expiry__error',
       result.error === 'auth_required'
-        ? 'Your sign-in has ended, so nothing was installed. Reload the page to sign in again, then paste it.'
-        : 'Rejected. Check you copied the whole value.'
+        ? 'ההתחברות לדף הסתיימה, ולכן שום דבר לא הותקן. טענו את הדף מחדש כדי להתחבר שוב, ואז הדביקו.'
+        : 'נדחתה. בדקו שהעתקתם את הערך במלואו.'
     );
     return;
   }
 
-  setResult(inner, 'expiry__ok', 'Installed. Re-checking…');
+  setResult(inner, 'expiry__ok', 'הותקנה. בודק שוב…');
 
   // Re-validate before claiming it worked. Only a result that is not an expiry clears the
   // banner; anything else leaves it up with the field still open.
   const check = await getState();
   if (check.error === TOKEN_EXPIRED) {
-    setResult(inner, 'expiry__error', 'Installed, but the charger still reports the credential as expired.');
+    setResult(inner, 'expiry__error', 'הותקנה, אבל העמדה עדיין מדווחת שתוקף ההרשאה פג.');
     return;
   }
   if (!check.ok) {
-    setResult(inner, 'expiry__ok', 'Installed. The charger did not answer just now — press refresh.');
+    setResult(inner, 'expiry__ok', 'הותקנה. העמדה לא ענתה כרגע — לחצו רענון.');
     return;
   }
 

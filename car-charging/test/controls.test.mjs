@@ -88,16 +88,16 @@ test('a row is live only while it carries no stop mark in any spelling', () => {
 test('an ended session leaves Stop disabled, not enabled against a dead id', () => {
   const el = paint({ state: { sessions: [ended] } });
 
-  assert.equal(button(el, 'Stop').disabled, true, 'Stop was live against a session that had ended');
-  assert.equal(button(el, 'Start charging').disabled, false, 'Start was held by an ended session');
-  assert.match(notes(el), /no session is running/i);
+  assert.equal(button(el, 'עצירה').disabled, true, 'Stop was live against a session that had ended');
+  assert.equal(button(el, 'התחלת טעינה').disabled, false, 'Start was held by an ended session');
+  assert.match(notes(el), /אין טעינה שרצה/);
 });
 
 test('a running session enables Stop and holds Start', () => {
   const el = paint({ state: { sessions: [running] } });
 
-  assert.equal(button(el, 'Stop').disabled, false);
-  assert.equal(button(el, 'Start charging').disabled, true);
+  assert.equal(button(el, 'עצירה').disabled, false);
+  assert.equal(button(el, 'התחלת טעינה').disabled, true);
 });
 
 test('the id sent to the charger is the live row, not the first row with an id', async () => {
@@ -111,7 +111,7 @@ test('the id sent to the charger is the live row, not the first row with an id',
     return Response.json({ session: { sessionId: 'running-1', completed: false } });
   };
 
-  await button(el, 'Stop').handlers.click();
+  await button(el, 'עצירה').handlers.click();
 
   const stopCall = sent.find((call) => call.path === '/api/charge/stop');
   assert.ok(stopCall, 'the stop press sent no stop command');
@@ -129,21 +129,21 @@ test('the id sent to the charger is the live row, not the first row with an id',
 
 test('a sign-in that ends mid-visit disables both controls on the mounted panel', () => {
   const healthy = paint({ state: { sessions: [running] } });
-  assert.equal(button(healthy, 'Stop').disabled, false, 'precondition: the panel mounted live');
+  assert.equal(button(healthy, 'עצירה').disabled, false, 'precondition: the panel mounted live');
 
   // Same snapshot, one flag later: app.js keeps the last good bodies on purpose.
   const el = paint({ state: { sessions: [running] }, authRequired: true, stale: true });
 
-  assert.equal(button(el, 'Stop').disabled, true, 'Stop stayed live for a signed-out viewer');
-  assert.equal(button(el, 'Start charging').disabled, true, 'Start stayed live for a signed-out viewer');
+  assert.equal(button(el, 'עצירה').disabled, true, 'Stop stayed live for a signed-out viewer');
+  assert.equal(button(el, 'התחלת טעינה').disabled, true, 'Start stayed live for a signed-out viewer');
 });
 
 test('the reason names the one action that can work, and never the one that cannot', () => {
   const el = paint({ state: { sessions: [running] }, authRequired: true });
 
-  assert.match(notes(el), /sign-in has ended/i);
-  assert.match(notes(el), /reload/i);
-  assert.doesNotMatch(notes(el), /press refresh/i);
+  assert.match(notes(el), /ההתחברות לדף הסתיימה/);
+  assert.match(notes(el), /טענו את הדף מחדש/);
+  assert.doesNotMatch(notes(el), /לחצו רענון/);
 });
 
 test('a sign-in that has ended outranks an expired credential', () => {
@@ -151,16 +151,16 @@ test('a sign-in that has ended outranks an expired credential', () => {
   // credential field posts to the same gate that just bounced this round.
   const el = paint({ state: { sessions: [running] }, authRequired: true, expired: true });
 
-  assert.match(notes(el), /sign-in has ended/i);
-  assert.doesNotMatch(notes(el), /install a replacement/i);
+  assert.match(notes(el), /ההתחברות לדף הסתיימה/);
+  assert.doesNotMatch(notes(el), /התקינו הרשאה חלופית/);
 });
 
 test('an expired credential still disables both controls', () => {
   const el = paint({ state: { sessions: [running] }, expired: true });
 
-  assert.equal(button(el, 'Stop').disabled, true);
-  assert.equal(button(el, 'Start charging').disabled, true);
-  assert.match(notes(el), /install a replacement/i);
+  assert.equal(button(el, 'עצירה').disabled, true);
+  assert.equal(button(el, 'התחלת טעינה').disabled, true);
+  assert.match(notes(el), /התקינו הרשאה חלופית/);
 });
 
 // ── No module may grow a second definition ──

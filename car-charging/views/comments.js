@@ -1,8 +1,8 @@
 // ── S8 comment board ──
 //
 // An inbox for future work, not a social feed. Everything lives in one D1 table read live on
-// every call, and a documented JSON route lets a later automated session fetch the whole backlog
-// in one request.
+// every call, and `GET /api/comments?archived=include` returns the whole backlog as JSON in one
+// request, which is how a later automated session reads this board.
 //
 // Two properties matter more than anything else this file does:
 //
@@ -11,14 +11,22 @@
 //      general hygiene: this page can stop a charge, and the board is documented as an
 //      instruction channel for an agent session that reads it. Markup that executes here does
 //      not need to steal a cookie; it can just press the buttons.
-//   2. The ✕ button archives. There is no delete, the route answers DELETE with 405, and an
+//   2. The ✕ button archives. There is no delete: the route answers DELETE with 405, and an
 //      archived row stays in the table, stays readable, and keeps reporting its flag so a reader
 //      can tell an archived note from one that was dropped.
+//
+// The board's copy is Hebrew and the page is RTL, but the ROUTE is not: its path, its query
+// parameters, its JSON keys and its error names stay English, because the caller that matters
+// most for them is a machine. Note text itself is whatever the owner typed, in any script, and
+// is never transformed on the way to the screen — no case folding, no trimming beyond the post
+// itself. Hebrew has no capitals, so a case transform would be a no-op on the Hebrew half of a
+// mixed note and a silent corruption of the Latin half.
 
 import { getComments, postComment, updateComment } from '../api.js';
+import { dayTime } from './he.js';
 
 // The sign-in that has ended, worded the same way app.js words it. Refreshing cannot mend it.
-const SIGNED_OUT = 'Your sign-in has ended. Reload this page to sign in again — refreshing will not bring it back.';
+const SIGNED_OUT = 'ההתחברות לדף הסתיימה. טענו את הדף מחדש כדי להתחבר שוב — רענון לא יחזיר אותה.';
 
 function make(tag, className, text) {
   const node = document.createElement(tag);
@@ -72,7 +80,7 @@ async function load() {
     // is signed out this is the ONLY panel that mounts -- nothing gates it -- so "press
     // refresh" here is the whole page's instruction, and it is the one action that provably
     // cannot work. Only a top-level navigation can follow the edge's redirect to the sign-in.
-    board.error = result.error === 'auth_required' ? SIGNED_OUT : 'Could not load the notes. Press refresh to try again.';
+    board.error = result.error === 'auth_required' ? SIGNED_OUT : 'לא ניתן היה לטעון את ההערות. לחצו רענון כדי לנסות שוב.';
   }
   paint();
 }
@@ -87,11 +95,11 @@ function paint() {
   // password manager can find is a liability with no upside. The class is what styles it.
   const composer = make('div', 'comment-form');
   const field = make('div', 'field');
-  const label = make('label', 'field__label', 'New note');
+  const label = make('label', 'field__label', 'הערה חדשה');
   label.htmlFor = 'comment-text';
   const textarea = make('textarea', 'textarea');
   textarea.id = 'comment-text';
-  textarea.placeholder = 'What happened?';
+  textarea.placeholder = 'מה קרה?';
   textarea.value = board.draft;
   textarea.addEventListener('input', () => {
     board.draft = textarea.value;
@@ -99,7 +107,7 @@ function paint() {
   field.append(label, textarea);
 
   const actions = make('div', 'comment-form__actions');
-  const post = make('button', 'btn btn--primary btn--small', board.busy ? 'Posting…' : 'Post');
+  const post = make('button', 'btn btn--primary btn--small', board.busy ? 'מפרסם…' : 'פרסום');
   post.type = 'button';
   if (board.busy) {
     post.classList.add('is-busy');
@@ -111,7 +119,7 @@ function paint() {
   composer.append(field, actions);
   frag.append(composer);
 
-  if (board.busy) frag.append(make('p', 'btn-note', 'Posting — the button is disabled until the note lands.'));
+  if (board.busy) frag.append(make('p', 'btn-note', 'מפרסם — הכפתור נעול עד שההערה נשמרת.'));
 
   const filter = make('div', 'comments__filter');
   const filterLabel = document.createElement('label');
@@ -124,7 +132,7 @@ function paint() {
     paint();
     load();
   });
-  filterLabel.append(checkbox, document.createTextNode(' Show archived'));
+  filterLabel.append(checkbox, document.createTextNode(' הצגת הארכיון'));
   filter.append(filterLabel);
   frag.append(filter);
 
@@ -138,13 +146,13 @@ function paint() {
     const empty = make('div', 'empty');
     empty.append(
       make('div', 'empty__icon', '🗒'),
-      make('p', 'empty__title', 'No notes yet'),
+      make('p', 'empty__title', 'אין עדיין הערות'),
       make(
         'p',
         'empty__hint',
         board.showArchived
-          ? 'Nothing has been written on this board, archived or otherwise.'
-          : 'Nothing open. Tick “Show archived” if you are looking for something that was filed away.'
+          ? 'שום דבר לא נכתב על הלוח הזה, לא בארכיון ולא מחוצה לו.'
+          : 'אין הערות פתוחות. סמנו “הצגת הארכיון” אם אתם מחפשים משהו שהועבר לשם.'
       )
     );
     frag.append(empty);
@@ -154,11 +162,11 @@ function paint() {
 }
 
 function errorBlock(message, keepingData) {
-  if (keepingData) return make('p', 'btn-note', message + ' The notes below are the last ones that loaded.');
+  if (keepingData) return make('p', 'btn-note', message + ' ההערות שלמטה הן האחרונות שנטענו.');
   const block = make('div', 'empty empty--error');
   block.append(
     make('div', 'empty__icon', '⚠'),
-    make('p', 'empty__title', 'Could not load notes'),
+    make('p', 'empty__title', 'לא ניתן לטעון את ההערות'),
     make('p', 'empty__hint', message)
   );
   return block;
@@ -188,12 +196,12 @@ function row(comment) {
   toggle.type = 'button';
   // The pressed style keys off the attribute, not a class, so both have to be right.
   toggle.setAttribute('aria-pressed', done ? 'true' : 'false');
-  toggle.append(make('span', 'sr-only', done ? 'Mark as open' : 'Mark done'));
+  toggle.append(make('span', 'sr-only', done ? 'סימון כפתוח' : 'סימון כבוצע'));
   toggle.addEventListener('click', () => patch(comment.id, { status: done ? 'open' : 'done' }, toggle));
 
   const archive = make('button', 'btn btn--icon btn--small comment__archive', archived ? '↩' : '✕');
   archive.type = 'button';
-  archive.append(make('span', 'sr-only', archived ? 'Restore from archive' : 'Archive'));
+  archive.append(make('span', 'sr-only', archived ? 'שחזור מהארכיון' : 'העברה לארכיון'));
   // A boolean on the wire. The column behind it is an integer, but the route answers 400 to a
   // number and it is the route's shape that counts. Archiving never deletes: the row stays.
   archive.addEventListener('click', () => patch(comment.id, { archived: !archived }, archive));
@@ -221,8 +229,8 @@ async function onPost(textarea) {
 
   if (!result.ok) {
     board.error = result.error === 'auth_required'
-      ? 'The note was not saved: your sign-in has ended. Reload this page to sign in again — the text is still in the box above.'
-      : 'The note was not saved. Nothing was lost — it is still in the box above.';
+      ? 'ההערה לא נשמרה: ההתחברות לדף הסתיימה. טענו את הדף מחדש כדי להתחבר שוב — הטקסט עדיין בתיבה שלמעלה.'
+      : 'ההערה לא נשמרה. שום דבר לא אבד — היא עדיין בתיבה שלמעלה.';
     paint();
     return;
   }
@@ -245,7 +253,7 @@ async function patch(id, change, button) {
   const result = await updateComment(id, change);
 
   if (!result.ok) {
-    board.error = 'That change did not save.';
+    board.error = 'השינוי הזה לא נשמר.';
     paint();
     return;
   }
@@ -264,11 +272,5 @@ async function patch(id, change, button) {
 }
 
 function when(ts) {
-  if (typeof ts !== 'number') return '';
-  return new Date(ts).toLocaleString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return typeof ts === 'number' ? dayTime(ts) : '';
 }

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Charging</title>
+<title>לוח הטעינה</title>
 <link rel="stylesheet" href="style.css">
 <script type="module" src="app.js"></script>
 </head>
@@ -18,17 +18,24 @@
 
   No remote asset of any kind: no favicon fetch, no font link, no analytics. Same-origin
   relative paths only, so moving this page to another hostname stays a DNS change.
+
+  lang and dir both belong on <html> and nowhere deeper, and neither is decoration:
+  style.css scopes its whole Hebrew typography block to `[dir="rtl"]` as a DESCENDANT
+  selector, and it translates the one word the views are forbidden to write into the DOM
+  -- the "archived" tag on a note -- through `:lang(he)`. Move either attribute onto
+  <body> or a panel and both silently stop matching, which reads as a design regression
+  rather than as a missing attribute.
 -->
 <div class="shell">
 
   <header class="shell__header">
     <div class="shell__header-inner">
-      <h1 class="shell__title">Charging</h1>
+      <h1 class="shell__title">טעינה</h1>
       <p class="updated" data-age="fresh">
-        <span class="updated__abs">No data yet</span>
+        <span class="updated__abs">אין עדיין נתונים</span>
         <span class="updated__age">&mdash;</span>
       </p>
-      <button class="btn btn--small" type="button" id="refresh">&#8635; Refresh</button>
+      <button class="btn btn--small" type="button" id="refresh">&#8635; רענון</button>
     </div>
   </header>
 
@@ -40,27 +47,27 @@
   <main class="shell__main">
 
     <section class="panel">
-      <div class="panel__head"><h2 class="panel__title">Price right now</h2></div>
+      <div class="panel__head"><h2 class="panel__title">המחיר כרגע</h2></div>
       <div class="panel__body" id="tariff"></div>
     </section>
 
     <section class="panel">
-      <div class="panel__head"><h2 class="panel__title">Controls</h2></div>
+      <div class="panel__head"><h2 class="panel__title">שליטה</h2></div>
       <div class="panel__body" id="controls"></div>
     </section>
 
     <section class="panel">
-      <div class="panel__head"><h2 class="panel__title">Sessions</h2></div>
+      <div class="panel__head"><h2 class="panel__title">טעינות</h2></div>
       <div class="panel__body panel__body--flush" id="history"></div>
     </section>
 
     <section class="panel">
-      <div class="panel__head"><h2 class="panel__title">Charger &amp; invoices</h2></div>
+      <div class="panel__head"><h2 class="panel__title">העמדה והחיובים</h2></div>
       <div class="panel__body panel__body--flush" id="account"></div>
     </section>
 
     <section class="panel">
-      <div class="panel__head"><h2 class="panel__title">Notes</h2></div>
+      <div class="panel__head"><h2 class="panel__title">הערות</h2></div>
       <div class="panel__body" id="comments"></div>
     </section>
 
@@ -68,8 +75,7 @@
 
   <footer class="shell__footer">
     <div class="shell__footer-inner">
-      Private dashboard. Nothing here reloads on its own &mdash; the data only moves when you
-      press Refresh.
+      לוח פרטי. שום דבר כאן לא מתרענן מעצמו &mdash; הנתונים זזים רק כשלוחצים רענון.
     </div>
   </footer>
 

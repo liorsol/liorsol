@@ -22,6 +22,7 @@
 // would re-break the invocation budget. Age is rendered, never acted on.
 
 import { getState, getHistory, getInvoices, refresh, TOKEN_EXPIRED } from './api.js';
+import { dateTime, relative } from './views/he.js';
 
 const HOUR_MS = 3600000;
 
@@ -60,12 +61,12 @@ const fetchedAt = { state: null, history: null, invoices: null };
 // load, an error block. Every view still has to tolerate a null on the other two -- the contract
 // says any route may be null, and today all three can fail independently.
 const views = [
-  { id: 'tariff', src: './views/tariff.js', needs: 'state', skel: '88px', fail: 'Could not load the tariff' },
-  { id: 'controls', src: './views/controls.js', needs: 'state', skel: '88px', fail: 'Could not load the controls' },
-  { id: 'history', src: './views/history.js', needs: 'history', skel: '180px', fail: 'Could not load sessions' },
-  { id: 'account', src: './views/account.js', needs: 'state', skel: '140px', fail: 'Could not load the charger' },
+  { id: 'tariff', src: './views/tariff.js', needs: 'state', skel: '88px', fail: 'לא ניתן לטעון את המחיר' },
+  { id: 'controls', src: './views/controls.js', needs: 'state', skel: '88px', fail: 'לא ניתן לטעון את השליטה' },
+  { id: 'history', src: './views/history.js', needs: 'history', skel: '180px', fail: 'לא ניתן לטעון את הטעינות' },
+  { id: 'account', src: './views/account.js', needs: 'state', skel: '140px', fail: 'לא ניתן לטעון את מצב העמדה' },
   // The comment board fetches its own data and owns its own empty states, so nothing gates it.
-  { id: 'comments', src: './views/comments.js', needs: null, skel: '120px', fail: 'Could not load notes' },
+  { id: 'comments', src: './views/comments.js', needs: null, skel: '120px', fail: 'לא ניתן לטעון את ההערות' },
 ];
 
 const controls = views[1];
@@ -109,8 +110,8 @@ function placeOwn(body, node) {
 // the refresh button is how; a sign-in that has ended is not, and pressing refresh is provably
 // the one action that cannot mend it. Only a top-level navigation can, because only that can
 // follow the edge's redirect to the sign-in page.
-const RETRY_HINT = 'Press refresh to try again.';
-const SIGN_IN_HINT = 'Your sign-in has ended. Reload this page to sign in again — refreshing will not bring it back.';
+const RETRY_HINT = 'לחצו רענון כדי לנסות שוב.';
+const SIGN_IN_HINT = 'ההתחברות לדף הסתיימה. טענו את הדף מחדש כדי להתחבר שוב — רענון לא יחזיר אותה.';
 
 function errorBlock(title, hint) {
   const box = h('div', 'empty empty--error');
@@ -128,16 +129,11 @@ function panelError(view) {
   return errorBlock(view.fail, shared.authRequired ? SIGN_IN_HINT : RETRY_HINT);
 }
 
-// "42 min", "3 h", "2 d" — computed at render time, never on a schedule.
-function ageText(ms) {
-  const minutes = Math.max(0, Math.round(ms / 60000));
-  if (minutes < 60) return minutes + ' min';
-  const hours = Math.round(minutes / 60);
-  return hours < 48 ? hours + ' h' : Math.round(hours / 24) + ' d';
-}
-
+// "לפני 42 דקות", "לפני 3 שעות", "לפני יומיים" — computed at render time, never on a schedule.
+// The phrase carries its own "ago", so nothing appends a word to it: Hebrew puts that at the
+// front, and Intl is the only thing here that knows the plural and dual forms.
 function currentAge() {
-  return shared.fetchedAt == null ? null : ageText(Date.now() - shared.fetchedAt);
+  return shared.fetchedAt == null ? null : relative(shared.fetchedAt - Date.now());
 }
 
 // ── Header: absolute time *and* relative age, always both ──
@@ -150,16 +146,14 @@ function paintUpdated() {
   const rel = updated.querySelector('.updated__age');
 
   if (shared.fetchedAt == null) {
-    abs.textContent = 'No data yet';
+    abs.textContent = 'אין עדיין נתונים';
     rel.textContent = '—';
     updated.dataset.age = 'fresh';
     return;
   }
 
-  abs.textContent = new Date(shared.fetchedAt).toLocaleString(undefined, {
-    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
-  rel.textContent = currentAge() + ' ago';
+  abs.textContent = dateTime(shared.fetchedAt);
+  rel.textContent = currentAge();
   // Display only: past the cache horizon the age pill turns amber. It does not trigger a fetch.
   updated.dataset.age = Date.now() - shared.fetchedAt > HOUR_MS ? 'old' : 'fresh';
 }
@@ -172,7 +166,7 @@ function setBusy(on) {
   button.classList.toggle('is-busy', on);
   button.disabled = on;
   button.setAttribute('aria-busy', String(on));
-  button.textContent = on ? 'Refreshing…' : '↻ Refresh';
+  button.textContent = on ? 'מרענן…' : '↻ רענון';
 }
 
 async function onRefresh() {
@@ -202,9 +196,9 @@ function frame(body, mount, view) {
     return;
   }
   const wrap = h('div', 'stale'); // amber rule down the edge; deliberately does not dim, the
-  const flag = h('span', 'stale__flag', 'Stale — '); // cached data is the only data there is
+  const flag = h('span', 'stale__flag', 'לא עדכני — '); // cached data is the only data there is
   const age = currentAge();
-  flag.append(h('span', 'stale__age', age ? age + ' old' : 'age unknown'));
+  flag.append(h('span', 'stale__age', age || 'גיל לא ידוע'));
   // In a flush panel the rule *is* the edge: keeping `.stale`'s inset would indent a
   // full-bleed table on its left only. The flag keeps an inset of its own so the pill is
   // not jammed against the rule.
@@ -278,7 +272,7 @@ function paintAuthRequired() {
   if (authMount.firstChild) return; // already up — do not rebuild it under the user
   const inner = h('div', 'expiry__inner');
   inner.append(
-    h('p', 'expiry__title', 'Session expired'),
+    h('p', 'expiry__title', 'ההתחברות הסתיימה'),
     h('p', 'expiry__text', SIGN_IN_HINT)
   );
   const banner = h('div', 'expiry');

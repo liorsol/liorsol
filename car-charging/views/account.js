@@ -36,6 +36,15 @@ function spaced(node, step) {
   return node;
 }
 
+// app.js mounts this view inside a .panel__body--flush so a wide table can run edge to edge.
+// Everything that is not a table therefore has to carry the panel's own inset itself. Read
+// from the DOM rather than assumed, so it still looks right if the shell drops the modifier.
+function inset(root, node, top) {
+  const flush = typeof root.closest === 'function' && root.closest('.panel__body--flush');
+  if (flush) node.style.setProperty('padding', (top ? 'var(--sp-4) ' : '0 ') + 'var(--sp-4) 0');
+  return node;
+}
+
 function stamp(iso, withTime) {
   const ms = toMs(iso);
   if (!Number.isFinite(ms)) return iso ? String(iso) : '—';
@@ -53,12 +62,9 @@ function emptyBlock(title, hint, isError) {
   return box;
 }
 
-function tile(value, label) {
-  const t = h('div', 'stat');
-  t.appendChild(h('div', 'stat__value', value));
-  t.appendChild(h('div', 'stat__label', label));
-  return t;
-}
+// Not a stat tile and not a chip: the off-peak state is an upstream string of unknown
+// length. A tile puts it in the big-number slot and it wraps into a wall; .chip is
+// white-space: nowrap, so a long one pushes the whole page sideways. Plain text wraps.
 
 function cell(tag, text, numeric) {
   return h(tag, numeric ? 'num' : null, text);
@@ -80,17 +86,18 @@ function table(headings) {
 
 // ── charger ─────────────────────────────────────────────────────────────────
 
-function chargerBlock(charger) {
+function chargerBlock(charger, root) {
   const box = h('div');
-  const grid = h('div', 'stat-grid');
-  grid.appendChild(tile(
-    charger.ocppConnected === true ? 'Online' : charger.ocppConnected === false ? 'Offline' : '—',
-    'Charger link'));
-  grid.appendChild(tile(
-    charger.offPeakState === null || charger.offPeakState === undefined
-      ? '—' : String(charger.offPeakState),
-    'Off-peak plan, as the charger reports it'));
-  box.appendChild(grid);
+  const head = h('div');
+  head.appendChild(charger.ocppConnected === true
+    ? h('span', 'chip chip--ok', 'Link online')
+    : charger.ocppConnected === false
+      ? h('span', 'chip chip--bad', 'Link offline')
+      : h('span', 'chip', 'Link state unknown'));
+  head.appendChild(spaced(h('p', null, 'Off-peak plan, as the charger reports it: '
+    + (charger.offPeakState === null || charger.offPeakState === undefined
+      ? 'not reported' : String(charger.offPeakState))), 2));
+  box.appendChild(inset(root || box, head, true));
 
   const connectors = Array.isArray(charger.connectors) ? charger.connectors : [];
   if (!connectors.length) {
@@ -167,9 +174,9 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
     el.appendChild(emptyBlock('Could not load charger status',
       'No charger state has arrived yet. Press refresh to try again.', true));
   } else {
-    el.appendChild(chargerBlock(payload.charger));
+    el.appendChild(chargerBlock(payload.charger, el));
   }
 
-  el.appendChild(spaced(h('h3', 'panel__title', 'Billed periods'), 5));
+  el.appendChild(inset(el, spaced(h('h3', 'panel__title', 'Billed periods'), 5)));
   el.appendChild(spaced(invoiceBlock(app.invoices), 3));
 }

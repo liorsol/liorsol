@@ -136,6 +136,15 @@ function spaced(node, step) {
   return node;
 }
 
+// app.js mounts this view inside a .panel__body--flush so a wide table can run edge to edge.
+// Everything that is not a table therefore has to carry the panel's own inset itself. Read
+// from the DOM rather than assumed, so it still looks right if the shell drops the modifier.
+function inset(root, node, top) {
+  const flush = typeof root.closest === 'function' && root.closest('.panel__body--flush');
+  if (flush) node.style.setProperty('padding', (top ? 'var(--sp-4) ' : '0 ') + 'var(--sp-4) 0');
+  return node;
+}
+
 const pad2 = (n) => String(n).padStart(2, '0');
 
 // Some upstream stamps carry no zone designator at all. Every one of them is UTC, but
@@ -227,18 +236,19 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
 
   const grid = h('div', 'stat-grid');
   grid.appendChild(tile(String(rows.length), null, 'Sessions'));
-  grid.appendChild(tile(kwh.toFixed(2), 'kWh', 'Energy delivered'));
+  grid.appendChild(tile(kwh.toFixed(1), 'kWh', 'Energy delivered'));
   grid.appendChild(tile(
     (paidInc || paidEx).toFixed(2), '₪',
     paidInc ? 'Paid — incl. VAT' : 'Paid — excl. VAT'));
+  // Both bases, always, and the basis of each in words: the inc-VAT figure is the one
+  // that shows up on a bill, the ex-VAT one is what the arithmetic is done in.
   grid.appendChild(tile(
-    (avoidedInc === null ? avoidedEx : avoidedInc).toFixed(2),
-    avoidedInc === null ? '₪ excl. VAT' : '₪ incl. VAT',
+    (avoidedInc === null ? avoidedEx : avoidedInc).toFixed(2), '₪',
     avoidedInc === null
-      ? 'Avoided by deferring — no VAT rate in the payload, so this is the ex-VAT figure'
-      : 'Avoided by deferring — ' + avoidedEx.toFixed(2) + ' ₪ excl. VAT',
+      ? 'Avoided by deferring — excl. VAT (no VAT rate in the payload)'
+      : 'Avoided by deferring — incl. VAT (' + avoidedEx.toFixed(2) + ' ₪ excl. VAT)',
     true));
-  el.appendChild(grid);
+  el.appendChild(inset(el, grid, true));
 
   const wrap = spaced(h('div', 'table-wrap'));
   const table = h('table', 'table');
@@ -249,7 +259,7 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   hrow.appendChild(cell('th', 'kWh', true));
   hrow.appendChild(cell('th', '₪ incl. VAT', true));
   hrow.appendChild(cell('th', 'Eff. kW', true));
-  hrow.appendChild(cell('th', 'Avoided ₪', true));
+  hrow.appendChild(cell('th', 'Avoided ₪ ' + (rate === null ? 'excl. VAT' : 'incl. VAT'), true));
   hrow.appendChild(cell('th', 'Stopped by'));
   thead.appendChild(hrow);
   table.appendChild(thead);
@@ -264,7 +274,11 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
     const paid = num(row.totalPaymentCostIncVat);
     tr.appendChild(cell('td', paid === null ? '—' : paid.toFixed(2), true));
     tr.appendChild(cell('td', effectiveKw(row).toFixed(2), true));
-    tr.appendChild(cell('td', shekelAvoided(row, slices).toFixed(2), true));
+    // Same basis as the header and the tile — mixing the two inside one panel is how a
+    // saving quietly reads 18% low.
+    const avoidedEx = shekelAvoided(row, slices);
+    const avoided = rate === null ? avoidedEx : withVat(avoidedEx, rate);
+    tr.appendChild(cell('td', avoided.toFixed(2), true));
 
     const td = h('td');
     const reason = row.stopReason;

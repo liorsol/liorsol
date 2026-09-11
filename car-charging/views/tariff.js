@@ -377,17 +377,18 @@ function sessionBlock(session, slices, nowMs) {
 
   const grid = spaced(h('div', 'stat-grid'), 3);
   const energy = num(session.totalEnergy);
-  grid.appendChild(tile(energy === null ? '—' : energy.toFixed(2), 'kWh', 'Delivered this session'));
+  grid.appendChild(tile(energy === null ? '—' : energy.toFixed(1), 'kWh', 'Delivered this session'));
   const secs = num(session.durationInSeconds);
   grid.appendChild(tile(
-    secs === null ? '—' : Math.floor(secs / 3600) + ' h ' + String(Math.floor((secs % 3600) / 60)).padStart(2, '0') + ' m',
+    secs === null ? '—' : Math.floor(secs / 3600) + 'h ' + String(Math.floor((secs % 3600) / 60)).padStart(2, '0') + 'm',
     null, 'Plugged in for'));
   const inc = num(session.totalCost);
   const ex = num(session.cost);
   grid.appendChild(tile(
-    inc === null ? (ex === null ? '—' : ex.toFixed(2)) : inc.toFixed(2),
-    inc === null ? '₪ excl. VAT' : '₪ incl. VAT',
-    inc === null || ex === null ? 'Cost so far' : 'Cost so far — ' + ex.toFixed(2) + ' ₪ excl. VAT'));
+    inc === null ? (ex === null ? '—' : ex.toFixed(2)) : inc.toFixed(2), '₪',
+    inc === null ? 'Cost so far — excl. VAT'
+      : ex === null ? 'Cost so far — incl. VAT'
+        : 'Cost so far — incl. VAT (' + ex.toFixed(2) + ' ₪ excl. VAT)'));
   box.appendChild(grid);
 
   const note = explainer(session, slices, nowMs);

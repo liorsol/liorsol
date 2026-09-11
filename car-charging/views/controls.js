@@ -63,7 +63,7 @@ function clearBusy(button, label) {
 // button is in flight, how far the settle poll got, what the last action said — is held here
 // and repainted, rather than being left to survive inside DOM nodes that get replaced.
 const ui = {
-  busy: null, // null | 'start' | 'stop' — held for the whole command, settle included
+  busy: null, // null | 'start' | 'stop' — held for the whole command: settle and reload included
   busyLabel: null, // what the in-flight button says while it is held
   settle: null, // null | { attempt, max, done }
   note: null, // null | { kind: 'ok' | 'bad', text }
@@ -199,6 +199,28 @@ function paint() {
   el.replaceChildren(frag);
 }
 
+// The only place ui.busy is ever cleared, and it clears it *after* the reload it was holding for.
+//
+// The view object this module paints from is the same object app.js hands every view, and app.js
+// does not overwrite it until its three fetches resolve. So the window between a command being
+// accepted and its reload landing is a window in which paint() computes startOff from the
+// pre-command snapshot: with busy already released, a successful start renders Start enabled
+// while the session it just created is still invisible to the page, and a second click sends a
+// second command to the contactor. Wave 2 closed the same hazard over the settle window; this is
+// the reload window immediately after it.
+//
+// finally, not a trailing statement: a control stuck disabled forever is its own bug, so a reload
+// that throws still releases.
+async function release(ctx, reload) {
+  try {
+    if (reload) await ctx.reload();
+  } finally {
+    ui.busy = null;
+    ui.busyLabel = null;
+    paint();
+  }
+}
+
 async function onStart() {
   if (!mount || ui.busy) return;
   const { ctx } = mount;
@@ -209,13 +231,11 @@ async function onStart() {
   paint();
 
   const result = await start();
-  ui.busy = null;
-  ui.busyLabel = null;
   ui.note = result.ok
     ? { kind: 'ok', text: 'Start accepted. The charger takes a few seconds to report it.' }
     : { kind: 'bad', text: failureText(result, 'Start failed.') };
-  paint();
-  if (result.ok) await ctx.reload();
+  paint(); // say what happened; the controls stay held until fresh state is on screen
+  await release(ctx, result.ok);
 }
 
 // The only entry point to the settle poll in the whole page. It is reached by a click and by
@@ -237,11 +257,9 @@ async function onStop() {
 
   if (!result.ok) {
     // 409 "nothing to stop" collapses to a generic http_error in the client. It is a failure,
-    // never a stop that worked.
-    ui.busy = null;
-    ui.busyLabel = null;
+    // never a stop that worked. Nothing was commanded, so there is nothing to reload for.
     ui.note = { kind: 'bad', text: failureText(result, 'Stop failed. Nothing was stopped.') };
-    paint();
+    await release(ctx, false);
     return;
   }
 
@@ -249,10 +267,8 @@ async function onStop() {
   ui.note = { kind: 'ok', text: 'Stop accepted.' };
 
   if (!sessionId) {
-    ui.busy = null;
-    ui.busyLabel = null;
     paint();
-    await ctx.reload();
+    await release(ctx, true);
     return;
   }
 
@@ -269,10 +285,8 @@ async function onStop() {
   });
 
   // The command is over either way — the poll is capped, so this is reached in every case and
-  // the controls are never left held.
-  ui.busy = null;
-  ui.busyLabel = null;
-
+  // the controls are never left held. They are still not released here: the reload below is the
+  // only thing that makes the page's picture of the charger match what just happened to it.
   const settled = (final.data?.session?.completed ?? final.data?.completed) === true;
   ui.settle = { attempt: ui.settle.attempt, max: SETTLE_MAX_ATTEMPTS, done: settled };
 
@@ -288,7 +302,7 @@ async function onStop() {
     };
   }
   paint();
-  await ctx.reload();
+  await release(ctx, true);
 }
 
 // Error names are a closed set and the status is only detail. No server wording reaches the DOM.

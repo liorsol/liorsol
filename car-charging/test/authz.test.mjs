@@ -164,3 +164,55 @@ test('a forwarded request with no upstream bound fails closed', async () => {
   assert.equal(response.status, 503);
   assert.deepEqual(await response.json(), { error: 'upstream_unavailable' });
 });
+
+// ── What the hostname serves (wave 3) ──
+//
+// The deploy uploads this directory whole, and `_redirects` is the only thing here that
+// keeps a file off the hostname -- see README. That makes the guarantee a property of a
+// config file nobody reads twice, so this checks it against the directory as it actually is:
+// add a doc, a fixture or a data file beside the page and this fails until it is covered.
+
+import { readdirSync, readFileSync } from 'node:fs';
+
+const DIR = new URL('../', import.meta.url);
+
+// The site itself. Anything else on the hostname is a file someone reads to learn how this
+// is wired. Widen this only for something the page genuinely fetches.
+const IS_PAGE = /\.(html|css|js)$/;
+
+// Withheld by the uploader's own fixed ignore list, so they never become assets.
+const NOT_UPLOADED = new Set(['_headers', '_redirects', '_routes.json', '_worker.js', 'functions', '.wrangler', '.git', 'node_modules']);
+
+const REDIRECT_FROM = readFileSync(new URL('_redirects', DIR), 'utf8')
+  .split('\n')
+  .map((line) => line.trim())
+  .filter((line) => line && !line.startsWith('#'))
+  .map((line) => line.split(/\s+/)[0]);
+
+const redirected = (path) =>
+  REDIRECT_FROM.some((from) => from === path || (from.endsWith('*') && path.startsWith(from.slice(0, -1))));
+
+const servedPaths = (dir = DIR, prefix = '/') =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+    NOT_UPLOADED.has(entry.name)
+      ? []
+      : entry.isDirectory()
+        ? servedPaths(new URL(`${entry.name}/`, dir), `${prefix}${entry.name}/`)
+        : [`${prefix}${entry.name}`]
+  );
+
+test('nothing but the page is reachable on the hostname', () => {
+  for (const path of servedPaths()) {
+    assert.ok(
+      IS_PAGE.test(path) || redirected(path),
+      `${path} is uploaded and nothing hides it -- add it to _redirects (and to .assetsignore)`
+    );
+  }
+});
+
+test('_routes.json pins the Function to /api/*', () => {
+  const routes = JSON.parse(readFileSync(new URL('_routes.json', DIR), 'utf8'));
+  // A wider include does not refuse anything: a request the Function does not route falls
+  // through to the asset server. It only widens what a future Function file can intercept.
+  assert.deepEqual(routes.include, ['/api/*']);
+});

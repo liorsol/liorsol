@@ -1,0 +1,18 @@
+# The deployed directory is the project, but the hostname should only serve the page.
+#
+# This is the file that actually does it on a classic Pages project. A redirect rule is
+# evaluated before the static asset is served, so these paths never reach their file --
+# `.assetsignore` is never read by this uploader, and `_routes.json` only decides what
+# reaches the Function, which falls back to the asset when no route of its own matches.
+#
+# 302, not 301: nothing here is secret, and a permanent redirect a browser caches forever
+# is a worse thing to be wrong about than one it re-asks for.
+#
+# This file is never served itself -- the uploader withholds it, along with `_headers`,
+# `_routes.json`, `_worker.js` and `functions/`.
+
+/README.md      /  302
+/CLAUDE.md      /  302
+/schema.sql     /  302
+/.assetsignore  /  302
+/test/*         /  302

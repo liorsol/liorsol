@@ -1,19 +1,26 @@
 # The deployed asset set should be the page, not the project.
 #
-# This directory is deployed whole, so without this file the docs, the database schema and the
-# tests are all fetchable on the hostname. Nothing in them is secret -- they are public in this
-# repository -- but they are not the site, and every one of them is a file an attacker reads
-# first to learn how the thing is wired.
+# This directory is deployed whole, so without something stopping them the docs, the database
+# schema and the tests are all fetchable on the hostname. Nothing in them is secret -- they are
+# public in this repository -- but they are not the site, and every one of them is a file an
+# attacker reads first to learn how the thing is wired.
 #
 # gitignore syntax. The platform already withholds `_headers`, `_redirects`, `_routes.json`,
 # `_worker.js`, `functions/`, `node_modules/`, `.git/` and `.wrangler/` without being asked.
+# It does NOT withhold this file, which is why `_redirects` also covers it.
 #
-# ⚠ Read this before trusting the file. The classic Pages uploader walks the directory against
-# a FIXED ignore list (the one above) and does not read this file -- only the newer static-asset
-# uploader does. So until this project moves to that pipeline, this file states the intent and
-# changes nothing, and `curl -I <host>/README.md` still answers 200. The fix that works on the
-# deployment shape we have today is a `_routes.json` that sends these paths to the Function,
-# which answers 404 to anything outside `/api/`.
+# ⚠ THIS FILE DOES NOTHING HERE. `_redirects` IS WHAT WORKS. The classic Pages uploader walks
+# the directory against the FIXED ignore list above and never reads this file -- only the newer
+# static-asset uploader does. Keeping it costs nothing and it starts working the day this
+# project moves to that pipeline; until then it is a statement of intent, not a control.
+#
+# Two things were tried and measured before `_redirects` was written, so nobody re-tries them:
+#   * `_routes.json` cannot do this. It only chooses which requests reach the Function. A
+#     request routed to the Function that matches no route of its own falls through to
+#     `env.ASSETS.fetch()` and the asset is served anyway -- 200, verified under
+#     `wrangler pages dev`. `_routes.json` is still here, pinning the Function to `/api/*`.
+#   * `_redirects` rejects a 404 status ("0 valid redirect rules"). 302 to `/` is the form
+#     that parses, and a redirect is evaluated before the asset is served.
 
 README.md
 CLAUDE.md

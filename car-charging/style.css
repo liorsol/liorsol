@@ -63,7 +63,14 @@
   --r-pill: 999px;
 
   /* — type scale — */
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Hebrew faces sit after the platform UI fonts and before the generic. Font
+     fallback is per-character, so Latin never reaches them and the LTR page is
+     byte-identical. They only catch the platforms whose UI font has no Hebrew:
+     Roboto does not, so Android would otherwise land on an undeclared
+     last-resort face and synthesise the 550/620/650 weights this sheet uses.
+     All three are OS-resident — still no @import, no <link>, no remote asset. */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Noto Sans Hebrew", "Arial Hebrew", Helvetica, Arial, sans-serif;
   --font-num: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --fs-xs: .75rem;
   --fs-sm: .8125rem;
@@ -924,6 +931,11 @@ button, input, textarea, select { font: inherit; color: inherit; }
   font-weight: 600;
 }
 
+/* The views are forbidden from writing this word into the DOM, so the sheet is
+   the only place it can be translated. Keyed on :lang, not on [dir] — it is a
+   language fact, not a layout one. :lang(he) also matches lang="he-IL". */
+:lang(he) .comment--archived .comment__author::after { content: "בארכיון"; }
+
 .comment__toggle[aria-pressed="true"] {
   background: var(--good-soft);
   border-color: var(--good-line);
@@ -1015,7 +1027,32 @@ button, input, textarea, select { font: inherit; color: inherit; }
   transition: width .3s linear;
 }
 
-/* ── RTL: table column edge ────────────────────────────────────────────── */
+/* ── Hebrew / RTL typography ───────────────────────────────────────────── */
+/* Layout needs nothing here: the sheet is 100% logical properties, so the box
+   model mirrors on its own. What does NOT mirror on its own is Latin
+   typographic habit applied to a script that has none of the same features.
+   Scoped to [dir="rtl"], so the LTR page is untouched.
+   CONTRACT: dir="rtl" goes on <html>. These are descendant selectors; putting
+   the attribute deeper (on <body>, on a panel) silently drops the whole block. */
+
+/* Hebrew has no ascenders or descenders: the letters fill the x-height band
+   almost solidly, so identical leading reads noticeably denser than Latin. */
+[dir="rtl"] body { line-height: 1.65; }
+
+/* Negative tracking is a Latin display trick. Hebrew tells ב/כ, ד/ר and ה/ח
+   apart by small gaps, and tightening is exactly what closes them. */
+[dir="rtl"] .shell__title,
+[dir="rtl"] .stat__value { letter-spacing: normal; }
+
+/* Hebrew has no capitals, so `uppercase` is a no-op on the Hebrew half of a
+   header — but not on the Latin half: it turns the unit symbols "kWh" and "kW"
+   into "KWH"/"KW", which are wrong, not merely loud. Positive tracking has the
+   same legibility cost as negative here. Both go; the size, weight and muted
+   colour still separate the header row from the body. */
+[dir="rtl"] .table thead th {
+  text-transform: none;
+  letter-spacing: normal;
+}
 
 /* The one place a PHYSICAL value is the right answer, and the reason is worth
    the four lines. Table cells are `unicode-bidi: plaintext` so their glyph runs

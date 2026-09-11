@@ -68,15 +68,25 @@ deploy prints `✨ Compiled Worker successfully`; if that line is missing, no Fu
 
 ### Bindings
 
-Set on the Pages project itself (both the production and preview environments), not in a file
-here:
+Set on the Pages project itself, not in a file here:
 
-| Binding | Kind | Points at |
-|---|---|---|
-| `DB` | D1 | the `car-charging` database |
-| `PROXY` | service | the private upstream service |
+| Binding | Kind | Points at | Environment |
+|---|---|---|---|
+| `DB` | D1 | the `car-charging` database | **production only** |
+| `PROXY` | service | the private upstream service | **production only** |
 
 The Pages side gets **no secret of any kind**. The credential belongs to the private service.
+
+**Never bind anything to the preview environment.** Preview deployment URLs
+(`<hash>.<project>.pages.dev`, and the branch alias) are permanent, guessable from a public
+repository, and printed in every deploy log. The edge policy protects the production hostname;
+a preview URL is a second front door onto the same code. A preview with no `DB` and no `PROXY`
+is harmless — the Function answers `503` and reaches nothing — and that is the whole control.
+It is a binding *not* added, so nothing warns you when someone adds it.
+
+If preview deployments ever need to work, the prerequisite is a second edge access application
+covering the wildcard preview hostname with the same one-identity policy, applied **before** the
+bindings, not after.
 
 ### Schema
 

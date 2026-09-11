@@ -72,7 +72,18 @@ const hits = (text, pattern) => text.split('\n').filter((line) => pattern.test(l
 const SELF_MOVING = /setTimeout|setInterval|requestAnimationFrame|serviceWorker|visibilitychange|localStorage|sessionStorage|document\.cookie|innerHTML|console\./;
 
 test('nothing in the page can fetch on its own', () => {
-  for (const name of ['app.js', 'index.html']) {
+  // Listed one by one, not globbed: a readdir that matched nothing would pass silently,
+  // which is the exact failure this test exists to catch. A sixth view fails here until
+  // someone adds it to this list, which is the reminder.
+  for (const name of [
+    'app.js',
+    'index.html',
+    'views/account.js',
+    'views/comments.js',
+    'views/controls.js',
+    'views/history.js',
+    'views/tariff.js',
+  ]) {
     assert.equal(hits(source(name), SELF_MOVING), 0, `${name} grew something self-moving`);
   }
 });

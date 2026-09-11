@@ -156,7 +156,9 @@ export function postComment({ author, text }) {
   return request('/api/comments', { method: 'POST', ...jsonBody({ author, text }) });
 }
 
-// patch is { status: 'open' | 'done' } or { archived: 0 | 1 }.
+// patch is { status: 'open' | 'done' } or { archived: true | false }.
+// `archived` is a boolean on the wire, not 0/1 — the route answers 400 to a number. The column
+// behind it is an integer, which is what made the wrong shape look plausible.
 export function updateComment(id, patch) {
   return request('/api/comments/' + encodeURIComponent(id), {
     method: 'PATCH',

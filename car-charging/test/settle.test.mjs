@@ -8,6 +8,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { stop, pollSettle } from '../api.js';
 
 // Answers settle calls from a queue -- last body repeats -- and counts only those.
@@ -50,4 +51,36 @@ test('a flat completed flag is honoured too', async () => {
   await pollSettle('x');
 
   assert.equal(samples.length, 1);
+});
+
+// ── The absence test ──
+//
+// A page left open all day must make zero upstream calls, and the cheapest way to prove an
+// absence is to read the shipped source rather than to sit and watch a page. The settle poll
+// above is the one permitted timer; everything else that could make the page fetch on its own
+// -- a timer, a retry loop, a tab-visibility or network listener, a background worker -- must
+// not appear at all. Browser storage and markup-injection sinks ride along in the same pattern
+// because they are checked by the same eye and fail the same reviews.
+//
+// The pattern lives here rather than in a comment in the files it checks, because a comment
+// quoting it would match itself.
+
+const source = (name) => readFileSync(new URL('../' + name, import.meta.url), 'utf8');
+
+const hits = (text, pattern) => text.split('\n').filter((line) => pattern.test(line)).length;
+
+const SELF_MOVING = /setTimeout|setInterval|requestAnimationFrame|serviceWorker|visibilitychange|localStorage|sessionStorage|document\.cookie|innerHTML|console\./;
+
+test('nothing in the page can fetch on its own', () => {
+  for (const name of ['app.js', 'index.html']) {
+    assert.equal(hits(source(name), SELF_MOVING), 0, `${name} grew something self-moving`);
+  }
+});
+
+// api.js is held to the stricter pattern -- it touches no DOM, so it has no business owning a
+// listener either. Exactly one line comes back: the wait() inside the settle poll.
+const WIDER = new RegExp('addEventListener|navigator\\.|' + SELF_MOVING.source);
+
+test('the settle poll is the only timer in the client', () => {
+  assert.equal(hits(source('api.js'), WIDER), 1);
 });

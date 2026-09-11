@@ -113,6 +113,13 @@ function paint() {
   const status = chargerStatus(view);
   const session = liveSession(view);
   const expired = view?.expired === true;
+  // The third flag of the mount contract (PLAN §7.10). Without it this panel cannot see the one
+  // failure it must not act through: a viewer whose sign-in has ended still has every panel
+  // mounted and a full snapshot painted, so nothing else on screen changes and both buttons
+  // would stay live against data that is now only a memory. The command would leave anyway and
+  // die at the edge -- the user would learn from a failure message, after pressing a control
+  // that closes a contactor.
+  const authRequired = view?.authRequired === true;
   const loaded = !!view?.state;
 
   const frag = document.createDocumentFragment();
@@ -135,7 +142,14 @@ function paint() {
   let startOff = false;
   let stopOff = false;
 
-  if (expired) {
+  // Ordered by which instruction is true. Signed out comes first because it outranks the other
+  // two: while the session is gone neither pressing refresh nor pasting a credential reaches
+  // anything, so a reason naming either of those would send the owner somewhere that cannot work.
+  if (authRequired) {
+    startOff = true;
+    stopOff = true;
+    reasons.push('Controls are disabled because your sign-in has ended. Reload the page to sign in again — refreshing will not bring it back.');
+  } else if (expired) {
     startOff = true;
     stopOff = true;
     reasons.push('Controls are disabled while the credential is expired. Install a replacement in the banner above.');
@@ -410,8 +424,16 @@ async function onInstall(el, inner, input, button, ctx) {
   clearBusy(button, 'Install');
 
   if (!result.ok) {
-    // Rejected. The field stays open so the owner can paste again.
-    setResult(inner, 'expiry__error', 'Rejected. Check you copied the whole value.');
+    // Rejected. The field stays open so the owner can paste again — unless the install never
+    // reached anything, in which case blaming the paste sends the owner to re-copy a credential
+    // that was fine. A bounced sign-in is the one failure here that no amount of re-pasting fixes.
+    setResult(
+      inner,
+      'expiry__error',
+      result.error === 'auth_required'
+        ? 'Your sign-in has ended, so nothing was installed. Reload the page to sign in again, then paste it.'
+        : 'Rejected. Check you copied the whole value.'
+    );
     return;
   }
 

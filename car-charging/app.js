@@ -35,10 +35,12 @@ const shared = {
   history: null,
   invoices: null,
   expired: false,
-  // The last round was bounced to a sign-in, not merely failed. Distinct from `expired`, which
-  // is the upstream credential; this one is the viewer's own session and nothing on the page
-  // can renew it.
-  signedOut: false,
+  // The third flag of the mount contract (PLAN §7.10), and it is on the shared object rather
+  // than local to this file for one reason: views/controls.js cannot gate a control it has no
+  // way to see. The last round was bounced to a sign-in, not merely failed. Distinct from
+  // `expired`, which is the upstream credential; this one is the viewer's own session and
+  // nothing on the page -- no refresh, no credential install -- can renew it.
+  authRequired: false,
   fetchedAt: null,
   stale: false,
 };
@@ -123,7 +125,7 @@ function errorBlock(title, hint) {
 // The only place that chooses between the two. A panel that has never mounted says why it is
 // empty; which of the two reasons it gives is the last round's verdict, never a guess.
 function panelError(view) {
-  return errorBlock(view.fail, shared.signedOut ? SIGN_IN_HINT : RETRY_HINT);
+  return errorBlock(view.fail, shared.authRequired ? SIGN_IN_HINT : RETRY_HINT);
 }
 
 // "42 min", "3 h", "2 d" — computed at render time, never on a schedule.
@@ -265,15 +267,15 @@ async function paintExpiry() {
 // Its own node, inserted *before* the credential banner's mount rather than into it: that mount
 // belongs to views/controls.js and is blanked on every pass. Created and removed, never hidden,
 // for the same reason the credential field is.
-const signedOutMount = h('div');
-document.getElementById('expiry').before(signedOutMount);
+const authMount = h('div');
+document.getElementById('expiry').before(authMount);
 
-function paintSignedOut() {
-  if (!shared.signedOut) {
-    signedOutMount.replaceChildren();
+function paintAuthRequired() {
+  if (!shared.authRequired) {
+    authMount.replaceChildren();
     return;
   }
-  if (signedOutMount.firstChild) return; // already up — do not rebuild it under the user
+  if (authMount.firstChild) return; // already up — do not rebuild it under the user
   const inner = h('div', 'expiry__inner');
   inner.append(
     h('p', 'expiry__title', 'Session expired'),
@@ -281,7 +283,7 @@ function paintSignedOut() {
   );
   const banner = h('div', 'expiry');
   banner.append(inner);
-  signedOutMount.replaceChildren(banner);
+  authMount.replaceChildren(banner);
 }
 
 // ── The fetch round ──
@@ -292,7 +294,7 @@ async function load() {
 
   let stale = false;
   let expired = false;
-  let signedOut = false;
+  let authRequired = false;
 
   for (const [key, result] of Object.entries(results)) {
     if (result.ok) {
@@ -304,7 +306,7 @@ async function load() {
     if (result.error === TOKEN_EXPIRED) expired = true;
     // 'auth_required' is api.js's name for the edge bouncing us to a sign-in. One route saying
     // it is enough: the gate is over the whole hostname, so it is true of all of them.
-    if (result.error === 'auth_required') signedOut = true;
+    if (result.error === 'auth_required') authRequired = true;
   }
 
   // The age of the *oldest* thing on screen, not the freshest — the header should not claim a
@@ -314,10 +316,10 @@ async function load() {
   // Nothing ever arrived means there is nothing to be stale about; the panels say so themselves.
   shared.stale = stale && shared.fetchedAt != null;
   shared.expired = expired;
-  shared.signedOut = signedOut;
+  shared.authRequired = authRequired;
 
   paintUpdated();
-  paintSignedOut();
+  paintAuthRequired();
   await Promise.all([...views.map(paint), paintExpiry()]);
 }
 

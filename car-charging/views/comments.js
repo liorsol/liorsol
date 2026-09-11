@@ -17,6 +17,9 @@
 
 import { getComments, postComment, updateComment } from '../api.js';
 
+// The sign-in that has ended, worded the same way app.js words it. Refreshing cannot mend it.
+const SIGNED_OUT = 'Your sign-in has ended. Reload this page to sign in again — refreshing will not bring it back.';
+
 function make(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -63,7 +66,13 @@ async function load() {
     board.error = null;
   } else {
     // Keep whatever is already on screen. A failed read is never a reason to blank the board.
-    board.error = 'Could not load the notes. Press refresh to try again.';
+    //
+    // This board owns its own failure text (it fetches its own rows), so it owns this split
+    // too: app.js makes the same one for the panels it feeds. On a cold load while the viewer
+    // is signed out this is the ONLY panel that mounts -- nothing gates it -- so "press
+    // refresh" here is the whole page's instruction, and it is the one action that provably
+    // cannot work. Only a top-level navigation can follow the edge's redirect to the sign-in.
+    board.error = result.error === 'auth_required' ? SIGNED_OUT : 'Could not load the notes. Press refresh to try again.';
   }
   paint();
 }
@@ -211,7 +220,9 @@ async function onPost(textarea) {
   board.busy = false;
 
   if (!result.ok) {
-    board.error = 'The note was not saved. Nothing was lost — it is still in the box above.';
+    board.error = result.error === 'auth_required'
+      ? 'The note was not saved: your sign-in has ended. Reload this page to sign in again — the text is still in the box above.'
+      : 'The note was not saved. Nothing was lost — it is still in the box above.';
     paint();
     return;
   }

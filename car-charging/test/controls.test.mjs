@@ -23,60 +23,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { installDocument, node, button, byClass } from './fake-dom.mjs';
 import { isLiveSession } from '../api.js';
 
-// ── A DOM small enough to read in one sitting ──
-//
-// Everything views/controls.js touches and nothing else. A real headless browser would test
-// the same property here; this runs in `node --test` with no dependency, which is what makes
-// it cheap enough to keep.
-
-function node(tag) {
-  const self = {
-    tagName: tag,
-    children: [],
-    className: '',
-    textContent: '',
-    disabled: false,
-    handlers: {},
-    style: { setProperty() {} },
-    classList: { add() {}, remove() {}, toggle() {} },
-    setAttribute() {},
-    removeAttribute() {},
-    querySelector: () => null,
-    querySelectorAll: () => [],
-    matches: () => false,
-    addEventListener(type, fn) {
-      self.handlers[type] = fn;
-    },
-    append(...kids) {
-      // A fragment is flattened into its parent, the way the real one is.
-      for (const kid of kids) {
-        if (kid.tagName === '#fragment') self.children.push(...kid.children);
-        else self.children.push(kid);
-      }
-    },
-    replaceChildren(...kids) {
-      self.children = [];
-      self.append(...kids);
-    },
-  };
-  return self;
-}
-
-globalThis.document = {
-  createElement: node,
-  createDocumentFragment: () => node('#fragment'),
-};
+// The stub DOM is shared with test/app.test.mjs: small enough to read in one sitting, and the
+// reason these are renders rather than greps.
+installDocument();
 
 const { render } = await import('../views/controls.js');
 
-const all = (el) => el.children.flatMap((child) => [child, ...all(child)]);
-const button = (el, label) =>
-  all(el).find((n) => n.tagName === 'button' && n.textContent === label);
 const notes = (el) =>
-  all(el)
-    .filter((n) => n.className === 'btn-note')
+  byClass(el, 'btn-note')
     .map((n) => n.textContent)
     .join(' ');
 
@@ -159,6 +116,51 @@ test('the id sent to the charger is the live row, not the first row with an id',
   const stopCall = sent.find((call) => call.path === '/api/charge/stop');
   assert.ok(stopCall, 'the stop press sent no stop command');
   assert.equal(stopCall.body.sessionId, 'running-1', 'the stop command named a session that had already ended');
+});
+
+// ── The sign-in that has ended ──
+//
+// The worse path is the mounted one. A viewer whose session ends mid-visit has every panel
+// painted already, so app.js's error block -- the one that carries the "sign in again" wording
+// -- is never reached: a failed round deliberately leaves a mounted subtree untouched. The only
+// thing that changes on screen is the amber stale rule, which is also what an unplugged cable
+// looks like. So the panel has to read the flag itself, and it has to read it on a re-render
+// over a snapshot it has already painted, which is what these two renders are.
+
+test('a sign-in that ends mid-visit disables both controls on the mounted panel', () => {
+  const healthy = paint({ state: { sessions: [running] } });
+  assert.equal(button(healthy, 'Stop').disabled, false, 'precondition: the panel mounted live');
+
+  // Same snapshot, one flag later: app.js keeps the last good bodies on purpose.
+  const el = paint({ state: { sessions: [running] }, authRequired: true, stale: true });
+
+  assert.equal(button(el, 'Stop').disabled, true, 'Stop stayed live for a signed-out viewer');
+  assert.equal(button(el, 'Start charging').disabled, true, 'Start stayed live for a signed-out viewer');
+});
+
+test('the reason names the one action that can work, and never the one that cannot', () => {
+  const el = paint({ state: { sessions: [running] }, authRequired: true });
+
+  assert.match(notes(el), /sign-in has ended/i);
+  assert.match(notes(el), /reload/i);
+  assert.doesNotMatch(notes(el), /press refresh/i);
+});
+
+test('a sign-in that has ended outranks an expired credential', () => {
+  // Both flags can be true at once, and only one of the two instructions is reachable: the
+  // credential field posts to the same gate that just bounced this round.
+  const el = paint({ state: { sessions: [running] }, authRequired: true, expired: true });
+
+  assert.match(notes(el), /sign-in has ended/i);
+  assert.doesNotMatch(notes(el), /install a replacement/i);
+});
+
+test('an expired credential still disables both controls', () => {
+  const el = paint({ state: { sessions: [running] }, expired: true });
+
+  assert.equal(button(el, 'Stop').disabled, true);
+  assert.equal(button(el, 'Start charging').disabled, true);
+  assert.match(notes(el), /install a replacement/i);
 });
 
 // ── No module may grow a second definition ──

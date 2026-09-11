@@ -75,6 +75,24 @@ function skeleton(height) {
   return block;
 }
 
+// ── Two panels are mounted `--flush` (zero body padding) so their tables can run edge to
+// edge. The views already read that off the DOM and inset their own non-table blocks; the
+// shell never did, so its own chrome -- the skeleton, the error card and the stale rule --
+// sat hard against the panel border in `#history` and `#account` and nowhere else. Only
+// visible with all five panels up: the two flush panels are the last two data panels, and
+// no wave-2 agent ever had them and the shell's chrome on screen at once.
+//
+// Measured at 1440x900: the error card was inset 16px inside `#tariff` and 0px inside
+// `#history`, where its rounded border landed on the panel's own; the stale rule pushed the
+// full-bleed table 15px right while leaving its right edge flush.
+const FLUSH = '.panel__body--flush';
+
+// Put one of the shell's own blocks into a panel body, inset to match a padded panel.
+function placeOwn(body, node) {
+  if (body.matches(FLUSH)) node.style.setProperty('margin', 'var(--sp-4)');
+  body.replaceChildren(node);
+}
+
 function errorBlock(title) {
   const box = h('div', 'empty empty--error');
   box.append(
@@ -162,6 +180,13 @@ function frame(body, mount, view) {
   const flag = h('span', 'stale__flag', 'Stale — '); // cached data is the only data there is
   const age = currentAge();
   flag.append(h('span', 'stale__age', age ? age + ' old' : 'age unknown'));
+  // In a flush panel the rule *is* the edge: keeping `.stale`'s inset would indent a
+  // full-bleed table on its left only. The flag keeps an inset of its own so the pill is
+  // not jammed against the rule.
+  if (body.matches(FLUSH)) {
+    wrap.style.setProperty('padding-inline-start', '0');
+    flag.style.setProperty('margin-inline-start', 'var(--sp-4)');
+  }
   wrap.append(flag, mount);
   body.replaceChildren(wrap);
 }
@@ -173,7 +198,7 @@ async function paint(view) {
   // Never loaded. On a first load that failed there is no existing DOM to preserve, so the
   // panel says so; once a view has mounted, a later failure leaves its subtree untouched.
   if (view.needs && shared[view.needs] == null) {
-    if (!view.mounted) body.replaceChildren(errorBlock(view.fail));
+    if (!view.mounted) placeOwn(body, errorBlock(view.fail));
     return;
   }
 
@@ -186,7 +211,7 @@ async function paint(view) {
     view.mounted = true;
   } catch {
     view.mod = null; // drop the rejected promise so a later reload gets another chance
-    if (!view.mounted) body.replaceChildren(errorBlock(view.fail));
+    if (!view.mounted) placeOwn(body, errorBlock(view.fail));
   }
 }
 
@@ -241,7 +266,7 @@ async function load() {
 // ── Bootstrap ──
 
 for (const view of views) {
-  document.getElementById(view.id).replaceChildren(skeleton(view.skel));
+  placeOwn(document.getElementById(view.id), skeleton(view.skel));
 }
 
 load();

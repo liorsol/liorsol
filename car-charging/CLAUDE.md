@@ -18,8 +18,9 @@ to show which sessions were held for price and which were merely throttled.
 read-only view into something that acts on hardware, so it raises the bar on auth: a leaked
 URL would stop being an information leak and start being physical control.
 
-Remote **start** is understood as of 2026-09-10 and works from the CLI. Remote **stop** is not,
-and is not going to be guessed — see the private notes.
+Remote **start** and **stop** are both understood as of 2026-09-11 and work from the CLI, so the
+dashboard can ship real controls rather than placeholders. One deferral-scheduling call remains
+uncaptured and will not be guessed — see the private notes.
 
 **Access model:** signed in with my Google account, only me. The personal credential for the
 upstream data source never reaches the browser — it lives in a proxy function. Everything
@@ -63,8 +64,8 @@ in this repo.
 
 Nothing is built yet **in this repo**. This folder is documentation only: the goal, the auth
 decision, and a pointer to the private notes. The data source is mapped and the CLI does
-history, live status and remote start — all in the iCloud folder above. Next session starts at
-step 1 of the decision below.
+history, live status, remote start and remote stop — all in the iCloud folder above. Next
+session starts at step 1 of the decision below.
 
 The read-only route set below is still the right shape, but it now needs a third thing: the
 live **tariff calendar**, since without it the dashboard cannot say whether a suspended session

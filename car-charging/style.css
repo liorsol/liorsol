@@ -440,18 +440,41 @@ button, input, textarea, select { font: inherit; color: inherit; }
   border-radius: var(--r-md);
   padding: var(--sp-3) var(--sp-4);
   min-width: 0;
+  container-type: inline-size;   /* .stat__value sizes its figure off THIS tile — see below */
 }
 
+/* A figure must never break inside itself. `1,111.3` over `3₪` reads as two numbers, in the
+   one panel this dashboard exists to show. So:
+     1. the figure is atomic — `overflow-wrap: normal`, no break opportunity inside it;
+     2. the single break opportunity is between the figure and its unit (the ZWSP below);
+     3. it never has to break, because it always FITS: 1cqi is 1% of the tile's content box,
+        the longest realistic figure ("12,345.67", 9 grouped glyphs) is 4.95em wide, so 19cqi
+        holds it on one line at ANY tile width, and min() caps it at the type scale.
+   The cap is the normal case, not the exception — measured at dir=rtl: 30px at 320 (the grid
+   drops to one column), 21.8px at 375 (the reported break), 25.5px at 414, and 30px at every
+   width from 480 up. It gives up size only where the alternative was a broken number.
+   `overflow-wrap: anywhere` used to sit here and is what split the digits once he-IL grouping
+   widened the figure by a glyph. `break-word` is not the fix: measured at 375px it renders
+   identically — the track min is a definite 140px, so min-content never sized the column, and
+   both keywords break an overflowing word just the same.
+   ponytail: calibrated for 9 glyphs. A 10-glyph figure (₪123,456.78 — this charger would have
+   to deliver ~500,000 kWh) overflows its tile rather than splitting. Lower the 19 if that day
+   comes; do not restore `anywhere`. */
 .stat__value {
-  font-size: var(--fs-2xl);
+  font-size: min(var(--fs-2xl), 19cqi);
   font-weight: 650;
   line-height: 1.15;
   letter-spacing: -.02em;
   font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
 }
 
 .stat__unit { font-size: var(--fs-lg); font-weight: 550; color: var(--fg-muted); margin-inline-start: 2px; }
+/* The one legal break in a stat value, and the reason it is in CSS: there is no character
+   between the figure and its unit in the DOM, so "12,345.67₪" is a single word. U+200B is a
+   soft-wrap opportunity and nothing else — zero width, bidi class BN, so it cannot reorder
+   the Hebrew around it, and generated content is not picked up by copy. */
+.stat__unit::before { content: "\200B"; }
 
 .stat__label {
   margin-top: var(--sp-1);

@@ -1,8 +1,14 @@
 // ── Bootstrap, fetching, view mounting, shared state ──
 //
 // This file is the only thing on the page that fetches, the only writer of the shared state
-// object, and the only owner of the stale marker and the expiry banner's lifecycle. Views are
-// pure painters: they are handed data that already arrived and they never see a failure.
+// object, and the only owner of the stale marker and of both banners' lifecycles -- the credential
+// expiry one and the signed-out one. Views are pure painters: they are handed data that already
+// arrived and they never see a failure.
+//
+// It is also the only place that reads *why* a round failed. The three outcomes stay three:
+// a transport failure says retry, a sign-in that has ended says sign in again, and an expired
+// upstream credential raises its own banner. Collapsing any two of them tells the user to do
+// something that cannot work.
 //
 // NO AUTOMATIC REFRESH. Upstream is touched in exactly two situations, and the server owns both
 // decisions: a page load whose cached data the server judges older than an hour, and the refresh
@@ -29,6 +35,10 @@ const shared = {
   history: null,
   invoices: null,
   expired: false,
+  // The last round was bounced to a sign-in, not merely failed. Distinct from `expired`, which
+  // is the upstream credential; this one is the viewer's own session and nothing on the page
+  // can renew it.
+  signedOut: false,
   fetchedAt: null,
   stale: false,
 };
@@ -93,14 +103,27 @@ function placeOwn(body, node) {
   body.replaceChildren(node);
 }
 
-function errorBlock(title) {
+// Two hints, and they must never merge back into one. A transport failure is worth retrying and
+// the refresh button is how; a sign-in that has ended is not, and pressing refresh is provably
+// the one action that cannot mend it. Only a top-level navigation can, because only that can
+// follow the edge's redirect to the sign-in page.
+const RETRY_HINT = 'Press refresh to try again.';
+const SIGN_IN_HINT = 'Your sign-in has ended. Reload this page to sign in again — refreshing will not bring it back.';
+
+function errorBlock(title, hint) {
   const box = h('div', 'empty empty--error');
   box.append(
     h('div', 'empty__icon', '⚠'),
     h('p', 'empty__title', title),
-    h('p', 'empty__hint', 'Press refresh to try again.')
+    h('p', 'empty__hint', hint)
   );
   return box;
+}
+
+// The only place that chooses between the two. A panel that has never mounted says why it is
+// empty; which of the two reasons it gives is the last round's verdict, never a guess.
+function panelError(view) {
+  return errorBlock(view.fail, shared.signedOut ? SIGN_IN_HINT : RETRY_HINT);
 }
 
 // "42 min", "3 h", "2 d" — computed at render time, never on a schedule.
@@ -198,7 +221,7 @@ async function paint(view) {
   // Never loaded. On a first load that failed there is no existing DOM to preserve, so the
   // panel says so; once a view has mounted, a later failure leaves its subtree untouched.
   if (view.needs && shared[view.needs] == null) {
-    if (!view.mounted) placeOwn(body, errorBlock(view.fail));
+    if (!view.mounted) placeOwn(body, panelError(view));
     return;
   }
 
@@ -211,7 +234,7 @@ async function paint(view) {
     view.mounted = true;
   } catch {
     view.mod = null; // drop the rejected promise so a later reload gets another chance
-    if (!view.mounted) placeOwn(body, errorBlock(view.fail));
+    if (!view.mounted) placeOwn(body, panelError(view));
   }
 }
 
@@ -232,6 +255,35 @@ async function paintExpiry() {
   }
 }
 
+// ── Signed-out banner lifecycle ──
+//
+// The panels alone cannot carry this. A viewer whose session ends mid-visit has every panel
+// already mounted, so a failed round leaves their subtrees untouched and the only thing that
+// changes is the amber stale rule -- which is exactly what an unplugged cable does too. Without
+// a line of its own, "signed out" and "offline" are the same picture.
+//
+// Its own node, inserted *before* the credential banner's mount rather than into it: that mount
+// belongs to views/controls.js and is blanked on every pass. Created and removed, never hidden,
+// for the same reason the credential field is.
+const signedOutMount = h('div');
+document.getElementById('expiry').before(signedOutMount);
+
+function paintSignedOut() {
+  if (!shared.signedOut) {
+    signedOutMount.replaceChildren();
+    return;
+  }
+  if (signedOutMount.firstChild) return; // already up — do not rebuild it under the user
+  const inner = h('div', 'expiry__inner');
+  inner.append(
+    h('p', 'expiry__title', 'Session expired'),
+    h('p', 'expiry__text', SIGN_IN_HINT)
+  );
+  const banner = h('div', 'expiry');
+  banner.append(inner);
+  signedOutMount.replaceChildren(banner);
+}
+
 // ── The fetch round ──
 
 async function load() {
@@ -240,6 +292,7 @@ async function load() {
 
   let stale = false;
   let expired = false;
+  let signedOut = false;
 
   for (const [key, result] of Object.entries(results)) {
     if (result.ok) {
@@ -249,6 +302,9 @@ async function load() {
     // A failed call means what is already on screen is the freshest thing there is.
     if (!result.ok || result.stale) stale = true;
     if (result.error === TOKEN_EXPIRED) expired = true;
+    // 'auth_required' is api.js's name for the edge bouncing us to a sign-in. One route saying
+    // it is enough: the gate is over the whole hostname, so it is true of all of them.
+    if (result.error === 'auth_required') signedOut = true;
   }
 
   // The age of the *oldest* thing on screen, not the freshest — the header should not claim a
@@ -258,8 +314,10 @@ async function load() {
   // Nothing ever arrived means there is nothing to be stale about; the panels say so themselves.
   shared.stale = stale && shared.fetchedAt != null;
   shared.expired = expired;
+  shared.signedOut = signedOut;
 
   paintUpdated();
+  paintSignedOut();
   await Promise.all([...views.map(paint), paintExpiry()]);
 }
 

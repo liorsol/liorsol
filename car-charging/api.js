@@ -55,20 +55,35 @@ function jsonBody(body) {
   return { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }
 
+// Why `redirect: 'manual'`, and why it is last in the object so no caller can turn it off:
+//
+// When the session ends, the edge answers a same-origin call to one of these routes with a
+// redirect to the sign-in host. Under the default mode the browser *follows* that redirect and
+// then applies the cross-origin check to where it landed; the sign-in host sends no header
+// allowing this origin, so the call rejects before any response object exists. Every property
+// that could have named the cause — `redirected` among them — is unreachable, and a dead session
+// arrives in the same catch as a dead network.
+//
+// Manual mode does not follow it. The browser hands back an opaque redirect instead: status 0,
+// no body, no headers, and a `type` that is readable. That one readable field is the whole
+// signal, and it survives the cross-origin case that `redirected` could never see.
 async function request(path, init) {
   let response;
   try {
-    response = await fetch(path, init);
+    response = await fetch(path, { ...init, redirect: 'manual' });
   } catch {
     return fail('network');
   }
+
+  // Checked before the body, because an opaque redirect has no body to read: reading first
+  // would land this in `bad_response` and lose the distinction again.
+  if (response.type === 'opaqueredirect') return fail('auth_required');
 
   let data = null;
   try {
     data = await response.json();
   } catch {
-    // Not JSON. A redirect off our own origin means the edge wants a fresh sign-in.
-    return fail(response.redirected ? 'auth_required' : 'bad_response', response.status);
+    return fail('bad_response', response.status);
   }
 
   const fetchedAt = typeof data?.fetchedAt === 'number' ? data.fetchedAt : null;

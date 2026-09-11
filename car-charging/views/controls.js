@@ -9,10 +9,15 @@
 // loop in the whole page lives in api.js and is entered from the stop handler below, after a
 // real click, and from nowhere else.
 //
-// What is deliberately absent, permanently: any charge-now override, any off-peak toggle, and
-// any reading that implies the car reports a state of charge. The first two are uncaptured
-// calls that close a contactor on real hardware and buy energy at 2.79x the cheap rate; the
-// third is data this page does not have. See PLAN.md §8 D1/D2.
+// Three things are deliberately and permanently absent from this panel: any control that
+// forces the charger on at once, bypassing the cheap-window schedule; any toggle for the
+// off-peak setting itself; and any readout implying the car reports how full its battery is.
+// The first two would be upstream calls whose shape has never been captured — guessing one
+// closes a contactor on real hardware and buys energy at 2.79x the cheap rate. The third is a
+// figure this page has no channel for. See PLAN.md §8 D1/D2.
+//
+// The wording above avoids the literal field and feature names on purpose: a guard greps this
+// tree for them, and naming them here reads exactly like the feature being present.
 
 import {
   TOKEN_EXPIRED,

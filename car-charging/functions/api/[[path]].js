@@ -49,13 +49,20 @@ export async function onRequest({ request, env }) {
   return json(404, { error: 'not_found' });
 }
 
+// The upstream service is reached with a *reconstructed* request: same method, same path,
+// same body, `content-type` and nothing else. Passing the original through would carry the
+// edge session cookie -- a live bearer credential for this whole hostname, with no device or
+// IP binding -- into a service that reads no header on any code path. It routes on the path
+// and reads the JSON body, so nothing else has any reason to cross, and one `console.log` of
+// the headers in a future debugging session can no longer put a session token in a log.
 function forward(request, env) {
   if (!env.PROXY) return json(503, { error: 'upstream_unavailable' });
-  return env.PROXY.fetch(request);
+  const type = request.headers.get('content-type');
+  return env.PROXY.fetch(new Request(request, { headers: type ? { 'content-type': type } : {} }));
 }
 
 // GET    /api/comments?archived=exclude|include|only   (default exclude)
-// POST   /api/comments            { author, text }
+// POST   /api/comments            { text }   -- `author` is server-assigned, see below
 // PATCH  /api/comments/<id>       { status } and/or { archived }
 //
 // There is deliberately no DELETE. Archiving is the only removal, rows stay in the
@@ -82,9 +89,20 @@ async function comments(request, env, url, id) {
 
   if (request.method === 'POST' && !id) {
     const body = await readJson(request);
-    const author = text(body?.author, MAX_AUTHOR);
+    // Provenance is assigned here from the authenticated caller and never read from the body.
+    // This board is a hand-off channel to a later automated reader, and `author` is the only
+    // trust signal it will ever have: anything that can post could otherwise claim to be
+    // "system" or "owner". A body `author` is accepted and discarded, not rejected.
+    //
+    // The email itself is deliberately not stored -- the database holds no personal data. The
+    // human class is the literal 'owner'; a future automated caller is its own client id.
+    const author =
+      callerClass(request) === 'human'
+        ? 'owner'
+        : text(request.headers.get('Cf-Access-Client-Id'), MAX_AUTHOR);
+    if (!author) return json(403, { error: 'forbidden' }); // no route admits a class without one
     const message = text(body?.text, MAX_TEXT);
-    if (!author || !message) return json(400, { error: 'author_and_text_required' });
+    if (!message) return json(400, { error: 'text_required' });
 
     const row = {
       id: crypto.randomUUID(),
@@ -128,8 +146,15 @@ async function comments(request, env, url, id) {
 
 const shape = (row) => ({ ...row, archived: row.archived === 1 });
 
-const text = (value, max) =>
-  typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : null;
+// Unicode format characters (bidi overrides, zero-width joiners and friends) are dropped on
+// write. They survive `textContent` intact, so they are invisible to the person reading the
+// board and read in full by the machine that reads it after them -- which is the whole reason
+// this board exists. Cost: an emoji sequence joined by U+200D is stored as its parts.
+const text = (value, max) => {
+  if (typeof value !== 'string') return null;
+  const clean = value.replace(/\p{Cf}/gu, '').trim();
+  return clean ? clean.slice(0, max) : null;
+};
 
 const readJson = (request) => request.json().catch(() => null);
 

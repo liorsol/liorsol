@@ -55,3 +55,112 @@ test('an unidentified request gets 403 on every route', async () => {
     }
   }
 });
+
+// ── The three properties added in wave 2 ──
+//
+// A stub database is enough: none of these care what SQL runs, only what the Function decided
+// before it ran. `identified()` is what the edge hands us once a session exists -- including
+// the session cookie, which is exactly what must not travel any further.
+
+const identified = (path, method = 'GET', body) =>
+  new Request(`https://example.invalid${path}`, {
+    method,
+    headers: {
+      'cf-access-authenticated-user-email': 'someone@example.invalid',
+      cookie: 'CF_Authorization=a.session.jwt',
+      ...(body ? { 'content-type': 'application/json' } : {}),
+    },
+    body,
+  });
+
+// Records every bound statement so a test can read back what would have been written.
+const stubDB = (writes) => ({
+  prepare: (sql) => ({
+    bind: (...args) => {
+      writes.push({ sql, args });
+      return {
+        run: async () => ({}),
+        first: async () => null,
+        all: async () => ({ results: [] }),
+      };
+    },
+  }),
+});
+
+test('the comment author is server-assigned and the body cannot forge it', async () => {
+  const writes = [];
+  const response = await onRequest({
+    request: identified('/api/comments', 'POST', JSON.stringify({ author: 'system', text: 'hi' })),
+    env: { DB: stubDB(writes) },
+  });
+
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).comment.author, 'owner');
+  assert.equal(writes.length, 1);
+  assert.ok(writes[0].args.includes('owner'), 'the row was not written with the server-assigned author');
+  assert.ok(!writes[0].args.includes('system'), 'a body-supplied author reached the database');
+  // No identity is stored either: the email is authorisation input, not a column value.
+  assert.ok(
+    !writes[0].args.some((a) => typeof a === 'string' && a.includes('@')),
+    'an address reached the database'
+  );
+});
+
+test('a missing author in the body is not an error, a missing text still is', async () => {
+  const writes = [];
+  const created = await onRequest({
+    request: identified('/api/comments', 'POST', JSON.stringify({ text: 'no author field' })),
+    env: { DB: stubDB(writes) },
+  });
+  assert.equal(created.status, 201);
+
+  const empty = await onRequest({
+    request: identified('/api/comments', 'POST', JSON.stringify({ author: 'owner' })),
+    env: { DB: stubDB([]) },
+  });
+  assert.equal(empty.status, 400);
+  assert.deepEqual(await empty.json(), { error: 'text_required' });
+});
+
+test('format characters are stripped from comment text on write', async () => {
+  const writes = [];
+  // A right-to-left override, a zero-width joiner and a zero-width no-break space.
+  const response = await onRequest({
+    request: identified(
+      '/api/comments',
+      'POST',
+      JSON.stringify({ text: 'do‮not‍trust﻿ me' })
+    ),
+    env: { DB: stubDB(writes) },
+  });
+
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).comment.text, 'donottrust me');
+  assert.ok(
+    !writes[0].args.some((a) => typeof a === 'string' && /\p{Cf}/u.test(a)),
+    'a format character reached the database'
+  );
+});
+
+test('a forwarded request carries no credential and no identity into the upstream service', async () => {
+  let seen = null;
+  const env = { PROXY: { fetch: (request) => ((seen = request), new Response('{}')) } };
+
+  await onRequest({
+    request: identified('/api/token', 'POST', JSON.stringify({ token: 'write-only' })),
+    env,
+  });
+
+  assert.ok(seen, 'nothing reached the upstream service');
+  assert.deepEqual([...seen.headers.keys()].sort(), ['content-type']);
+  assert.equal(seen.method, 'POST');
+  assert.equal(new URL(seen.url).pathname, '/api/token');
+  // The body is the one thing that must survive intact -- it is forwarded, never parsed here.
+  assert.equal(await seen.text(), JSON.stringify({ token: 'write-only' }));
+});
+
+test('a forwarded request with no upstream bound fails closed', async () => {
+  const response = await onRequest({ request: identified('/api/state'), env: {} });
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: 'upstream_unavailable' });
+});

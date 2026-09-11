@@ -1,0 +1,14 @@
+# The deployed asset set should be the page, not the project.
+#
+# This directory is deployed whole, so without this file the docs, the database schema and the
+# tests are all fetchable on the hostname. Nothing in them is secret -- they are public in this
+# repository -- but they are not the site, and every one of them is a file an attacker reads
+# first to learn how the thing is wired.
+#
+# gitignore syntax. The platform already withholds `_headers`, `_redirects`, `_routes.json`,
+# `_worker.js`, `functions/`, `node_modules/`, `.git/` and `.wrangler/` without being asked.
+
+README.md
+CLAUDE.md
+schema.sql
+test/

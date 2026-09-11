@@ -150,14 +150,18 @@ button.addEventListener('click', onRefresh);
 
 // The view's own element is created once and never discarded: the stale chrome is built around
 // it, so marking data stale costs a view nothing and cannot blank it.
-function frame(body, mount) {
-  if (!shared.stale) {
+//
+// Only a panel fed by a cached route wears the marker. The comment board reads its own rows
+// live on every call, so flagging it with the charging data's age would be a lie.
+function frame(body, mount, view) {
+  if (!shared.stale || !view.needs) {
     body.replaceChildren(mount);
     return;
   }
   const wrap = h('div', 'stale'); // amber rule down the edge; deliberately does not dim, the
   const flag = h('span', 'stale__flag', 'Stale — '); // cached data is the only data there is
-  flag.append(h('span', 'stale__age', (currentAge() ?? 'unknown age') + ' old'));
+  const age = currentAge();
+  flag.append(h('span', 'stale__age', age ? age + ' old' : 'age unknown'));
   wrap.append(flag, mount);
   body.replaceChildren(wrap);
 }
@@ -177,7 +181,7 @@ async function paint(view) {
     const mod = (view.mod ??= import(view.src));
     const { render } = await mod;
     view.el ??= document.createElement('div');
-    frame(body, view.el);
+    frame(body, view.el, view);
     render(view.el, shared, ctx);
     view.mounted = true;
   } catch {
@@ -222,9 +226,12 @@ async function load() {
     if (result.error === TOKEN_EXPIRED) expired = true;
   }
 
+  // The age of the *oldest* thing on screen, not the freshest — the header should not claim a
+  // panel is current because some other route happened to succeed.
   const times = Object.values(fetchedAt).filter((time) => typeof time === 'number');
   shared.fetchedAt = times.length ? Math.min(...times) : null;
-  shared.stale = stale;
+  // Nothing ever arrived means there is nothing to be stale about; the panels say so themselves.
+  shared.stale = stale && shared.fetchedAt != null;
   shared.expired = expired;
 
   paintUpdated();

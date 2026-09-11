@@ -144,15 +144,28 @@ async function comments(request, env, url, id) {
   return json(405, { error: 'method_not_allowed' });
 }
 
-const shape = (row) => ({ ...row, archived: row.archived === 1 });
+// Unicode format characters -- bidi overrides, zero-width joiners and friends, and the U+E0000
+// tag block that smuggles plain ASCII past a human -- plus the two line separators, which are
+// not Cf and are exactly as invisible. They survive `textContent` intact, so they are invisible
+// to the person reading the board and read in full by the machine that reads it after them,
+// which is the whole reason this board exists. Cost: an emoji sequence joined by U+200D is
+// stored and served as its parts.
+const INVISIBLE = /[\p{Cf}\u2028\u2029]/gu;
 
-// Unicode format characters (bidi overrides, zero-width joiners and friends) are dropped on
-// write. They survive `textContent` intact, so they are invisible to the person reading the
-// board and read in full by the machine that reads it after them -- which is the whole reason
-// this board exists. Cost: an emoji sequence joined by U+200D is stored as its parts.
+// Every row leaves through here, on GET, POST and PATCH alike, so this is where the strip
+// belongs: a row can enter this table by routes the POST path never sees -- a direct database
+// execute, a restore, an import, or a write that predates the strip -- and the reader this
+// board was built for is a machine. Sanitising on write only leaves those rows intact.
+const shape = (row) => ({
+  ...row,
+  text: typeof row.text === 'string' ? row.text.replace(INVISIBLE, '') : row.text,
+  archived: row.archived === 1,
+});
+
+// The write half: same character class, plus the length and emptiness rules.
 const text = (value, max) => {
   if (typeof value !== 'string') return null;
-  const clean = value.replace(/\p{Cf}/gu, '').trim();
+  const clean = value.replace(INVISIBLE, '').trim();
   return clean ? clean.slice(0, max) : null;
 };
 

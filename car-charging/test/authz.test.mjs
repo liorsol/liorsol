@@ -142,6 +142,34 @@ test('format characters are stripped from comment text on write', async () => {
   );
 });
 
+// Sanitising on write alone leaves every row that entered by another route -- a direct database
+// execute, a restore, an import, a write that predates the strip -- readable in full by the
+// machine this board exists for. So the property under test is the read path: this row is handed
+// straight back by the stub, exactly as one of those routes would have left it in the table.
+// Escapes, not literals: an invisible character in a test file is invisible in the test file too.
+const stubRead = (rows) => ({
+  prepare: () => ({ all: async () => ({ results: rows }) }),
+});
+
+test('format characters are stripped from comment text on read, not only on write', async () => {
+  // A right-to-left override, a zero-width joiner, a line separator (Zl, not Cf) and a
+  // U+E0000-block tag character, which is how plain ASCII is smuggled past a human reader.
+  const smuggled = 'do\u202Enot\u200Dtrust\u2028me\u{E0041}';
+  const response = await onRequest({
+    request: identified('/api/comments'),
+    env: {
+      DB: stubRead([
+        { id: 'row-the-write-path-never-saw', ts: 0, author: 'owner', text: smuggled, status: 'open', archived: 0 },
+      ]),
+    },
+  });
+
+  assert.equal(response.status, 200);
+  const [comment] = (await response.json()).comments;
+  assert.equal(comment.text, 'donottrustme');
+  assert.equal(comment.archived, false);
+});
+
 test('a forwarded request carries no credential and no identity into the upstream service', async () => {
   let seen = null;
   const env = { PROXY: { fetch: (request) => ((seen = request), new Response('{}')) } };

@@ -20,16 +20,22 @@ const MAX_TEXT = 4000;
 // Today every route is people-only. When an automated caller is added later it is
 // authorised at the edge as a second policy on the same application, and the only
 // change here is adding 'machine' to the rows it may use.
-const ROUTES = [
+export const ROUTES = [
   { match: /^\/api\/comments(?:\/([^/]+))?$/, callers: ['human'], handler: comments },
   { match: /^\/api\//, callers: ['human'], handler: forward },
 ];
 
-// Authorisation only. An authenticated identity that carries no address is not a
-// person, so it maps to 'machine' -- which no route allows today, and is therefore
-// refused. A missing address is never read as "trusted", and never as an error.
-function callerClass(request) {
-  return request.headers.get('Cf-Access-Authenticated-User-Email') ? 'human' : 'machine';
+// Authorisation only, and every class comes from a signal that is *present*.
+//
+// The absence of a header is not evidence of anything: the edge strips these headers
+// from anything it did not itself authenticate, so a request arriving without them is
+// a request that was never identified. It gets 'unknown', which appears in no route's
+// `callers` and never may. Deriving a trusted class from a missing header would make
+// every anonymous request on the internet that class the day a route admits it.
+export function callerClass(request) {
+  if (request.headers.get('Cf-Access-Authenticated-User-Email')) return 'human';
+  if (request.headers.get('Cf-Access-Client-Id')) return 'machine';
+  return 'unknown';
 }
 
 export async function onRequest({ request, env }) {

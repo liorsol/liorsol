@@ -98,6 +98,17 @@ npx wrangler d1 execute car-charging --remote --file=car-charging/schema.sql
 
 It is idempotent (`CREATE TABLE IF NOT EXISTS`), so re-running it is safe.
 
+### Check
+
+```bash
+node --test car-charging/test/authz.test.mjs
+```
+
+No dependencies, no network. It asserts the one property this directory can prove offline:
+a request carrying no identity header is a caller class that no route in the table admits, so
+it gets `403` on every route. It iterates the route table, so a new route is covered the day
+it is added.
+
 **One writer per table, and this is a hard rule:** the private upstream service owns `cache`,
 this Function owns `comments`. Neither ever writes the other's table.
 

@@ -65,9 +65,31 @@ npx wrangler pages deploy . --cwd car-charging --project-name car-charging --bra
 deployment. Anything else publishes a preview.
 
 **The directory is deployed whole**, so the docs, the schema and the tests next to the page are
-fetchable on the hostname unless something stops them. `.assetsignore` states which ones should
-not be — read the note inside it before trusting it, because the classic uploader does not read
-the file. Nothing in them is secret; they are public in this repository.
+fetchable on the hostname unless something stops them. Nothing in them is secret — they are
+public in this repository — but they are not the site.
+
+**`_redirects` is the file that stops them**, and it is the only one here that does. Each of
+`/README.md`, `/CLAUDE.md`, `/schema.sql`, `/.assetsignore` and `/test/*` is answered with a
+`302` to `/` before the asset is ever reached. The other two candidates were measured and both
+fail, so do not reach for them again:
+
+- **`.assetsignore` is inert.** The classic Pages uploader walks the directory against a fixed
+  ignore list (`_worker.js`, `_redirects`, `_headers`, `_routes.json`, `functions`,
+  `**/.DS_Store`, `**/node_modules`, `**/.git`, `.wrangler`) and never opens the file. It is
+  kept because it states the intent and starts working if this project ever moves to the newer
+  static-asset uploader. Note what that list does *not* contain: `.assetsignore` itself is
+  uploaded and served, which is why `_redirects` covers it too.
+- **`_routes.json` cannot do it either.** It only chooses which requests reach the Function. A
+  request routed *to* the Function that matches none of the Function's own routes falls through
+  to `env.ASSETS.fetch()` and the asset is served regardless — `200`, measured under
+  `wrangler pages dev`, not inferred.
+
+`_routes.json` is still here doing its actual job: pinning the Function to `/api/*`. Without it
+the Function's surface is whatever the `functions/` tree happens to imply, so a file added there
+later could start running on every request for the page. Everything outside `/api/*` goes
+straight to the asset server and never invokes a Worker.
+
+`car-charging/test/authz.test.mjs` fails if a file is added beside the page and nothing hides it.
 
 **The `--cwd` is load-bearing, not decoration.** Wrangler looks for `functions/` relative to its
 working directory, *not* inside the asset directory you name. Run it as

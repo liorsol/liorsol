@@ -153,6 +153,32 @@ button, input, textarea, select { font: inherit; color: inherit; }
 
 .num { font-variant-numeric: tabular-nums; }
 
+/* ── bidi: figures are LTR runs inside RTL prose ───────────────────────── */
+/* Every box below holds a measurement, not a sentence: "31.10", "₪ 14.00",
+   "5.1 kW", "17:04", "3 h old". Dropped into a Hebrew paragraph those are weak
+   runs fenced by neutrals, and the neutrals take the paragraph's direction —
+   which is how "6 h 03 m" comes out as "m 03 h 6".
+   `plaintext` gives each of these boxes its own bidi paragraph whose direction
+   comes from its first STRONG character. A bare figure has none, so it stays
+   LTR; a value that does start with Hebrew still reads RTL. Crucially it does
+   not touch the `direction` property, so `text-align: start/end` keeps
+   resolving in the page direction and a numeric column still hugs the table's
+   inline-end (right in LTR, left in RTL).
+   MEASURED, not assumed: without this the duration cell "6 h 03 m" renders its
+   glyph runs out of logical order at dir="rtl". It is the column WITHOUT .num
+   that broke, so the rule is on the cell, not on the numeric class — all six
+   columns are mixed-script, not just the three numeric ones. A cell that really
+   does start with Hebrew ("10 בספט׳") still gets RTL. */
+.num,
+.table th,
+.table td,
+.updated__abs,
+.stat__value,
+.suspend__amount,
+.comment__time,
+.stale__age,
+.tariff__flip strong { unicode-bidi: plaintext; }
+
 /* ── page shell ────────────────────────────────────────────────────────── */
 
 .shell {
@@ -467,6 +493,10 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .table th,
 .table td {
   padding: var(--sp-3);
+  /* Correct in LTR, and the fallback in RTL. See the [dir="rtl"] override at
+     the end of the sheet: these cells are `unicode-bidi: plaintext`, and under
+     plaintext `start`/`end` resolve against the CELL CONTENT's direction, not
+     the page's — which is right for glyph order and wrong for a column edge. */
   text-align: start;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
@@ -626,6 +656,20 @@ button, input, textarea, select { font: inherit; color: inherit; }
    .tariff__slice{--start:<%>;--end:<%>}  .tariff__now{--at:<%>}  */
 
 .tariff { min-width: 0; }
+
+/* RULING: the band is a TIME AXIS and does not mirror under dir="rtl". Midnight
+   is at the left edge and the day runs rightwards in both page directions —
+   like a clock face, a scrubber or a Gantt row, none of which mirror in Hebrew.
+   The scale labels (00 06 12 18 24) are the proof: mirrored, they read 24 → 00
+   left-to-right, and a reader has to invert the axis before reading the price.
+   Pinning `direction` here also pins the CONTRACT: `inset-inline-start` on a
+   box whose own direction is ltr always resolves to `left`, so --start/--end/--at
+   keep meaning "percent of the day from midnight" with no change to the view
+   module and no dependence on what the page direction happens to be.
+   The legend and .tariff__flip are prose and are deliberately left to mirror. */
+.tariff .scroll-x,
+.tariff__band,
+.tariff__scale { direction: ltr; }
 
 .tariff__band {
   position: relative;
@@ -955,13 +999,37 @@ button, input, textarea, select { font: inherit; color: inherit; }
   min-width: 80px;
 }
 
-/* --pct is set inline by the view module, 0–100. */
+/* --pct is set inline by the view module, 0–100.
+   RULING: this one DOES mirror — under dir="rtl" the fill grows from the right,
+   which is what it already does for free (a block box narrower than its
+   container hugs the inline-start edge). Opposite call to the tariff band, and
+   deliberately so: the band is an axis with labelled coordinates that have a
+   fixed reading order, this is an unlabelled proportion, and every native RTL
+   progress indicator (UIProgressView, Android ProgressBar, Material) mirrors.
+   It also sits in a flex row that mirrors around it, so a fill that grew
+   leftwards would grow away from its own "Settling…" label. */
 .settle__fill {
   height: 100%;
   width: calc(var(--pct, 0) * 1%);
   background: var(--accent);
   transition: width .3s linear;
 }
+
+/* ── RTL: table column edge ────────────────────────────────────────────── */
+
+/* The one place a PHYSICAL value is the right answer, and the reason is worth
+   the four lines. Table cells are `unicode-bidi: plaintext` so their glyph runs
+   cannot scramble; the cost is that `text-align: start/end` then resolves
+   against each CELL's own content direction. Measured at dir="rtl": the Hebrew
+   date column aligned right and the Latin duration column aligned left, in the
+   same table — a column edge that moves with the row's content is not a column.
+   Inside a block that is already scoped to one direction, `right` is not an
+   un-migrated physical property; it is the only value plaintext cannot
+   reinterpret. Every column, numeric or not, meets the same edge. */
+[dir="rtl"] .table th,
+[dir="rtl"] .table td,
+[dir="rtl"] .table th.num,
+[dir="rtl"] .table td.num { text-align: right; }
 
 /* ── desktop ───────────────────────────────────────────────────────────── */
 

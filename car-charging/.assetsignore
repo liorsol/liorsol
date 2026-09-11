@@ -7,6 +7,13 @@
 #
 # gitignore syntax. The platform already withholds `_headers`, `_redirects`, `_routes.json`,
 # `_worker.js`, `functions/`, `node_modules/`, `.git/` and `.wrangler/` without being asked.
+#
+# ⚠ Read this before trusting the file. The classic Pages uploader walks the directory against
+# a FIXED ignore list (the one above) and does not read this file -- only the newer static-asset
+# uploader does. So until this project moves to that pipeline, this file states the intent and
+# changes nothing, and `curl -I <host>/README.md` still answers 200. The fix that works on the
+# deployment shape we have today is a `_routes.json` that sends these paths to the Function,
+# which answers 404 to anything outside `/api/`.
 
 README.md
 CLAUDE.md

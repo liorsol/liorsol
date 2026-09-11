@@ -69,7 +69,14 @@ const source = (name) => readFileSync(new URL('../' + name, import.meta.url), 'u
 
 const hits = (text, pattern) => text.split('\n').filter((line) => pattern.test(line)).length;
 
-const SELF_MOVING = /setTimeout|setInterval|requestAnimationFrame|serviceWorker|visibilitychange|localStorage|sessionStorage|document\.cookie|innerHTML|console\./;
+// `visibilitychange` as a bare string caught one of the four revalidation events §1.3 forbids
+// and none of the other three: a view could bind focus, online or pageshow, promote itself to
+// self-fetching, and pass. The listener form is matched as well as the bare word so that a
+// module that reaches for any of the four is caught by the event name it binds, not by the one
+// name somebody happened to type here first. `addEventListener` on its own is deliberately not
+// in the pattern -- the views legitimately bind click, input and change.
+const SELF_MOVING =
+  /setTimeout|setInterval|requestAnimationFrame|serviceWorker|visibilitychange|addEventListener\(\s*['"](focus|online|visibilitychange|pageshow)|localStorage|sessionStorage|document\.cookie|innerHTML|console\./;
 
 test('nothing in the page can fetch on its own', () => {
   // Listed one by one, not globbed: a readdir that matched nothing would pass silently,

@@ -297,7 +297,20 @@ async function load() {
   let authRequired = false;
 
   for (const [key, result] of Object.entries(results)) {
-    if (result.ok) {
+    // An expired credential is not a failed read, and this is the round that proves it. The
+    // server answers 503 with its own last cached row riding along -- the same bytes the happy
+    // path returns, flagged stale and carrying the row's ORIGINAL fetchedAt -- so the page can
+    // keep showing data under the banner. Discarding it is what turned a first load during
+    // expiry into five generic error cards, and that load is the likely one: the owner opens
+    // the dashboard *because* they were told the credential expired.
+    //
+    // Taken only when the row is really there. An empty cache answers with the error alone, and
+    // a body with no fetchedAt is a body with nothing in it: adopting that would mount every
+    // view over an object with no charger, no sessions and no calendar, and the panels would
+    // paint an invented "nothing plugged in" where the truth is "nothing has ever arrived".
+    const carried =
+      result.error === TOKEN_EXPIRED && result.data && typeof result.fetchedAt === 'number';
+    if (result.ok || carried) {
       shared[key] = result.data;
       fetchedAt[key] = result.fetchedAt;
     }

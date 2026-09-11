@@ -22,9 +22,12 @@ Remote **start** and **stop** are both understood as of 2026-09-11 and work from
 dashboard can ship real controls rather than placeholders. One deferral-scheduling call remains
 uncaptured and will not be guessed — see the private notes.
 
-**Access model:** signed in with my Google account, only me. The personal credential for the
-upstream data source never reaches the browser — it lives in a proxy function. Everything
-except the UI source runs on Cloudflare.
+**Access model:** the whole hostname sits behind one Cloudflare Access application whose policy
+allows exactly one identity — mine. *Which* sign-in method that application uses is a dashboard
+setting and is deliberately absent from this repo: nothing in the page, the Function or the
+deploy names it, branches on it, or has to change when it changes. The personal credential for
+the upstream data source never reaches the browser — it lives in the private proxy Worker.
+Everything except the UI source runs on Cloudflare.
 
 ## Read this first
 
@@ -53,9 +56,10 @@ and endpoints out of a public repo is the point.
 
 - No provider or app names, hostnames, endpoint paths, header names or token values — not in
   code, comments, commit messages, branch names or filenames.
-- Upstream base URL and API tokens go in **Wrangler secrets** (`env.UPSTREAM_BASE`,
-  `env.API_TOKEN`), never hardcoded — that keeps the Worker source safe to commit.
-- Credentials never leave the iCloud folder.
+- The upstream base URL and the API token are **secrets bound to the private Worker**, never
+  hardcoded and never in this repo — not even as a name in a wrangler config committed here.
+- Credentials never leave the iCloud folder and the Cloudflare account.
+- The private Worker's source is not committed to this repo under any filename.
 
 If a change can't be described without naming the provider, it belongs in the iCloud notes, not
 in this repo.
@@ -73,28 +77,35 @@ is saving money or just losing time.
 
 ## What gets built here
 
-Worker as a secret-holding proxy plus a static page, following the existing `esim-usage/`
-pattern in this repo — but see the auth decision below: the page is served by Cloudflare Pages,
-**not** GitHub Pages:
+Two halves. **Only one of them is in this repo**, and the split is the security model, not a
+packaging preference.
+
+In this directory — the whole public half, a Cloudflare Pages project, no build step:
 
 ```
-car-charging/proxy.js     Cloudflare Worker: holds credentials, returns sanitised JSON
-car-charging/index.html   dashboard, served by Cloudflare Pages behind Access
+car-charging/index.html                  the page
+car-charging/{style.css,app.js,api.js}   and views/
+car-charging/functions/api/[[path]].js   Pages Function: owns the comment board,
+                                         hands everything else to the private half
+car-charging/schema.sql                  D1 schema
 ```
 
-Deploy the same bare way:
+**The proxy that holds the credential is not here, and must never be created here.** It is a
+separate Worker; its source lives beside the private notes in the iCloud folder above, it is
+deployed by hand, and it is never committed to any repo. Its credential lives in Cloudflare
+Secrets Store, bound to that Worker — not in a file, not in this repo's Actions secrets, and
+never passing through this directory. The page reaches it over a **service binding** on the
+Pages project, so nothing here holds a hostname, a path, a header name or a token, and the two
+halves deploy independently.
 
-```bash
-npx wrangler deploy car-charging/proxy.js --name car-charging-proxy --compatibility-date 2026-01-01
-npx wrangler secret put UPSTREAM_BASE
-npx wrangler secret put API_TOKEN
-```
+⚠️ **This is the opposite of the `esim-usage/proxy.js` pattern next door.** That Worker is
+committed and deliberately open, because it holds nothing. This one holds a credential that
+exposes personal details and closes a contactor on real hardware.
 
-⚠️ **This Worker is not like `esim-usage/proxy.js`.** That one is deliberately open because it
-holds no secrets. This one holds a credential that exposes personal details and will eventually
-trigger physical actions on a charger. It must be gated. Expose a narrow, read-only route set
-rather than a generic passthrough, and strip personal fields in the Worker before returning
-anything to the browser.
+> A future session that finds itself about to create `car-charging/proxy.js`, or to run
+> `wrangler secret put` in this directory, is about to put the credential in a public repo.
+> That is what this section exists to prevent. `.gitignore` carries a tripwire for the filename;
+> the tripwire is a backstop, not the rule.
 
 ## Auth: the one decision to make first
 
@@ -117,27 +128,32 @@ cannot follow.
 
 ### ✅ Decided: option A — serve from Cloudflare (2026-09-07)
 
-**Agreed, not yet implemented.** Deferred to a later session; nothing has been built or
-deployed. Option B is rejected: it cannot satisfy goal 2, because a Worker that checks a token
-in its own code has already paid for the request by the time it says no.
+Option B is rejected: it cannot satisfy goal 2, because a Worker that checks a token in its own
+code has already paid for the request by the time it says no. Goal 1 is now stated as "one
+identity, mine" — **which** sign-in method the Access application uses is a dashboard setting,
+deliberately not named anywhere in this repo (see *Access model* above).
 
 "UI on GitHub" still holds in the sense that matters — the source stays in this repo and
 Cloudflare Pages builds from it. Only the serving moves.
 
-**When picking this up, in order:**
+**The shape this landed in, and the order it has to be built in:**
 
-1. Cloudflare Pages project building this repo, `car-charging/` as the output — replaces
-   GitHub Pages for *this page only*; the rest of the site stays where it is.
-2. Custom hostname on Cloudflare, one Access application covering both the page and the
-   Worker route, Google as the identity provider, policy narrowed to my address.
-3. `workers_dev = false` — otherwise the Worker keeps an unauthenticated door open beside the
-   locked one, and option A's whole benefit evaporates.
-4. Only then `proxy.js`: `UPSTREAM_BASE` + `API_TOKEN` as Wrangler secrets, narrow read-only
-   routes, personal fields stripped before anything reaches the browser.
-5. `index.html` last, once there's an authenticated endpoint to call.
+1. Cloudflare Pages project serving `car-charging/` — replaces GitHub Pages for *this page
+   only*; the rest of the site stays where it is.
+2. One Access application over the whole hostname, policy narrowed to my one address. A second
+   application is needed over the preview hostnames, or preview deployments are an open door —
+   which is why **no binding is ever attached to the preview environment** (`README.md`).
+3. `workers_dev = false` on the private Worker and no route on it — otherwise it keeps an
+   unauthenticated door open beside the locked one and option A's whole benefit evaporates. The
+   service binding from the Pages project is its only door.
+4. The private Worker itself, **built and deployed from the iCloud folder, never from here**:
+   its secrets live in Cloudflare Secrets Store, it exposes a narrow route set rather than a
+   passthrough, and it strips personal fields before anything reaches the browser.
+5. The page last, once there is an authenticated endpoint to call.
 
-Verify at the end by opening the Worker URL in a private window: it must land on Google
-sign-in, not on data. If it returns JSON, the gate isn't on.
+Verify at the end by opening the hostname in a private window: it must land on the Access
+sign-in, not on data. If it returns JSON, the gate isn't on — and check a preview URL the same
+way, not only the production hostname.
 
 Credentials expire and cannot renew themselves unattended; the recovery procedure is in the
 iCloud notes. The Worker should surface expiry explicitly (`503` + a clear banner) rather than

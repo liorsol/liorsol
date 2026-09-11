@@ -9,3 +9,11 @@ package.json
 package-lock.json
 .DS_Store
 .wrangler/
+**/.wrangler/
+.dev.vars
+.dev.vars.*
+
+# Tripwire, not a rule. The charging dashboard's proxy holds a credential and is
+# deployed from outside this repo; see car-charging/CLAUDE.md. If this line ever
+# starts mattering, something has already gone wrong.
+car-charging/proxy.js

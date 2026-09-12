@@ -31,6 +31,34 @@ Alongside them: `_headers` (CSP, `frame-ancestors`, referrer, nosniff), `_redire
 denylist that keeps everything but the page off the hostname), `_routes.json` (pins the Function
 to `/api/*`), `.assetsignore` (intent only — see below), `schema.sql`, `test/`, and the two docs.
 
+### One screen, four views
+
+The page is **not a long scroll**. It is one screen with a menu — a fixed rail from 900px up, an
+off-canvas drawer below it — and four routes, each a `.view` section in `<main>` with exactly one
+`.is-active`:
+
+```
+#/status     the default: the tariff window, the connector, the live charge, start/stop
+#/history    the sessions table
+#/invoices   the charger and the billing panel
+#/comments   the notes board
+```
+
+The router is the browser's own hash navigation, about thirty lines at the bottom of `app.js`;
+the pattern is lifted from `trips/italy-2026/trip.js`. Two things a reader should not have to
+rediscover:
+
+- **The leading slash is load-bearing.** Two panel bodies carry the ids `history` and `comments`,
+  so a bare `#history` really resolves and the browser scrolls that panel into view before the
+  router runs. `#/history` names no element. The slashless form is still accepted on the way in
+  for old bookmarks, and must never be produced.
+- **A menu press fetches nothing.** Every view is mounted and filled by the same load round, so
+  navigating is a class toggle over DOM that already has its data. An upstream call per menu press
+  is the invocation budget the one-hour cache rule exists to protect; `test/nav.test.mjs` counts
+  `fetch` rather than trusting this sentence.
+
+Signed out, the menu is hidden and the views are detached as a set: the sign-in card is the page.
+
 **The gate is application code, not an edge product.** Nothing is authenticated before this
 directory runs: the Function receives every request, asks the private service one body-less
 question about the session cookie, and answers `401 {"error":"auth_required"}` itself when the
@@ -89,6 +117,11 @@ whatever happened, so nothing about it is enumerable.
 | `403 forbidden` | a session not allowed *that route* | this Function's route table |
 | `503 token_expired` | the **charger** credential is dead — nothing to do with signing in | upstream |
 
+`503 token_expired` is the one of the three to distrust: the private service raises it for *any*
+unsuccessful upstream answer, so a misconfigured base URL arrives here wearing the name of a dead
+credential. It has already sent a session hunting a credential that was fine. See `CLAUDE.md`
+before believing it.
+
 **The page itself is public, on purpose.** The HTML, CSS and JS are served to anyone; the gate is
 on `/api/*` only. The page holds no data and no secret — anonymous, it gets `401`s and renders a
 sign-in screen — and moving the gate in front of the page means an edge gate, which is the
@@ -122,6 +155,13 @@ npx wrangler pages deploy . --cwd car-charging --project-name car-charging --bra
 
 `--branch main` is the project's production branch, so this publishes the production
 deployment. Anything else publishes a preview.
+
+**The project serves on two hostnames**: the `pages.dev` one and a custom domain, which is not
+named here because it is a subdomain of a zone carrying the owner's personal mail — the same
+omission rule as the sign-in details. One deploy serves both. Three facts about it are in
+`CLAUDE.md`: Pages did **not** create its DNS record and validation stalled until the record was
+added by hand, the deploy credential cannot see DNS at all, and the session cookie is host-only so
+signing in once per hostname is expected rather than a bug.
 
 The private service is a **separate, hand-run deploy** from outside this repo. Neither deploy
 touches the other, and nothing here ever deploys it.
@@ -229,7 +269,20 @@ one of them fails *silently* in production if it breaks:
 - a comment's `author` comes from the verified caller class and a body field cannot forge it, and
   no address reaches the database;
 - format characters are stripped from comment text on write **and** on read;
-- the settle poll stops on the first completed sample instead of spending its whole cap.
+- the settle poll stops on the first completed sample instead of spending its whole cap;
+- **an ordinary page load forces nothing upstream** — the server's one-hour rule is where the
+  invocation budget lives — while **a command's own reload does force it**. An unforced reload
+  after a start or a stop re-reads the cached row and repaints the charger as it was *before* the
+  command; that shipped once, and it was invisible until someone was standing at a charger. The
+  `force` parameter on the shared release path has **no default** on purpose;
+- a start press is confirmed by a bounded poll, armed only by the press, and running its cap out
+  is reported as neither success nor failure — the command was accepted and the charger has not
+  confirmed it yet;
+- walking the whole menu makes **no** request, every view is deep-linkable, and an unknown hash
+  lands on the status view rather than on a blank page;
+- an unrecognised connector status is rendered as itself and **never** falls through to "nothing
+  is connected" — a car plugged in and idle reports a connector state with zero sessions, so the
+  session list cannot answer whether a cable is in the car.
 
 **One writer per table, and this is a hard rule:** the private upstream service owns `cache`,
 `sessions` and `login_tokens`; this Function owns `comments`. Neither ever writes the other's

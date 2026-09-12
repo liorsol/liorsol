@@ -25,8 +25,25 @@ iCloud:
 └── .token.json      ← credential, chmod 600
 ```
 
-Start any session by reading that folder's `CLAUDE.md`, then `build/HANDOFF.md`. This file is a
-signpost: it carries the shape and the rules, and no vendor detail at all.
+Start any session by reading that folder's `CLAUDE.md`, then `build/DISPATCH-LOG.md` and
+`build/HANDOFF.md`. This file is a signpost: it carries the shape and the rules, and no vendor
+detail at all.
+
+**Those notes lag the tree, always.** They are written by whoever finished a piece of work, and
+the next piece lands before the note is updated — the largest open item in `HANDOFF.md` has twice
+been something that had already shipped. When a note and the code disagree, the code wins, and
+`git log --oneline` is the cheapest way to see what arrived after a note was written.
+
+**The upstream configuration comes from the working script, never from prose in the notes.**
+`charge.sh` runs against the real data source and is therefore the source of truth for the base
+URL and for the constant beside it; `API-NOTES.md` is commentary, and it has been wrong. A session
+that built the Worker's secrets by regex-scraping a documentation table in the notes got both
+values wrong, and the failure did not present as a configuration error — it reached the owner as
+*"your charger credential has expired"*, for a credential that was never broken. Read the values
+off the script's own assignment lines, strip the quotes **and the trailing comment**, and refuse
+to write anything still carrying a `#` or a `"`. The second attempt at that fix stripped the
+quotes only, stored the constant plus fifty-one characters of comment, and broke a value that had
+been correct all along.
 
 ## Why the split — the secrecy rule
 
@@ -74,6 +91,13 @@ it, or has to change when it changes again.
 - **Everything under `/api/*` answers `401 {"error":"auth_required"}` without a valid session.**
   `403 forbidden` means a session not allowed that route; `503 token_expired` means the
   *charger* credential is dead and has nothing to do with sign-in. Three states, none collapsed.
+- **`503 token_expired` is currently too coarse to believe.** The private half maps *any*
+  unsuccessful upstream answer onto it, so a wrong base URL reports itself as a dead charger
+  credential — which is exactly how the configuration bug above reached the owner, and it cost a
+  session spent hunting a credential that was fine. Check the configuration against the working
+  script **before** treating that error as a credential problem. Narrowing it — auth rejection vs
+  unreachable vs malformed, without leaking upstream detail to the page — is an open fix on the
+  private half.
 - The signing key lives in Secrets Store bound to the Worker. **If it is missing the system does
   not degrade, it closes** — every route 401s and no unsigned cookie is ever minted, which looks
   exactly like "nobody has signed in yet". If sign-in silently never works, check the key first.
@@ -118,8 +142,8 @@ product — that trade was made knowingly.
 In this directory — the whole public half, a Cloudflare Pages project, no build step:
 
 ```
-car-charging/index.html                  the page
-car-charging/{app.js,api.js,style.css}   app shell, transport, design system
+car-charging/index.html                  the markup shell: the menu and four empty view sections
+car-charging/{app.js,api.js,style.css}   app shell + hash router, transport, design system
 car-charging/views/                      account, auth, comments, controls, he, history, tariff
 car-charging/functions/api/[[path]].js   Pages Function: authorises, owns the comment board,
                                          forwards everything else to the private half
@@ -159,6 +183,74 @@ expose personal details and close a contactor on real hardware.
 **Bindings are production-only, always.** Preview deployment URLs are permanent, guessable from
 a public repo and printed in every deploy log. Nothing is ever bound to the preview environment.
 
+## The page — one screen, four views, a hash router
+
+**It is not a long scrolling page any more, and the earlier description of one was the thing the
+owner rejected.** What they asked for: *"one page with menu … most of the time we should see just
+current status. History, invoice and commenting should be in menu. The same way it was implemented
+in the travel webpages."* So the pattern is **lifted from `trips/italy-2026/trip.js`**, not
+invented here — read that file before changing this one.
+
+- Four routes: **`#/status` (the default), `#/history`, `#/invoices`, `#/comments`.** One `.view`
+  section per route inside `<main>`, exactly one wearing `.is-active`. The menu is a fixed rail
+  from 900px up and an **off-canvas drawer below it**, with a `☰` handle in the sticky header and
+  a scrim. `nav` / `navscrim` / `.shell` must stay siblings in that order — the desktop gutter and
+  the scrim are both selected off that adjacency.
+- **The leading slash is load-bearing.** Two panel bodies carry the ids `history` and `comments`,
+  so a bare `#history` is a fragment that genuinely resolves and the browser scrolls that panel
+  into view *before* the router runs. `#/history` can never name an element. The parser accepts
+  the slashless form on the way in so old bookmarks still land — that tolerance is for reading,
+  never for writing.
+- Menu items are real `<a href="#/name">` and the browser's own hash navigation is the router:
+  Back and Forward work, every view is deep-linkable, and the items stay focusable and
+  middle-clickable. The travel page's href-less `<a data-view>` is the one thing deliberately
+  *not* copied. Nothing calls `preventDefault` and nothing assigns to `location.hash`.
+- **A view switch fetches nothing.** All the views are mounted and filled by the same `load()`
+  round, so navigating is a class toggle over DOM that already holds its data. That is the
+  invocation budget, not an optimisation, and `test/nav.test.mjs` asserts it by counting `fetch`.
+- Signed out, the menu is hidden and the views are detached as a set: the sign-in card *is* the
+  page. A rail leading to four blank views is worse than no rail.
+
+**The connector answers "is a car connected"; the session list answers "is a charge running".**
+They are different questions and must never share a predicate. A car plugged in and idle is
+connector `Preparing` with **zero sessions** — the page used to read the session list and print
+"nothing is connected", which the owner found by standing at the charger. `connection()` in
+`views/he.js` is the single judgement and owns every word of the answer: `Available` is the *only*
+value that means nothing is plugged in; the states that require an EV say so; and **`Faulted`, an
+unreported status and any value this page has never met render as themselves and claim nothing
+about the cable**. Falling through to "nothing connected" is a lie in the direction that looks
+safest, and upstream has already handed this project an undocumented enum value once.
+
+## Commands force the fetch; nothing else does
+
+The server serves `/api/state` out of its cached D1 row while the row is under an hour old, and
+that rule is where the invocation budget lives — a page load must never bypass it. **`refresh()`
+(`POST /api/refresh`) is the only call that forces an upstream fetch regardless of age**, and it
+is reachable only from a press: the refresh button, or the reload a command runs after it has
+changed the charger.
+
+- `ctx.reload(force)` → `load(force)`, and in `views/controls.js`
+  **`release(ctx, reload, force)` takes `force` with no default, deliberately.** Getting it wrong
+  is invisible: an unforced reload re-reads the cached row and faithfully repaints the charger
+  **as it was before the command**. The owner saw a start press go busy, come back, and change
+  nothing. Do not give that parameter a default to tidy the call sites.
+- **That bug was never confined to start.** `release()` is the single exit of both handlers, so a
+  stop repainted the charge it had just ended as still running, and the credential install took
+  the banner down over an hour-old row fetched while the credential was dead. One parameter on the
+  shared function fixed all three; patching only the reported path would have left two.
+- Pass `false` only when a poll above has just forced a round — the rows are seconds old — or when
+  nothing was commanded at all.
+- **A start press runs a bounded confirmation poll**, the twin of the stop path's settle poll:
+  counted `for` loop, hard cap, armed only by the press setting a module boolean, so it cannot
+  start on load and cannot survive a reload. Its sample is `refresh()` — the existing forcing
+  call, not a second mechanism. Running the cap out is **neither success nor failure** and is
+  worded as neither: the command was accepted and the charger has not confirmed it yet. Claiming
+  it started invents a charge; claiming it failed sends the owner to press start again at a
+  contactor that may already be closed.
+- The budget cost was accepted knowingly: a start press is now up to ten forced rounds instead of
+  none. **An idle page is still zero**, which is the requirement that actually binds, and
+  `test/start-confirm.test.mjs` asserts that first.
+
 ## Deploying
 
 Two independent deploys. Neither touches the other.
@@ -191,6 +283,34 @@ is `IF NOT EXISTS`.
 2. `/.wrangler/cache/wrangler-account.json` answers **302**, not 200.
 3. `/CLAUDE.md`, `/README.md`, `/schema.sql`, `/.assetsignore`, `/test/*` answer **302**.
 4. The page itself answers 200 and carries the CSP and frame headers from `_headers`.
+
+**Run check 4 from an uninterposed network.** A TLS-inspecting corporate proxy rewrites response
+headers, so a CSP read through one is the *proxy's* CSP and tells you nothing about what this
+project serves. The body and the status code still come through intact, so checks 1–3 survive it;
+check 4 does not.
+
+### The custom domain
+
+**There is a second hostname**, added as a Pages custom domain alongside the `pages.dev` one. It
+is not named here, and that is the same rule as the sign-in details: it is a subdomain of a zone
+that carries the owner's live personal mail, so the hostname is a personal identifier and belongs
+in the private notes. Confirmed serving on 2026-09-12 — page 200, `/api/*` `401 auth_required`,
+`/.wrangler/*` 302 — so any note still recording it as pending or unconfirmed is stale.
+
+Three things about it that cost time and will cost it again:
+
+- **Pages did not create the DNS record.** Certificate validation sat pending indefinitely because
+  HTTP validation was answered by a wildcard record pointing somewhere that returns a 522. The
+  record was added **by hand** and validation only then completed. A specific record beats a
+  wildcard; if a custom domain hangs in `pending`, look for the record before looking at anything
+  else.
+- **The deploy credential cannot see DNS.** The wrangler OAuth grant used for Pages, Workers, D1
+  and Secrets Store has no DNS scope at all, so this is not a step an agent can quietly do — and
+  the zone carries live personal mail, so anything touching it must leave the MX records alone and
+  is the owner's call, not an agent's.
+- **The session cookie is host-only.** Signing in once per hostname is expected, not a bug. Never
+  widen the cookie's `Domain` to fix it. The sign-in link origins are configured on the private
+  Worker and already carry both hostnames, so no redeploy is needed to mint a link for either.
 
 ## Two measured facts worth inheriting
 
@@ -227,6 +347,13 @@ Guessing either actuates a contactor on real hardware **and** buys energy at rou
 the low tariff. There is therefore deliberately **no charge-now control and no off-peak toggle
 in the UI**, and that absence is a decision, not a gap in the work. The capture runbook is in
 the iCloud notes and only the owner can run it.
+
+**Expect to be asked for this, and expect the ask to sound reasonable.** The owner wants the
+charger to always charge at the low tariff, and that feature is blocked on exactly this capture
+and on nothing else. It is not blocked on design, effort or permission, so the temptation is to
+reconstruct the call from the payloads that *are* captured and ship it. Do not. Until the request
+has been observed on the wire from the vendor's own app, the correct answer to the request is
+still "not yet", and the reason to give is the 2.79× and the contactor.
 
 Related, and the same discipline: nothing has ever been fired at the real charger by an agent.
 Start and stop are built and tested against captured traffic. They are not run without the owner

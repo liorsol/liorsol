@@ -47,6 +47,16 @@ const dateFmt = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short'
 const timeFmt = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' });
 const relFmt = new Intl.RelativeTimeFormat(LOCALE, { numeric: 'auto' });
 
+// CLDR spells the Hebrew singular and dual relative forms with the numeral appended in brackets —
+// "בעוד שעתיים (2)", "לפני דקה (1)". It is a disambiguation gloss for data consumers, not text to
+// put in front of a reader, and Intl hands it through verbatim. Reproduced identically in node
+// (ICU 78 / CLDR 48) and in Chromium, so it is the locale data rather than one engine. Exactly
+// five forms carry it — ±1 minute and ±1/±2 hours — and those are the ones this page shows most:
+// the header's freshness age one minute after a load, and the flip sentence in the hour before
+// 23:00. Stripped here, at the one function both callers route through, rather than at either.
+const GLOSS = /\s*\(\d+\)$/;
+const rel = (value, unit) => relFmt.format(value, unit).replace(GLOSS, '');
+
 export const dateTime = (ms) => (Number.isFinite(ms) ? dateTimeFmt.format(ms) : '—');
 export const dayTime = (ms) => (Number.isFinite(ms) ? dayTimeFmt.format(ms) : '—');
 export const dayTimeUtc = (ms) => (Number.isFinite(ms) ? dayTimeUtcFmt.format(ms) : '—');
@@ -61,10 +71,10 @@ export const time = (ms) => (Number.isFinite(ms) ? timeFmt.format(ms) : '—');
 export function relative(deltaMs) {
   if (!Number.isFinite(deltaMs)) return '—';
   const minutes = Math.round(deltaMs / 60000);
-  if (Math.abs(minutes) < 90) return relFmt.format(minutes, 'minute');
+  if (Math.abs(minutes) < 90) return rel(minutes, 'minute');
   const hours = Math.round(minutes / 60);
-  if (Math.abs(hours) < 48) return relFmt.format(hours, 'hour');
-  return relFmt.format(Math.round(hours / 24), 'day');
+  if (Math.abs(hours) < 48) return rel(hours, 'hour');
+  return rel(Math.round(hours / 24), 'day');
 }
 
 /** "1 שע׳ 30 דק׳". Hebrew-first, so a .num cell's `plaintext` resolves it right to left. */

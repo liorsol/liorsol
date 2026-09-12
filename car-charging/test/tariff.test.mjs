@@ -64,6 +64,12 @@ test('the panel names the next slice and the clock time it flips at', () => {
   assert.equal(clock.textContent, time(Date.parse(slices[1].from)),
     'the clock is not he.js\'s he-IL formatting of the next slice\'s own start');
   assert.match(clock.textContent, /\d{1,2}:\d{2}/);
+  // The sentence ends in relative() and this fixture flips two hours out, which is one of the
+  // five forms CLDR glosses with a bracketed numeral ("בעוד שעתיים (2)"). he.js strips it; this
+  // is the assertion that the strip is still between the locale data and the panel. See
+  // test/he.test.mjs for the other four forms and for the header's age.
+  assert.doesNotMatch(read, /\(\d+\)/,
+    `CLDR's disambiguation gloss reached the flip sentence: "${read}"`);
 });
 
 test('one slice in the calendar: it says no next slice was published, and invents no flip', () => {

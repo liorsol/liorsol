@@ -23,7 +23,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { installDocument, node, button, byClass } from './fake-dom.mjs';
+import { installDocument, node, button, byClass, text } from './fake-dom.mjs';
 import { isLiveSession } from '../api.js';
 
 // The stub DOM is shared with test/app.test.mjs: small enough to read in one sitting, and the
@@ -142,8 +142,48 @@ test('the reason names the one action that can work, and never the one that cann
   const el = paint({ state: { sessions: [running] }, authRequired: true });
 
   assert.match(notes(el), /ההתחברות לדף הסתיימה/);
+  // Reload AND sign in, both halves. A reload of a signed-out page lands on the sign-in card,
+  // which is the thing that actually ends this state, so the note names the card as well --
+  // app.js paints it from the same flag, above these panels, before this panel is painted.
   assert.match(notes(el), /טענו את הדף מחדש/);
+  assert.match(notes(el), /בכרטיס שלמעלה/);
+  // The one control that provably cannot mend a sign-out is the one it must never send them to.
   assert.doesNotMatch(notes(el), /לחצו רענון/);
+});
+
+// The refresh button is not how this state is usually met. Nothing here polls, so between the
+// round that painted the snapshot and the moment the session ends the page looks identical --
+// and the press itself is the first thing to touch the server. The 401 it comes back with is
+// the page's first news of its own sign-out, and a button that has just been told it cannot act
+// must not go straight back to looking live.
+test('a command that bounces runs the round that locks the panel', async () => {
+  // app.js is the only writer of the flag and load() is the only thing that raises the sign-in
+  // card, marks the data stale and re-gates the other panels. So what this module owes a 401 is
+  // that round, never a private copy of the flag -- a copy would lock these two buttons and
+  // leave the rest of the page still claiming to be signed in. The view object here is the
+  // shared one, exactly as app.js hands it over, so writing the flag inside reload() is what a
+  // real round does to it.
+  const view = { state: { sessions: [running] } };
+  let reloads = 0;
+  const signsOutOnReload = {
+    reload: async () => {
+      reloads++;
+      view.authRequired = true;
+    },
+  };
+
+  const el = node('div');
+  render(el, view, signsOutOnReload);
+  assert.equal(button(el, 'עצירה').disabled, false, 'precondition: the panel mounted live');
+
+  globalThis.fetch = async () => Response.json({ error: 'no_session' }, { status: 401 });
+  await button(el, 'עצירה').handlers.click();
+
+  assert.equal(reloads, 1, 'a bounced command never told the shell its session had ended');
+  assert.equal(button(el, 'עצירה').disabled, true, 'Stop went back to looking live after a 401');
+  assert.equal(button(el, 'התחלת טעינה').disabled, true, 'Start went back to looking live after a 401');
+  // Nothing was commanded and nothing stopped: the reload is about the session, not the charger.
+  assert.match(notes(el) + ' ' + text(el), /שום דבר לא נעצר/);
 });
 
 test('a sign-in that has ended outranks an expired credential', () => {

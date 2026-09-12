@@ -169,3 +169,24 @@ test('a session that ends mid-visit is announced, and the controls stop being li
   // it is not evidence of anything on its own.
   assert.ok(all(dom.get('#tariff')).some((n) => n.className === 'stale__flag'), 'the stale marker went missing');
 });
+
+// ── Round 4: the page learns it is signed out FROM the press ──
+//
+// The refresh button is not how this state is usually met. There is no auto-refresh, so between
+// the round that painted the page and the moment the session ends, nothing looks any different:
+// the snapshot is on screen, the controls are live, and the first thing that touches the server
+// is the press itself. The 401 that comes back is the page's first news of its own sign-out --
+// and a control that has just been told it cannot act must not go straight back to looking live.
+
+test('a command that bounces locks the control it just failed through', async () => {
+  signedIn = true;
+  await refresh().handlers.click();
+  await until(() => button(panel('controls'), 'עצירה').disabled === false, 'the controls to come back live');
+
+  signedIn = false;
+  await button(panel('controls'), 'עצירה').handlers.click();
+
+  assert.equal(button(panel('controls'), 'עצירה').disabled, true, 'Stop went back to looking live after a 401');
+  assert.equal(button(panel('controls'), 'התחלת טעינה').disabled, true, 'Start went back to looking live after a 401');
+  assert.match(text(card()), /צריך להתחבר/, 'a bounced command raised no sign-in card');
+});

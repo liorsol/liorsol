@@ -156,7 +156,13 @@ function paint() {
   if (authRequired) {
     startOff = true;
     stopOff = true;
-    reasons.push('השליטה נעולה כי ההתחברות לדף הסתיימה. טענו את הדף מחדש כדי להתחבר שוב — רענון לא יחזיר אותה.');
+    // The card is on screen whenever this note is: app.js paints it from the same flag, before
+    // it paints this panel, and the panels are only detached when nothing has ever arrived --
+    // which is a page that has no controls on it to lock. So naming the card is a thing this
+    // state knows rather than a thing it hopes. Reload stays in the sentence as the other way
+    // back, and it is "reload AND sign in": a reload of a signed-out page lands on this same
+    // card, one press further from a session. Refresh is named only to be ruled out.
+    reasons.push('השליטה נעולה כי ההתחברות לדף הסתיימה. בקשו קישור כניסה בכרטיס שלמעלה, או טענו את הדף מחדש והתחברו — רענון לא יחזיר אותה.');
   } else if (expired) {
     startOff = true;
     stopOff = true;
@@ -253,6 +259,20 @@ async function release(ctx, reload) {
   }
 }
 
+// When a command comes back bounced, the press IS how the page found out its session ended.
+// There is no auto-refresh, so between the round that painted the snapshot and the press nothing
+// looked any different -- and without this the note says the sign-in is over while the button
+// that just failed goes straight back to looking live, on the one panel that closes a contactor.
+//
+// The way to act on it is to run the round that discovers it, not to set a flag here. app.js is
+// the only writer of `shared.authRequired` (PLAN §7.10) and load() is the only thing that raises
+// the sign-in card, marks the data stale and re-gates every panel; a local copy in this module
+// would lock these two buttons and leave the rest of the page claiming to be signed in.
+//
+// Not an automatic refresh: it is reached from a click and from nowhere else, exactly like the
+// reload a successful command already runs.
+const bounced = (result) => result.error === 'auth_required';
+
 async function onStart() {
   if (!mount || ui.busy) return;
   const { ctx } = mount;
@@ -267,7 +287,7 @@ async function onStart() {
     ? { kind: 'ok', text: 'ההתחלה התקבלה. לוקח לעמדה כמה שניות לדווח עליה.' }
     : { kind: 'bad', text: failureText(result, 'ההתחלה נכשלה.') };
   paint(); // say what happened; the controls stay held until fresh state is on screen
-  await release(ctx, result.ok);
+  await release(ctx, result.ok || bounced(result));
 }
 
 // The only entry point to the settle poll in the whole page. It is reached by a click and by
@@ -289,9 +309,10 @@ async function onStop() {
 
   if (!result.ok) {
     // 409 "nothing to stop" collapses to a generic http_error in the client. It is a failure,
-    // never a stop that worked. Nothing was commanded, so there is nothing to reload for.
+    // never a stop that worked. Nothing was commanded, so there is nothing to reload for -- with
+    // one exception: a bounce is news about the page's own session rather than about the charger.
     ui.note = { kind: 'bad', text: failureText(result, 'העצירה נכשלה. שום דבר לא נעצר.') };
-    await release(ctx, false);
+    await release(ctx, bounced(result));
     return;
   }
 
@@ -339,10 +360,13 @@ async function onStop() {
 
 // Error names are a closed set and the status is only detail. No server wording reaches the DOM.
 function failureText(result, prefix) {
-  // The three outcomes stay three, in Hebrew as in English: an ended sign-in says reload, a
-  // transport failure says the request never arrived, and an expired credential says so by name.
+  // The three outcomes stay three, in Hebrew as in English: an ended sign-in sends the owner to
+  // the sign-in card (התחברות), a transport failure says the request never arrived, and an
+  // expired credential names itself (הרשאה) and sends them to the vendor's own app.
   // Two of them would otherwise collapse into "try again", which is true of exactly one.
-  if (result.error === 'auth_required') return prefix + ' ההתחברות לדף הסתיימה — טענו את הדף מחדש.';
+  // The bounce is what makes this note's own instruction true: release() runs the round that
+  // raises the sign-in card, so by the time this text is painted the card is above the panels.
+  if (result.error === 'auth_required') return prefix + ' ההתחברות לדף הסתיימה — בקשו קישור כניסה בכרטיס שלמעלה.';
   if (result.error === 'network') return prefix + ' הבקשה לא הושלמה מעולם.';
   if (result.error === TOKEN_EXPIRED) return prefix + ' פג תוקף ההרשאה מול העמדה.';
   return prefix + ' העמדה לא קיבלה את הפקודה.';

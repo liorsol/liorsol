@@ -35,7 +35,8 @@
 //
 //   TOKEN_EXPIRED   the credential needs replacing. A first-class state, not a failure:
 //                   show the banner, keep the previously loaded data visible and marked stale.
-//   'auth_required' the edge bounced us to a sign-in; the page needs a reload, not a retry
+//   'auth_required' this browser holds no session -- a 401 on any route, or a bounce to a
+//                   sign-in. It needs a new sign-in link, not a retry and not a reload.
 //   'network'       the request never completed
 //   'bad_response'  a response that was not the JSON we expect
 //   'http_error'    any other non-2xx; read `status` for which
@@ -78,6 +79,18 @@ async function request(path, init) {
   // Checked before the body, because an opaque redirect has no body to read: reading first
   // would land this in `bad_response` and lose the distinction again.
   if (response.type === 'opaqueredirect') return fail('auth_required');
+
+  // A 401 is the server saying this browser holds no session, and it is the STATUS that says
+  // so. The body names it too, but that name belongs to the route and the body may not be JSON
+  // at all -- so this is read before the parse, for the same reason the opaque redirect above
+  // is. A 401 that fails to parse would otherwise land in `bad_response`, and the page would
+  // offer a retry in the one state where only a sign-in link can help.
+  //
+  // This status is also the ONLY way the page learns it is signed out. The session rides in a
+  // cookie the browser will not hand to script, which is why nothing here tries to read one --
+  // and why nothing here keeps a marker of its own. A stored marker can claim a session the
+  // server has already stopped honouring; the server's last answer cannot.
+  if (response.status === 401) return fail('auth_required', 401);
 
   let data = null;
   try {
@@ -186,6 +199,27 @@ export function settle(sessionId) {
 export async function installToken(value) {
   const result = await request('/api/token', { method: 'POST', ...jsonBody({ token: value }) });
   return { ok: result.ok, status: result.status, error: result.error };
+}
+
+// ── Sign-in link — the only call a signed-out page may make ──
+//
+// It takes no body and returns no data, and both are the point. The address to mail lives on
+// the server: this page never asks for one, never holds one and never sends one, so a visitor
+// who cannot get in also cannot learn it and cannot aim the mail somewhere else.
+//
+// The other half of the flow is not a call at all. The link arrives by mail and the owner opens
+// it, which is a top-level navigation to a route this file never fetches; it lands a session on
+// that browser and redirects back to the page, which then loads signed in like any other load.
+// So there is nothing here to poll, nothing to wait on and no second function to write.
+export async function requestSignInLink() {
+  const result = await request('/api/auth/request', { method: 'POST' });
+  // A 2xx is a yes even with no body to parse -- the route may answer 204, and request()
+  // reports an unreadable body as `bad_response` whatever the status said. Of the two possible
+  // mistakes, painting a failure over a link that really did go out is the worse one: it sends
+  // the owner back to press a button whose work is already done.
+  const sent =
+    result.ok || (result.error === 'bad_response' && result.status >= 200 && result.status < 300);
+  return { ok: sent, status: result.status, error: sent ? null : result.error };
 }
 
 // ── Comments ──

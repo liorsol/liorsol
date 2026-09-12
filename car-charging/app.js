@@ -23,6 +23,12 @@
 
 import { getState, getHistory, getInvoices, refresh, TOKEN_EXPIRED } from './api.js';
 import { dateTime, relative } from './views/he.js';
+// The one view imported statically rather than mounted through the table below. The dynamic
+// import exists because five view files were being written concurrently by agents who could not
+// talk to each other, so a broken one had to cost a panel instead of the page (frontend-notes
+// ruling 7). Neither half of that applies here: this file and views/auth.js ship together, and
+// a sign-in screen that failed to load would cost the page anyway -- it is the only way in.
+import { render as renderAuth } from './views/auth.js';
 
 const HOUR_MS = 3600000;
 
@@ -111,7 +117,11 @@ function placeOwn(body, node) {
 // the one action that cannot mend it. Only a top-level navigation can, because only that can
 // follow the edge's redirect to the sign-in page.
 const RETRY_HINT = 'לחצו רענון כדי לנסות שוב.';
-const SIGN_IN_HINT = 'ההתחברות לדף הסתיימה. טענו את הדף מחדש כדי להתחבר שוב — רענון לא יחזיר אותה.';
+// Reachable only in the compound case: signed out, with data already on screen, in a panel that
+// never managed to mount. It points at the card rather than repeating its instructions, and it
+// must not say "reload" -- a reload of a signed-out page lands on the same card, one press
+// further from a session than the viewer already is.
+const SIGN_IN_HINT = 'ההתחברות הסתיימה. בקשו קישור כניסה חדש בכרטיס שלמעלה.';
 
 function errorBlock(title, hint) {
   const box = h('div', 'empty empty--error');
@@ -251,33 +261,44 @@ async function paintExpiry() {
   }
 }
 
-// ── Signed-out banner lifecycle ──
+// ── The sign-in screen's mount ──
 //
 // The panels alone cannot carry this. A viewer whose session ends mid-visit has every panel
 // already mounted, so a failed round leaves their subtrees untouched and the only thing that
 // changes is the amber stale rule -- which is exactly what an unplugged cable does too. Without
-// a line of its own, "signed out" and "offline" are the same picture.
+// a card of its own, "signed out" and "offline" are the same picture.
 //
-// Its own node, inserted *before* the credential banner's mount rather than into it: that mount
-// belongs to views/controls.js and is blanked on every pass. Created and removed, never hidden,
-// for the same reason the credential field is.
+// ONE MOUNT, TWO SHAPES OF PAGE UNDER IT. The card is always the first child of <main>, so it
+// inherits the page's own padding and measure and needs no rule of its own. What differs is
+// what sits beneath it:
+//
+//   cold and signed out (nothing has ever arrived) -- the other five panels would be five
+//     copies of one message, and the owner asked for a message and a button. They are detached
+//     as a set and the card is the page.
+//   signed out mid-visit -- the panels hold the last good round, and blanking data on a failed
+//     round is the one thing this shell never does. The card goes above them and they stay.
+//
+// `.panel` sections, detached and reattached whole: their subtrees come with them, so a view
+// keeps its DOM and app.js keeps its element references across the round trip. Toggled on a
+// change of state rather than every pass -- re-parenting a section on every refresh press would
+// blur a half-typed note in #comments.
+const main = document.querySelector('.shell__main');
+const panels = [...main.children];
 const authMount = h('div');
-document.getElementById('expiry').before(authMount);
+main.replaceChildren(authMount, ...panels);
+
+let panelsDetached = false;
 
 function paintAuthRequired() {
-  if (!shared.authRequired) {
-    authMount.replaceChildren();
-    return;
+  const cold = shared.authRequired && shared.fetchedAt == null;
+  if (cold !== panelsDetached) {
+    main.replaceChildren(authMount, ...(cold ? [] : panels));
+    panelsDetached = cold;
   }
-  if (authMount.firstChild) return; // already up — do not rebuild it under the user
-  const inner = h('div', 'expiry__inner');
-  inner.append(
-    h('p', 'expiry__title', 'ההתחברות הסתיימה'),
-    h('p', 'expiry__text', SIGN_IN_HINT)
-  );
-  const banner = h('div', 'expiry');
-  banner.append(inner);
-  authMount.replaceChildren(banner);
+  // views/auth.js creates and removes the card itself, for the same reason the credential field
+  // is created and removed: a sign-in control left hidden in the DOM of a signed-in page is a
+  // control somebody eventually finds.
+  renderAuth(authMount, shared);
 }
 
 // ── The fetch round ──
@@ -327,6 +348,11 @@ async function load() {
 
   paintUpdated();
   paintAuthRequired();
+  // Nothing under the card to paint, and nothing worth fetching to paint it with: the panels
+  // are detached, #comments would spend a round learning it is signed out too, and the
+  // credential banner would pull a view module down to be told there is no credential problem.
+  // The 401 is the only thing this page knows and the card is the whole of what it can say.
+  if (panelsDetached) return;
   await Promise.all([...views.map(paint), paintExpiry()]);
 }
 

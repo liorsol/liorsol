@@ -29,11 +29,6 @@ export function node(tag) {
     addEventListener(type, fn) {
       self.handlers[type] = fn;
     },
-    // The shell inserts its own banner before the expiry mount. Nothing here has a parent, so
-    // the insertion is recorded rather than performed: a test reads `before` to find the node.
-    before(other) {
-      self.inserted = other;
-    },
     append(...kids) {
       for (const kid of kids) {
         if (kid.tagName === '#fragment') self.children.push(...kid.children);
@@ -100,6 +95,21 @@ export function installDocument() {
   };
 
   get('#refresh', 'button');
+
+  // <main> and the five panel sections inside it, in the markup's order. The shell detaches and
+  // reattaches those sections AS A SET when it puts the sign-in card up on a cold signed-out
+  // load, and it hands the views the bodies nested inside them -- so a stub whose <main> has no
+  // children cannot show the thing that matters, which is that the sections come back with
+  // their subtrees intact.
+  const main = get('.shell__main');
+  for (const id of ['tariff', 'controls', 'history', 'account', 'comments']) {
+    const section = node('section');
+    section.className = 'panel';
+    const body = get('#' + id);
+    body.className = 'panel__body';
+    section.append(body);
+    main.append(section);
+  }
 
   // The header's two spans live inside `.updated` in the real markup.
   const updated = get('.updated');

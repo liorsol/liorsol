@@ -86,6 +86,7 @@ test('nothing in the page can fetch on its own', () => {
     'app.js',
     'index.html',
     'views/account.js',
+    'views/auth.js',
     'views/he.js',
     'views/comments.js',
     'views/controls.js',

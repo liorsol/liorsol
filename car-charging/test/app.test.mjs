@@ -50,21 +50,15 @@ const BODIES = {
   '/api/comments': { comments: [] },
 };
 
-// What the edge answers once the session is gone: an opaque redirect. Status 0, no headers and
-// no body to read -- api.js reads `type` and nothing else, which is the whole point of it.
-const bounced = {
-  type: 'opaqueredirect',
-  status: 0,
-  ok: false,
-  json: async () => {
-    throw new Error('an opaque redirect has no body');
-  },
-};
+// What every /api/* route answers to a browser with no session: 401 and a machine-readable
+// name. The name is the route's and this page does not branch on it -- the status is the
+// contract -- so the stub sends one to prove the page ignores it.
+const noSession = () => Response.json({ error: 'no_session' }, { status: 401 });
 
 let signedIn = false;
 
 globalThis.fetch = async (path) => {
-  if (!signedIn) return bounced;
+  if (!signedIn) return noSession();
   const body = BODIES[String(path).split('?')[0]];
   return Response.json(body ?? { ok: true });
 };
@@ -82,47 +76,56 @@ await import('../app.js');
 
 const panel = (id) => dom.get('#' + id);
 const PANELS = ['tariff', 'controls', 'history', 'account'];
-// app.js inserts the signed-out banner before the credential banner's mount, which is a node it
-// does not own and blanks on every pass. The stub records the insertion.
-const authBanner = () => dom.get('#expiry').inserted;
+const main = () => dom.get('.shell__main');
+// The sign-in card's mount: always <main>'s first child, in both shapes of the signed-out page.
+const card = () => main().children[0];
 const refresh = () => dom.get('#refresh');
 
 // ── Round 1: the cold load, signed out ──
 //
-// The likely first contact with this state: the page is opened, or reloaded, after the session
-// has already ended. Nothing has ever arrived, so every panel paints the shell's own block --
-// and the instruction on it is the only one the user gets.
+// The likely first contact with this state: the page is opened in a browser that has never had
+// a session, or after one ended. Nothing has ever arrived, so five panels would paint five
+// copies of one message. What the owner asked for is a message and a button.
 
-test('a cold load while signed out says sign in, on every panel and the banner', async () => {
-  await until(() => text(panel('tariff')).length > 0, 'the first round to paint');
-  // The notes board fetches its own rows, so its verdict lands after the shell's. Waiting for
-  // the block to exist, not for what it says — the wording is what the assertion is for.
-  await until(
-    () => all(panel('comments')).some((n) => n.className === 'empty__hint'),
-    'the notes board to finish its own round'
+test('a cold load while signed out is the sign-in card and nothing else', async () => {
+  await until(() => text(card()).length > 0, 'the first round to paint');
+
+  assert.equal(main().children.length, 1, '<main> kept its panels behind the sign-in card');
+  assert.equal(card().children.length, 1, 'the card never came up');
+
+  assert.match(text(card()), /צריך להתחבר/, 'the card did not say the viewer needs a session');
+  assert.ok(button(card(), 'שלחו לי קישור כניסה'), 'the card came up with no way to ask for a link');
+
+  // The owner's design, and the rule that keeps an address off this page: no field, anywhere.
+  assert.equal(
+    all(card()).some((n) => n.tagName === 'input' || n.tagName === 'textarea'),
+    false,
+    'the sign-in card grew a field to type an address into'
   );
 
-  assert.match(text(authBanner()), /ההתחברות הסתיימה/, 'no signed-out banner on a cold load');
-  assert.match(text(authBanner()), /טענו את הדף מחדש כדי להתחבר שוב/);
-
-  for (const id of [...PANELS, 'comments']) {
-    const painted = text(panel(id));
-    assert.match(painted, /טענו את הדף מחדש כדי להתחבר שוב/, `#${id} did not name the one action that can work`);
-    assert.doesNotMatch(
-      painted,
-      /לחצו רענון/,
-      `#${id} told a signed-out viewer to press refresh, which cannot reach anything`
-    );
-  }
+  // The two other states' vocabulary must not leak into this one. "הרשאה" is the charging
+  // station's credential and sends the viewer to a phone app they do not need; "רענון" is a
+  // button that cannot create a session.
+  assert.doesNotMatch(text(card()), /הרשאה/, 'the sign-in card borrowed the credential banner’s noun');
+  assert.doesNotMatch(text(card()), /רענון/, 'the sign-in card sent a signed-out viewer to the refresh button');
 });
 
 // ── Round 2: signed back in ──
+//
+// Reachable for real: the link was opened in another tab, so this one is a signed-out page in
+// front of a browser that now has a session. The panels have to come back with their subtrees,
+// not as five fresh empty sections.
 
-test('signing back in clears the banner and mounts the panels', async () => {
+test('signing back in takes the card down and brings the panels back', async () => {
   signedIn = true;
   await refresh().handlers.click();
+  await until(
+    () => all(panel('comments')).some((n) => n.className === 'empty__hint' || n.className === 'comment'),
+    'the notes board to finish its own round'
+  );
 
-  assert.equal(authBanner().children.length, 0, 'the banner outlived the state it reports');
+  assert.equal(main().children.length, 6, 'the panels did not come back under the card');
+  assert.equal(card().children.length, 0, 'the sign-in card outlived the state it reports');
   assert.equal(button(panel('controls'), 'עצירה').disabled, false, 'a running session did not reach the controls');
   assert.match(text(panel('history')), /\S/);
 });
@@ -155,7 +158,9 @@ test('a session that ends mid-visit is announced, and the controls stop being li
     before,
     'a failed round rewrote a mounted panel instead of leaving it alone'
   );
-  assert.match(text(authBanner()), /טענו את הדף מחדש כדי להתחבר שוב/, 'a mid-visit sign-out rendered no banner at all');
+  assert.equal(main().children.length, 6, 'a mid-visit sign-out threw away the data on screen');
+  assert.match(text(card()), /צריך להתחבר/, 'a mid-visit sign-out rendered no card at all');
+  assert.ok(button(card(), 'שלחו לי קישור כניסה'), 'the card offered no way back in');
 
   assert.equal(button(panel('controls'), 'עצירה').disabled, true, 'Stop stayed live for a signed-out viewer');
   assert.equal(button(panel('controls'), 'התחלת טעינה').disabled, true, 'Start stayed live for a signed-out viewer');

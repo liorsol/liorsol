@@ -85,7 +85,8 @@ await import('../app.js');
 const panel = (id) => dom.get('#' + id);
 const DATA = ['tariff', 'history', 'account'];
 const expiryBanner = () => dom.get('#expiry');
-const signedOutBanner = () => dom.get('#expiry').inserted;
+// The sign-in card's mount: always <main>'s first child, empty while there is a session.
+const signInCard = () => dom.get('.shell__main').children[0];
 const refresh = () => dom.get('#refresh');
 const hasClass = (el, className) => all(el).some((n) => n.className === className);
 
@@ -121,7 +122,7 @@ test('the cached row rides out with the 503 and is painted under the banner', as
   await refresh().handlers.click();
 
   assert.match(text(expiryBanner()), /פג תוקף ההרשאה/, 'the banner went down while still expired');
-  assert.equal(signedOutBanner().children.length, 0, 'an expired credential was reported as a sign-out');
+  assert.equal(signInCard().children.length, 0, 'an expired credential was reported as a sign-out');
 
   for (const id of DATA) {
     assert.equal(

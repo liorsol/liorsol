@@ -35,8 +35,17 @@
 // Error names — a closed set, so the UI branches on a known value and never renders a raw
 // server string:
 //
-//   TOKEN_EXPIRED   the credential needs replacing. A first-class state, not a failure:
-//                   show the banner, keep the previously loaded data visible and marked stale.
+//   TOKEN_EXPIRED   the charger credential was REJECTED and needs replacing. A first-class
+//                   state, not a failure: show the banner, keep the previously loaded data
+//                   visible and marked stale. Mended only in the vendor's own phone app.
+//   CHARGER_UNREACHABLE  the server could not reach the charger service at all, or it answered
+//                   something that is not a verdict on the credential (a 404, a 5xx). A
+//                   configuration or outage fault. NOT a credential problem, and it must never
+//                   be worded as one -- this name exists because it used to arrive as
+//                   TOKEN_EXPIRED, and a wrong base URL therefore told the owner to go and
+//                   renew a credential that was healthy the entire time.
+//   CHARGER_BAD_REPLY    the charger service answered in a shape the server cannot read.
+//                   Also not a credential problem.
 //   'auth_required' this browser holds no session -- a 401 on any route, or a bounce to a
 //                   sign-in. It needs a new sign-in link, not a retry and not a reload.
 //   'network'       the request never completed
@@ -47,6 +56,15 @@
 // to go upstream; this module must not second-guess it, and must not cache anything itself.
 
 export const TOKEN_EXPIRED = 'token_expired';
+export const CHARGER_UNREACHABLE = 'charger_unreachable';
+export const CHARGER_BAD_REPLY = 'charger_bad_reply';
+
+// The three names the server may use for "something went wrong between here and the charger".
+// Still a CLOSED set: a name the server has not agreed to becomes 'http_error', so no server
+// string can reach the DOM. Exported as a predicate rather than as the set, because the only
+// thing any caller wants to ask is "is this one of them".
+const UPSTREAM_ERRORS = new Set([TOKEN_EXPIRED, CHARGER_UNREACHABLE, CHARGER_BAD_REPLY]);
+export const isChargerError = (error) => UPSTREAM_ERRORS.has(error);
 
 // ── Core ──
 
@@ -105,10 +123,10 @@ async function request(path, init) {
   const stale = data?.stale === true;
 
   if (!response.ok) {
-    // Only the one name is passed through. Any other server string stays out of the UI, both
-    // because callers should branch on a known set and because upstream wording is not ours
-    // to put on a public page.
-    const error = data?.error === TOKEN_EXPIRED ? TOKEN_EXPIRED : 'http_error';
+    // Only the three agreed names are passed through. Any other server string stays out of the
+    // UI, both because callers should branch on a known set and because upstream wording is not
+    // ours to put on a public page.
+    const error = isChargerError(data?.error) ? data.error : 'http_error';
     return { ok: false, status: response.status, data, fetchedAt, stale: true, error };
   }
 
@@ -286,7 +304,13 @@ export async function pollSettle(sessionId, onSample) {
     last = await settle(sessionId);
     if (onSample) onSample(last, attempt);
     if (last.ok && settled(last.data)) return last;
-    if (last.error === TOKEN_EXPIRED) return last;
+    // The same two exits pollStart has, and the second one for the same reason: the gate is over
+    // the whole hostname, so once a sign-in has ended EVERY remaining sample is bounced and not
+    // one of them can succeed. Without this the poll spends all SETTLE_MAX_ATTEMPTS and hands
+    // the caller the ran-out-of-attempts outcome, whose wording says press refresh -- provably
+    // the one action that cannot mend an ended sign-in. Neither condition mends itself by being
+    // asked again; a transport failure might, which is why it keeps the cap instead.
+    if (last.error === TOKEN_EXPIRED || last.error === 'auth_required') return last;
     if (attempt < SETTLE_MAX_ATTEMPTS) await wait(SETTLE_INTERVAL_MS);
   }
   return last;

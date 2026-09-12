@@ -65,11 +65,18 @@ const EMPTY = { error: 'token_expired' };
 
 let cacheWarm = false;
 
+// Round 3 answers the SAME rows under a different fault. `fault` is the whole difference: the
+// server's error name and its status. Everything else about the round is identical, which is
+// what makes the assertions about wording assertions about the name and nothing else.
+let fault = { error: 'token_expired', status: 503 };
+
+const withFault = (body) => ({ ...body, error: fault.error });
+
 globalThis.fetch = async (path) => {
   const route = String(path).split('?')[0];
   if (route === '/api/comments') return Response.json({ comments: [] });
-  if (!CACHED[route]) return Response.json(EMPTY, { status: 503 }); // refresh, and anything else
-  return Response.json(cacheWarm ? CACHED[route] : EMPTY, { status: 503 });
+  const body = cacheWarm && CACHED[route] ? CACHED[route] : EMPTY;
+  return Response.json(withFault(body), { status: fault.status });
 };
 
 async function until(predicate, what) {
@@ -147,4 +154,58 @@ test('the cached row rides out with the 503 and is painted under the banner', as
   assert.equal(button(panel('controls'), 'עצירה').disabled, true);
   assert.match(text(panel('controls')), /פג תוקף ההרשאה מול העמדה/);
   assert.doesNotMatch(text(panel('controls')), /ההתחברות לדף הסתיימה/);
+});
+
+
+// ── Round 3: the credential is fine, and the link to the charger is not ──
+//
+// The round the whole error split exists for, and the one that used to be indistinguishable
+// from round 2. A wrong base URL -- which is what actually happened -- drew a 404 upstream, the
+// server called it `token_expired`, and this page put up the credential banner: it told the
+// owner to open the vendor's app and renew a credential that was healthy, and offered a box to
+// paste the new one into. Every instruction on that banner was false and none of them could
+// have worked.
+//
+// This is the round the view-level tests cannot stand in for. They hand `chargerFault` in by
+// hand; only a real response proves app.js ever sets it, and sets it instead of `expired`.
+
+test('an unreachable charger is not reported to the owner as a dead credential', async () => {
+  fault = { error: 'charger_unreachable', status: 502 };
+  await refresh().handlers.click();
+
+  const said = text(expiryBanner());
+  assert.notEqual(said, '', 'a link fault said nothing at all');
+  assert.doesNotMatch(said, /פג תוקף/, 'a link fault was reported as an expired credential');
+  assert.match(said, /אינה בעיית הרשאה/, 'the banner never denied being a credential problem');
+  assert.equal(
+    all(expiryBanner()).some((n) => n.tagName === 'input'),
+    false,
+    'a link fault offered a field to paste a credential into -- nothing pasted there can help'
+  );
+  assert.equal(signInCard().children.length, 0, 'a link fault was reported as a sign-out');
+
+  // The wave-3 property, under the new name: what already arrived stays on screen and stays
+  // marked stale. An outage blanks a first load exactly as an expiry did.
+  for (const id of DATA) {
+    assert.equal(hasClass(panel(id), 'empty empty--error'), false, `#${id} threw away the cached row`);
+    assert.ok(hasClass(panel(id), 'stale__flag'), `#${id} shows cached data without marking it stale`);
+  }
+  assert.match(text(panel('tariff')), /0\.4500/, 'the cached tariff did not survive a link fault');
+
+  // Locked, for a reason that names this state and neither of the other two.
+  assert.equal(button(panel('controls'), 'עצירה').disabled, true);
+  assert.match(text(panel('controls')), /אינה בעיית הרשאה/);
+  assert.doesNotMatch(text(panel('controls')), /פג תוקף ההרשאה מול העמדה/);
+  assert.doesNotMatch(text(panel('controls')), /ההתחברות לדף הסתיימה/);
+});
+
+test('a charger that answers something unreadable is a third state, not either of the others', async () => {
+  fault = { error: 'charger_bad_reply', status: 502 };
+  await refresh().handlers.click();
+
+  const said = text(expiryBanner());
+  assert.doesNotMatch(said, /פג תוקף/, 'an unreadable answer was reported as an expired credential');
+  assert.doesNotMatch(said, /אין כרגע קשר לעמדה/, 'an unreadable answer was reported as an outage');
+  assert.match(said, /אינה בעיית הרשאה/);
+  assert.equal(all(expiryBanner()).some((n) => n.tagName === 'input'), false);
 });

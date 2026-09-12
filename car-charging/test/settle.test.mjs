@@ -53,6 +53,31 @@ test('a flat completed flag is honoured too', async () => {
   assert.equal(samples.length, 1);
 });
 
+// ── The exit pollStart already had and this poll did not ──
+//
+// A sign-in that ends mid-settle bounces every remaining sample: the gate is over the whole
+// hostname, so not one of the other 44 can succeed. Without an exit the poll spends the entire
+// cap and hands its caller the ran-out-of-attempts outcome -- and the caller's wording for that
+// says press refresh, which is provably the one action that cannot mend an ended sign-in. The
+// pairing is the one test/controls.test.mjs forbids everywhere else in the product.
+//
+// Throwing from the callback is how this fails in a second rather than in 45 of them.
+test('the poll stops the moment the sign-in ends, instead of spending the whole cap', async () => {
+  globalThis.fetch = async () => Response.json({ error: 'auth_required' }, { status: 401 });
+  await stop('x');
+
+  const last = await pollSettle('x', (_sample, attempt) =>
+    assert.equal(
+      attempt,
+      1,
+      'the poll sampled again after the gate bounced it: every remaining sample is bounced too, ' +
+        'and running the cap out lands the caller on wording that says press refresh'
+    )
+  );
+
+  assert.equal(last.error, 'auth_required', 'the bounce must reach the caller by name');
+});
+
 // ── The absence test ──
 //
 // A page left open all day must make zero upstream calls, and the cheapest way to prove an

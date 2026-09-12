@@ -27,7 +27,7 @@
 // command that has just changed the charger knows something the cache does not, so it asks for
 // the fetch to be forced. It cannot be reached except from a click.
 
-import { getState, getHistory, getInvoices, refresh, TOKEN_EXPIRED } from './api.js';
+import { getState, getHistory, getInvoices, refresh, TOKEN_EXPIRED, isChargerError } from './api.js';
 import { dateTime, relative } from './views/he.js';
 // The one view imported statically rather than mounted through the table below. The dynamic
 // import exists because five view files were being written concurrently by agents who could not
@@ -54,6 +54,11 @@ const shared = {
   // `expired`, which is the upstream credential; this one is the viewer's own session and
   // nothing on the page -- no refresh, no credential install -- can renew it.
   authRequired: false,
+  // The other two ways the link to the charger can fail, held as the error NAME or null. Kept
+  // apart from `expired` because only `expired` is a credential problem: a configuration fault
+  // or an outage telling the owner to go and renew a credential in their phone is the bug this
+  // flag exists to stop, and it is one that has already been shipped once.
+  chargerFault: null,
   fetchedAt: null,
   stale: false,
 };
@@ -333,6 +338,7 @@ async function load(force) {
 
   let stale = false;
   let expired = false;
+  let chargerFault = null;
   let authRequired = false;
 
   for (const [key, result] of Object.entries(results)) {
@@ -347,15 +353,20 @@ async function load(force) {
     // a body with no fetchedAt is a body with nothing in it: adopting that would mount every
     // view over an object with no charger, no sessions and no calendar, and the panels would
     // paint an invented "nothing plugged in" where the truth is "nothing has ever arrived".
+    // All three charger faults, not expiry alone: what makes the row worth keeping is that the
+    // caller has lost their reading, and an outage blanks a first load exactly as an expiry did.
     const carried =
-      result.error === TOKEN_EXPIRED && result.data && typeof result.fetchedAt === 'number';
+      isChargerError(result.error) && result.data && typeof result.fetchedAt === 'number';
     if (result.ok || carried) {
       shared[key] = result.data;
       fetchedAt[key] = result.fetchedAt;
     }
     // A failed call means what is already on screen is the freshest thing there is.
     if (!result.ok || result.stale) stale = true;
+    // Three upstream conditions, and the page must never paint one as another. Expiry outranks
+    // the other two when routes disagree: it is the only one the owner can actually act on.
     if (result.error === TOKEN_EXPIRED) expired = true;
+    else if (isChargerError(result.error)) chargerFault = chargerFault || result.error;
     // 'auth_required' is api.js's name for the edge bouncing us to a sign-in. One route saying
     // it is enough: the gate is over the whole hostname, so it is true of all of them.
     if (result.error === 'auth_required') authRequired = true;
@@ -368,6 +379,7 @@ async function load(force) {
   // Nothing ever arrived means there is nothing to be stale about; the panels say so themselves.
   shared.stale = stale && shared.fetchedAt != null;
   shared.expired = expired;
+  shared.chargerFault = expired ? null : chargerFault;
   shared.authRequired = authRequired;
 
   paintUpdated();

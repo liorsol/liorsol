@@ -23,14 +23,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { installDocument, node, button, byClass, text } from './fake-dom.mjs';
+import { installDocument, node, button, byClass, text, all } from './fake-dom.mjs';
 import { isLiveSession } from '../api.js';
 
 // The stub DOM is shared with test/app.test.mjs: small enough to read in one sitting, and the
 // reason these are renders rather than greps.
 installDocument();
 
-const { render } = await import('../views/controls.js');
+const { render, renderExpiry, release } = await import('../views/controls.js');
 
 const notes = (el) =>
   byClass(el, 'btn-note')
@@ -201,6 +201,117 @@ test('an expired credential still disables both controls', () => {
   assert.equal(button(el, 'עצירה').disabled, true);
   assert.equal(button(el, 'התחלת טעינה').disabled, true);
   assert.match(notes(el), /התקינו הרשאה חלופית/);
+});
+
+// ── A sign-in that ends in the middle of the settle poll ──
+//
+// The worst version of the pairing this file forbids. The stop press succeeds, the poll starts,
+// and the session ends while it runs: every remaining sample is bounced by the same gate, so
+// the poll can only ever run out. The wording for running out says press refresh -- and this
+// suite already asserts, twice above, that refresh is the one thing a dead sign-in must never
+// be sent to. pollStart has had a branch for exactly this since it was written; pollSettle did
+// not, and this is the only place in the product where the rule leaked.
+//
+// Slow under the defect and instant once fixed: the broken version spends 45 samples a second
+// apart before it reaches the assertions.
+test('a settle that bounces names the sign-in card, and never refresh', async () => {
+  const view = { state: { sessions: [running] } };
+  const el = node('div');
+  // A real round is what raises the sign-in card, so the reload writes the flag the same way
+  // app.js's load() does -- the note's own instruction is only true because of it.
+  render(el, view, { reload: async () => { view.authRequired = true; } });
+  assert.equal(button(el, 'עצירה').disabled, false, 'precondition: the panel mounted live');
+
+  let settleCalls = 0;
+  globalThis.fetch = async (path) => {
+    if (path.startsWith('/api/charge/settle/')) {
+      settleCalls++;
+      return Response.json({ error: 'auth_required' }, { status: 401 });
+    }
+    return Response.json({ session: { sessionId: 'running-1', completed: false } });
+  };
+
+  await button(el, 'עצירה').handlers.click();
+
+  assert.equal(settleCalls, 1, 'the poll kept sampling a session whose sign-in had already ended');
+  const said = notes(el) + ' ' + text(el);
+  assert.match(said, /ההתחברות לדף הסתיימה/, 'a stop whose sign-in ended never said so');
+  assert.doesNotMatch(said, /לחצו רענון/, 'a dead sign-in was sent to press refresh');
+});
+
+// ── Three upstream conditions, and only one of them is a credential ──
+//
+// The banner slot is one <div> and the states share a stylesheet, so what separates them is the
+// text and the presence of the field. A configuration fault wearing the expiry banner is the
+// defect these exist for: it told the owner to go and renew a credential that was healthy, in
+// an app on their phone, and the renewal could not have helped.
+
+const banner = (state) => {
+  const el = node('div');
+  renderExpiry(el, state, ctx);
+  return el;
+};
+const fields = (el) => all(el).filter((n) => n.tagName === 'input');
+
+test('a genuinely expired credential still gets the banner and the field', () => {
+  const el = banner({ expired: true });
+  assert.match(text(el), /פג תוקף ההרשאה/);
+  assert.equal(fields(el).length, 1, 'the one state a pasted credential can mend lost its field');
+});
+
+test('an unreachable charger is not painted as an expired credential', () => {
+  const el = banner({ chargerFault: 'charger_unreachable' });
+  const said = text(el);
+
+  assert.notEqual(said, '', 'an upstream fault painted no banner at all');
+  assert.doesNotMatch(said, /פג תוקף/, 'a configuration fault was painted as an expired credential');
+  assert.match(said, /אינה בעיית הרשאה/, 'the banner never said this is not a credential problem');
+  assert.equal(fields(el).length, 0, 'a configuration fault offered a credential field to paste into');
+});
+
+test('a malformed answer is its own state, distinct from both of the others', () => {
+  const el = banner({ chargerFault: 'charger_bad_reply' });
+  const said = text(el);
+
+  assert.notEqual(said, '', 'a malformed upstream answer painted no banner at all');
+  assert.notEqual(said, text(banner({ chargerFault: 'charger_unreachable' })), 'two different faults painted the same words');
+  assert.doesNotMatch(said, /פג תוקף/, 'a malformed answer was painted as an expired credential');
+  assert.equal(fields(el).length, 0, 'a malformed answer offered a credential field to paste into');
+});
+
+test('an upstream fault locks the controls, and says which kind of fault it is not', () => {
+  const el = paint({ state: { sessions: [running] }, chargerFault: 'charger_unreachable' });
+
+  assert.equal(button(el, 'עצירה').disabled, true, 'Stop stayed live with no link to the charger');
+  assert.equal(button(el, 'התחלת טעינה').disabled, true, 'Start stayed live with no link to the charger');
+  assert.match(notes(el), /אינה בעיית הרשאה/);
+  assert.doesNotMatch(notes(el), /התקינו הרשאה חלופית/, 'a configuration fault sent the owner to paste a credential');
+});
+
+// ── The parameter that has no default, and must not grow one ──
+//
+// release(ctx, reload, force) is the shared exit of start, stop AND the credential install. A
+// reload that does not force re-reads the D1 row -- correctly served back untouched while it is
+// under an hour old -- and repaints the charger as it was BEFORE the command. That is the bug
+// the owner met standing at the charger watching a button do nothing, and it is invisible from
+// the call site.
+//
+// `force` therefore has no default ON PURPOSE, so that a future call site which forgets it is a
+// bug at the moment it is written rather than a silent cache read. The danger is that the
+// missing default reads as an oversight: adding `force = false` keeps every call site working
+// and every other test green, and hands the defect back to all three paths.
+//
+// Function.prototype.length stops counting at the first defaulted parameter, so this is a
+// runtime property of the real function -- not a grep over its source text. `release` is
+// exported for no other reason than to be reachable here.
+test('release() takes force with no default, so a caller cannot omit it', () => {
+  assert.equal(
+    release.length,
+    3,
+    'release() grew a default for a parameter whose whole job is to be impossible to forget: ' +
+      'a defaulted `force` makes a post-command reload read the hour-old cache and repaint the ' +
+      'charger as it was before the command, on start, stop and the credential install alike'
+  );
 });
 
 // ── No module may grow a second definition ──

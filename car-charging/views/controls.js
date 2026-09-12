@@ -24,6 +24,9 @@
 
 import {
   TOKEN_EXPIRED,
+  CHARGER_UNREACHABLE,
+  CHARGER_BAD_REPLY,
+  isChargerError,
   SETTLE_MAX_ATTEMPTS,
   SETTLE_INTERVAL_MS,
   START_MAX_ATTEMPTS,
@@ -82,6 +85,39 @@ const ui = {
   note: null, // null | { kind: 'ok' | 'bad', text }
 };
 
+// ── The two link faults that are NOT an expired credential ──
+//
+// The server used to answer every upstream trouble with `token_expired`, so a wrong base URL
+// told the owner their charger credential had expired and sent them into their phone to renew a
+// credential that was healthy. That is why every string in this table says, in so many words,
+// that this is not a credential problem and there is nothing to renew: the failure being fixed
+// was not a missing message, it was a confident WRONG one, and only naming the negative undoes
+// it. Both states also lose the paste field entirely — see renderExpiry.
+//
+// The keys are the server's own names, exactly as api.js passes them through. A name that is
+// not here renders nothing rather than an invented state (`view?.chargerFault` in paint()).
+//
+// NOT_A_CREDENTIAL is one sentence with one spelling on purpose: the banner, the lock reason and
+// the command note all have to make the same denial, and three hand-written versions of it is
+// three chances for one of them to drift back into sounding like an expiry.
+const NOT_A_CREDENTIAL = ' זו אינה בעיית הרשאה, ואין מה לחדש באפליקציה של העמדה.';
+const FAULT = {
+  [CHARGER_UNREACHABLE]: {
+    title: 'אין כרגע קשר לעמדה',
+    text: 'הלוח לא קיבל תשובה מהעמדה. זו תקלת תקשורת או הגדרה בצד השרת, והעמדה לא דחתה שום הרשאה.',
+    hint: NOT_A_CREDENTIAL.trim() + ' מה שמוצג כאן הוא הנתון האחרון שהתקבל. נסו רענון מאוחר יותר.',
+    reason: 'השליטה נעולה כי אין כרגע קשר לעמדה.' + NOT_A_CREDENTIAL,
+    short: 'אין כרגע קשר לעמדה, וזו אינה בעיית הרשאה.',
+  },
+  [CHARGER_BAD_REPLY]: {
+    title: 'תשובה שהלוח לא מצליח לקרוא',
+    text: 'העמדה ענתה, אבל התשובה לא הייתה בתבנית שהלוח מכיר. העמדה לא דחתה שום הרשאה.',
+    hint: NOT_A_CREDENTIAL.trim() + ' ייתכן ששירות העמדה השתנה. מה שמוצג כאן הוא הנתון האחרון שהתקבל.',
+    reason: 'השליטה נעולה כי התשובה האחרונה מהעמדה לא הייתה בתבנית שהלוח מכיר.' + NOT_A_CREDENTIAL,
+    short: 'התשובה מהעמדה לא הייתה בתבנית שהלוח מכיר, וזו אינה בעיית הרשאה.',
+  },
+};
+
 let mount = null; // { el, view, ctx } — the last thing render() was called with
 
 // The one row this panel may act on: live by the shared definition *and* carrying an id, because
@@ -122,6 +158,8 @@ function paint() {
   // die at the edge -- the user would learn from a failure message, after pressing a control
   // that closes a contactor.
   const authRequired = view?.authRequired === true;
+  // Not a credential problem, and never rendered as one. See FAULT below.
+  const fault = FAULT[view?.chargerFault] ? view.chargerFault : null;
   const loaded = !!view?.state;
 
   const frag = document.createDocumentFragment();
@@ -160,6 +198,15 @@ function paint() {
     startOff = true;
     stopOff = true;
     reasons.push('השליטה נעולה כל עוד פג תוקף ההרשאה מול העמדה. התקינו הרשאה חלופית בהודעה שלמעלה.');
+  } else if (fault) {
+    // Locked for the same reason `expired` is -- the panel is painting a snapshot it can no
+    // longer check, and offering Start against it is offering to actuate hardware blind. What
+    // must differ is the WORDING: this is not a credential problem, so the reason may not send
+    // the owner to renew anything. Saying it in the negative is deliberate; the whole cost of
+    // this defect was an instruction that sounded actionable and could not work.
+    startOff = true;
+    stopOff = true;
+    reasons.push(FAULT[fault].reason);
   } else if (!loaded) {
     startOff = true;
     stopOff = true;
@@ -249,7 +296,10 @@ function paint() {
 // nothing has forced a fetch since. Pass false when a poll above has just forced one -- the rows
 // are seconds old and a second force buys three upstream fetches and no new fact -- or when
 // nothing was commanded at all.
-async function release(ctx, reload, force) {
+// Exported for one reason and no other: test/controls.test.mjs asserts `release.length === 3`,
+// which is the only way the no-default rule above can be checked as a property of the real
+// function rather than as a grep over this file's text. Nothing imports it in the product.
+export async function release(ctx, reload, force) {
   try {
     if (reload) await ctx.reload(force);
   } finally {
@@ -419,6 +469,15 @@ async function onStop() {
     ui.note = { kind: 'ok', text: 'נעצרה והסתכמה.' };
   } else if (final.error === TOKEN_EXPIRED) {
     ui.note = { kind: 'bad', text: 'נעצרה, אבל תוקף ההרשאה מול העמדה פג לפני שהטעינה הסתכמה.' };
+  } else if (bounced(final)) {
+    // Its own branch, and it must stay one -- the twin of onStart's. The note in the `else`
+    // below says press refresh, and refresh is provably the one action that cannot mend a
+    // sign-in that has ended. api.js now leaves the poll on the first bounce rather than
+    // spending all 45 samples to arrive here, so this is reached in a second, not in 45.
+    ui.note = {
+      kind: 'bad',
+      text: 'נעצרה, אבל ההתחברות לדף הסתיימה לפני שהטעינה הסתכמה — בקשו קישור כניסה בכרטיס שלמעלה כדי לראות את הסיכום.',
+    };
   } else {
     // Running the cap out is not a failure. The charge is stopped; the totals are still landing.
     ui.note = {
@@ -443,13 +502,14 @@ function failureText(result, prefix) {
   if (result.error === 'auth_required') return prefix + ' ההתחברות לדף הסתיימה — בקשו קישור כניסה בכרטיס שלמעלה.';
   if (result.error === 'network') return prefix + ' הבקשה לא הושלמה מעולם.';
   if (result.error === TOKEN_EXPIRED) return prefix + ' פג תוקף ההרשאה מול העמדה.';
+  if (FAULT[result.error]) return prefix + ' ' + FAULT[result.error].short;
   return prefix + ' העמדה לא קיבלה את הפקודה.';
 }
 
-// ── S6 — the expiry banner and the credential field ──
+// ── S6 — the banner slot: one <div>, three states, and only one of them takes a paste ──
 //
-// The whole block is created when the credential is expired and REMOVED FROM THE DOM when it is
-// not. Never [hidden], never display:none: a security test asserts the field is absent, and a
+// The whole block is created when there is something to say and REMOVED FROM THE DOM when there
+// is not. Never [hidden], never display:none: a security test asserts the field is absent, and a
 // hidden password field is still a field a password manager, a session restore or a page-source
 // reader can find.
 //
@@ -457,23 +517,48 @@ function failureText(result, prefix) {
 // is not held in a variable beyond that expression, not kept in a data attribute, not echoed
 // back, not previewed, not measured. installToken() deliberately returns no body, so there is
 // nothing to render even by accident.
+//
+// THE FIELD BELONGS TO THE EXPIRY AND TO NOTHING ELSE. A link fault that offered a box to paste
+// a credential into would be the whole defect again in one control: the owner would go to their
+// phone, renew something healthy, paste it, and watch the same banner come back. The two fault
+// states share this slot and its stylesheet and get no field at all.
 
 const FIELD_ID = 'expiry-credential';
 
 export function renderExpiry(el, state, ctx) {
-  if (state?.expired !== true) {
+  // Expiry outranks a fault when both are somehow set: it is the only one the owner can act on.
+  const kind = state?.expired === true ? TOKEN_EXPIRED : (FAULT[state?.chargerFault] ? state.chargerFault : null);
+  if (!kind) {
     el.replaceChildren(); // banner and field leave the DOM entirely
     return;
   }
-  if (el.querySelector('.expiry')) return; // already up — do not rebuild under the user's hands
+  // Already up, and up for the SAME reason — do not rebuild under the user's hands. Keyed on the
+  // state rather than on the class, because all three wear `.expiry`: keying on the class would
+  // leave an expiry banner standing when the condition had changed to a fault, or the reverse.
+  if (el.firstChild?.dataset?.kind === kind) return;
 
   const inner = make('div', 'expiry__inner');
+  if (kind !== TOKEN_EXPIRED) {
+    inner.append(
+      make('p', 'expiry__title', FAULT[kind].title),
+      make('p', 'expiry__text', FAULT[kind].text),
+      make('p', 'expiry__text', FAULT[kind].hint)
+    );
+    const banner = make('div', 'expiry');
+    banner.dataset.kind = kind;
+    banner.append(inner);
+    el.replaceChildren(banner);
+    return; // no field: there is nothing here a pasted credential could mend
+  }
+
   inner.append(
     make('p', 'expiry__title', 'פג תוקף ההרשאה מול העמדה'),
     make(
       'p',
       'expiry__text',
-      'הלוח לא מצליח להגיע לעמדה. חדשו את ההרשאה באפליקציה של העמדה עצמה, ואז הדביקו כאן את החלופה.'
+      // "refused", not "could not reach". The charger answered and turned the credential down;
+      // saying the link was unreachable here is the same conflation from the other side.
+      'העמדה דחתה את ההרשאה. חדשו את ההרשאה באפליקציה של העמדה עצמה, ואז הדביקו כאן את החלופה.'
     ),
     make(
       'p',
@@ -503,6 +588,7 @@ export function renderExpiry(el, state, ctx) {
   inner.append(form);
 
   const banner = make('div', 'expiry');
+  banner.dataset.kind = kind;
   banner.append(inner);
   el.replaceChildren(banner);
 
@@ -539,13 +625,16 @@ async function onInstall(el, inner, input, button, ctx) {
     // Rejected. The field stays open so the owner can paste again — unless the install never
     // reached anything, in which case blaming the paste sends the owner to re-copy a credential
     // that was fine. A bounced sign-in is the one failure here that no amount of re-pasting fixes.
-    setResult(
-      inner,
-      'expiry__error',
-      result.error === 'auth_required'
-        ? 'ההתחברות לדף הסתיימה, ולכן שום דבר לא הותקן. טענו את הדף מחדש כדי להתחבר שוב, ואז הדביקו.'
-        : 'נדחתה. בדקו שהעתקתם את הערך במלואו.'
-    );
+    // Three reasons an install can fail and only one of them is about the value that was
+    // pasted. Blaming the paste for a link fault sends the owner to re-copy a credential that
+    // was fine -- the same mistake as the banner's, on the one control meant to end it.
+    let why = 'נדחתה. בדקו שהעתקתם את הערך במלואו.';
+    if (result.error === 'auth_required') {
+      why = 'ההתחברות לדף הסתיימה, ולכן שום דבר לא הותקן. טענו את הדף מחדש כדי להתחבר שוב, ואז הדביקו.';
+    } else if (isChargerError(result.error) && result.error !== TOKEN_EXPIRED) {
+      why = 'לא הותקן: אין כרגע קשר לעמדה כדי לבדוק את הערך. הערך שהדבקתם לא נדחה — נסו שוב מאוחר יותר.';
+    }
+    setResult(inner, 'expiry__error', why);
     return;
   }
 

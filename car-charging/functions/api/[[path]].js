@@ -1,7 +1,14 @@
 // Pages Function mounted at /api/*.
 //
-// Every request that reaches this file has already been authenticated at the edge.
-// Nothing here authenticates; this file only authorises and routes.
+// Nothing here authenticates and nothing here can: the session is a signed cookie and the
+// signing key lives in the private upstream service, never in this public repository. So
+// this file ASKS -- one body-less call to the upstream -- and then authorises and routes.
+//
+// The edge used to do this. It cannot any more: the identity header this file once trusted
+// is injected by an edge product that is not enabled on this account, so it is never present
+// and every route answered 403, the owner's requests included. The gate moved into the
+// application. What did not change is that a class is something a caller PROVED, never
+// something a header failed to say.
 //
 // It has exactly two jobs:
 //   1. hand anything it does not own to the private upstream service over a service
@@ -17,25 +24,39 @@ const MAX_AUTHOR = 80;
 const MAX_TEXT = 4000;
 
 // Route table. `callers` is the set of caller classes allowed to reach the route.
-// Today every route is people-only. When an automated caller is added later it is
-// authorised at the edge as a second policy on the same application, and the only
-// change here is adding 'machine' to the rows it may use.
+//
+// 'unknown' is the class of every caller that has not proved anything, and it appears on
+// exactly one row: the login door, whose whole purpose is to be reachable by someone with
+// no session. Adding it anywhere else opens that route to the internet.
+//
+// Today every other route is the owner and nobody else. When an automated caller is added
+// later (the iPhone Shortcut), it gets its own class and this table is the one place that
+// decides which rows it may use -- which is why the 403 branch below stays even though
+// nothing reaches it yet.
 export const ROUTES = [
-  { match: /^\/api\/comments(?:\/([^/]+))?$/, callers: ['human'], handler: comments },
-  { match: /^\/api\//, callers: ['human'], handler: forward },
+  { match: /^\/api\/auth\/(?:request|callback)$/, callers: ['unknown', 'owner'], handler: forward },
+  { match: /^\/api\/comments(?:\/([^/]+))?$/, callers: ['owner'], handler: comments },
+  { match: /^\/api\//, callers: ['owner'], handler: forward },
 ];
 
-// Authorisation only, and every class comes from a signal that is *present*.
+// Authorisation only, and the class comes from a signal that is *present* and verified.
 //
-// The absence of a header is not evidence of anything: the edge strips these headers
-// from anything it did not itself authenticate, so a request arriving without them is
-// a request that was never identified. It gets 'unknown', which appears in no route's
-// `callers` and never may. Deriving a trusted class from a missing header would make
-// every anonymous request on the internet that class the day a route admits it.
-export function callerClass(request) {
-  if (request.headers.get('Cf-Access-Authenticated-User-Email')) return 'human';
-  if (request.headers.get('Cf-Access-Client-Id')) return 'machine';
-  return 'unknown';
+// A cookie is not a class. `owner` is returned only when the upstream service -- the one
+// holding the signing key -- has checked the signature, the expiry AND that the session's
+// jti is still a row in the sessions table, which is what will make the future revoke page
+// a DELETE and nothing more. Anything else, including a cookie that merely looks right, is
+// 'unknown'. Absence of a cookie is answered here without a call, so an anonymous flood
+// costs one invocation rather than two.
+export async function callerClass(request, env) {
+  // No cookie, or nothing to ask: either way this caller has proved nothing. An unbound
+  // upstream is not a reason to admit someone -- it is a reason nobody can be admitted.
+  if (!request.headers.get('cookie') || !env.PROXY) return 'unknown';
+  const probe = await env.PROXY.fetch(
+    new Request(new URL('/api/auth/verify', request.url), {
+      headers: { cookie: request.headers.get('cookie') },
+    })
+  );
+  return probe.status === 204 ? 'owner' : 'unknown';
 }
 
 export async function onRequest({ request, env }) {
@@ -43,22 +64,67 @@ export async function onRequest({ request, env }) {
   for (const route of ROUTES) {
     const m = url.pathname.match(route.match);
     if (!m) continue;
-    if (!route.callers.includes(callerClass(request))) return json(403, { error: 'forbidden' });
-    return route.handler(request, env, url, m[1]);
+
+    // The login door needs no probe: there is nothing to verify yet, and asking would
+    // double the cost of the one route an unauthenticated stranger can reach.
+    if (route.callers.includes('unknown')) return route.handler(request, env, url, m[1]);
+
+    const klass = await callerClass(request, env);
+
+    // Three distinct answers, and the page renders each differently. 401: no session --
+    // sign in. 403: a session that may not use this route. 503 token_expired, raised
+    // upstream: the CHARGER credential is dead, which is not an authentication problem
+    // at all. Never collapse a pair of them.
+    if (klass === 'unknown') return json(401, { error: 'auth_required' });
+    if (!route.callers.includes(klass)) return json(403, { error: 'forbidden' });
+
+    return route.handler(request, env, url, m[1], klass);
   }
   return json(404, { error: 'not_found' });
 }
 
 // The upstream service is reached with a *reconstructed* request: same method, same path,
-// same body, `content-type` and nothing else. Passing the original through would carry the
-// edge session cookie -- a live bearer credential for this whole hostname, with no device or
-// IP binding -- into a service that reads no header on any code path. It routes on the path
-// and reads the JSON body, so nothing else has any reason to cross, and one `console.log` of
-// the headers in a future debugging session can no longer put a session token in a log.
+// same body, and an allowlist of four headers. Everything not named here is dropped, so a
+// header added to this hostname later -- by a product, by a proxy, by anything -- does not
+// silently start crossing into the service that holds the account credential.
+//
+// Each one earns its place, and the list is the whole argument for the design:
+//
+//   content-type      the service reads JSON bodies
+//   cookie            the session. It USED to be the reason this allowlist existed: under the
+//                     old edge gate the cookie was somebody else's bearer credential and had
+//                     no business crossing. It is now OUR cookie, signed by the service on the
+//                     other side of this call, and it is the only thing that can authenticate
+//                     the request. This host sets no other cookie, and pages.dev is on the
+//                     public suffix list, so no sibling site can add one to this jar.
+//   user-agent        written once, to the session row, so the future revoke page can say
+//                     "the iPhone" rather than a hex id
+//   cf-ipcountry      coarse location for that same row, when the platform gives it for free
+//
+// Deliberately absent: cf-connecting-ip on everything but the login route below. The service
+// hashes it for rate limiting and stores nothing; no other route has a use for it.
+const PASS = ['content-type', 'cookie', 'user-agent', 'cf-ipcountry'];
+
 function forward(request, env) {
   if (!env.PROXY) return json(503, { error: 'upstream_unavailable' });
-  const type = request.headers.get('content-type');
-  return env.PROXY.fetch(new Request(request, { headers: type ? { 'content-type': type } : {} }));
+  const headers = {};
+  for (const name of PASS) {
+    const value = request.headers.get(name);
+    if (value) headers[name] = value;
+  }
+  if (!headers['cf-ipcountry'] && request.cf?.country) headers['cf-ipcountry'] = request.cf.country;
+  // The login routes are the only ones with a caller to rate-limit, and the only ones the
+  // service needs an address for. It hashes it with the signing key and never stores it.
+  if (/^\/api\/auth\//.test(new URL(request.url).pathname)) {
+    const ip = request.headers.get('cf-connecting-ip');
+    if (ip) headers['cf-connecting-ip'] = ip;
+  }
+  // `redirect: 'manual'` is load-bearing and is written last so no caller can drop it. The
+  // sign-in link is answered with a 302 and a Set-Cookie: under the default mode this call
+  // would follow that redirect HERE, server-side, and hand the browser whatever the second
+  // request returned -- a 401, since the cookie was never delivered to anyone. The symptom
+  // would be a sign-in link that silently never signs anyone in.
+  return env.PROXY.fetch(new Request(request, { headers, redirect: 'manual' }));
 }
 
 // GET    /api/comments?archived=exclude|include|only   (default exclude)
@@ -68,7 +134,7 @@ function forward(request, env) {
 // There is deliberately no DELETE. Archiving is the only removal, rows stay in the
 // database, stay readable, and always report their `archived` flag so a machine
 // reader can tell an archived comment from a dropped one.
-async function comments(request, env, url, id) {
+async function comments(request, env, url, id, klass) {
   if (!env.DB) return json(503, { error: 'store_unavailable' });
 
   if (request.method === 'GET' && !id) {
@@ -89,17 +155,16 @@ async function comments(request, env, url, id) {
 
   if (request.method === 'POST' && !id) {
     const body = await readJson(request);
-    // Provenance is assigned here from the authenticated caller and never read from the body.
-    // This board is a hand-off channel to a later automated reader, and `author` is the only
-    // trust signal it will ever have: anything that can post could otherwise claim to be
+    // Provenance is the caller class that was verified above, and never anything from the
+    // body. This board is a hand-off channel to a later automated reader, and `author` is the
+    // only trust signal it will ever have: anything that can post could otherwise claim to be
     // "system" or "owner". A body `author` is accepted and discarded, not rejected.
     //
-    // The email itself is deliberately not stored -- the database holds no personal data. The
-    // human class is the literal 'owner'; a future automated caller is its own client id.
-    const author =
-      callerClass(request) === 'human'
-        ? 'owner'
-        : text(request.headers.get('Cf-Access-Client-Id'), MAX_AUTHOR);
+    // Using the class itself rather than a literal is what keeps that true when a second class
+    // exists: a machine caller admitted to this row writes its own name, not the owner's. No
+    // address is stored either -- the database holds no personal data, and there is none to
+    // store: the session's subject is the string 'owner'.
+    const author = text(klass, MAX_AUTHOR);
     if (!author) return json(403, { error: 'forbidden' }); // no route admits a class without one
     const message = text(body?.text, MAX_TEXT);
     if (!message) return json(400, { error: 'text_required' });

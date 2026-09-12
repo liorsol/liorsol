@@ -1,170 +1,233 @@
 # CLAUDE.md — car charging dashboard
 
-A dashboard for my own EV charging data: session history, energy, spend, and how much of each
-session was actually delivering power.
+A private dashboard for my own EV charging data: session history, energy, spend, the live
+time-of-use tariff, what deferring a charge saved, and working start/stop controls.
 
-## Goal
-
-**Now:** a private dashboard showing charge history — sessions over time, energy, cost, and
-how much of each session was actually delivering power versus sitting suspended.
-
-Electricity here is **time-of-use, not flat** (confirmed 2026-09-10): an evening peak window
-priced ~2.8× the rest of the day. So a session's cost depends on *when* its kWh landed, and
-two numbers matter equally — how much of the session actually delivered power, and how much
-of it was deferred into the cheap window. Deferring is usually correct; the dashboard's job is
-to show which sessions were held for price and which were merely throttled.
-
-**Later:** starting and stopping a charge from the same dashboard. That turns it from a
-read-only view into something that acts on hardware, so it raises the bar on auth: a leaked
-URL would stop being an information leak and start being physical control.
-
-Remote **start** and **stop** are both understood as of 2026-09-11 and work from the CLI, so the
-dashboard can ship real controls rather than placeholders. One deferral-scheduling call remains
-uncaptured and will not be guessed — see the private notes.
-
-**Access model:** the whole hostname sits behind one Cloudflare Access application whose policy
-allows exactly one identity — mine. *Which* sign-in method that application uses is a dashboard
-setting and is deliberately absent from this repo: nothing in the page, the Function or the
-deploy names it, branches on it, or has to change when it changes. The personal credential for
-the upstream data source never reaches the browser — it lives in the private proxy Worker.
-Everything except the UI source runs on Cloudflare.
+**State, 2026-09-12: built, deployed and serving real data.** This is no longer a design
+document. The page renders, the API answers, the private Worker holds the credential, and a
+real charging session has been read end to end. Read this whole file before changing anything
+here — several of the things it says are counter-intuitive and each one was paid for.
 
 ## Read this first
 
-**The working notes, tooling and credentials for this project are deliberately NOT in this
-repo.** They live in iCloud:
+**The working notes, tooling and credentials are deliberately NOT in this repo.** They live in
+iCloud:
 
 ```
 ~/Library/Mobile Documents/com~apple~CloudDocs/car-charging-api/
-├── CLAUDE.md     ← start here: current state, next steps, house rules
-├── API-NOTES.md  ← full data-source reference
-├── charge.sh     ← CLI: auth, token refresh, history, live status, remote start
-├── *.har         ← app captures; the source of truth for request schemas
-└── .token.json   ← credential, chmod 600
+├── CLAUDE.md        ← start here: current state, next steps, house rules
+├── API-NOTES.md     ← full data-source reference
+├── charge.sh        ← CLI: auth, token refresh, history, live status, start, stop
+├── worker/          ← the private Worker's source + DEPLOY.md. Never committed anywhere.
+├── tests/           ← the security and functional suites that run against the live host
+├── build/           ← the build record: PLAN.md, STATUS.md, HANDOFF.md, DISPATCH-LOG.md, notes
+├── *.har            ← app captures; the source of truth for request schemas. Do not read these.
+└── .token.json      ← credential, chmod 600
 ```
 
-Start any session on this project by reading that folder's `CLAUDE.md`. This file is only a
-signpost — it intentionally contains no technical detail.
+Start any session by reading that folder's `CLAUDE.md`, then `build/HANDOFF.md`. This file is a
+signpost: it carries the shape and the rules, and no vendor detail at all.
 
-## Why the split
+## Why the split — the secrecy rule
 
 This repo is public and search-indexed. The data source is a private mobile-app backend for my
-building's charger, reached with a personal credential. Keeping the provider details, hostnames
-and endpoints out of a public repo is the point.
+building's charger, reached with a personal credential. Keeping the provider out of a public
+repo is the entire reason the system has the shape it has.
 
 **Rules for anything committed here:**
 
-- No provider or app names, hostnames, endpoint paths, header names or token values — not in
-  code, comments, commit messages, branch names or filenames.
-- The upstream base URL and the API token are **secrets bound to the private Worker**, never
-  hardcoded and never in this repo — not even as a name in a wrangler config committed here.
+- **No vendor or app name, hostname, endpoint path, header name, field name or token value** —
+  not in code, comments, commit messages, branch names or filenames.
+- **No personal identifier**: no address, no mail zone, no account name, no id.
+- The upstream base URL and the upstream tokens are **secrets bound to the private Worker**,
+  never hardcoded, never in this repo, not even as a name in a wrangler config committed here.
 - Credentials never leave the iCloud folder and the Cloudflare account.
 - The private Worker's source is not committed to this repo under any filename.
 
-If a change can't be described without naming the provider, it belongs in the iCloud notes, not
-in this repo.
+If a change cannot be described without naming the provider, it belongs in the iCloud notes.
 
-## Status
+**This extends to the sign-in details, and that omission is a rule, not an oversight.** The
+mechanism below is described because code in this repo implements it and cannot be understood
+otherwise. Everything around it — the recipient address, the sending zone, the identity
+provider, the configured origins — is named nowhere here and must not be added "for clarity".
+Two reasons, both still live. It is reconnaissance: the sign-in screen renders to anonymous
+visitors, so naming what guards the dashboard hands a passer-by the one fact worth having. And
+it has already changed three times; a doc that names it is a doc that goes stale and misleads
+the next session into building against a model that is gone. Nothing here reads it, branches on
+it, or has to change when it changes again.
 
-Nothing is built yet **in this repo**. This folder is documentation only: the goal, the auth
-decision, and a pointer to the private notes. The data source is mapped and the CLI does
-history, live status, remote start and remote stop — all in the iCloud folder above. Next
-session starts at step 1 of the decision below.
+## Auth — how it actually works
 
-The read-only route set below is still the right shape, but it now needs a third thing: the
-live **tariff calendar**, since without it the dashboard cannot say whether a suspended session
-is saving money or just losing time.
+**The gate is application code in the private Worker.** There is no edge gate.
 
-## What gets built here
+- Sign-in is a **single-use link mailed to one fixed address**, configured on the Worker. The
+  login route takes **no address and cannot be made to** — it never reads its request body, and
+  the platform binding refuses any other recipient. It always answers `200 {"ok":true}`,
+  whatever happened, so nothing is enumerable.
+- A followed link sets **`__Host-session`**: an HS256 JWT in an
+  `HttpOnly; Secure; SameSite=Lax; Path=/` cookie. `HttpOnly` and not `localStorage`
+  specifically because this page closes a contactor — an XSS that can read a token is physical
+  control of the charger.
+- Every request verifies the signature, the expiry, **and that the token's `jti` is still a row
+  in the D1 `sessions` table**. That row is the revoke handle: one `DELETE` kills a session and
+  the next request is a `401`. Rotating the signing key kills all of them.
+- **Everything under `/api/*` answers `401 {"error":"auth_required"}` without a valid session.**
+  `403 forbidden` means a session not allowed that route; `503 token_expired` means the
+  *charger* credential is dead and has nothing to do with sign-in. Three states, none collapsed.
+- The signing key lives in Secrets Store bound to the Worker. **If it is missing the system does
+  not degrade, it closes** — every route 401s and no unsigned cookie is ever minted, which looks
+  exactly like "nobody has signed in yet". If sign-in silently never works, check the key first.
 
-Two halves. **Only one of them is in this repo**, and the split is the security model, not a
-packaging preference.
+Full contracts, the threat reasoning, and which mutations were watched failing:
+`build/backend/auth-notes.md`. The repo-side half runs offline with
+`node --test car-charging/test/`.
+
+### The retired model — do not propose it again
+
+This directory previously documented **Cloudflare Access** as the live gate, and every version
+of that is now wrong. **Access is not used, was never enabled on the account, and the owner
+decided against it three times.** The decision is settled; do not re-litigate it, do not
+"restore" the edge gate, and do not write code that reads an edge identity header — that header
+is injected by a product that is not on this account, so it is never present, and the Function
+that trusted it answered `403` to everyone including the owner.
+
+The record is kept here because deleting it silently guarantees the next session proposes it
+again from first principles. What it cost to give up is stated honestly below.
+
+### The page is public on purpose
+
+**The HTML, CSS and JS are served to anyone. The gate is on `/api/*` only.** This is deliberate
+and is not a bug to fix:
+
+- the page contains no data and no secret — it renders whatever the API gives it, and anonymous
+  it gets `401`s and a sign-in screen;
+- moving the gate in front of the page means an edge gate, which is the retired model.
+
+The cost, stated plainly: an anonymous `/api/*` request now **costs a Worker invocation**, which
+the original design treated as a hard requirement to avoid (see
+[Cloudflare Workers: the account is the quota](../README.md#cloudflare-workers-the-account-is-the-quota)).
+That property is gone by construction and is mitigated, not restored: the login route is rate
+limited, and a request carrying no `__Host-session=` jar entry is refused in the Function for
+**one** invocation with no upstream call. Do not "fix" the public page by reaching for an edge
+product — that trade was made knowingly.
+
+## The architecture — two halves, and the split is the security model
+
+**Only one half is in this repo.**
 
 In this directory — the whole public half, a Cloudflare Pages project, no build step:
 
 ```
 car-charging/index.html                  the page
-car-charging/{style.css,app.js,api.js}   and views/
-car-charging/functions/api/[[path]].js   Pages Function: owns the comment board,
-                                         hands everything else to the private half
-car-charging/schema.sql                  D1 schema
+car-charging/{app.js,api.js,style.css}   app shell, transport, design system
+car-charging/views/                      account, auth, comments, controls, he, history, tariff
+car-charging/functions/api/[[path]].js   Pages Function: authorises, owns the comment board,
+                                         forwards everything else to the private half
+car-charging/schema.sql                  D1 schema: cache, comments, sessions, login_tokens
+car-charging/_redirects                  the denylist that keeps docs/tests/schema off the host
+car-charging/_headers                    CSP, frame-ancestors, referrer, nosniff
+car-charging/_routes.json                pins the Function to /api/*
+car-charging/.assetsignore               intent only — inert on this uploader, see _redirects
+car-charging/test/                       the repo-side suite: node --test car-charging/test/
+car-charging/README.md                   the operational detail for this directory
 ```
 
-**The proxy that holds the credential is not here, and must never be created here.** It is a
-separate Worker; its source lives beside the private notes in the iCloud folder above, it is
-deployed by hand, and it is never committed to any repo. Its credential lives in Cloudflare
-Secrets Store, bound to that Worker — not in a file, not in this repo's Actions secrets, and
-never passing through this directory. The page reaches it over a **service binding** on the
-Pages project, so nothing here holds a hostname, a path, a header name or a token, and the two
-halves deploy independently.
+The Function is **thin and vendor-neutral**. It holds no host, no path, no header, no credential
+and no signing key. It asks the Worker one body-less question to authorise, answers the comment
+board itself, and forwards the rest over the binding unchanged.
 
-⚠️ **This is the opposite of the `esim-usage/proxy.js` pattern next door.** That Worker is
-committed and deliberately open, because it holds nothing. This one holds a credential that
-exposes personal details and closes a contactor on real hardware.
+**The proxy that holds the credentials is not here, and must never be created here.** It is a
+separate Worker; its source lives in `worker/` beside the private notes, **outside git
+entirely**, and it is deployed by hand. Its secrets live in **Cloudflare Secrets Store, bound to
+that Worker** — never to Pages, never in a file, never in this repo's Actions secrets. The page
+reaches it over a **service binding** on the Pages project, so the two halves deploy
+independently and nothing here holds a vendor fact.
 
-> A future session that finds itself about to create `car-charging/proxy.js`, or to run
-> `wrangler secret put` in this directory, is about to put the credential in a public repo.
-> That is what this section exists to prevent. `.gitignore` carries a tripwire for the filename;
-> the tripwire is a backstop, not the rule.
+`workers_dev = false` and **no routes** on that Worker: it has no public door, and the service
+binding is the only way in. If a deploy of it ever prints a `workers.dev` URL or a route, stop —
+that is the whole security model, not a detail.
 
-## Auth: the one decision to make first
+⚠ **This is the opposite of the `esim-usage/proxy.js` pattern next door.** That Worker is
+committed and deliberately open, because it holds nothing. This one holds credentials that
+expose personal details and close a contactor on real hardware.
 
-Read [Cloudflare Workers: the account is the quota](../README.md#cloudflare-workers-the-account-is-the-quota)
-before designing this. Two goals here pull against each other:
+> A future session about to create `car-charging/proxy.js`, or to run `wrangler secret put` in
+> this directory, is about to put a credential in a public repo. That is what this section
+> exists to prevent. `.gitignore` carries a tripwire for the filename; the tripwire is a
+> backstop, not the rule.
 
-1. exactly one identity can reach the dashboard — mine
-2. an unauthenticated caller must not be able to burn the account's shared Worker quota
-3. the UI lives on GitHub
+**Bindings are production-only, always.** Preview deployment URLs are permanent, guessable from
+a public repo and printed in every deploy log. Nothing is ever bound to the preview environment.
 
-**All three cannot hold at once.** Cloudflare Access gates only hostnames behind Cloudflare;
-`liorsol.github.io` is not one. And a cross-origin `fetch` from GitHub Pages to an
-Access-protected Worker fails, because the gate answers an unauthenticated call with an
-interactive sign-in redirect — cross-origin, and one a `fetch` cannot follow.
+## Deploying
 
-| | One identity only | Quota safe | UI hosted on |
-|---|---|---|---|
-| **A. UI on Cloudflare Pages, Access over UI + Worker** | ✓ the gate decides at the edge, before any code of ours runs | ✓ rejected at the edge, Worker never runs | Cloudflare (source still in this repo) |
-| **B. UI on GitHub Pages, Worker verifies an identity token itself** | ✓ an identity check written into the page and the Worker | ✗ every anonymous request still costs an invocation | GitHub Pages |
+Two independent deploys. Neither touches the other.
 
-### ✅ Decided: option A — serve from Cloudflare (2026-09-07)
+**The page** (from the repo root):
 
-Option B is rejected: it cannot satisfy goal 2, because a Worker that checks a token in its own
-code has already paid for the request by the time it says no. Goal 1 is met as a property of the
-hostname rather than of any page code: the access gate admits exactly one identity and enforces
-it at the edge.
+```bash
+rm -rf car-charging/.wrangler          # see "Two measured facts" — do this every time
+npx wrangler pages deploy . --cwd car-charging --project-name car-charging --branch main
+```
 
-**Which** sign-in method that gate uses is a dashboard setting and is named nowhere in this repo
-— not here, not in the page, not in the Function, not in the deploy (see *Access model* above).
-Two reasons, and both still hold. It is reconnaissance: the sign-in page renders to anonymous
-visitors, so naming the factor that guards the dashboard hands a passer-by the one fact worth
-having. And it has already changed once since this decision was written — a doc that names a
-method is a doc that goes stale and misleads the next session into building against a model that
-is no longer there. Nothing in this repo reads it, branches on it, or has to change when it
-changes again; if you need to know what is configured today, read the dashboard or the private
-notes.
+`--cwd car-charging` is **load-bearing and is not the same command as `pages deploy
+car-charging`**. Wrangler resolves `functions/` against its working directory, not against the
+asset directory you name: run it the other way and it uploads every static file, compiles **no
+Function**, and `/api/*` serves a static 404 with no error anywhere. The tell is the line
+`✨ Compiled Worker successfully`. **A deploy without that line is a lie.**
 
-"UI on GitHub" still holds in the sense that matters — the source stays in this repo and
-Cloudflare Pages builds from it. Only the serving moves.
+`.github/workflows/car-charging-pages.yml` does this on any push touching `car-charging/**`, and
+fails the job if that line is absent.
 
-**The shape this landed in, and the order it has to be built in:**
+**The Worker**: by hand, from `worker/` in the iCloud folder, per its own `DEPLOY.md`. Never
+from here, never from CI. Schema changes go in with
+`npx wrangler d1 execute car-charging --remote --file car-charging/schema.sql` — every statement
+is `IF NOT EXISTS`.
 
-1. Cloudflare Pages project serving `car-charging/` — replaces GitHub Pages for *this page
-   only*; the rest of the site stays where it is.
-2. One Access application over the whole hostname, policy narrowed to my one address. A second
-   application is needed over the preview hostnames, or preview deployments are an open door —
-   which is why **no binding is ever attached to the preview environment** (`README.md`).
-3. `workers_dev = false` on the private Worker and no route on it — otherwise it keeps an
-   unauthenticated door open beside the locked one and option A's whole benefit evaporates. The
-   service binding from the Pages project is its only door.
-4. The private Worker itself, **built and deployed from the iCloud folder, never from here**:
-   its secrets live in Cloudflare Secrets Store, it exposes a narrow route set rather than a
-   passthrough, and it strips personal fields before anything reaches the browser.
-5. The page last, once there is an authenticated endpoint to call.
+**Verify after a page deploy** — four checks, none of them by argument:
 
-Verify at the end by opening the hostname in a private window: it must land on the Access
-sign-in, not on data. If it returns JSON, the gate isn't on — and check a preview URL the same
-way, not only the production hostname.
+1. `/api/state`, `/api/history` and friends answer **`401 auth_required`** with no cookie, with
+   a junk cookie, and with a forged `__Host-session` value. Not `403`, not `200`.
+2. `/.wrangler/cache/wrangler-account.json` answers **302**, not 200.
+3. `/CLAUDE.md`, `/README.md`, `/schema.sql`, `/.assetsignore`, `/test/*` answer **302**.
+4. The page itself answers 200 and carries the CSP and frame headers from `_headers`.
 
-Credentials expire and cannot renew themselves unattended; the recovery procedure is in the
-iCloud notes. The Worker should surface expiry explicitly (`503` + a clear banner) rather than
-rendering empty charts.
+## Two measured facts worth inheriting
+
+**1. Secrets Store propagation is lazy.** A secret written through the API or the CLI is **not**
+seen by an already-running isolate; the Worker keeps serving the old value until it is
+redeployed. Consequences: rotating a credential is a write **plus a redeploy**, in-page rotation
+cannot clear its own banner, and the Secrets Store *write* credential that would have made
+in-page rotation possible is deliberately **not created at all** — it would outrank every secret
+it protects and buys nothing when the write needs a redeploy anyway.
+
+**2. `car-charging/.wrangler` regenerates and has been served publicly.** Anything that runs
+wrangler in this directory recreates it, it is gitignored so **nothing warns you**, and the
+classic Pages uploader's fixed ignore list does **not** cover it despite notes in this repo that
+once claimed otherwise. It was measured live: `/.wrangler/cache/wrangler-account.json` returned
+`200` with the account name in it, and the same directory holds miniflare's D1/KV/cache SQLite
+files, which carry whatever local dev last fetched. It has come back three times.
+**Delete it before every deploy.** The `/.wrangler/*` rule in `_redirects` is the backstop for
+the time someone forgets, not the fix.
+
+More generally: `_redirects` is a **denylist**. Every file added to `car-charging/` later is
+served on the hostname until a line is added for it.
+
+## Do not guess: the two uncaptured calls
+
+Both remain **uncaptured and unimplemented**, and neither may be inferred, reconstructed or
+guessed:
+
+- the **off-peak-change request schema** (the call that writes the setting — named in the
+  private notes, not here), and
+- the **charge-now value** of the off-peak setting (only the deferring value has ever been seen
+  on the wire).
+
+Guessing either actuates a contactor on real hardware **and** buys energy at roughly **2.79×**
+the low tariff. There is therefore deliberately **no charge-now control and no off-peak toggle
+in the UI**, and that absence is a decision, not a gap in the work. The capture runbook is in
+the iCloud notes and only the owner can run it.
+
+Related, and the same discipline: nothing has ever been fired at the real charger by an agent.
+Start and stop are built and tested against captured traffic. They are not run without the owner
+watching.

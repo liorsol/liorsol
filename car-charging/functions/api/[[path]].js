@@ -39,18 +39,32 @@ export const ROUTES = [
   { match: /^\/api\//, callers: ['owner'], handler: forward },
 ];
 
+// The session cookie's NAME, anchored to the start of a jar entry: a `Cookie` header is a
+// `;`-separated list, so an entry begins at the header or just after a separator. `x__Host-
+// session=`, `__Host-session-other=` and a value that merely CONTAINS the name are therefore
+// not it, and neither is `__host-session=` -- cookie names are case-sensitive.
+//
+// It is deliberately the same rule the Worker's own parser uses (`cookieValue` in auth.js:
+// split on `;`, trim, `startsWith(name + '=')`), so this refusal can never reject a jar the
+// Worker would have accepted. A looser test here would 401 the owner; a naive
+// `includes('__Host-session')` would put the cost back.
+const SESSION_COOKIE = /(?:^|;)\s*__Host-session=/;
+
 // Authorisation only, and the class comes from a signal that is *present* and verified.
 //
 // A cookie is not a class. `owner` is returned only when the upstream service -- the one
 // holding the signing key -- has checked the signature, the expiry AND that the session's
 // jti is still a row in the sessions table, which is what will make the future revoke page
 // a DELETE and nothing more. Anything else, including a cookie that merely looks right, is
-// 'unknown'. Absence of a cookie is answered here without a call, so an anonymous flood
-// costs one invocation rather than two.
+// 'unknown'. A caller carrying no session cookie is answered here without a call, so an
+// anonymous flood costs one invocation rather than two.
 export async function callerClass(request, env) {
-  // No cookie, or nothing to ask: either way this caller has proved nothing. An unbound
-  // upstream is not a reason to admit someone -- it is a reason nobody can be admitted.
-  if (!request.headers.get('cookie') || !env.PROXY) return 'unknown';
+  // No session cookie, or nothing to ask: either way this caller has proved nothing. The
+  // test is the cookie's NAME, not the presence of a `Cookie` header -- every browser that
+  // has ever visited this host sends something, so testing presence puts an ordinary
+  // drive-by hit on the expensive path, which is the one case this line exists to avoid. An
+  // unbound upstream is not a reason to admit someone -- it is a reason nobody can be.
+  if (!SESSION_COOKIE.test(request.headers.get('cookie') || '') || !env.PROXY) return 'unknown';
   const probe = await env.PROXY.fetch(
     new Request(new URL('/api/auth/verify', request.url), {
       headers: { cookie: request.headers.get('cookie') },

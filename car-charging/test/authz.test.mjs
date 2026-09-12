@@ -143,6 +143,87 @@ test('a cookie the upstream does not accept is refused exactly like no cookie at
   }
 });
 
+// ── The cheap path is a cookie NAME test, not a cookie PRESENCE test ──────────────────
+//
+// The test above is the expensive half and it is correct: a caller presenting something
+// session-shaped has earned the probe, because only the upstream can say whether it verifies.
+// These are the other half. "Carries a Cookie header" is not the same question as "carries a
+// session", and every browser that has ever visited this host sends something -- an analytics
+// cookie, a consent flag, anything. Treating those as maybe-authenticated spends one upstream
+// call and therefore two invocations to refuse a stranger, which is precisely the case the
+// cheap path exists to avoid. The whole architecture is justified on invocation budget.
+
+const jar = (value, path = '/api/state') =>
+  new Request(`https://example.invalid${path}`, { headers: { cookie: value } });
+
+test('a cookie that is not the session is refused without asking upstream', async () => {
+  // An upstream that refuses, which is what a real one does with a cookie that is not a
+  // session. So the status is right either way and the ONLY thing this can fail on is the
+  // count -- the defect is the call, not the verdict.
+  const up = upstream(401);
+  const response = await onRequest({ request: jar('junk=1'), env: { ...up, DB: stubDB([]) } });
+
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { error: 'auth_required' });
+  assert.equal(up.seen.length, 0, 'a drive-by cookie bought an upstream call');
+
+  // The other direction, in the same test so the pair cannot drift apart: a jar that DOES
+  // carry the name is still probed. Refusing that one here would be a session the Worker
+  // signed, 401'd by the Function without ever being checked.
+  const real = upstream(401);
+  const refused = await onRequest({
+    request: jar('__Host-session=not.a.real.signature'),
+    env: { ...real, DB: stubDB([]) },
+  });
+  assert.equal(refused.status, 401);
+  assert.deepEqual(await refused.json(), { error: 'auth_required' });
+  assert.equal(real.probes().length, 1, 'a session-shaped cookie was refused without being checked');
+});
+
+test('a jar entry that merely contains the session name is not the session', async () => {
+  // A cookie name is case-sensitive and a jar entry starts at the header or just after a `;`.
+  // `includes('__Host-session')` passes every one of these, which is the same defect wearing
+  // a longer needle.
+  for (const value of [
+    'x__Host-session=a.b.c',
+    '__Host-session-other=a.b.c',
+    '__Host-sessionx=a.b.c',
+    'a=1; x__Host-session=a.b.c',
+    'a=1; __Host-session-other=a.b.c',
+    '__host-session=a.b.c',
+    'note=__Host-session=a.b.c',
+  ]) {
+    const up = upstream(401); // refuses, as a real one would: the count is the property here
+    const response = await onRequest({ request: jar(value), env: { ...up, DB: stubDB([]) } });
+    assert.equal(response.status, 401, `${value} was not refused`);
+    assert.equal(up.seen.length, 0, `${value} was read as a session and bought an upstream call`);
+  }
+
+  // And the shapes a browser actually sends ARE the session -- neighbours and the space after
+  // the separator included. A guard that misses one of these 401s the owner for free.
+  for (const value of [
+    '__Host-session=a.b.c',
+    'other=1; __Host-session=a.b.c',
+    'other=1;__Host-session=a.b.c',
+    '__Host-session=a.b.c; other=1',
+  ]) {
+    const up = upstream();
+    await onRequest({ request: jar(value), env: { ...up } });
+    assert.equal(up.probes().length, 1, `${value} is a session and was not checked`);
+  }
+});
+
+// The control in the other direction, and it was green before the name test existed: absence
+// of the header was never the defect. It is here so the two live next to each other and a
+// future edit cannot satisfy one by breaking the other.
+test('no Cookie header at all is refused without asking upstream', async () => {
+  const up = upstream();
+  const response = await onRequest({ request: anonymous('/api/state'), env: { ...up, DB: stubDB([]) } });
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { error: 'auth_required' });
+  assert.equal(up.seen.length, 0);
+});
+
 test('with no upstream bound, a cookie proves nothing -- 401, never an open door', async () => {
   const response = await onRequest({ request: identified('/api/state'), env: { DB: stubDB([]) } });
   assert.equal(response.status, 401);

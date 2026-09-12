@@ -10,11 +10,13 @@
 // open all day makes zero upstream calls — that is a free-tier invocation budget requirement,
 // not an optimisation.
 //
-// The one exception is pollSettle() at the bottom of this file: a counted, hard-capped loop that
-// only runs after the user presses stop. It holds the only timer in this file.
+// The two exceptions are pollSettle() and pollStart() at the bottom of this file: counted,
+// hard-capped loops that only run after the user presses stop or start. They share the one timer
+// in this file and neither can be entered without the press that arms it.
 //
 // To check that claim rather than trust it: grep this file for every timer, listener and
-// worker API the platform offers. The bounded settle poll is the only line that comes back.
+// worker API the platform offers. One line comes back -- the sleep those two polls share -- and
+// `test/settle.test.mjs` asserts that it is still exactly one.
 
 // ── Result envelope ──
 //
@@ -160,8 +162,10 @@ export function isLiveSession(session) {
 }
 
 // ── Refresh — user-pressed only ──
-// The only call that forces an upstream fetch regardless of cache age. Wire it to a button and
-// to nothing else.
+// The only call that forces an upstream fetch regardless of cache age, and the only mechanism
+// there is: nothing else in this file may grow a way to bypass the server's age rule. Wire it to
+// the refresh button, to the reload a command runs after it has changed something, and to
+// nothing else. Every one of those is a press.
 
 export function refresh() {
   return request('/api/refresh', { method: 'POST' });
@@ -169,12 +173,16 @@ export function refresh() {
 
 // ── Charge control ──
 
+// Arms the confirmation poll below, the same way stop() arms the settle poll. Module memory only:
+// gone on reload, which is what makes the poll impossible to resurrect by reloading the page.
+let startPressedThisPageSession = false;
+
 export function start() {
+  startPressedThisPageSession = true;
   return request('/api/charge/start', { method: 'POST' });
 }
 
-// Arms the settle poll below. Module memory only: it is gone on reload, which is what makes the
-// poll impossible to resurrect by reloading the page.
+// Arms the settle poll below. Same memory, same reason.
 let stopPressedThisPageSession = false;
 
 // The body carries a neutral `sessionId`. Translating it to whatever the upstream call wants is
@@ -245,7 +253,7 @@ export function updateComment(id, patch) {
   });
 }
 
-// ── The one bounded exception to "no automatic refresh" ──
+// ── The two bounded exceptions to "no automatic refresh" ──
 //
 // A stopped session takes a few seconds to settle upstream, and showing the user a stop that
 // looks like it failed is worse than a handful of extra calls. So after a stop press — and only
@@ -282,4 +290,46 @@ export async function pollSettle(sessionId, onSample) {
     if (attempt < SETTLE_MAX_ATTEMPTS) await wait(SETTLE_INTERVAL_MS);
   }
   return last;
+}
+
+// ── The same shape, for the other end of a charge ──
+//
+// A start is accepted before the charger reports it, exactly as a stop is settled after it. The
+// page held a reload that read the CACHED row -- under an hour old, so the server rightly served
+// it back unchanged -- and faithfully repainted the charger as it had been before the press. The
+// owner saw the button go to its wait label, come back, and change nothing.
+//
+// So the sample is refresh(), the one call that forces the fetch regardless of age, and it is the
+// existing one rather than a second forcing mechanism: it is also what writes the row the reload
+// afterwards reads, so by the time this returns the page's next ordinary load is already true.
+// The server's hour rule is untouched -- a page load still forces nothing, which is the free-tier
+// invocation budget requirement, and `test/start-confirm.test.mjs` asserts that first.
+//
+// The cap is lower than the settle poll's and the interval longer, because a sample here is three
+// upstream fetches rather than one. Worst case START_MAX_ATTEMPTS forced rounds over roughly half
+// a minute, then it gives up and SAYS it gave up -- see the caller. Running out is not a failure
+// and must never be reported as one: the command was accepted, the charger has not confirmed yet.
+//
+// `took` is the caller's, not this module's: what counts as "charging" is the same judgement the
+// panel paints from, and it stays in one place rather than being spelled a second time here. The
+// refresh body nests the three routes, so the state half is unwrapped here -- the wire shape is
+// this module's and does not leak into a view.
+
+export const START_MAX_ATTEMPTS = 10;
+export const START_INTERVAL_MS = 3000;
+
+export async function pollStart(took, onSample) {
+  if (!startPressedThisPageSession) return { ...fail('start_not_armed'), confirmed: false };
+
+  let last = fail('start_not_armed');
+  for (let attempt = 1; attempt <= START_MAX_ATTEMPTS; attempt++) {
+    last = await refresh();
+    if (onSample) onSample(last, attempt);
+    if (last.ok && took(last.data?.state ?? last.data)) return { ...last, confirmed: true };
+    // Neither of these mends itself by being asked again, and asking costs a forced round each
+    // time. A transport failure is different: it may be one bad round, so the loop keeps its cap.
+    if (last.error === TOKEN_EXPIRED || last.error === 'auth_required') break;
+    if (attempt < START_MAX_ATTEMPTS) await wait(START_INTERVAL_MS);
+  }
+  return { ...last, confirmed: false };
 }

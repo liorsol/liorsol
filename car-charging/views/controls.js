@@ -5,9 +5,9 @@
 //   render(el, state, ctx)        the start/stop panel body
 //   renderExpiry(el, state, ctx)  the empty <div id="expiry"> between </header> and <main>
 //
-// Neither ever blanks anything it does not own, and neither holds a timer. The one bounded
-// loop in the whole page lives in api.js and is entered from the stop handler below, after a
-// real click, and from nowhere else.
+// Neither ever blanks anything it does not own, and neither holds a timer. The two bounded loops
+// in the whole page live in api.js and are entered from the start and stop handlers below, after
+// a real click, and from nowhere else.
 //
 // Three things are deliberately and permanently absent from this panel, and they are named here
 // plainly because a reader who cannot tell "not built" from "broken" files the wrong bug:
@@ -25,14 +25,18 @@
 import {
   TOKEN_EXPIRED,
   SETTLE_MAX_ATTEMPTS,
+  SETTLE_INTERVAL_MS,
+  START_MAX_ATTEMPTS,
+  START_INTERVAL_MS,
   isLiveSession,
   start,
   stop,
   pollSettle,
+  pollStart,
   installToken,
   getState,
 } from '../api.js';
-import { statusClass, statusLabel } from './he.js';
+import { statusClass, statusKey, statusLabel } from './he.js';
 
 // ── tiny DOM helpers ──
 // Text always goes in as text. There is no HTML-parsing sink anywhere in this module.
@@ -68,9 +72,13 @@ function clearBusy(button, label) {
 // button is in flight, how far the settle poll got, what the last action said — is held here
 // and repainted, rather than being left to survive inside DOM nodes that get replaced.
 const ui = {
-  busy: null, // null | 'start' | 'stop' — held for the whole command: settle and reload included
+  busy: null, // null | 'start' | 'stop' — held for the whole command: poll and reload included
   busyLabel: null, // what the in-flight button says while it is held
-  settle: null, // null | { attempt, max, done }
+  // null | { attempt, max, done, step, text, doneText } — the bounded progress of whichever poll
+  // is running. Both commands wait on a charger that has not caught up yet and both show the same
+  // bar; only the words differ, and `step` is how many seconds a sample costs, so the figure
+  // beside the bar is seconds rather than a count wearing a seconds label.
+  settle: null,
   note: null, // null | { kind: 'ok' | 'bad', text }
 };
 
@@ -194,7 +202,7 @@ function paint() {
   // layout bug rather than as a blocked attribute.
   if (ui.settle) {
     const bar = make('div', 'settle');
-    bar.append(make('span', null, ui.settle.done ? 'הסתכם' : 'מסכם…'));
+    bar.append(make('span', null, ui.settle.done ? ui.settle.doneText : ui.settle.text));
     const track = make('div', 'settle__bar');
     const fill = make('div', 'settle__fill');
     const pct = ui.settle.done
@@ -205,7 +213,7 @@ function paint() {
     // Hebrew first inside a .num box: the sheet gives it its own bidi paragraph taking its
     // direction from the first strong character, and "45 שנ׳" opening with a digit would be
     // resolved left to right and land the unit on the wrong side of the figure.
-    bar.append(track, make('span', 'num', ui.settle.attempt + ' שנ׳'));
+    bar.append(track, make('span', 'num', ui.settle.attempt * ui.settle.step + ' שנ׳'));
     frag.append(bar);
   }
 
@@ -234,9 +242,16 @@ function paint() {
 //
 // finally, not a trailing statement: a control stuck disabled forever is its own bug, so a reload
 // that throws still releases.
-async function release(ctx, reload) {
+//
+// `force` is not optional and has no default, because getting it wrong is invisible: a reload that
+// does not force re-reads the cached row and repaints the charger as it was BEFORE the command,
+// which is exactly the bug this page shipped. Pass true whenever the charger has been changed and
+// nothing has forced a fetch since. Pass false when a poll above has just forced one -- the rows
+// are seconds old and a second force buys three upstream fetches and no new fact -- or when
+// nothing was commanded at all.
+async function release(ctx, reload, force) {
   try {
-    if (reload) await ctx.reload();
+    if (reload) await ctx.reload(force);
   } finally {
     ui.busy = null;
     ui.busyLabel = null;
@@ -258,6 +273,17 @@ async function release(ctx, reload) {
 // reload a successful command already runs.
 const bounced = (result) => result.error === 'auth_required';
 
+// What "the start took effect" means, read off a sample exactly as the panel reads it off the
+// snapshot it paints: a live session appeared, or the connector itself says it is charging. Both,
+// because they are not the same fact -- a charge can be running for a few seconds before the
+// session row materialises, and this is a page that must not tell the owner "nothing is charging"
+// while the cable is live.
+const tookEffect = (state) =>
+  !!liveSession({ state }) || statusKey(chargerStatus({ state })) === 'charging';
+
+// The second entry point to a bounded poll, and the twin of onStop below. It is reached by a
+// click and by nothing else: api.js refuses an unarmed call and makes zero network requests, so a
+// reload cannot resurrect it and nothing on load can enter it.
 async function onStart() {
   if (!mount || ui.busy) return;
   const { ctx } = mount;
@@ -268,11 +294,63 @@ async function onStart() {
   paint();
 
   const result = await start();
-  ui.note = result.ok
-    ? { kind: 'ok', text: 'ההתחלה התקבלה. לוקח לעמדה כמה שניות לדווח עליה.' }
-    : { kind: 'bad', text: failureText(result, 'ההתחלה נכשלה.') };
-  paint(); // say what happened; the controls stay held until fresh state is on screen
-  await release(ctx, result.ok || bounced(result));
+
+  if (!result.ok) {
+    // Nothing was commanded, so there is nothing to force a fetch for -- except a bounce, which
+    // is news about the page's own session rather than about the charger.
+    ui.note = { kind: 'bad', text: failureText(result, 'ההתחלה נכשלה.') };
+    paint(); // say what happened now; a bounce still has a whole round to run before it releases
+    await release(ctx, bounced(result), false);
+    return;
+  }
+
+  // Accepted is not started. The charger takes a few seconds to report the session, and the page
+  // used to repaint a cached, pre-command snapshot into that gap and call it the answer.
+  ui.note = { kind: 'ok', text: 'ההתחלה התקבלה. לוקח לעמדה כמה שניות לדווח עליה.' };
+  ui.busyLabel = 'מאמת…';
+  // Both controls stay held for the whole window, as they are for a stop: until the charger has
+  // confirmed, the page cannot say what a second press would be pressing against.
+  ui.settle = {
+    attempt: 0,
+    max: START_MAX_ATTEMPTS,
+    done: false,
+    step: START_INTERVAL_MS / 1000,
+    text: 'מאמת…',
+    doneText: 'אומת',
+  };
+  paint();
+
+  const final = await pollStart(tookEffect, (_sample, attempt) => {
+    ui.settle = { ...ui.settle, attempt };
+    paint();
+  });
+
+  ui.settle = { ...ui.settle, done: final.confirmed };
+
+  if (final.confirmed) {
+    ui.note = { kind: 'ok', text: 'הטעינה התחילה.' };
+  } else if (final.error === TOKEN_EXPIRED) {
+    ui.note = { kind: 'bad', text: 'ההתחלה התקבלה, אבל תוקף ההרשאה מול העמדה פג לפני שהעמדה דיווחה על טעינה.' };
+  } else if (bounced(final)) {
+    // Its own branch, and it must stay one: the note below says press refresh, and refresh is
+    // provably the one action that cannot mend a sign-in that has ended.
+    ui.note = {
+      kind: 'bad',
+      text: 'ההתחלה התקבלה, אבל ההתחברות לדף הסתיימה לפני שהעמדה דיווחה על טעינה — בקשו קישור כניסה בכרטיס שלמעלה.',
+    };
+  } else {
+    // Running the cap out is NOT a failure and is not a success either, and the note says exactly
+    // that: the command was accepted and the charger has not confirmed it yet. Claiming it started
+    // would be inventing a charge; claiming it failed would send the owner to press start again,
+    // at a contactor that may well be closed already.
+    ui.note = {
+      kind: 'ok',
+      text: 'ההתחלה התקבלה, אבל העמדה עדיין לא דיווחה על טעינה — הבדיקה הופסקה אחרי ' + START_MAX_ATTEMPTS + ' דגימות. לחצו רענון מאוחר יותר כדי לראות אם היא התחילה.',
+    };
+  }
+  paint();
+  // false: the poll's own samples forced the fetch and wrote the rows this reload reads.
+  await release(ctx, true, false);
 }
 
 // The only entry point to the settle poll in the whole page. It is reached by a click and by
@@ -297,7 +375,7 @@ async function onStop() {
     // never a stop that worked. Nothing was commanded, so there is nothing to reload for -- with
     // one exception: a bounce is news about the page's own session rather than about the charger.
     ui.note = { kind: 'bad', text: failureText(result, 'העצירה נכשלה. שום דבר לא נעצר.') };
-    await release(ctx, bounced(result));
+    await release(ctx, bounced(result), false);
     return;
   }
 
@@ -306,7 +384,9 @@ async function onStop() {
 
   if (!sessionId) {
     paint();
-    await release(ctx, true);
+    // Forced: the charger has just been stopped and the cached row still holds the charge that
+    // was running. Without this the panel repaints the session it just ended as still live.
+    await release(ctx, true, true);
     return;
   }
 
@@ -314,11 +394,18 @@ async function onStop() {
   // totals are still landing; offering "start charging" into that is offering to actuate
   // hardware against a state the page cannot yet read.
   ui.busyLabel = 'מסכם…';
-  ui.settle = { attempt: 0, max: SETTLE_MAX_ATTEMPTS, done: false };
+  ui.settle = {
+    attempt: 0,
+    max: SETTLE_MAX_ATTEMPTS,
+    done: false,
+    step: SETTLE_INTERVAL_MS / 1000,
+    text: 'מסכם…',
+    doneText: 'הסתכם',
+  };
   paint();
 
-  const final = await pollSettle(sessionId, (sample, attempt) => {
-    ui.settle = { attempt, max: SETTLE_MAX_ATTEMPTS, done: false };
+  const final = await pollSettle(sessionId, (_sample, attempt) => {
+    ui.settle = { ...ui.settle, attempt };
     paint();
   });
 
@@ -326,7 +413,7 @@ async function onStop() {
   // the controls are never left held. They are still not released here: the reload below is the
   // only thing that makes the page's picture of the charger match what just happened to it.
   const settled = (final.data?.session?.completed ?? final.data?.completed) === true;
-  ui.settle = { attempt: ui.settle.attempt, max: SETTLE_MAX_ATTEMPTS, done: settled };
+  ui.settle = { ...ui.settle, done: settled };
 
   if (settled) {
     ui.note = { kind: 'ok', text: 'נעצרה והסתכמה.' };
@@ -340,7 +427,9 @@ async function onStop() {
     };
   }
   paint();
-  await release(ctx, true);
+  // Forced: the settle route samples one session and never rewrites the cached state row, so an
+  // ordinary reload here would repaint the charge this press just ended as still running.
+  await release(ctx, true, true);
 }
 
 // Error names are a closed set and the status is only detail. No server wording reaches the DOM.
@@ -475,5 +564,8 @@ async function onInstall(el, inner, input, button, ctx) {
   }
 
   el.replaceChildren(); // banner and field leave the DOM
-  await ctx.reload();
+  // Forced, for the same reason a command's reload is: what is cached was fetched while the
+  // credential was dead. An unforced round would take the banner down and leave the hour-old row
+  // under it, which reads as "fixed, and nothing changed".
+  await ctx.reload(true);
 }

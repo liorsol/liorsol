@@ -124,7 +124,9 @@ test('signing back in takes the card down and brings the panels back', async () 
     'the notes board to finish its own round'
   );
 
-  assert.equal(main().children.length, 6, 'the panels did not come back under the card');
+  // The card plus the four views -- not the five panels: the panels are nested inside the
+  // views now, and it is the views that are detached and reattached as a set.
+  assert.equal(main().children.length, 5, 'the views did not come back under the card');
   assert.equal(card().children.length, 0, 'the sign-in card outlived the state it reports');
   assert.equal(button(panel('controls'), 'עצירה').disabled, false, 'a running session did not reach the controls');
   assert.match(text(panel('history')), /\S/);
@@ -158,7 +160,7 @@ test('a session that ends mid-visit is announced, and the controls stop being li
     before,
     'a failed round rewrote a mounted panel instead of leaving it alone'
   );
-  assert.equal(main().children.length, 6, 'a mid-visit sign-out threw away the data on screen');
+  assert.equal(main().children.length, 5, 'a mid-visit sign-out threw away the data on screen');
   assert.match(text(card()), /צריך להתחבר/, 'a mid-visit sign-out rendered no card at all');
   assert.ok(button(card(), 'שלחו לי קישור כניסה'), 'the card offered no way back in');
 

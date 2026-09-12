@@ -10,19 +10,42 @@
 // answer honestly belongs in the browser pass, not in a stub that fakes an answer.
 
 export function node(tag) {
+  // `classes` and `attrs` are kept SEPARATE from `className`, which stays the thing the
+  // querySelector stubs below match on. A view's static class ("panel__body") is written once
+  // through `className`; a state class ("is-active", "is-busy") only ever arrives through
+  // classList, and the router's state is the only reason either is readable at all. Merging
+  // the two would change what querySelector finds mid-test, which is not what any of these
+  // tests is about.
+  const classes = new Set();
+  const attrs = {};
   const self = {
     tagName: tag,
     children: [],
     className: '',
     textContent: '',
     disabled: false,
+    hidden: false,
     value: '',
     dataset: {},
     handlers: {},
+    classes,
+    attrs,
     style: { setProperty() {} },
-    classList: { add() {}, remove() {}, toggle() {} },
-    setAttribute() {},
-    removeAttribute() {},
+    classList: {
+      add: (name) => classes.add(name),
+      remove: (name) => classes.delete(name),
+      contains: (name) => classes.has(name),
+      toggle: (name, on) => (on ?? !classes.has(name)) ? classes.add(name) : classes.delete(name),
+    },
+    setAttribute(name, value) {
+      attrs[name] = String(value);
+    },
+    getAttribute(name) {
+      return name in attrs ? attrs[name] : null;
+    },
+    removeAttribute(name) {
+      delete attrs[name];
+    },
     querySelector: (sel) => all(self).find((n) => n.className.split(' ').includes(sel.replace('.', ''))) || null,
     querySelectorAll: (sel) => all(self).filter((n) => n.className.split(' ').includes(sel.replace('.', ''))),
     matches: () => false,
@@ -95,20 +118,33 @@ export function installDocument() {
   };
 
   get('#refresh', 'button');
+  get('#navtoggle', 'button');
 
-  // <main> and the five panel sections inside it, in the markup's order. The shell detaches and
-  // reattaches those sections AS A SET when it puts the sign-in card up on a cold signed-out
-  // load, and it hands the views the bodies nested inside them -- so a stub whose <main> has no
-  // children cannot show the thing that matters, which is that the sections come back with
-  // their subtrees intact.
+  // <main>, the four `.view` sections inside it, and the five panels nested inside those, in
+  // the markup's nesting and order. The shell detaches and reattaches the VIEWS as a set when
+  // it puts the sign-in card up on a cold signed-out load, and it hands the view modules the
+  // panel bodies nested two deep -- so a stub whose <main> has no children cannot show the
+  // thing that matters, which is that the sections come back with their subtrees intact.
   const main = get('.shell__main');
-  for (const id of ['tariff', 'controls', 'history', 'account', 'comments']) {
-    const section = node('section');
-    section.className = 'panel';
-    const body = get('#' + id);
-    body.className = 'panel__body';
-    section.append(body);
+  const LAYOUT = {
+    status: ['tariff', 'controls'],
+    history: ['history'],
+    invoices: ['account'],
+    comments: ['comments'],
+  };
+  for (const [view, ids] of Object.entries(LAYOUT)) {
+    const section = get('#view-' + view, 'section');
+    section.className = 'view';
+    for (const id of ids) {
+      const panel = node('section');
+      panel.className = 'panel';
+      const body = get('#' + id);
+      body.className = 'panel__body';
+      panel.append(body);
+      section.append(panel);
+    }
     main.append(section);
+    get('#nav-' + view, 'a');
   }
 
   // The header's two spans live inside `.updated` in the real markup.
@@ -119,5 +155,25 @@ export function installDocument() {
   age.className = 'updated__age';
   updated.append(abs, age);
 
-  return { get, registry };
+  // ── the hash router's two globals ──
+  //
+  // The menu is plain `<a href="#name">`, so the browser is the router: a press changes
+  // location.hash and fires hashchange, and app.js only listens. `navigate()` below is that
+  // pair, which is a menu press for every purpose these tests care about -- including the
+  // one they exist for, which is that a press makes no request.
+  const listeners = {};
+  globalThis.location = { hash: '' };
+  globalThis.window = {
+    addEventListener(type, fn) {
+      listeners[type] = fn;
+    },
+    scrollTo() {},
+  };
+
+  const navigate = (hash) => {
+    globalThis.location.hash = hash;
+    listeners.hashchange?.();
+  };
+
+  return { get, registry, navigate };
 }

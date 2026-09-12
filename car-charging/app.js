@@ -281,16 +281,17 @@ async function paintExpiry() {
 // inherits the page's own padding and measure and needs no rule of its own. What differs is
 // what sits beneath it:
 //
-//   cold and signed out (nothing has ever arrived) -- the other five panels would be five
+//   cold and signed out (nothing has ever arrived) -- the five panels behind the menu would be five
 //     copies of one message, and the owner asked for a message and a button. They are detached
 //     as a set and the card is the page.
 //   signed out mid-visit -- the panels hold the last good round, and blanking data on a failed
 //     round is the one thing this shell never does. The card goes above them and they stay.
 //
-// `.panel` sections, detached and reattached whole: their subtrees come with them, so a view
-// keeps its DOM and app.js keeps its element references across the round trip. Toggled on a
-// change of state rather than every pass -- re-parenting a section on every refresh press would
-// blur a half-typed note in #comments.
+// `.view` sections, detached and reattached whole: their subtrees -- the panels and everything
+// a view module mounted inside them -- come with them, so a view keeps its DOM and app.js keeps
+// its element references across the round trip. Toggled on a change of state rather than every
+// pass -- re-parenting a section on every refresh press would blur a half-typed note in
+// #comments.
 const main = document.querySelector('.shell__main');
 const panels = [...main.children];
 const authMount = h('div');
@@ -303,6 +304,13 @@ function paintAuthRequired() {
   if (cold !== panelsDetached) {
     main.replaceChildren(authMount, ...(cold ? [] : panels));
     panelsDetached = cold;
+    // The menu goes with them, and is hidden rather than emptied. A rail offering four
+    // destinations that are all detached from the document is worse than no rail: every item
+    // leads to a blank page with the one card that matters now scrolled off the top of it.
+    // Hiding the rail is also what gives <body> its gutter back -- see `.nav[hidden] ~ .shell`.
+    nav.hidden = cold;
+    navToggle.hidden = cold;
+    if (cold) drawer(false);
   }
   // views/auth.js creates and removes the card itself, for the same reason the credential field
   // is created and removed: a sign-in control left hidden in the DOM of a signed-in page is a
@@ -371,6 +379,75 @@ async function load(force) {
   if (panelsDetached) return;
   await Promise.all([...views.map(paint), paintExpiry()]);
 }
+
+// ── The menu: four views, one hash router ──
+//
+// The pattern is `trips/italy-2026/trip.js`, which is the precedent the owner named -- "the
+// same way it was implemented in the travel webpages (either history and routing)". Same three
+// parts: one `.view` section per destination, exactly one wearing `.is-active`, and
+// `location.hash` as the only thing that decides which. Two deliberate departures, both
+// corrections rather than taste:
+//
+//   - the menu items are real `<a href="#/name">`, where the travel page uses `<a data-view>`
+//     with a click handler and no href. The browser is then the router: it writes the history
+//     entry, so Back and Forward are correct and every view is deep-linkable, and the item
+//     stays keyboard-focusable and middle-clickable, which an href-less <a> is not. Nothing
+//     here calls preventDefault and nothing here assigns to location.hash.
+//   - the routes carry a leading slash. Two panel bodies are id="history" and id="comments",
+//     so a bare `#history` is a fragment that RESOLVES -- the browser scrolls that panel into
+//     view before this ever runs. `#/history` names no element and cannot start to. The slash
+//     is optional on the way in, so a bookmark of the slashless form still lands.
+//   - no scroll memory. The travel page stamps every history entry with a scroll offset
+//     because its views run for metres; these are one or two panels each, and a restored
+//     offset would be the wrong answer more often than the right one.
+//
+// NOTHING IN HERE FETCHES, and that is structural rather than careful. All four views are
+// mounted and repainted by the same `load()` round, so a menu press moves a class over DOM that
+// is already holding its data. A view that fetched on entry would put an upstream call behind
+// every menu press, which is the invocation budget the whole one-hour cache rule protects.
+// `test/nav.test.mjs` asserts the absence of the call rather than trusting this paragraph.
+const VIEWS = ['status', 'history', 'invoices', 'comments'];
+const nav = document.getElementById('nav');
+const navToggle = document.getElementById('navtoggle');
+
+let navOpen = false;
+let shownView = null;
+
+// Under 900px the rail is an off-canvas drawer and this class is what slides it in. Above it
+// the rail is always on screen and the class is inert. The scrim is styled off
+// `.nav.is-open ~ .navscrim`, so one class moves both halves.
+function drawer(open) {
+  navOpen = open;
+  nav.classList.toggle('is-open', open);
+  navToggle.setAttribute('aria-expanded', String(open));
+}
+
+function route() {
+  const name = String(location.hash || '').replace(/^#\/?/, '');
+  // An unknown or absent hash is the status view. A deep link that has gone stale lands on
+  // what the owner wanted to see anyway, rather than on a blank page.
+  const view = VIEWS.includes(name) ? name : VIEWS[0];
+  drawer(false);
+  if (view === shownView) return;
+  shownView = view;
+  for (const id of VIEWS) {
+    document.getElementById('view-' + id).classList.toggle('is-active', id === view);
+    const link = document.getElementById('nav-' + id);
+    // aria-current is both the announcement and the styling hook -- one source of truth, so
+    // the highlighted item and the announced one cannot drift apart.
+    if (id === view) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+  window.scrollTo(0, 0);
+}
+
+navToggle.addEventListener('click', () => drawer(!navOpen));
+document.getElementById('navscrim').addEventListener('click', () => drawer(false));
+// Closes the drawer on the press that navigates. `route()` closes it too, but only when the
+// hash actually changes -- pressing the item that is already open fires no hashchange.
+nav.addEventListener('click', () => drawer(false));
+window.addEventListener('hashchange', route);
+route();
 
 // ── Bootstrap ──
 

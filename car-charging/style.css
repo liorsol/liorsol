@@ -1050,6 +1050,145 @@ button, input, textarea, select { font: inherit; color: inherit; }
   transition: width .3s linear;
 }
 
+/* ── views: one screen at a time ───────────────────────────────────────── */
+/* The owner's requirement, verbatim: "I don't want all to be in one long page
+   ... most of the time we should see just current status."  So <main> holds
+   four `.view` sections and exactly one wears `.is-active`; app.js moves that
+   class from `location.hash`.
+
+   `.shell__main` is untouched and stays the flex column it was: a view is a
+   flex ITEM, and `display: none` takes a flex item out of layout gap and all,
+   so the inactive three cost no space and no stray `gap`. The active one is a
+   flex column of its own, which is what re-creates the panel stack the old
+   single-page shell had — same spacing, same measure, one screen's worth. */
+
+.view {
+  display: none;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.view.is-active { display: flex; }
+
+/* ── the menu ──────────────────────────────────────────────────────────── */
+/* Fixed rail from 900px up, off-canvas drawer below it — the pattern the
+   owner pointed at by name (`trips/italy-2026`), reproduced rather than
+   redesigned.
+
+   The page is ALWAYS dir="rtl", so `inset-inline-start: 0` puts the rail on
+   the right; the drawer therefore has to slide out to the right, and
+   `translateX` is physical, not logical — hence the positive 100%. Flip the
+   page to LTR and this one value is what needs revisiting.
+
+   Nothing here uses a fixed colour. The rail is `--surface` on `--line` like
+   every panel, so it follows the dark block with no rule of its own. */
+
+:root { --nav-w: 224px; }
+
+.nav {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--nav-w);
+  z-index: 60;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  border-inline-end: 1px solid var(--line);
+}
+
+.nav__bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-4) var(--sp-3);
+}
+
+.nav__brand {
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  padding: 0 var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+/* `min-height: var(--tap)` is the whole reason these are comfortable on a
+   phone: this dashboard is read one-handed standing next to a charger. */
+.nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  color: var(--fg);
+  text-decoration: none;
+  font-size: var(--fs-md);
+  font-weight: 550;
+}
+
+.nav__link:hover { background: var(--surface-2); }
+
+/* aria-current is the styling hook AND the announcement — one source of truth,
+   so what is highlighted and what a screen reader calls current cannot drift. */
+.nav__link[aria-current="page"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.navtoggle, .navscrim { display: none; }
+
+@media (min-width: 900px) {
+  /* The gutter goes on `.shell`, not on <body>, so that the sibling selector
+     below can take it back when app.js hides the rail on a signed-out page —
+     no `:has()`, no class on <html>. `.navscrim` sits between the two, so the
+     general sibling combinator is the one that reaches. */
+  .shell { padding-inline-start: var(--nav-w); }
+  .nav[hidden] ~ .shell { padding-inline-start: 0; }
+}
+
+@media (max-width: 899.98px) {
+  .nav {
+    width: min(var(--nav-w), 78vw);
+    transform: translateX(100%);
+    transition: transform .2s ease;
+    box-shadow: var(--shadow);
+  }
+  .nav.is-open { transform: none; }
+
+  /* Inside the header rather than floating over the page: the header is
+     sticky, so the menu is reachable from the bottom of a long history table
+     without scrolling back up, and nothing has to reserve a corner for it. */
+  .navtoggle { display: inline-flex; order: -1; }
+
+  .nav.is-open ~ .navscrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: rgba(16, 24, 32, .45);
+  }
+}
+
+/* `.btn` and `.navtoggle` are both one class deep, and the button carries both.
+   Two classes beat the UA's `[hidden]`, so state the hiding explicitly. */
+.nav[hidden], .navtoggle[hidden] { display: none; }
+
+/* The rail scrolls with nothing; the header must not scroll away either, or the
+   ☰ leaves the screen on the one view that is taller than a phone. */
+.shell__header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav { transition: none; }
+}
+
 /* ── Hebrew / RTL typography ───────────────────────────────────────────── */
 /* Layout needs nothing here: the sheet is 100% logical properties, so the box
    model mirrors on its own. What does NOT mirror on its own is Latin
@@ -1106,4 +1245,9 @@ button, input, textarea, select { font: inherit; color: inherit; }
 @media print {
   .shell__header, .shell__footer, .btn, .comment-form { display: none; }
   .panel { border: 0; box-shadow: none; }
+  /* The menu is chrome, and its desktop gutter would print as a blank margin. The ACTIVE
+     view is what prints — printing the history table means being on the history view, which
+     is the only reason anyone prints this page. */
+  .nav, .navtoggle, .navscrim { display: none; }
+  .shell { padding-inline-start: 0; }
 }

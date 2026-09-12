@@ -25,11 +25,57 @@
   -- the "archived" tag on a note -- through `:lang(he)`. Move either attribute onto
   <body> or a panel and both silently stop matching, which reads as a design regression
   rather than as a missing attribute.
+
+  ── THE SHAPE OF THIS PAGE: one screen, four views, a menu ──
+
+  The owner's requirement, in their own words: "one page with menu ... most of the time we
+  should see just current status. History, invoice and commenting should be in menu. The same
+  way it was implemented in the travel webpages (either history and routing)."
+
+  So the structure below is lifted from `trips/italy-2026`, not invented here:
+    - every destination is a `.view` section inside <main>; exactly one carries `.is-active`;
+    - the menu is a fixed rail from 900px up and an off-canvas drawer below it;
+    - each menu item is a REAL `<a href="#/name">`. The browser's own hash navigation is the
+      router: it writes a history entry, so Back and Forward work and every view is
+      deep-linkable, and it keeps the item focusable and middle-clickable, which a
+      `<a data-view>` with no href (the travel page's one weak spot) is not.
+      The leading slash is not decoration. Two panel BODIES below carry the ids `history`
+      and `comments`, so a bare `#history` is a fragment that really resolves: the browser
+      would scroll that panel into view before the router ever ran. `#/history` can never
+      name an element, so the hash is a route and nothing else. app.js still accepts the
+      slashless form, so an old bookmark keeps working.
+
+  A view switch paints nothing and fetches nothing. All four views are mounted and filled by
+  the same `load()` round, so navigating between them is a class toggle over DOM that is
+  already there. That is not an optimisation: an upstream call per menu press would break the
+  invocation budget the whole one-hour cache rule exists to protect.
 -->
+
+<!-- The menu. app.js hides it whole while nobody is signed in: on that page the sign-in card
+     IS the page, and four menu items leading to four empty views is the opposite of that.
+     It is a sibling of `.shell` on purpose: `.nav[hidden] ~ .shell` is what gives the page
+     its desktop gutter back when the rail goes, and `.nav.is-open ~ .navscrim` is what puts
+     the scrim up on a phone. Both need the three to stay siblings, in this order. -->
+<nav class="nav" id="nav" aria-label="תפריט ראשי">
+  <div class="nav__bar">
+    <span class="nav__brand">לוח הטעינה</span>
+    <a class="nav__link" id="nav-status"   href="#/status">⚡ מצב כרגע</a>
+    <a class="nav__link" id="nav-history"  href="#/history">🔌 טעינות</a>
+    <a class="nav__link" id="nav-invoices" href="#/invoices">🧾 עמדה וחיובים</a>
+    <a class="nav__link" id="nav-comments" href="#/comments">💬 הערות</a>
+  </div>
+</nav>
+<div class="navscrim" id="navscrim"></div>
+
 <div class="shell">
 
   <header class="shell__header">
     <div class="shell__header-inner">
+      <!-- The drawer handle, below 900px only. It lives in the header rather than floating
+           over the page because the header is sticky: the menu stays reachable from the
+           bottom of a long history table, and no view has to reserve a corner for it. -->
+      <button class="btn btn--icon navtoggle" type="button" id="navtoggle"
+              aria-label="תפריט" aria-expanded="false" aria-controls="nav">☰</button>
       <h1 class="shell__title">טעינה</h1>
       <p class="updated" data-age="fresh">
         <span class="updated__abs">אין עדיין נתונים</span>
@@ -41,34 +87,47 @@
 
   <!-- The expiry banner's mount. Left empty on purpose: views/controls.js creates the .expiry
        block inside it while the credential is expired and removes it again when it is healthy.
-       Absent from the DOM, not hidden -- a hidden credential field fails the security test. -->
+       Absent from the DOM, not hidden -- a hidden credential field fails the security test.
+       Outside <main>, so it stays on screen whichever view is open: an expired credential is
+       true of the charger, not of a menu item. -->
   <div id="expiry"></div>
 
   <main class="shell__main">
 
-    <section class="panel">
-      <div class="panel__head"><h2 class="panel__title">המחיר כרגע</h2></div>
-      <div class="panel__body" id="tariff"></div>
+    <!-- THE DEFAULT VIEW. What the owner is looking at while standing next to the charger:
+         what the connector says, the live session if there is one, the tariff window, and the
+         two buttons. Nothing else, and no scrolling past anything else to reach the buttons. -->
+    <section class="view is-active" id="view-status">
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">המחיר כרגע</h2></div>
+        <div class="panel__body" id="tariff"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">שליטה</h2></div>
+        <div class="panel__body" id="controls"></div>
+      </section>
     </section>
 
-    <section class="panel">
-      <div class="panel__head"><h2 class="panel__title">שליטה</h2></div>
-      <div class="panel__body" id="controls"></div>
+    <section class="view" id="view-history">
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">טעינות</h2></div>
+        <div class="panel__body panel__body--flush" id="history"></div>
+      </section>
     </section>
 
-    <section class="panel">
-      <div class="panel__head"><h2 class="panel__title">טעינות</h2></div>
-      <div class="panel__body panel__body--flush" id="history"></div>
+    <section class="view" id="view-invoices">
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">העמדה והחיובים</h2></div>
+        <div class="panel__body panel__body--flush" id="account"></div>
+      </section>
     </section>
 
-    <section class="panel">
-      <div class="panel__head"><h2 class="panel__title">העמדה והחיובים</h2></div>
-      <div class="panel__body panel__body--flush" id="account"></div>
-    </section>
-
-    <section class="panel">
-      <div class="panel__head"><h2 class="panel__title">הערות</h2></div>
-      <div class="panel__body" id="comments"></div>
+    <section class="view" id="view-comments">
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">הערות</h2></div>
+        <div class="panel__body" id="comments"></div>
+      </section>
     </section>
 
   </main>

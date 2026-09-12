@@ -32,7 +32,7 @@ import {
   installToken,
   getState,
 } from '../api.js';
-import { statusLabel } from './he.js';
+import { statusClass, statusLabel } from './he.js';
 
 // ── tiny DOM helpers ──
 // Text always goes in as text. There is no HTML-parsing sink anywhere in this module.
@@ -75,16 +75,6 @@ const ui = {
 };
 
 let mount = null; // { el, view, ctx } — the last thing render() was called with
-
-const SEVEN_STATES = [
-  'available',
-  'preparing',
-  'charging',
-  'suspendedevse',
-  'suspendedev',
-  'finishing',
-  'faulted',
-];
 
 // The one row this panel may act on: live by the shared definition *and* carrying an id, because
 // the only thing this module does with it is name it in a stop command. A row that has ended is
@@ -132,15 +122,10 @@ function paint() {
   // Suffixes are lower-case with no separator; anything outside the seven known states gets a
   // bare .status rather than a class invented from an unrecognised string.
   if (status) {
-    const suffix = String(status).toLowerCase();
     // Hebrew is the label; the protocol's own spelling rides on the title. The owner needs to
     // be able to read "SuspendedEVSE" off the badge when something is wrong, and the tariff
     // panel names the same raw state in its prose for the phone, where a title is unreachable.
-    const badge = make(
-      'span',
-      SEVEN_STATES.includes(suffix) ? 'status status--' + suffix : 'status',
-      statusLabel(status)
-    );
+    const badge = make('span', statusClass(status), statusLabel(status));
     badge.title = String(status);
     frag.append(badge);
   }

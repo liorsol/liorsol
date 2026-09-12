@@ -17,7 +17,7 @@
 // A row that has ended stays in state.sessions for a few seconds after it stops, so "there is
 // a row" is not the question — see the comment on the predicate in api.js.
 import { isLiveSession } from '../api.js';
-import { duration, ils, n, relative, statusLabel, time } from './he.js';
+import { connection, duration, ils, n, relative, statusClass, statusLabel, time } from './he.js';
 
 const DAY_MS = 86400000;
 const DAY_MIN = 1440;
@@ -316,9 +316,17 @@ function flipLine(slices, nowMs, top) {
 // The raw upstream state, in the prose rather than only in a title. The Hebrew label is what the
 // badge says, but the owner asking "why is nothing charging" needs the charger's own word for it,
 // and a title attribute is not reachable on a phone — which is where this panel is read.
-function reported(session) {
-  const raw = rawStatusOf(session);
-  return raw ? ' (המצב המדווח: ' + raw + ')' : '';
+function reported(raw) {
+  return raw ? ' (המצב המדווח: ' + String(raw) + ')' : '';
+}
+
+// Hebrew on the badge, the protocol's own spelling on the title: the colour and the label are for
+// reading at a glance, the raw value is for saying out loud to whoever can fix it. The class comes
+// from he.js so an unrecognised value cannot invent one the stylesheet has no rule for.
+function badge(raw) {
+  const el = h('span', statusClass(raw), statusLabel(raw));
+  el.title = String(raw);
+  return el;
 }
 
 function explainer(session, slices, nowMs) {
@@ -328,7 +336,7 @@ function explainer(session, slices, nowMs) {
     // Established, and neither of the two charger-side cases. It gets its own words.
     return h('p', 'suspend__detail',
       'הרכב אינו מושך חשמל — זו החלטה של הרכב, לא של העמדה. '
-      + 'העמדה מדווחת שהיא מוכנה ואינה מעכבת דבר בגלל מחיר.' + reported(session));
+      + 'העמדה מדווחת שהיא מוכנה ואינה מעכבת דבר בגלל מחיר.' + reported(rawStatusOf(session)));
   }
   if (verdict === 'not-suspended') return null;
 
@@ -357,8 +365,8 @@ function explainer(session, slices, nowMs) {
       ils(gapInc === null ? gapEx : gapInc) + ' ל־kWh'));
     detail.appendChild(document.createTextNode(
       gapInc === null
-        ? ', לפני מע״מ — אין שיעור מע״מ בנתונים.' + reported(session)
-        : ', כולל מע״מ (' + ils(gapEx) + ' לפני מע״מ). זה הכסף ששווה ההמתנה הזו.' + reported(session)));
+        ? ', לפני מע״מ — אין שיעור מע״מ בנתונים.' + reported(rawStatusOf(session))
+        : ', כולל מע״מ (' + ils(gapEx) + ' לפני מע״מ). זה הכסף ששווה ההמתנה הזו.' + reported(rawStatusOf(session))));
     body.appendChild(detail);
     return box;
   }
@@ -367,7 +375,7 @@ function explainer(session, slices, nowMs) {
     body.appendChild(h('p', 'suspend__title', 'מרוסן על ידי לוח החשמל בבניין'));
     body.appendChild(h('p', 'suspend__detail',
       'זו אינה החלטת מחיר — זה עיכוב בלבד, ולא נחסך כסף. הפרוסה הזולה כבר רצה, '
-      + 'ולכן ההמתנה קונה זמן ותו לא.' + reported(session)));
+      + 'ולכן ההמתנה קונה זמן ותו לא.' + reported(rawStatusOf(session))));
     return box;
   }
 
@@ -375,7 +383,7 @@ function explainer(session, slices, nowMs) {
   body.appendChild(h('p', 'suspend__detail',
     'העמדה מעכבת, אבל הלוח שפורסם אינו מכסה את החלון הזה או שיש בו מחיר אחיד יחיד, '
     + 'ולכן אי אפשר להבחין בין מחיר לבין לוח החשמל. זה לא מספיק כדי לקבוע אחד מהם.'
-    + reported(session)));
+    + reported(rawStatusOf(session))));
   return box;
 }
 
@@ -390,13 +398,7 @@ function vatOf(slices) {
 function sessionBlock(session, slices, nowMs) {
   const box = h('div');
   const status = session.status ? String(session.status) : null;
-  if (status) {
-    // Hebrew on the badge, the protocol's own spelling on the title: the colour and the label
-    // are for reading at a glance, the raw value is for saying out loud to whoever can fix it.
-    const badge = h('span', 'status status--' + status.toLowerCase(), statusLabel(status));
-    badge.title = status;
-    box.appendChild(badge);
-  }
+  if (status) box.appendChild(badge(status));
 
   const grid = spaced(h('div', 'stat-grid'), 3);
   const energy = num(session.totalEnergy);
@@ -438,13 +440,43 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
 
   const sessions = (Array.isArray(payload.sessions) && payload.sessions) || [];
   const live = sessions.filter(isLiveSession);
-  const heading = spaced(h('h3', 'panel__title', 'טעינה פעילה'), 5);
-  el.appendChild(heading);
+  // Two headings for two questions. With a charge running this section is about that charge;
+  // with none running it is about the CABLE, and calling it "active charging" over a sentence
+  // that says the car is plugged in and idle would put the contradiction in the owner's face.
+  el.appendChild(spaced(h('h3', 'panel__title', live.length ? 'טעינה פעילה' : 'מצב החיבור'), 5));
 
   if (!live.length) {
-    el.appendChild(emptyBlock('שום דבר לא מחובר',
-      'אין טעינה בעיצומה. רצועת התעריפים שלמעלה תקפה גם כשתתחיל אחת.'));
+    el.appendChild(connectorBlock(payload));
     return;
   }
   for (const session of live) el.appendChild(spaced(sessionBlock(session, slices, nowMs), 3));
+}
+
+// ── no live session: what the CONNECTOR says ────────────────────────────────
+//
+// This is the fix for the bug the owner reported standing at the charger. "No live session"
+// used to print "nothing is connected", which is a statement about the cable derived from the
+// session list — and a car plugged in and idle is `Preparing` with zero sessions. The two facts
+// are both true at once and only one of them was being read.
+//
+// `connection()` in he.js owns the judgement and every word of it; this function only decides
+// which shape the panel paints it in.
+function connectorBlock(payload) {
+  const raw = payload && payload.charger && Array.isArray(payload.charger.connectors)
+    ? payload.charger.connectors[0]?.status ?? null
+    : null;
+  const verdict = connection(raw);
+
+  // No status reported, or an empty bay: there is no badge worth painting, so it stays the
+  // panel's own empty state. Note the two say different things — "nothing is plugged in" and
+  // "the charger did not tell us" are not the same fact.
+  if (!raw || verdict.connected === false) return emptyBlock(verdict.title, verdict.note);
+
+  // Connected, faulted, or a value this page has never met: all three have a real status to
+  // show, so all three get the badge and the raw spelling. The unknown one claims nothing about
+  // the cable — it just says what arrived.
+  const box = h('div');
+  box.appendChild(badge(raw));
+  box.appendChild(spaced(h('p', 'suspend__detail', verdict.note + reported(raw)), 3));
+  return box;
 }

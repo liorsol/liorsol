@@ -160,3 +160,76 @@ export const statusKey = normalise;
 export const statusLabel = (raw) => lookup(STATUS, raw);
 export const stopReasonKey = normalise;
 export const stopReasonLabel = (raw) => lookup(STOP_REASON, raw);
+
+// The seven the stylesheet actually paints. Anything else — `Reserved`, `Unavailable`, or a value
+// upstream has not documented — gets a bare `.status` rather than a class invented from a string
+// no rule matches, which renders as an unstyled badge instead of an unstyled badge plus a class
+// nobody can grep for. Three views were spelling this concatenation themselves and only one of
+// them guarded it.
+const PAINTED = new Set([
+  'available', 'preparing', 'charging', 'suspendedevse', 'suspendedev', 'finishing', 'faulted',
+]);
+export const statusClass = (raw) =>
+  (PAINTED.has(normalise(raw)) ? 'status status--' + normalise(raw) : 'status');
+
+// ── is a car connected? ─────────────────────────────────────────────────────
+//
+// A DIFFERENT QUESTION FROM "IS A CHARGE RUNNING", and the session list cannot answer it. A car
+// plugged in and idle reports connector `Preparing` with NO SESSION AT ALL, so a view that reads
+// `state.sessions` and prints "nothing is connected" has answered the wrong question and printed
+// the answer in the other question's words. Read this off `state.charger.connectors[]`.
+//
+// `isLiveSession()` in api.js is the answer to the other question and stays that way: it is
+// correct to say "no charge is running" about this fixture at the same moment it is correct to
+// say "the car is connected". The two are not a contradiction and must not share a predicate.
+//
+// `Available` is the ONLY value that means nothing is plugged in. Everything else is either a
+// state that requires an EV on the other end, or a state this page cannot read — and the second
+// group is shown as itself and claims NOTHING about the cable. An unrecognised status falling
+// through to "nothing connected" is a lie in the direction that looks safest, and upstream has
+// already handed this project an undocumented enum value once.
+
+// Each names its own culprit: the charger withholding and the car refusing are different facts
+// with different remedies, and colour is never allowed to be the only difference between them.
+const CONNECTED = {
+  preparing: 'הרכב מחובר ואינו נטען כרגע.',
+  charging: 'הרכב מחובר, והעמדה מוסרת לו חשמל.',
+  suspendedevse: 'הרכב מחובר. העמדה היא שמעכבת את החשמל — לא הרכב.',
+  suspendedev: 'הרכב מחובר. הרכב הוא שמסרב לקבל חשמל — לא העמדה.',
+  finishing: 'הרכב עדיין מחובר. הטעינה מסתיימת.',
+};
+
+const UNKNOWN_NOTE = {
+  // Faulted says a fault, and nothing at all about the cable. Guessing either way from it would
+  // be inventing the half the charger did not report.
+  faulted: 'העמדה מדווחת על תקלה. אי אפשר ללמוד ממנה אם הרכב מחובר.',
+  none: 'התשובה האחרונה לא כללה מצב מחבר, ולכן אי אפשר לומר אם הרכב מחובר. לחצו רענון.',
+  other: 'העמדה מדווחת מצב שהדף אינו מכיר, והוא מוצג כאן כפי שהתקבל. אי אפשר ללמוד ממנו אם הרכב מחובר.',
+};
+
+/**
+ * What a connector's own status says about the cable.
+ *
+ * @param {*} raw the connector's `status`, exactly as upstream spelled it
+ * @returns {{connected: boolean|null, title: string, note: string}}
+ *   connected === false  `Available`: nothing is plugged in
+ *   connected === true   a state that requires a car on the other end
+ *   connected === null   `Faulted`, an unrecognised value, or none reported — no claim is made
+ */
+export function connection(raw) {
+  const key = normalise(raw);
+  if (!key) return { connected: null, title: 'מצב המחבר לא דווח', note: UNKNOWN_NOTE.none };
+  if (key === 'available') {
+    return {
+      connected: false,
+      title: 'שום דבר לא מחובר',
+      note: 'הכבל אינו מחובר לרכב. רצועת התעריפים שלמעלה תקפה גם כשתחברו אותו.',
+    };
+  }
+  if (CONNECTED[key]) return { connected: true, title: 'הרכב מחובר', note: CONNECTED[key] };
+  return {
+    connected: null,
+    title: 'מצב החיבור לא ידוע',
+    note: key === 'faulted' ? UNKNOWN_NOTE.faulted : UNKNOWN_NOTE.other,
+  };
+}

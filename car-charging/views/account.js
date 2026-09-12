@@ -9,7 +9,7 @@
 // Mount contract (PLAN §7.10): render(el, state, ctx) with
 //   { state, history, invoices, expired, fetchedAt, stale }; any payload may be null.
 
-import { date, dayTime, n, statusLabel } from './he.js';
+import { date, dayTime, n, statusClass, statusLabel } from './he.js';
 
 function num(v) {
   if (v === null || v === undefined || v === '') return null;
@@ -117,7 +117,7 @@ function chargerBlock(charger, root) {
     if (status) {
       // Hebrew label, protocol spelling on the title — the same split the controls panel and the
       // session table make, so one state never reads as two different things on one page.
-      const badge = h('span', 'status status--' + status.toLowerCase(), statusLabel(status));
+      const badge = h('span', statusClass(status), statusLabel(status));
       badge.title = status;
       stateCell.appendChild(badge);
     } else {

@@ -16,3 +16,12 @@
 /schema.sql     /  302
 /.assetsignore  /  302
 /test/*         /  302
+
+# Local wrangler dev state. Measured 2026-09-12: this WAS being served --
+# /.wrangler/cache/wrangler-account.json returned 200 with the account name in it, and the
+# directory also holds miniflare's D1/KV/cache SQLite files, which can carry whatever local
+# dev last fetched. The uploader's fixed ignore list does NOT cover it, despite an earlier
+# note in this repo claiming otherwise. The directory is gitignored, so nothing warns you.
+# Deleting it before a deploy is the real fix; this rule is the backstop for the day someone
+# runs `wrangler pages dev` and deploys without clearing it.
+/.wrangler/*    /  302

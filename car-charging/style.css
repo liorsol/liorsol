@@ -1,54 +1,62 @@
 /* ==========================================================================
-   Charging dashboard — design system.
-   Vanilla CSS. No framework, no build step, no web font, no remote asset.
-   Mobile-first: 375px is the target, 1440px is the comfortable case.
+   Charging dashboard — THE BASE SHEET.
 
-   Light palette is defined on bare :root. The dark block below redefines only
-   what changes. Never give a colour its only definition inside a media query.
+   This file is not a design. It is what every design has to stand on, and it
+   is loaded under all six of them. The look lives in `themes/<slug>.css`, and
+   `themes/classic.css` is today's design ported here unchanged.
+
+   ── THE LINE THIS FILE DRAWS ──
+
+   style.css makes the page WORK. A theme makes it LOOK like something.
+
+   So this file holds, and a theme sheet must not need to repeat:
+
+     · the reset;
+     · the accessibility floor — .sr-only, a focus outline that survives a
+       theme forgetting to define a colour, and --tap;
+     · bidi and RTL correctness — the `unicode-bidi: plaintext` set, the
+       Hebrew leading, and the physical `text-align` that a plaintext table
+       cell and a plaintext stat value both need;
+     · the `[hidden]` contract, because app.js hides real destinations with it;
+     · the router's display contract — `.view` / `.view.is-active`;
+     · the menu mechanics app.js toggles — the rail, the drawer, `.is-open`,
+       the scrim, and the desktop gutter that comes back on `.nav[hidden]`;
+     · overflow containment, so nothing can scroll the page sideways;
+     · the geometry of every custom property a JS module sets — --start/--end
+       on a tariff slice, --at on the now marker, --pct on the settle bar, and
+       the whole --sp-* scale, which three view modules and the shell write
+       into inline styles by name;
+     · the figure-integrity mechanism on a stat tile (container query context,
+       no break inside the number, one break opportunity before the unit);
+     · every `content:` that carries MEANING rather than decoration — the two
+       suspension glyphs, the ⚠/✓ prefixes, the delta arrows and the
+       translated "archived" tag. The view modules are forbidden from writing
+       those strings into the DOM, so the sheet is the only place they can
+       exist, and a theme that dropped them would leave two states told apart
+       by colour alone.
+
+   It holds NO colour, NO shadow, NO font family, NO border, NO radius and NO
+   type size. Those are a theme's, entirely. Where a rule here has to reference
+   one it does so through a `var(…, fallback)` so a theme that has not defined
+   the token still renders.
+
+   Nothing here is a lock. Theme sheets are linked AFTER this one, so at equal
+   specificity a theme wins; treat everything below as the default a theme may
+   overrule and the floor it should not. See THEMES.md for the contract.
 
    State is expressed as classes / [data-*] / [hidden] that the view modules
-   toggle. No JS lives here. See designer-notes.md for the DOM contract.
+   toggle. No JS lives here.
    ========================================================================== */
 
 :root {
-  color-scheme: light dark;
-
-  /* — surfaces & text — */
-  --bg: #f4f6f8;
-  --surface: #ffffff;
-  --surface-2: #eef1f4;
-  --line: #d5dbe1;
-  --line-strong: #b9c2cb;
-  --fg: #14181d;
-  --fg-muted: #57616c;          /* 4.9:1 on --surface */
-  --shadow: 0 1px 2px rgba(16, 24, 32, .06), 0 4px 14px rgba(16, 24, 32, .05);
-
-  /* — accent — */
-  --accent: #1059c9;            /* 5.9:1 on --surface */
-  --accent-fg: #ffffff;
-  --accent-soft: #e6eefc;
-  --accent-line: #a9c6f2;
-
-  /* — semantic: good / warn / danger / alt (a 5th hue for one badge) — */
-  --good: #0f6a38;
-  --good-soft: #e3f4ea;
-  --good-line: #9ad1b1;
-
-  --warn: #7c4a00;
-  --warn-soft: #fdf0dc;
-  --warn-line: #e5bc78;
-
-  --danger: #a81f18;
-  --danger-soft: #fdeae8;
-  --danger-line: #eeada7;
-
-  --alt: #5b2ec4;
-  --alt-soft: #efe9fd;
-  --alt-line: #c3aef0;
-
-  --focus: #1059c9;
-
-  /* — spacing scale — */
+  /* — the spacing scale —
+     In the base sheet because it is not only CSS: app.js sets
+     `margin: var(--sp-4)` on its own chrome, and views/tariff.js,
+     views/history.js and views/account.js build a property name by
+     concatenation — `var(--sp-' + step + ')'` — because the CSP refuses a
+     style="…" attribute. A theme may change these VALUES. A theme that
+     removes a NAME makes those declarations invalid at computed-value time,
+     which drops the spacing silently and reads as a layout bug. */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
@@ -56,68 +64,15 @@
   --sp-5: 24px;
   --sp-6: 32px;
 
-  /* — radii — */
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
-  --r-pill: 999px;
+  /* The minimum interactive target. This dashboard is read one-handed while
+     standing next to a charger, and one of its buttons opens a contactor. A
+     theme may raise this. It may not lower it. */
+  --tap: 44px;
 
-  /* — type scale — */
-  /* Hebrew faces sit after the platform UI fonts and before the generic. Font
-     fallback is per-character, so Latin never reaches them and the LTR page is
-     byte-identical. They only catch the platforms whose UI font has no Hebrew:
-     Roboto does not, so Android would otherwise land on an undeclared
-     last-resort face and synthesise the 550/620/650 weights this sheet uses.
-     All three are OS-resident — still no @import, no <link>, no remote asset. */
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          "Noto Sans Hebrew", "Arial Hebrew", Helvetica, Arial, sans-serif;
-  --font-num: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --fs-xs: .75rem;
-  --fs-sm: .8125rem;
-  --fs-md: .9375rem;
-  --fs-lg: 1.0625rem;
-  --fs-xl: 1.375rem;
-  --fs-2xl: 1.875rem;
-
-  /* — layout — */
-  --page-max: 1080px;
-  --tap: 44px;                  /* minimum interactive target */
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface-2: #1e242c;
-    --line: #303840;
-    --line-strong: #454f5a;
-    --fg: #e7edf3;
-    --fg-muted: #9aa4af;        /* 6.0:1 on --surface */
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 14px rgba(0, 0, 0, .3);
-
-    --accent: #6cb0ff;
-    --accent-fg: #0d1117;
-    --accent-soft: #13263f;
-    --accent-line: #2d558c;
-
-    --good: #5fd37c;
-    --good-soft: #10281a;
-    --good-line: #2c6b40;
-
-    --warn: #e9b949;
-    --warn-soft: #2a2010;
-    --warn-line: #6b5220;
-
-    --danger: #ff8a80;
-    --danger-soft: #2c1512;
-    --danger-line: #75302a;
-
-    --alt: #bda2ff;
-    --alt-soft: #1d1633;
-    --alt-line: #4a3a80;
-
-    --focus: #6cb0ff;
-  }
+  /* The rail's width. Here rather than in a theme because the desktop gutter
+     below is computed from it and the drawer's off-canvas width is clamped
+     against it — both are menu mechanics, not paint. */
+  --nav-w: 224px;
 }
 
 /* ── reset ─────────────────────────────────────────────────────────────── */
@@ -128,9 +83,6 @@
 html { -webkit-text-size-adjust: 100%; }
 
 body {
-  font: var(--fs-md) / 1.55 var(--font);
-  background: var(--bg);
-  color: var(--fg);
   /* clip, not hidden: keeps the page from ever scrolling sideways without
      turning <body> into a scroll container. Wide content scrolls in .scroll-x. */
   overflow-x: clip;
@@ -139,10 +91,21 @@ body {
 img, svg { max-width: 100%; display: block; }
 button, input, textarea, select { font: inherit; color: inherit; }
 
+/* app.js hides real destinations with `el.hidden` — the contact menu item when
+   the card is unconfigured, and the whole rail plus its handle on a signed-out
+   page. ANY author declaration of `display` beats the UA sheet's `[hidden]`,
+   whatever its specificity, so a theme that gives `.nav__link` a display value
+   would silently resurrect a menu item leading to a section that is no longer
+   in the document. One rule, stated loudly, so no theme has to remember. */
+[hidden] { display: none !important; }
+
+/* The outline colour is a theme's, but the OUTLINE is not optional. The
+   fallback is what keeps focus visible in a theme that never defined --focus:
+   currentColor always resolves, and it is by definition legible against the
+   ground the text beside it is legible against. */
 :focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--focus, currentColor);
   outline-offset: 2px;
-  border-radius: var(--r-sm);
 }
 
 /* Screen-reader-only text — used for the icon-button labels. */
@@ -152,7 +115,8 @@ button, input, textarea, select { font: inherit; color: inherit; }
 }
 
 /* Any container that may hold a table/strip wider than the phone. */
-.scroll-x {
+.scroll-x,
+.table-wrap {
   overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
@@ -175,7 +139,10 @@ button, input, textarea, select { font: inherit; color: inherit; }
    glyph runs out of logical order at dir="rtl". It is the column WITHOUT .num
    that broke, so the rule is on the cell, not on the numeric class — all six
    columns are mixed-script, not just the three numeric ones. A cell that really
-   does start with Hebrew ("10 בספט׳") still gets RTL. */
+   does start with Hebrew ("10 בספט׳") still gets RTL.
+   THIS IS THE BASE SHEET'S because it is correctness, not taste, and because a
+   theme has no way to discover it failed: the glyphs are all present and all
+   legible, in the wrong order. */
 .num,
 .table th,
 .table td,
@@ -184,1037 +151,18 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .suspend__amount,
 .comment__time,
 .stale__age,
+/* A user-agent string is Latin, punctuation-heavy and displayed verbatim inside an
+   RTL row. Without its own bidi paragraph the brackets and slashes take the page
+   direction and the whole line reassembles itself in front of the reader. */
+.session__ua,
+.contact__value,
 .tariff__flip strong { unicode-bidi: plaintext; }
 
-/* ── page shell ────────────────────────────────────────────────────────── */
-
-.shell {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-}
-
-.shell__header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  padding: var(--sp-4);
-}
-
-.shell__header-inner,
-.shell__main,
-.shell__footer-inner {
-  width: 100%;
-  max-width: var(--page-max);
-  margin-inline: auto;
-}
-
-.shell__header-inner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-2) var(--sp-3);
-}
-
-.shell__title {
-  font-size: var(--fs-xl);
-  font-weight: 650;
-  letter-spacing: -.01em;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.shell__main {
-  flex: 1 1 auto;
-  padding: var(--sp-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-  min-width: 0;
-}
-
-.shell__footer {
-  border-top: 1px solid var(--line);
-  padding: var(--sp-4);
-  color: var(--fg-muted);
-  font-size: var(--fs-sm);
-}
-
-/* last-updated: absolute timestamp + relative age, always both. */
-.updated {
-  flex: 1 1 100%;
-  order: 3;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--sp-1) var(--sp-2);
-  color: var(--fg-muted);
-  font-size: var(--fs-sm);
-}
-
-.updated__abs { font-variant-numeric: tabular-nums; }
-
-.updated__age {
-  padding: 1px var(--sp-2);
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  font-size: var(--fs-xs);
-}
-
-/* Age crosses the cache horizon — the data is old but not flagged stale. */
-.updated[data-age="old"] .updated__age {
-  background: var(--warn-soft);
-  border-color: var(--warn-line);
-  color: var(--warn);
-}
-
-@media (min-width: 700px) {
-  .updated { flex: 0 1 auto; order: 0; }
-}
-
-/* ── panels (one per view) ─────────────────────────────────────────────── */
-
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow);
-  min-width: 0;
-}
-
-.panel__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-2) var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  border-bottom: 1px solid var(--line);
-}
-
-.panel__title {
-  font-size: var(--fs-lg);
-  font-weight: 620;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.panel__body { padding: var(--sp-4); min-width: 0; }
-.panel__body--flush { padding: 0; }
-
-/* ── buttons ───────────────────────────────────────────────────────────── */
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-2);
-  min-height: var(--tap);
-  padding: var(--sp-2) var(--sp-4);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  color: var(--fg);
-  font-size: var(--fs-md);
-  font-weight: 550;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background .15s, border-color .15s, opacity .15s;
-}
-
-.btn:hover:not(:disabled) { background: var(--surface-2); border-color: var(--fg-muted); }
-.btn:active:not(:disabled) { transform: translateY(1px); }
-
-.btn--primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-fg);
-}
-.btn--primary:hover:not(:disabled) { filter: brightness(1.08); background: var(--accent); border-color: var(--accent); }
-
-.btn--danger {
-  background: var(--danger-soft);
-  border-color: var(--danger-line);
-  color: var(--danger);
-}
-.btn--danger:hover:not(:disabled) { background: var(--danger-soft); border-color: var(--danger); }
-
-.btn--quiet { border-color: transparent; background: transparent; color: var(--accent); }
-.btn--small { min-height: 36px; padding: var(--sp-1) var(--sp-3); font-size: var(--fs-sm); }
-
-.btn--icon {
-  min-width: var(--tap);
-  min-height: var(--tap);
-  padding: 0;
-  border-radius: var(--r-md);
-  font-size: var(--fs-lg);
-  line-height: 1;
-}
-
-.btn:disabled,
-.btn[aria-disabled="true"] {
-  opacity: .5;
-  cursor: not-allowed;
-}
-
-/* Busy / in-flight. Set .is-busy AND aria-busy="true"; keep the button disabled
-   so a second press cannot fire. The label stays visible on purpose. */
-.btn.is-busy { cursor: progress; }
-
-.btn.is-busy::before {
-  content: "";
-  width: 1em;
-  height: 1em;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  border-top-color: transparent;
-  animation: spin .7s linear infinite;
-  flex: none;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-@media (prefers-reduced-motion: reduce) {
-  .btn.is-busy::before { animation-duration: 2.4s; }
-  * { transition-duration: .01ms !important; }
-}
-
-.btn-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
-}
-.btn-row > .btn { flex: 1 1 160px; }
-
-/* Explains why controls are disabled. Never rely on the dimming alone. */
-.btn-note {
-  margin-top: var(--sp-2);
-  font-size: var(--fs-sm);
-  color: var(--fg-muted);
-}
-
-/* ── form fields ───────────────────────────────────────────────────────── */
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-  min-width: 0;
-}
-
-.field__label { font-size: var(--fs-sm); font-weight: 550; }
-
-.input,
-.textarea {
-  width: 100%;
-  min-height: var(--tap);
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-md);
-  color: var(--fg);
-}
-
-.textarea { min-height: 84px; resize: vertical; line-height: 1.5; }
-.input::placeholder, .textarea::placeholder { color: var(--fg-muted); opacity: 1; }
-.input:focus-visible, .textarea:focus-visible { border-color: var(--focus); }
-
-.form-error {
-  color: var(--danger);
-  font-size: var(--fs-sm);
-  font-weight: 550;
-}
-.form-error::before { content: "⚠ "; }
-
-/* ── stat tiles ────────────────────────────────────────────────────────── */
-
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--sp-3);
-  min-width: 0;
-}
-
-.stat {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: var(--sp-3) var(--sp-4);
-  min-width: 0;
-  container-type: inline-size;   /* .stat__value sizes its figure off THIS tile — see below */
-}
-
-/* A figure must never break inside itself. `1,111.3` over `3₪` reads as two numbers, in the
-   one panel this dashboard exists to show. So:
-     1. the figure is atomic — `overflow-wrap: normal`, no break opportunity inside it;
-     2. the single break opportunity is between the figure and its unit (the ZWSP below);
-     3. it never has to break, because it always FITS: 1cqi is 1% of the tile's content box,
-        the longest realistic figure ("12,345.67", 9 grouped glyphs) is 4.95em wide, so 19cqi
-        holds it on one line at ANY tile width, and min() caps it at the type scale.
-   The cap is the normal case, not the exception — measured at dir=rtl: 30px at 320 (the grid
-   drops to one column), 21.8px at 375 (the reported break), 25.5px at 414, and 30px at every
-   width from 480 up. It gives up size only where the alternative was a broken number.
-   `overflow-wrap: anywhere` used to sit here and is what split the digits once he-IL grouping
-   widened the figure by a glyph. `break-word` is not the fix: measured at 375px it renders
-   identically — the track min is a definite 140px, so min-content never sized the column, and
-   both keywords break an overflowing word just the same.
-   ponytail: calibrated for 9 glyphs. A 10-glyph figure (₪123,456.78 — this charger would have
-   to deliver ~500,000 kWh) overflows its tile rather than splitting. Lower the 19 if that day
-   comes; do not restore `anywhere`. */
-.stat__value {
-  font-size: min(var(--fs-2xl), 19cqi);
-  font-weight: 650;
-  line-height: 1.15;
-  letter-spacing: -.02em;
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: normal;
-}
-
-.stat__unit { font-size: var(--fs-lg); font-weight: 550; color: var(--fg-muted); margin-inline-start: 2px; }
-/* The one legal break in a stat value, and the reason it is in CSS: there is no character
-   between the figure and its unit in the DOM, so "12,345.67₪" is a single word. U+200B is a
-   soft-wrap opportunity and nothing else — zero width, bidi class BN, so it cannot reorder
-   the Hebrew around it, and generated content is not picked up by copy. */
-.stat__unit::before { content: "\200B"; }
-
-.stat__label {
-  margin-top: var(--sp-1);
-  font-size: var(--fs-sm);
-  color: var(--fg-muted);
-}
-
-.stat__delta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: var(--sp-2);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  padding: 1px var(--sp-2);
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  color: var(--fg-muted);
-  font-variant-numeric: tabular-nums;
-}
-.stat__delta--up { background: var(--good-soft); color: var(--good); }
-.stat__delta--up::before { content: "▲"; }
-.stat__delta--down { background: var(--danger-soft); color: var(--danger); }
-.stat__delta--down::before { content: "▼"; }
-.stat__delta--flat::before { content: "="; }
-
-/* A tile whose point is money saved. */
-.stat--good .stat__value { color: var(--good); }
-
-/* ── tables (session history, invoices) ────────────────────────────────── */
-
-.table-wrap { /* the only horizontal scroller on a phone */
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-  border-radius: 0 0 var(--r-lg) var(--r-lg);
-}
-
-.table {
-  width: 100%;
-  min-width: 620px;             /* below this the columns stop being readable */
-  border-collapse: collapse;
-  font-size: var(--fs-sm);
-}
-
-.table th,
-.table td {
-  padding: var(--sp-3);
-  /* Correct in LTR, and the fallback in RTL. See the [dir="rtl"] override at
-     the end of the sheet: these cells are `unicode-bidi: plaintext`, and under
-     plaintext `start`/`end` resolve against the CELL CONTENT's direction, not
-     the page's — which is right for glyph order and wrong for a column edge. */
-  text-align: start;
-  border-bottom: 1px solid var(--line);
-  white-space: nowrap;
-}
-
-.table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--surface-2);
-  color: var(--fg-muted);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-}
-
-.table td.num,
-.table th.num { text-align: end; font-variant-numeric: tabular-nums; }
-
-.table tbody tr:last-child td { border-bottom: 0; }
-.table tbody tr:hover td { background: var(--surface-2); }
-
-/* The row of a session that is still running. */
-.table tbody tr.is-live td { background: var(--accent-soft); }
-
-/* ── chips (stop reason, and any short inline tag) ─────────────────────── */
-
-.chip {
-  display: inline-block;
-  padding: 1px var(--sp-2);
-  border-radius: var(--r-pill);
-  border: 1px solid var(--line);
-  background: var(--surface-2);
-  color: var(--fg-muted);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  white-space: nowrap;
-}
-.chip--ok     { background: var(--good-soft);   border-color: var(--good-line);   color: var(--good); }
-.chip--info   { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
-.chip--warn   { background: var(--warn-soft);   border-color: var(--warn-line);   color: var(--warn); }
-.chip--bad    { background: var(--danger-soft); border-color: var(--danger-line); color: var(--danger); }
-
-/* ── status badge — seven states ───────────────────────────────────────── */
-
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px var(--sp-3);
-  border-radius: var(--r-pill);
-  border: 1px solid var(--line);
-  background: var(--surface-2);
-  color: var(--fg-muted);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  align-self: start;            /* never stretch inside a flex column */
-}
-
-/* The dot is decoration; the badge's own text carries the meaning. */
-.status::before {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: currentColor;
-  flex: none;
-}
-
-.status--available    { background: var(--good-soft);   border-color: var(--good-line);   color: var(--good); }
-.status--preparing    { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
-.status--charging     { background: var(--good);        border-color: var(--good);        color: var(--surface); }
-.status--suspendedevse{ background: var(--warn-soft);   border-color: var(--warn-line);   color: var(--warn); }
-.status--suspendedev  { background: var(--alt-soft);    border-color: var(--alt-line);    color: var(--alt); }
-.status--finishing    { background: var(--surface-2);   border-color: var(--line-strong); color: var(--fg); }
-.status--faulted      { background: var(--danger);      border-color: var(--danger);      color: var(--surface); }
-
-@media (prefers-color-scheme: dark) {
-  /* filled badges: dark surface text on a light-ish fill */
-  .status--charging,
-  .status--faulted { color: #0d1117; }
-}
-
-/* Charging is the one state worth animating. */
-.status--charging::before { animation: pulse 1.8s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: .35; } }
-@media (prefers-reduced-motion: reduce) { .status--charging::before { animation: none; } }
-
-/* ── suspension explainer — the product's whole point ──────────────────── */
-/* Two variants of one underlying state. They must never be told apart by
-   colour alone: each carries its own glyph from CSS and its own copy from the
-   view module. Do not reuse one variant's wording under the other class. */
-
-.suspend {
-  display: flex;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--line);
-  border-inline-start-width: 4px;
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-  min-width: 0;
-}
-
-.suspend::before {
-  font-size: var(--fs-lg);
-  line-height: 1.3;
-  flex: none;
-}
-
-.suspend__body { min-width: 0; }
-
-.suspend__title {
-  font-size: var(--fs-md);
-  font-weight: 650;
-}
-
-.suspend__detail {
-  margin-top: 2px;
-  font-size: var(--fs-sm);
-  color: var(--fg-muted);
-  overflow-wrap: anywhere;
-}
-
-.suspend__amount {
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Good: deliberately waiting for the cheap window. Money is being saved. */
-.suspend--price {
-  background: var(--good-soft);
-  border-color: var(--good-line);
-  border-inline-start-color: var(--good);
-}
-.suspend--price::before { content: "⏱"; color: var(--good); }
-.suspend--price .suspend__title { color: var(--good); }
-.suspend--price .suspend__amount { color: var(--good); }
-
-/* Neutral/warning: the building's panel is limiting us. Pure delay, no saving. */
-.suspend--panel {
-  background: var(--warn-soft);
-  border-color: var(--warn-line);
-  border-inline-start-color: var(--warn);
-}
-.suspend--panel::before { content: "⚡"; color: var(--warn); }
-.suspend--panel .suspend__title { color: var(--warn); }
-
-/* Neither cause established yet. */
-.suspend--unknown { border-inline-start-color: var(--line-strong); }
-.suspend--unknown::before { content: "?"; color: var(--fg-muted); font-weight: 700; }
-
-/* ── tariff strip — 24h band, two price slices ─────────────────────────── */
-/* Geometry comes from custom properties set inline by the view module:
-   .tariff__slice{--start:<%>;--end:<%>}  .tariff__now{--at:<%>}  */
-
-.tariff { min-width: 0; }
-
-/* RULING: the band is a TIME AXIS and does not mirror under dir="rtl". Midnight
-   is at the left edge and the day runs rightwards in both page directions —
-   like a clock face, a scrubber or a Gantt row, none of which mirror in Hebrew.
-   The scale labels (00 06 12 18 24) are the proof: mirrored, they read 24 → 00
-   left-to-right, and a reader has to invert the axis before reading the price.
-   Pinning `direction` here also pins the CONTRACT: `inset-inline-start` on a
-   box whose own direction is ltr always resolves to `left`, so --start/--end/--at
-   keep meaning "percent of the day from midnight" with no change to the view
-   module and no dependence on what the page direction happens to be.
-   The legend and .tariff__flip are prose and are deliberately left to mirror. */
-.tariff .scroll-x,
-.tariff__band,
-.tariff__scale { direction: ltr; }
-
-.tariff__band {
-  position: relative;
-  height: 34px;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  overflow: hidden;
-  min-width: 280px;
-}
-
-.tariff__slice {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  inset-inline-start: var(--start, 0%);
-  width: calc(var(--end, 0%) - var(--start, 0%));
-}
-
-.tariff__slice--peak { background: var(--warn-soft); border-inline: 1px solid var(--warn-line); }
-.tariff__slice--offpeak { background: var(--good-soft); }
-
-.tariff__now {
-  position: absolute;
-  top: -2px;
-  bottom: -2px;
-  inset-inline-start: var(--at, 0%);
-  width: 2px;
-  background: var(--fg);
-  z-index: 2;
-}
-.tariff__now::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  inset-inline-start: -3px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--fg);
-}
-
-.tariff__scale {
-  display: flex;
-  justify-content: space-between;
-  margin-top: var(--sp-1);
-  font-size: var(--fs-xs);
-  color: var(--fg-muted);
-  font-variant-numeric: tabular-nums;
-  min-width: 280px;
-}
-
-.tariff__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2) var(--sp-4);
-  margin-top: var(--sp-3);
-  font-size: var(--fs-sm);
-}
-
-.tariff__key {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--fg-muted);
-}
-.tariff__key::before {
-  content: "";
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  border: 1px solid var(--line);
-  flex: none;
-}
-.tariff__key--peak::before { background: var(--warn-soft); border-color: var(--warn-line); }
-.tariff__key--offpeak::before { background: var(--good-soft); border-color: var(--good-line); }
-
-.tariff__flip {
-  margin-top: var(--sp-3);
-  font-size: var(--fs-md);
-}
-.tariff__flip strong { font-variant-numeric: tabular-nums; }
-
-/* ── expiry banner ─────────────────────────────────────────────────────── */
-/* Full-bleed, loud, and it stays until the credential is replaced.
-   The input + install button live in .expiry__form, which the view module
-   CREATES only while expiry is active and REMOVES on success — [hidden] is
-   not enough; the field must be absent from the DOM when healthy. */
-
-.expiry {
-  background: var(--danger-soft);
-  border-block: 1px solid var(--danger-line);
-  border-inline-start: 4px solid var(--danger);
-  padding: var(--sp-4);
-  color: var(--fg);
-}
-
-.expiry__inner {
-  width: 100%;
-  max-width: var(--page-max);
-  margin-inline: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  min-width: 0;
-}
-
-.expiry__title {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: var(--fs-lg);
-  font-weight: 700;
-  color: var(--danger);
-}
-.expiry__title::before { content: "🔒"; }
-
-.expiry__text { font-size: var(--fs-md); overflow-wrap: anywhere; }
-
-.expiry__form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  align-items: flex-end;
-}
-.expiry__form .field { flex: 1 1 220px; }
-.expiry__form .btn { flex: 0 0 auto; }
-
-.expiry__error {
-  color: var(--danger);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-}
-.expiry__error::before { content: "⚠ "; }
-
-.expiry__ok {
-  color: var(--good);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-}
-.expiry__ok::before { content: "✓ "; }
-
-/* ── stale marker ──────────────────────────────────────────────────────── */
-/* Stale data stays fully readable. It is labelled, not dimmed into uselessness. */
-
-.stale {
-  position: relative;
-  border-inline-start: 3px solid var(--warn-line);
-  padding-inline-start: var(--sp-3);
-}
-
-.stale__flag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: var(--sp-2);
-  padding: 2px var(--sp-3);
-  border-radius: var(--r-pill);
-  background: var(--warn-soft);
-  border: 1px solid var(--warn-line);
-  color: var(--warn);
-  font-size: var(--fs-xs);
-  font-weight: 650;
-}
-.stale__flag::before { content: "⏳"; }
-.stale__age { font-variant-numeric: tabular-nums; }
-
-/* ── comment board ─────────────────────────────────────────────────────── */
-
-.comment-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-4);
-}
-.comment-form__actions {
-  display: flex;
-  gap: var(--sp-2);
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.comment-list {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  min-width: 0;
-}
-
-.comment {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--sp-1) var(--sp-2);
-  padding: var(--sp-3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  min-width: 0;
-}
-
-.comment__meta {
-  grid-column: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--sp-1) var(--sp-2);
-  font-size: var(--fs-xs);
-  color: var(--fg-muted);
-  min-width: 0;
-}
-.comment__author { font-weight: 650; color: var(--fg); font-size: var(--fs-sm); }
-.comment__time { font-variant-numeric: tabular-nums; }
-
-.comment__text {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  font-size: var(--fs-md);
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;        /* comments are plain text, set with textContent */
-}
-
-.comment__actions {
-  grid-column: 2;
-  grid-row: 1;
-  display: flex;
-  gap: var(--sp-1);
-  align-self: start;
-}
-
-/* Done: struck through and quieter, still legible. */
-.comment--done { background: var(--surface-2); }
-.comment--done .comment__text { text-decoration: line-through; color: var(--fg-muted); }
-
-/* Archived: visually distinct from both open and done — dashed, inset, tagged. */
-.comment--archived {
-  background: transparent;
-  border-style: dashed;
-  border-color: var(--line-strong);
-  margin-inline-start: var(--sp-4);
-}
-.comment--archived .comment__author::after {
-  content: "archived";
-  margin-inline-start: var(--sp-2);
-  padding: 0 6px;
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--fg-muted);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-}
-
-/* The views are forbidden from writing this word into the DOM, so the sheet is
-   the only place it can be translated. Keyed on :lang, not on [dir] — it is a
-   language fact, not a layout one. :lang(he) also matches lang="he-IL". */
-:lang(he) .comment--archived .comment__author::after { content: "בארכיון"; }
-
-.comment__toggle[aria-pressed="true"] {
-  background: var(--good-soft);
-  border-color: var(--good-line);
-  color: var(--good);
-}
-
-.comment__archive:hover:not(:disabled) {
-  background: var(--danger-soft);
-  border-color: var(--danger-line);
-  color: var(--danger);
-}
-
-.comments__filter {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-3);
-  font-size: var(--fs-sm);
-  color: var(--fg-muted);
-}
-.comments__filter input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
-.comments__filter label { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); cursor: pointer; }
-
-/* ── empty / error / loading states ────────────────────────────────────── */
-
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-6) var(--sp-4);
-  text-align: center;
-  color: var(--fg-muted);
-}
-
-.empty__icon { font-size: 1.75rem; line-height: 1; opacity: .8; }
-.empty__title { font-size: var(--fs-md); font-weight: 600; color: var(--fg); }
-.empty__hint { font-size: var(--fs-sm); max-width: 44ch; }
-
-.empty--error {
-  border: 1px solid var(--danger-line);
-  border-radius: var(--r-md);
-  background: var(--danger-soft);
-}
-.empty--error .empty__title { color: var(--danger); }
-
-/* Skeleton placeholder for the first paint before data lands. */
-.skeleton {
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
-  min-height: 1em;
-  animation: fade 1.4s ease-in-out infinite;
-}
-@keyframes fade { 50% { opacity: .45; } }
-@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
-
-/* ── settle progress (post-stop, bounded) ──────────────────────────────── */
-
-.settle {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  font-size: var(--fs-sm);
-  color: var(--fg-muted);
-}
-
-.settle__bar {
-  flex: 1 1 auto;
-  height: 6px;
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  overflow: hidden;
-  min-width: 80px;
-}
-
-/* --pct is set inline by the view module, 0–100.
-   RULING: this one DOES mirror — under dir="rtl" the fill grows from the right,
-   which is what it already does for free (a block box narrower than its
-   container hugs the inline-start edge). Opposite call to the tariff band, and
-   deliberately so: the band is an axis with labelled coordinates that have a
-   fixed reading order, this is an unlabelled proportion, and every native RTL
-   progress indicator (UIProgressView, Android ProgressBar, Material) mirrors.
-   It also sits in a flex row that mirrors around it, so a fill that grew
-   leftwards would grow away from its own "Settling…" label. */
-.settle__fill {
-  height: 100%;
-  width: calc(var(--pct, 0) * 1%);
-  background: var(--accent);
-  transition: width .3s linear;
-}
-
-/* ── views: one screen at a time ───────────────────────────────────────── */
-/* The owner's requirement, verbatim: "I don't want all to be in one long page
-   ... most of the time we should see just current status."  So <main> holds
-   four `.view` sections and exactly one wears `.is-active`; app.js moves that
-   class from `location.hash`.
-
-   `.shell__main` is untouched and stays the flex column it was: a view is a
-   flex ITEM, and `display: none` takes a flex item out of layout gap and all,
-   so the inactive three cost no space and no stray `gap`. The active one is a
-   flex column of its own, which is what re-creates the panel stack the old
-   single-page shell had — same spacing, same measure, one screen's worth. */
-
-.view {
-  display: none;
-  flex-direction: column;
-  gap: var(--sp-4);
-  min-width: 0;
-}
-
-.view.is-active { display: flex; }
-
-/* ── the menu ──────────────────────────────────────────────────────────── */
-/* Fixed rail from 900px up, off-canvas drawer below it — the pattern the
-   owner pointed at by name (`trips/italy-2026`), reproduced rather than
-   redesigned.
-
-   The page is ALWAYS dir="rtl", so `inset-inline-start: 0` puts the rail on
-   the right; the drawer therefore has to slide out to the right, and
-   `translateX` is physical, not logical — hence the positive 100%. Flip the
-   page to LTR and this one value is what needs revisiting.
-
-   Nothing here uses a fixed colour. The rail is `--surface` on `--line` like
-   every panel, so it follows the dark block with no rule of its own. */
-
-:root { --nav-w: 224px; }
-
-.nav {
-  position: fixed;
-  inset-block: 0;
-  inset-inline-start: 0;
-  width: var(--nav-w);
-  z-index: 60;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  background: var(--surface);
-  border-inline-end: 1px solid var(--line);
-}
-
-.nav__bar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-  padding: var(--sp-4) var(--sp-3);
-}
-
-.nav__brand {
-  font-size: var(--fs-lg);
-  font-weight: 650;
-  padding: 0 var(--sp-3);
-  margin-bottom: var(--sp-3);
-}
-
-/* `min-height: var(--tap)` is the whole reason these are comfortable on a
-   phone: this dashboard is read one-handed standing next to a charger. */
-.nav__link {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-height: var(--tap);
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  color: var(--fg);
-  text-decoration: none;
-  font-size: var(--fs-md);
-  font-weight: 550;
-}
-
-.nav__link:hover { background: var(--surface-2); }
-
-/* aria-current is the styling hook AND the announcement — one source of truth,
-   so what is highlighted and what a screen reader calls current cannot drift. */
-.nav__link[aria-current="page"] {
-  background: var(--accent-soft);
-  border-color: var(--accent-line);
-  color: var(--accent);
-  font-weight: 650;
-}
-
-.navtoggle, .navscrim { display: none; }
-
-@media (min-width: 900px) {
-  /* The gutter goes on `.shell`, not on <body>, so that the sibling selector
-     below can take it back when app.js hides the rail on a signed-out page —
-     no `:has()`, no class on <html>. `.navscrim` sits between the two, so the
-     general sibling combinator is the one that reaches. */
-  .shell { padding-inline-start: var(--nav-w); }
-  .nav[hidden] ~ .shell { padding-inline-start: 0; }
-}
-
-@media (max-width: 899.98px) {
-  .nav {
-    width: min(var(--nav-w), 78vw);
-    transform: translateX(100%);
-    transition: transform .2s ease;
-    box-shadow: var(--shadow);
-  }
-  .nav.is-open { transform: none; }
-
-  /* Inside the header rather than floating over the page: the header is
-     sticky, so the menu is reachable from the bottom of a long history table
-     without scrolling back up, and nothing has to reserve a corner for it. */
-  .navtoggle { display: inline-flex; order: -1; }
-
-  .nav.is-open ~ .navscrim {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 55;
-    background: rgba(16, 24, 32, .45);
-  }
-}
-
-/* `.btn` and `.navtoggle` are both one class deep, and the button carries both.
-   Two classes beat the UA's `[hidden]`, so state the hiding explicitly. */
-.nav[hidden], .navtoggle[hidden] { display: none; }
-
-/* The rail scrolls with nothing; the header must not scroll away either, or the
-   ☰ leaves the screen on the one view that is taller than a phone. */
-.shell__header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .nav { transition: none; }
-}
-
-/* ── Hebrew / RTL typography ───────────────────────────────────────────── */
-/* Layout needs nothing here: the sheet is 100% logical properties, so the box
-   model mirrors on its own. What does NOT mirror on its own is Latin
-   typographic habit applied to a script that has none of the same features.
-   Scoped to [dir="rtl"], so the LTR page is untouched.
-   CONTRACT: dir="rtl" goes on <html>. These are descendant selectors; putting
-   the attribute deeper (on <body>, on a panel) silently drops the whole block. */
-
 /* Hebrew has no ascenders or descenders: the letters fill the x-height band
-   almost solidly, so identical leading reads noticeably denser than Latin. */
+   almost solidly, so identical leading reads noticeably denser than Latin. A
+   script fact rather than a taste, which is why it is the base's default — a
+   theme is free to set its own body leading, and every one of them will. */
 [dir="rtl"] body { line-height: 1.65; }
-
-/* Negative tracking is a Latin display trick. Hebrew tells ב/כ, ד/ר and ה/ח
-   apart by small gaps, and tightening is exactly what closes them. */
-[dir="rtl"] .shell__title,
-[dir="rtl"] .stat__value { letter-spacing: normal; }
-
-/* Hebrew has no capitals, so `uppercase` is a no-op on the Hebrew half of a
-   header — but not on the Latin half: it turns the unit symbols "kWh" and "kW"
-   into "KWH"/"KW", which are wrong, not merely loud. Positive tracking has the
-   same legibility cost as negative here. Both go; the size, weight and muted
-   colour still separate the header row from the body. */
-[dir="rtl"] .table thead th {
-  text-transform: none;
-  letter-spacing: normal;
-}
 
 /* The one place a PHYSICAL value is the right answer, and the reason is worth
    the four lines. Table cells are `unicode-bidi: plaintext` so their glyph runs
@@ -1230,24 +178,235 @@ button, input, textarea, select { font: inherit; color: inherit; }
 [dir="rtl"] .table th.num,
 [dir="rtl"] .table td.num { text-align: right; }
 
-/* ── desktop ───────────────────────────────────────────────────────────── */
+/* The same ruling, for the same reason, on the one other box that holds a bare
+   figure: `.stat__value` is in the plaintext set above, so `start` resolves
+   against the FIGURE's own direction — and a figure that opens with a digit has
+   no strong character at all, resolves LTR, and slides to the far side of its
+   tile while the Hebrew `.stat__label` under it stays put. The two halves of one
+   tile ending up on opposite edges is not a theme's mistake and a theme has no
+   way to discover it: every glyph is present and legible. So it is the base's,
+   next to the cell rule it is a copy of. */
+[dir="rtl"] .stat__value { text-align: right; }
 
-@media (min-width: 900px) {
-  .shell__main { padding: var(--sp-5) var(--sp-4); gap: var(--sp-5); }
-  .shell__header { padding: var(--sp-4) var(--sp-5); }
-  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-  .table { min-width: 0; }
-  .comment { grid-template-columns: 1fr auto; }
+/* ── the router's display contract ─────────────────────────────────────── */
+/* <main> holds seven `.view` sections and exactly one wears `.is-active`;
+   app.js moves that class from `location.hash`. `display: none` takes a flex
+   item out of layout gap and all, so the inactive six cost no space and no
+   stray `gap`. A theme may change what an active view IS (a grid, say) but not
+   whether an inactive one is on screen. */
+
+.view { display: none; min-width: 0; }
+.view.is-active { display: flex; flex-direction: column; }
+
+/* ── the menu mechanics ────────────────────────────────────────────────── */
+/* Fixed rail from 900px up, off-canvas drawer below it. All of it is wired to
+   app.js — `drawer()` toggles `.is-open`, `paintAuthRequired()` sets
+   `nav.hidden` — so it is mechanism rather than paint and it lives here. What
+   it looks like (ground, edge, type, the scrim's tint) is a theme's, and a
+   theme that wants a different shape entirely — a bottom tab bar, say —
+   overrides these rules from a sheet that loads after this one.
+
+   The page is ALWAYS dir="rtl", so `inset-inline-start: 0` puts the rail on
+   the right; the drawer therefore has to slide out to the right, and
+   `translateX` is physical, not logical — hence the positive 100%. Flip the
+   page to LTR and this one value is what needs revisiting. */
+
+.nav {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--nav-w);
+  z-index: 60;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
-/* ── print: the history table, nothing else ────────────────────────────── */
+/* ── THE DRAWER HANDLE, AND WHY IT IS SELECTED THROUGH `.btn` ──
+   The handle is `button.btn.btn--icon.navtoggle`. A bare `.navtoggle` is
+   specificity (0,1,0) — exactly what `.btn` is — and every theme sheet loads
+   AFTER this one, so the moment a theme gives `.btn` a `display` value it wins
+   on source order and the ☰ comes back on desktop, beside a rail that is
+   already on screen, opening a drawer that duplicates it. Measured at 1440px
+   under `classic`: visible, 44px and clickable. Three of the six themes hit
+   this independently and each restated the rule in its own sheet.
+   `.btn.navtoggle` is (0,2,0), which outranks `.btn` without spending an
+   `!important` — the base reserves that for `[hidden]`, where no selector can
+   help because ANY author `display` beats the UA sheet's rule whatever its
+   weight. Here specificity is the cheaper tool and it is enough.
+   A theme that genuinely wants a different handle can still reach it by
+   matching `.btn.navtoggle` too. It just cannot do it by accident. */
+.btn.navtoggle, .navscrim { display: none; }
 
+@media (min-width: 900px) {
+  /* The gutter goes on `.shell`, not on <body>, so that the sibling selector
+     below can take it back when app.js hides the rail on a signed-out page —
+     no `:has()`, no class on <html>. `.navscrim` sits between the two, so the
+     general sibling combinator is the one that reaches. `nav` / `navscrim` /
+     `.shell` must stay siblings in that order. */
+  .shell { padding-inline-start: var(--nav-w); }
+  .nav[hidden] ~ .shell { padding-inline-start: 0; }
+}
+
+@media (max-width: 899.98px) {
+  .nav {
+    width: min(var(--nav-w), 78vw);
+    transform: translateX(100%);
+    transition: transform .2s ease;
+  }
+  .nav.is-open { transform: none; }
+
+  /* Inside the header rather than floating over the page: the header is
+     sticky, so the menu is reachable from the bottom of a long history table
+     without scrolling back up, and nothing has to reserve a corner for it. */
+  /* `.btn.navtoggle` for the same reason the default above is: at (0,1,0) a
+     theme's `.btn { display: … }` outranks it on source order, and below 900px
+     that hides the only way into the menu. */
+  .btn.navtoggle { display: inline-flex; order: -1; }
+
+  .nav.is-open ~ .navscrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+  }
+}
+
+/* The rail scrolls with nothing; the header must not scroll away either, or the
+   ☰ leaves the screen on the one view that is taller than a phone. */
+.shell__header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+/* ── geometry the view modules write into ──────────────────────────────── */
+/* Each of these consumes a custom property a JS module sets through the style
+   object (a style="…" attribute is refused by the CSP). The property names and
+   what they mean are a contract between the module and whatever sheet is on;
+   the SIZE, the colour and the shape are a theme's. */
+
+/* RULING: the tariff band is a TIME AXIS and does not mirror under dir="rtl".
+   Midnight is at the left edge and the day runs rightwards in both page
+   directions — like a clock face, a scrubber or a Gantt row, none of which
+   mirror in Hebrew. The scale labels (00 06 12 18 24) are the proof: mirrored,
+   they read 24 → 00 left-to-right, and a reader has to invert the axis before
+   reading the price. Pinning `direction` here also pins the CONTRACT:
+   `inset-inline-start` on a box whose own direction is ltr always resolves to
+   `left`, so --start/--end/--at keep meaning "percent of the day from
+   midnight" with no change to the view module and no dependence on what the
+   page direction happens to be.
+   The legend and .tariff__flip are prose and are deliberately left to mirror. */
+.tariff .scroll-x,
+.tariff__band,
+.tariff__scale { direction: ltr; }
+
+.tariff__band { position: relative; overflow: hidden; }
+
+.tariff__slice {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--start, 0%);
+  width: calc(var(--end, 0%) - var(--start, 0%));
+}
+
+.tariff__now {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--at, 0%);
+  z-index: 2;
+}
+
+/* --pct is set inline by the view module, 0–100.
+   RULING: this one DOES mirror — under dir="rtl" the fill grows from the right,
+   which is what it already does for free (a block box narrower than its
+   container hugs the inline-start edge). Opposite call to the tariff band, and
+   deliberately so: the band is an axis with labelled coordinates that have a
+   fixed reading order, this is an unlabelled proportion, and every native RTL
+   progress indicator (UIProgressView, Android ProgressBar, Material) mirrors.
+   It also sits in a flex row that mirrors around it, so a fill that grew
+   leftwards would grow away from its own "Settling…" label. */
+.settle__fill { width: calc(var(--pct, 0) * 1%); }
+
+/* ── a figure never breaks inside itself ───────────────────────────────── */
+/* `1,111.3` over `3₪` reads as two numbers, in the one panel this dashboard
+   exists to show. So:
+     1. the figure is atomic — `overflow-wrap: normal`, no break opportunity
+        inside it;
+     2. the single break opportunity is between the figure and its unit (the
+        ZWSP below);
+     3. it never has to break, because it always FITS — which is a theme's job:
+        size `.stat__value` as `min(<your size>, 19cqi)` against the container
+        context this rule establishes. 1cqi is 1% of the tile's content box, and
+        the longest realistic figure ("12,345.67", 9 grouped glyphs) is 4.95em
+        wide, so 19cqi holds it on one line at ANY tile width.
+   `overflow-wrap: anywhere` used to sit here and is what split the digits once
+   he-IL grouping widened the figure by a glyph. `break-word` is not the fix:
+   measured at 375px it renders identically — the track min is a definite 140px,
+   so min-content never sized the column, and both keywords break an overflowing
+   word just the same.
+   ponytail: calibrated for 9 glyphs. A 10-glyph figure (₪123,456.78 — this
+   charger would have to deliver ~500,000 kWh) overflows its tile rather than
+   splitting. Lower the 19 if that day comes; do not restore `anywhere`. */
+.stat { container-type: inline-size; }
+.stat__value { overflow-wrap: normal; }
+
+/* The one legal break in a stat value, and the reason it is in CSS: there is no
+   character between the figure and its unit in the DOM, so "12,345.67₪" is a
+   single word. U+200B is a soft-wrap opportunity and nothing else — zero width,
+   bidi class BN, so it cannot reorder the Hebrew around it, and generated
+   content is not picked up by copy. */
+.stat__unit::before { content: "\200B"; }
+
+/* ── generated content that carries meaning ────────────────────────────── */
+/* Not decoration. Every string below is a fact the view modules are forbidden
+   from writing into the DOM, so the sheet is the only place it exists. A theme
+   may restyle these or swap the glyph; a theme that simply drops them leaves
+   two states told apart by colour alone, which is the defect these exist to
+   prevent. */
+
+.form-error::before { content: "⚠ "; }
+.expiry__title::before { content: "🔒"; }
+.expiry__error::before { content: "⚠ "; }
+.expiry__ok::before { content: "✓ "; }
+.stale__flag::before { content: "⏳"; }
+
+.stat__delta--up::before { content: "▲"; }
+.stat__delta--down::before { content: "▼"; }
+.stat__delta--flat::before { content: "="; }
+
+/* Two variants of one underlying state. They must never be told apart by
+   colour alone: each carries its own glyph from here and its own copy from the
+   view module. Do not reuse one variant's wording under the other class. */
+.suspend--price::before { content: "⏱"; }
+.suspend--panel::before { content: "⚡"; }
+.suspend--unknown::before { content: "?"; }
+
+/* The views are forbidden from writing this word into the DOM, so the sheet is
+   the only place it can be translated. Keyed on :lang, not on [dir] — it is a
+   language fact, not a layout one. :lang(he) also matches lang="he-IL". */
+.comment--archived .comment__author::after { content: "archived"; }
+:lang(he) .comment--archived .comment__author::after { content: "בארכיון"; }
+
+/* ── motion floor ──────────────────────────────────────────────────────── */
+/* Transitions are killed for everyone who asked, here, once, so no theme can
+   forget. ANIMATIONS are deliberately NOT killed globally: `.btn.is-busy`
+   wants to slow down rather than freeze — a frozen spinner on a busy button
+   reads as a stuck command — so each theme owns its own animation's reduced
+   state. THEMES.md makes that an obligation and test/theme.test.mjs fails a
+   theme that declares an animation and never mentions the query. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; }
+}
+
+/* ── print ─────────────────────────────────────────────────────────────── */
+/* The menu is chrome, and its desktop gutter would print as a blank margin.
+   The ACTIVE view is what prints — printing the history table means being on
+   the history view, which is the only reason anyone prints this page. The rest
+   of the print sheet (what a panel looks like on paper) is a theme's. */
 @media print {
-  .shell__header, .shell__footer, .btn, .comment-form { display: none; }
-  .panel { border: 0; box-shadow: none; }
-  /* The menu is chrome, and its desktop gutter would print as a blank margin. The ACTIVE
-     view is what prints — printing the history table means being on the history view, which
-     is the only reason anyone prints this page. */
-  .nav, .navtoggle, .navscrim { display: none; }
+  /* `.btn.navtoggle` here too: a media query changes nothing about specificity
+     or source order, so a theme's `.btn` display would follow the handle onto
+     paper as well. */
+  .nav, .btn.navtoggle, .navscrim { display: none; }
   .shell { padding-inline-start: 0; }
 }

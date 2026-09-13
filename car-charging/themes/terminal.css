@@ -1,0 +1,1690 @@
+/* ==========================================================================
+   THEME: terminal (מסוף) — the dashboard looks like the equipment it commands.
+
+   AXIS: personality. The thing behind this screen is not a SaaS product, it is
+   a contactor bolted to a wall in a parking garage. Swiss typographic grid meets
+   military terminal: rigid columns, extreme type-scale contrast (an 11px label
+   under a ~100px figure), hairline compartments instead of cards, no radius, no
+   shadow, monospaced figures, static scanlines sitting BEHIND content.
+
+   ── DARK ONLY, DELIBERATELY ──
+   There is no light palette and no `prefers-color-scheme` block, and that is a
+   decision rather than an omission. A deactivated-CRT substrate is the whole
+   direction; a light variant of it is a different theme wearing this one's
+   grid. THEMES.md §8 permits a direction that commits to one look provided the
+   look is complete and `color-scheme` agrees with it — so `color-scheme: dark`
+   is set below and every component in §4 is painted here. `classic` remains one
+   press away for a viewer who wants the light page.
+
+   ── TWO DISCIPLINES THIS SHEET WILL NOT BREAK ──
+   1. RED MEANS EXPENSIVE. `--accent` marks the dearest tariff step, its legend
+      key, and the one command that can cost money by ending a cheap charge.
+      It is NOT the alarm colour: faults, errors, stale data, an expired
+      credential and the building-panel throttle are all carried by hazard
+      hatching, plate inversion, border style and the glyphs style.css supplies.
+      An interface that shouts in red at an outage has nothing left to say about
+      a tariff that is 2.79x.
+   2. ONE ACCENT, ONE PLACE. `--lamp` (terminal green) appears on exactly one
+      element in the whole sheet: the square inside `.status--charging`. It is
+      the contactor lamp. It is not a text colour, not a success colour, and not
+      a second accent.
+
+   ── TYPE, AND THE TRAP IN THIS DIRECTION ──
+   Most monospace faces have no Hebrew at all: SF Mono, Menlo and Consolas each
+   cover none of it. A naive `monospace` therefore falls through to an undeclared
+   last-resort face and the grid comes apart while every glyph is still present.
+   So there are two stacks and the fallback order is deliberate:
+
+     --t-mono  mono families FIRST, so Latin digits stay tabular, then CONCRETE
+               Hebrew faces before the generic — Noto Sans Hebrew (Android,
+               most Linux), Arial Hebrew (older macOS/iOS), -apple-system
+               (current macOS/iOS resolves Hebrew through SF Hebrew) and
+               "Segoe UI" (Windows). Per-character fallback then lands every
+               Hebrew glyph on a NAMED resident face on all four platforms, and
+               `monospace` is only ever reached for a character none of them has.
+     --t-sans  THEMES.md §8's known-good stack, unchanged. Hebrew words are set
+               in it. The prototype led with "Arial Hebrew"; that family is not
+               resident on current macOS (which ships SFHebrew instead), so the
+               documented stack is the one that actually renders.
+
+   NO TRACKING ON HEBREW, POSITIVE OR NEGATIVE. Hebrew tells ב/כ, ד/ר and ה/ח
+   apart by small gaps and letter-spacing closes them in both directions, so the
+   tracked micro-type this direction usually lives on is applied to Latin-only
+   runs and to nothing else. The terminal character comes from scale contrast,
+   the mono figures and the compartment rules instead. Nothing is uppercased:
+   Hebrew has no capitals and `uppercase` would only reach "kWh" and turn it into
+   a unit that does not exist.
+
+   ── CONTRAST, measured against #0A0A0A (and #141414) ──
+     --fg      #EAEAEA  16.5:1  (15.3:1)   body, figures, headings
+     --fg-dim  #9A9A9A   7.0:1  ( 6.6:1)   labels, metadata, axis
+     --accent  #FF2A2A   5.3:1  ( 4.9:1)   clears BODY text, not merely large
+     --lamp    #4AF626  13.7:1  (12.7:1)   the one lamp
+     --rule-hi #7A7A7A   4.6:1  ( 4.3:1)   every border that carries meaning
+     --rule    #2B2B2B   1.4:1              DECORATIVE subdivision only — no
+                                            state, no affordance and no
+                                            meaning is ever carried by it.
+   Inverted plates (#0A0A0A on #EAEAEA) are 16.5:1.
+
+   Vanilla CSS. No @import, no web font, no remote asset, no image file. The
+   scanlines and every hatch are gradients. 100% logical properties.
+   ========================================================================== */
+
+:root {
+  /* One look, and the form controls and scrollbars are told so. */
+  color-scheme: dark;
+
+  /* — substrate — */
+  --bg: #0a0a0a;          /* deactivated CRT; never pure black */
+  --bg-lift: #141414;
+  --fg: #eaeaea;          /* white phosphor */
+  --fg-dim: #9a9a9a;
+  --accent: #ff2a2a;      /* aviation red = EXPENSIVE. See the header. */
+  --lamp: #4af626;        /* one element only: the contactor lamp */
+  --rule: #2b2b2b;        /* decorative compartment hairlines */
+  --rule-hi: #7a7a7a;     /* meaningful borders and control outlines */
+
+  --focus: var(--fg);
+  --scrim: rgba(0, 0, 0, .78);
+
+  /* Static, never animated, and always painted BEHIND content: it is a
+     background layer, so it cannot sit on a glyph and cannot move a measured
+     contrast ratio. `fixed` attachment keeps the lines from swimming as the
+     page scrolls and keeps every surface that repeats them in register. */
+  --scan: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, .03) 0 1px,
+    transparent 1px 3px
+  );
+
+  /* Hazard hatching. This is what carries caution on this page, because the
+     accent is spent on price. */
+  --hatch: repeating-linear-gradient(
+    45deg,
+    var(--fg-dim) 0 4px,
+    transparent 4px 9px
+  );
+
+  /* — type — */
+  --t-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+            "Liberation Mono", "DejaVu Sans Mono",
+            "Noto Sans Hebrew", "Arial Hebrew", -apple-system, "Segoe UI",
+            monospace;
+  --t-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            "Noto Sans Hebrew", "Arial Hebrew", Helvetica, Arial, sans-serif;
+  /* The two names classic exports, kept pointing at this theme's stacks so
+     anything that reaches for them by habit still gets this design. */
+  --font: var(--t-sans);
+  --font-num: var(--t-mono);
+
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: clamp(19px, 5.2vw, 24px);
+  --fs-2xl: clamp(30px, 9vw, 44px);
+
+  /* — geometry — */
+  /* Absolute rejection of the radius: every corner on this page is 90°. The
+     names stay because style.css documents them as a theme's to re-value. */
+  --r-sm: 0;
+  --r-md: 0;
+  --r-lg: 0;
+  --r-pill: 0;
+
+  --page-max: 1180px;
+}
+
+/* Nothing here is round, including anything a future view adds. */
+*, *::before, *::after { border-radius: 0; }
+
+html { background: var(--bg); }
+
+body {
+  font: var(--fs-md) / 1.5 var(--t-sans);
+  color: var(--fg);
+  background-color: var(--bg);
+  background-image: var(--scan);
+  background-attachment: fixed;
+}
+
+/* Hebrew fills the x-height band almost solidly, so it reads denser than Latin
+   at the same leading. style.css defaults to 1.65; this sheet is set tighter to
+   hold the grid and still opens the lines enough to read at arm's length. */
+[dir="rtl"] body { line-height: 1.55; }
+
+/* The outline is style.css's; this is only its colour and its squareness. */
+:focus-visible { outline-offset: 2px; }
+
+/* ── the page shell ────────────────────────────────────────────────────── */
+
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell__header-inner,
+.shell__main,
+.shell__footer-inner {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+}
+
+/* The masthead is a solid plate under a 2px rule. It repeats the scanline
+   layer with the same `fixed` attachment, so its lines stay in register with
+   the page's while it is stuck to the top. */
+.shell__header {
+  background-color: var(--bg);
+  background-image: var(--scan);
+  background-attachment: fixed;
+  border-block-end: 2px solid var(--fg);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.shell__header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.shell__title {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: normal;      /* never tracked: the title is Hebrew */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.shell__main {
+  flex: 1 1 auto;
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.shell__footer {
+  border-block-start: 2px solid var(--fg);
+  padding: var(--sp-4);
+  color: var(--fg-dim);
+  font-size: var(--fs-sm);
+}
+
+/* ── the freshness stamp ───────────────────────────────────────────────── */
+
+.updated {
+  flex: 1 1 100%;
+  order: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-3);
+  color: var(--fg-dim);
+  font-size: var(--fs-sm);
+}
+
+/* NOT tracked: dateTime() returns "13 בספט׳ 2026, 10:21" — the month is Hebrew. */
+.updated__abs {
+  font-family: var(--t-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.updated__age {
+  font-family: var(--t-mono);
+  font-size: var(--fs-xs);
+  padding: 2px var(--sp-2);
+  border: 1px dashed var(--rule-hi);
+  color: var(--fg-dim);
+}
+
+/* Past the cache horizon. Marked by inversion rather than by a colour, so it
+   survives being read in a dim garage and by a viewer who cannot separate hues. */
+.updated[data-age="old"] .updated__age {
+  background: var(--fg);
+  border-style: solid;
+  border-color: var(--fg);
+  color: var(--bg);
+}
+
+@media (min-width: 700px) {
+  .updated { flex: 0 1 auto; order: 0; }
+}
+
+/* ── the theme switcher ────────────────────────────────────────────────── */
+/* Selected through its OWN class and never through a parent: it is in the
+   header today because a signed-out page hides the menu, and it has moved once
+   already. `.shell__header-inner .themeswitch` would break the day it moves
+   again, so nothing here looks upwards. */
+
+.themeswitch {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 0 0 auto;
+  min-width: 0;
+  margin-inline-start: auto;
+}
+
+.themeswitch__label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--fg-dim);
+  white-space: nowrap;
+}
+
+.themeswitch__select {
+  min-height: var(--tap);
+  max-width: 10rem;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--bg);
+  border: 1px solid var(--rule-hi);
+  color: var(--fg);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+/* ── the menu ──────────────────────────────────────────────────────────── */
+/* The rail/drawer mechanics are style.css's. This is the paint. */
+
+.nav {
+  background-color: var(--bg);
+  background-image: var(--scan);
+  background-attachment: fixed;
+  border-inline-end: 1px solid var(--rule-hi);
+}
+
+.nav__bar {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4) 0;
+  /* Channel indices, below. A destination app.js has taken away with [hidden]
+     is `display: none` and does not increment, so the numbering stays
+     contiguous when the contact card is unconfigured. */
+  counter-reset: ch;
+}
+
+.nav__brand {
+  font-family: var(--t-mono);
+  font-size: var(--fs-xs);
+  color: var(--fg-dim);
+  padding: 0 var(--sp-4) var(--sp-3);
+  border-block-end: 1px solid var(--rule);
+  margin-block-end: var(--sp-2);
+}
+
+.nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-4);
+  border-block-end: 1px solid var(--rule);
+  color: var(--fg-dim);
+  text-decoration: none;
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.nav__link::before {
+  counter-increment: ch;
+  content: counter(ch, decimal-leading-zero);
+  font-family: var(--t-mono);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  letter-spacing: .1em;        /* digits only */
+  color: var(--rule-hi);
+  flex: none;
+}
+
+.nav__link:hover { background: var(--bg-lift); color: var(--fg); }
+
+/* aria-current is the hook AND the announcement, so what is highlighted and
+   what a screen reader calls current cannot drift. Inverted plate: the
+   strongest mark this palette has, and it is not a hue. */
+.nav__link[aria-current="page"] {
+  background: var(--fg);
+  color: var(--bg);
+  border-block-end-color: var(--fg);
+}
+.nav__link[aria-current="page"]::before { color: var(--bg); }
+
+.nav.is-open { border-inline-end-color: var(--fg); }
+.nav.is-open ~ .navscrim { background: var(--scrim); }
+
+/* ── panels: hairline compartments, not cards ──────────────────────────── */
+
+.panel {
+  background: transparent;     /* the scanline substrate runs under everything */
+  border: 1px solid var(--rule-hi);
+  min-width: 0;
+}
+
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-block-end: 2px solid var(--fg);
+}
+
+.panel__title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: normal;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* A section marker rather than a bracket pair: `[` and `]` are bidi-mirrored,
+   so a bracketed Hebrew title renders with the pair swapped. Solidi are not
+   mirrored and read the same in both directions. */
+.panel__title::before {
+  content: "// ";
+  font-family: var(--t-mono);
+  font-weight: 400;
+  color: var(--fg-dim);
+}
+
+.panel__body { padding: var(--sp-4); min-width: 0; }
+.panel__body--flush { padding: 0; }
+
+/* Not every block in a panel body has a class. `#account` paints the off-peak schedule as a
+   bare <p> carrying an upstream string of unknown length that is never translated, so it gets
+   a designed default here rather than raw body type. */
+.panel__body p:not([class]) {
+  font-size: var(--fs-sm);
+  color: var(--fg-dim);
+  margin-block-start: var(--sp-2);
+  overflow-wrap: anywhere;
+}
+
+/* ── buttons ───────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--rule-hi);
+  background: transparent;
+  color: var(--fg);
+  font-family: var(--t-sans);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color .12s ease-out, color .12s ease-out,
+              border-color .12s ease-out;
+}
+
+.btn:hover:not(:disabled) { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn:active:not(:disabled) { background: var(--fg-dim); color: var(--bg); }
+
+/* Primary is an inverted plate. It is the loudest thing the palette can do
+   without spending the accent, which is reserved for what a kWh costs. */
+.btn--primary {
+  background: var(--fg);
+  border-color: var(--fg);
+  color: var(--bg);
+}
+.btn--primary:hover:not(:disabled) { background: var(--fg-dim); border-color: var(--fg-dim); color: var(--bg); }
+
+/* Stop, and the revoke controls. OUTLINED in the accent and never filled: it
+   must read as dangerous without reading as the primary action. Red is
+   admissible here under this sheet's one rule — ending a cheap charge is what
+   costs money. */
+.btn--danger {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: transparent;
+}
+.btn--danger:hover:not(:disabled) { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+.btn--quiet { border-color: transparent; background: transparent; color: var(--fg); text-decoration: underline; }
+
+/* Raised to the full target: the refresh control and the comment board's icon
+   buttons are read one-handed next to a charger. `--tap` is the floor and this
+   theme does not go under it anywhere. */
+.btn--small {
+  min-height: var(--tap);
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-sm);
+}
+
+.btn--icon {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  font-size: var(--fs-lg);
+  line-height: 1;
+}
+
+/* The drawer handle's display is the base sheet's and is not restated here:
+   style.css carries it as `.btn.navtoggle`, which outranks this sheet's `.btn`
+   on specificity rather than on source order. */
+
+/* Disabled is never told by dimming alone: the outline goes dashed as well, and
+   every disabled control on this page carries a stated reason beside it. */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  color: var(--fg-dim);
+  border-color: var(--rule-hi);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+.btn--primary:disabled { background: transparent; }
+
+/* In flight. A blinking block, not a spinning ring — nothing on this page is
+   round. It stays visible and keeps the label. */
+.btn.is-busy { cursor: progress; }
+.btn.is-busy::before {
+  content: "";
+  width: .7em;
+  height: 1em;
+  background: currentColor;
+  flex: none;
+  animation: tele-blink 1s steps(2, jump-none) infinite;
+}
+
+@keyframes tele-blink { 50% { opacity: .15; } }
+
+/* Slowed, not stopped: a frozen indicator on a disabled button reads as a
+   stuck command, which is the opposite of what it has to say. */
+@media (prefers-reduced-motion: reduce) {
+  .btn.is-busy::before { animation-duration: 2.4s; }
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.btn-row > .btn { flex: 1 1 160px; }
+
+/* Why a control is locked. Never the dimming alone. */
+.btn-note {
+  margin-block-start: var(--sp-3);
+  padding-inline-start: var(--sp-3);
+  border-inline-start: 2px solid var(--rule-hi);
+  font-size: var(--fs-sm);
+  color: var(--fg-dim);
+  line-height: 1.45;
+}
+
+/* ── form fields ───────────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.field__label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--fg-dim);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg);
+  border: 1px solid var(--rule-hi);
+  color: var(--fg);
+  font-family: var(--t-sans);
+  font-size: var(--fs-md);
+}
+
+.input { font-family: var(--t-mono); letter-spacing: .06em; }
+.textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+
+.input::placeholder,
+.textarea::placeholder { color: var(--fg-dim); opacity: 1; }
+
+.input:focus-visible,
+.textarea:focus-visible { border-color: var(--fg); }
+
+.form-error {
+  color: var(--fg);
+  background: var(--bg-lift);
+  border-inline-start: 3px solid var(--accent);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+/* ── stat tiles: instrument cells on a 1px grid ────────────────────────── */
+/* `gap: 1px` over a ruled ground is how this sheet draws mathematically exact
+   dividing lines without a border on every cell. */
+
+/* The rule goes on the TILES, as an outline, and never on the grid's own ground: an odd number
+   of tiles in an even number of columns leaves one track empty, and a ruled ground paints that
+   hole as a fourth, broken-looking tile. An outline takes no layout space, so the 1px gap
+   between two tiles carries exactly one hairline and the outer edge carries one too. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  min-width: 0;
+}
+
+.stat {
+  outline: 1px solid var(--rule);
+  background: var(--bg);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+/* The label sits ABOVE its figure here — an 11px caption over a ~40px numeral
+   is the type-scale contrast this direction is built on, and reading the label
+   first is how an instrument panel is read.
+   The `min(…, 19cqi)` is style.css's calibration against the container context
+   it establishes on `.stat`, and a theme that sizes this value has to keep it:
+   19cqi is what holds the longest realistic figure on one line at any tile
+   width. `letter-spacing: normal` because a duration renders here in Hebrew. */
+.stat__value {
+  order: 2;
+  font-family: var(--t-mono);
+  font-size: min(var(--fs-2xl), 19cqi);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__unit {
+  font-size: .42em;
+  font-weight: 400;
+  color: var(--fg-dim);
+  margin-inline-start: .4em;
+}
+
+.stat__label {
+  order: 1;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--fg-dim);
+  line-height: 1.35;
+}
+
+.stat__delta {
+  order: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--t-mono);
+  font-size: var(--fs-xs);
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+}
+.stat__delta--up { color: var(--fg); }
+.stat__delta--down { color: var(--fg); }
+
+/* The tile whose point is money that was NOT spent. It is marked by a rule and
+   a plate, not by a hue — green is spent on the contactor lamp and red means
+   the opposite of what this tile says. */
+.stat--good { border-block-start: 3px solid var(--fg); }
+.stat--good .stat__value { color: var(--fg); }
+
+/* ── tables ────────────────────────────────────────────────────────────── */
+
+.table {
+  width: 100%;
+  min-width: 680px;            /* mono figures are wider than classic's */
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--sp-3);
+  text-align: start;           /* style.css carries the [dir=rtl] override */
+  border-block-end: 1px solid var(--rule);
+  white-space: nowrap;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-lift);
+  border-block-end: 2px solid var(--fg);
+  color: var(--fg-dim);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  /* Not uppercased and not tracked: the headers are Hebrew with a Latin unit
+     in brackets, and `uppercase` would only reach "kWh" and "kW". */
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.table td.num,
+.table th.num {
+  text-align: end;
+  font-family: var(--t-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.table tbody tr:last-child td { border-block-end: 0; }
+.table tbody tr:hover td { background: var(--bg-lift); }
+
+/* The row of a charge that is still running: a lifted ground AND a rule top and
+   bottom, so it is separable without a hue. */
+.table tbody tr.is-live td {
+  background: var(--bg-lift);
+  border-block: 1px solid var(--fg);
+}
+
+.table-wrap { border-block-start: 0; }
+
+/* ── chips ─────────────────────────────────────────────────────────────── */
+/* Every chip carries its own words; the border STYLE is what separates the four
+   kinds, so none of them depends on being seen in colour. */
+
+.chip {
+  display: inline-block;
+  padding: 2px var(--sp-2);
+  border: 1px solid var(--rule-hi);
+  background: transparent;
+  color: var(--fg-dim);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chip--ok   { border-color: var(--fg); color: var(--fg); }
+.chip--info { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.chip--warn { border-style: dashed; border-color: var(--fg); color: var(--fg); }
+.chip--bad  { border-style: double; border-width: 3px; border-color: var(--fg); color: var(--fg); }
+
+/* ── the connector status badge — seven states and the eighth case ─────── */
+/* The badge's own TEXT carries the meaning and [title] holds the protocol's raw
+   spelling. A bare `.status` with no modifier is a normal thing to render, so it
+   is styled first and completely. */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  align-self: start;
+  padding: var(--sp-1) var(--sp-3);
+  border: 1px dashed var(--rule-hi);
+  background: var(--bg-lift);
+  color: var(--fg);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* A square lamp, not a dot. Decoration everywhere except on --charging. */
+.status::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  background: currentColor;
+  flex: none;
+}
+
+.status--available     { border-style: solid; border-color: var(--rule-hi); color: var(--fg-dim); }
+.status--preparing     { border-style: solid; border-color: var(--fg); }
+.status--charging      { border-style: solid; border-color: var(--fg); }
+.status--suspendedevse { border-style: dashed; border-color: var(--fg); }
+.status--suspendedev   { border-style: dotted; border-width: 2px; border-color: var(--fg); }
+.status--finishing     { border-style: solid; border-color: var(--rule-hi); }
+.status--faulted       { border-style: solid; background: var(--fg); border-color: var(--fg); color: var(--bg); }
+
+/* THE ONE PLACE GREEN APPEARS IN THIS SHEET. It is the contactor lamp: closed,
+   and energy is moving. Information rather than decoration, which is the only
+   reason a continuous animation is defensible here — and it is the only
+   continuous animation this theme declares. */
+.status--charging::before {
+  background: var(--lamp);
+  animation: contactor 2.4s ease-in-out infinite;
+}
+
+@keyframes contactor { 50% { opacity: .34; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .status--charging::before { animation: none; }
+}
+
+/* ── the suspension explainer — the product's whole point ──────────────── */
+/* Two variants of one upstream state that mean opposite things. The glyph that
+   separates them is style.css's `content:`; this sheet adds a second, non-colour
+   difference to each so neither can be told only by its ink. */
+
+.suspend {
+  position: relative;
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-lift);
+  border: 1px solid var(--rule-hi);
+  border-inline-start: 4px solid var(--fg-dim);
+  min-width: 0;
+}
+
+.suspend::before {
+  font-size: var(--fs-lg);
+  line-height: 1.3;
+  flex: none;
+}
+
+.suspend__body { min-width: 0; }
+
+.suspend__title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.suspend__detail {
+  margin-block-start: var(--sp-1);
+  font-size: var(--fs-sm);
+  color: var(--fg-dim);
+  overflow-wrap: anywhere;
+}
+
+.suspend__amount {
+  font-family: var(--t-mono);
+  font-size: var(--fs-lg);
+  font-weight: 500;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Deliberately waiting out the dear window. Money is being saved, so it gets the
+   solid white rule — the affirmative mark in this palette. */
+.suspend--price { border-inline-start-color: var(--fg); }
+
+/* The building's panel is limiting us. It LOOKS identical upstream and it is
+   NOT a price decision: nothing is being saved. Hazard hatching, never the
+   accent — red on this page means a kWh is expensive, and this state says
+   nothing at all about price. */
+.suspend--panel {
+  border-inline-start: 0;
+  padding-inline-start: calc(var(--sp-4) + 18px);
+}
+.suspend--panel::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 14px;
+  background-image: var(--hatch);
+}
+
+/* Withholding, cause not established. Provisional, and it says so. */
+.suspend--unknown { border-inline-start-style: dashed; }
+.suspend--unknown::before { color: var(--fg-dim); font-weight: 700; }
+
+/* ── the tariff panel ──────────────────────────────────────────────────── */
+/* themes/terminal.js replaces this renderer with a 24 h STEP PROFILE: bar
+   height is price, fill is severity, and the session hangs off the baseline on
+   the same axis. It reuses style.css's geometry rather than inventing its own —
+   `--start`/`--end` on a slice and `--at` on the now marker keep meaning
+   "percent of the day from midnight", and the `direction: ltr` pin on the band
+   and the scale is inherited, not re-declared.
+   THE RULING IS INHERITED AND IT APPLIES: this is still a time AXIS with
+   labelled coordinates, so it does not mirror. Midnight is at the left edge and
+   the day runs rightwards, like the clock face the owner reads. */
+
+.tariff { min-width: 0; }
+
+/* — hero: what a kWh costs right now — */
+
+.tariff__hero {
+  border-block-end: 1px solid var(--rule);
+  padding-block-end: var(--sp-4);
+  margin-block-end: var(--sp-4);
+}
+
+.tariff__window {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.tariff__window-name {
+  font-size: clamp(22px, 6.4vw, 30px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: normal;
+}
+
+.tariff__lbl {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--fg-dim);
+  line-height: 1.35;
+}
+
+/* The figure this dashboard exists to show, at the top of the scale contrast.
+   Its own `direction: ltr` paragraph so the price, the separator and the unit
+   cannot be reassembled by the Hebrew around them. */
+.tariff__figure {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-block-start: var(--sp-2);
+  direction: ltr;
+  justify-content: flex-start;
+}
+
+.tariff__figure-n {
+  font-family: var(--t-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(46px, 16vw, 96px);
+  line-height: .85;
+  font-weight: 500;
+  letter-spacing: -.03em;      /* digits only; no Hebrew reaches this box */
+}
+
+.tariff__figure-u {
+  font-family: var(--t-mono);
+  font-size: clamp(12px, 3.4vw, 16px);
+  letter-spacing: .05em;
+  color: var(--fg-dim);
+  padding-block-end: 6px;
+}
+
+.tariff__vat {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border-block-start: 1px solid var(--rule);
+  margin-block-start: var(--sp-4);
+}
+
+.tariff__vat-cell {
+  background: var(--bg);
+  padding-block: var(--sp-3);
+  padding-inline: 0 var(--sp-3);
+}
+
+/* Its own bidi paragraph, like every other figure box on the page. "1.0942 ₪/kWh" and "×0.58"
+   are weak runs fenced by neutrals: without this the neutrals take the paragraph's RTL direction
+   and the unit lands on the wrong side of its figure — measured, not assumed. */
+.tariff__vat-val {
+  display: block;
+  margin-block-start: var(--sp-1);
+  font-family: var(--t-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-lg);
+  font-weight: 500;
+  unicode-bidi: plaintext;
+}
+
+/* — the 24 h step profile — */
+
+.tariff__prof { margin-block-start: var(--sp-3); }
+
+.tariff__cap {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  margin-block-end: var(--sp-5);
+}
+
+/* The now-tag's own row, above the plot, because the band clips. */
+.tariff__tags {
+  position: relative;
+  height: 16px;
+  min-width: 300px;
+}
+
+.tariff__nowtag {
+  position: absolute;
+  inset-inline-start: var(--at, 0%);
+  inset-block-end: 0;
+  font-family: var(--t-mono);
+  font-size: var(--fs-xs);
+  color: var(--fg);
+  white-space: nowrap;
+}
+/* Anchored by the renderer so the label cannot be clipped at either edge. */
+.tariff__nowtag--mid { transform: translateX(-50%); }
+.tariff__nowtag--end { inset-inline-start: auto; inset-inline-end: 0; }
+
+/* style.css gives the band `position: relative` and `overflow: hidden`. The
+   overflow is released here so the section line can rise above the baseline;
+   nothing overflows sideways because every slice is clamped to 0–100%. */
+.tariff__band {
+  height: 128px;
+  overflow: visible;
+  border-block-end: 1px solid var(--rule-hi);
+  min-width: 300px;
+}
+
+/* Height encodes price. style.css positions and widths the slice from
+   --start/--end; this hangs it off the baseline and reads --h. */
+.tariff__slice {
+  inset-block: auto 0;
+  height: var(--h, 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-block-end: 4px;
+  overflow: hidden;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--bg);
+  white-space: nowrap;
+}
+
+/* Severity by ink weight: the cheapest band is the quietest, the dearest is the
+   only red on the chart. */
+.tariff__slice--offpeak { background: var(--fg-dim); }
+.tariff__slice--mid { background: var(--fg); }
+.tariff__slice--peak { background: var(--accent); }
+
+/* A published window with no price on it. It claims nothing: hatched rather than filled, so it
+   cannot be read as a magnitude it does not have. */
+.tariff__slice--unknown {
+  background-color: var(--bg-lift);
+  background-image: var(--hatch);
+  border: 1px dashed var(--rule-hi);
+  color: var(--fg);
+}
+
+/* A drafting section line: white hairline / black core / white hairline, so NOW
+   stays legible over a filled bar AND over bare ground. */
+.tariff__now {
+  inset-block: -12px 0;
+  width: 2px;
+  background: var(--bg);
+  border-inline: 1px solid var(--fg);
+}
+
+/* The session, on the same axis as the rates above it, terminating exactly at
+   the section line. The slice geometry is reused; only the lane differs. */
+.tariff__lane {
+  position: relative;
+  height: 11px;
+  min-width: 300px;
+}
+.tariff__lane-track {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 5px;
+  height: 1px;
+  background: var(--rule-hi);
+}
+.tariff__lane .tariff__slice { background: var(--fg); }
+
+.tariff__scale {
+  display: flex;
+  justify-content: space-between;
+  margin-block-start: var(--sp-2);
+  font-family: var(--t-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: .06em;       /* digits only */
+  color: var(--fg-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 300px;
+}
+
+.tariff__note {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+  margin-block-start: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--fg-dim);
+}
+.tariff__note .num { font-family: var(--t-mono); color: var(--fg); }
+
+/* — legend: one key per distinct price — */
+
+.tariff__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  margin-block-start: var(--sp-4);
+  padding-block-start: var(--sp-3);
+  border-block-start: 1px solid var(--rule);
+  font-size: var(--fs-sm);
+}
+
+.tariff__key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--fg-dim);
+}
+.tariff__key::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  flex: none;
+  background: var(--fg-dim);
+}
+.tariff__key--mid::before { background: var(--fg); }
+.tariff__key--peak::before { background: var(--accent); }
+.tariff__key--peak { color: var(--fg); }
+.tariff__key--unknown::before {
+  background-color: var(--bg-lift);
+  background-image: var(--hatch);
+  border: 1px dashed var(--rule-hi);
+}
+
+/* — the flip sentence: always rendered, and it is the answer — */
+
+.tariff__flip {
+  margin-block-start: var(--sp-4);
+  padding-block-start: var(--sp-3);
+  border-block-start: 2px solid var(--fg);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+.tariff__flip strong {
+  font-family: var(--t-mono);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── the command block ─────────────────────────────────────────────────── */
+/* themes/terminal.js supplies the body of `#controls` through the builder
+   views/controls.js exposes. It renders the gate's reasons, the two guarded
+   doors and a two-press stop confirm; it does not own the command, the busy
+   flag or either bounded poll. */
+
+.controls { min-width: 0; }
+
+.cmd {
+  border: 1px solid var(--rule);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+}
+.cmd + .cmd { border-block-start: 0; }
+
+.cmd__lbl {
+  display: block;
+  margin-block-end: var(--sp-2);
+  font-family: var(--t-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: .14em;       /* Latin and digits only */
+  color: var(--fg-dim);
+}
+
+/* The command plate itself, and the direct child only: the confirm's two buttons are inside
+   this compartment too and are ordinary `.btn`s in a `.btn-row`. */
+.cmd > .btn {
+  width: 100%;
+  min-height: 56px;
+  justify-content: space-between;
+  font-size: var(--fs-lg);
+}
+.cmd__key {
+  font-family: var(--t-mono);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  color: inherit;
+  margin-inline-start: auto;
+}
+
+/* The second press. Inside the compartment it is asking about, under the
+   accent's own rule, so there is never a question on screen without the command
+   it belongs to. */
+.cmd__confirm {
+  margin-block-start: var(--sp-3);
+  padding-block-start: var(--sp-3);
+  border-block-start: 1px solid var(--accent);
+}
+
+.cmd__question {
+  margin-block-end: var(--sp-3);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  line-height: 1.45;
+}
+.cmd__question .cmd__warn { color: var(--accent); }
+
+/* ── the expiry banner — every control on the page is dead ─────────────── */
+/* Unmissable WITHOUT the accent: hazard hatching down the inline start, a rule
+   top and bottom, and the title on an inverted plate. style.css supplies the 🔒
+   and the ⚠/✓ prefixes. */
+
+.expiry {
+  position: relative;
+  background: var(--bg-lift);
+  border-block: 2px solid var(--fg);
+  padding: var(--sp-4);
+  padding-inline-start: calc(var(--sp-4) + 22px);
+  color: var(--fg);
+}
+
+.expiry::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 16px;
+  background-image: var(--hatch);
+}
+
+.expiry__inner {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.expiry__title {
+  align-self: start;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--fg);
+  color: var(--bg);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+
+.expiry__text { font-size: var(--fs-md); overflow-wrap: anywhere; }
+
+.expiry__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: flex-end;
+}
+.expiry__form .field { flex: 1 1 220px; }
+.expiry__form .btn { flex: 0 0 auto; }
+
+.expiry__error {
+  padding-inline-start: var(--sp-3);
+  border-inline-start: 3px solid var(--fg);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.expiry__ok {
+  padding-inline-start: var(--sp-3);
+  border-inline-start: 3px solid var(--fg-dim);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--fg-dim);
+}
+
+/* ── the stale marker ──────────────────────────────────────────────────── */
+/* Stale data stays fully readable. It is labelled, never dimmed into
+   uselessness: the cached row is the only data there is. */
+
+.stale {
+  position: relative;
+  padding-inline-start: var(--sp-4);
+}
+.stale::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 10px;
+  background-image: var(--hatch);
+}
+
+.stale__flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-block-end: var(--sp-2);
+  padding: 2px var(--sp-2);
+  border: 1px dashed var(--fg);
+  color: var(--fg);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.stale__age { font-family: var(--t-mono); font-variant-numeric: tabular-nums; }
+
+/* ── the comment board ─────────────────────────────────────────────────── */
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-block-end: var(--sp-4);
+  padding-block-end: var(--sp-4);
+  border-block-end: 1px solid var(--rule);
+}
+.comment-form__actions {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.comments__filter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-block-end: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--fg-dim);
+}
+.comments__filter label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  cursor: pointer;
+}
+.comments__filter input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--fg);
+}
+
+.comment-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+/* Three slots: the view appends meta, actions, text in that order. */
+.comment {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--rule);
+  background: var(--bg-lift);
+  min-width: 0;
+}
+
+.comment__meta {
+  grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--fg-dim);
+  min-width: 0;
+}
+.comment__author { font-weight: 700; color: var(--fg); font-size: var(--fs-sm); }
+.comment__time { font-family: var(--t-mono); font-variant-numeric: tabular-nums; }
+
+.comment__actions {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  gap: var(--sp-1);
+  align-self: start;
+}
+
+.comment__text {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  font-size: var(--fs-md);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;       /* plain text, set with textContent */
+}
+
+.comment--done { background: transparent; }
+.comment--done .comment__text { text-decoration: line-through; color: var(--fg-dim); }
+
+/* Archived: dashed, inset and tagged. The tag's WORD is style.css's, in both
+   languages; this is its plate. */
+.comment--archived {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--rule-hi);
+  margin-inline-start: var(--sp-4);
+}
+.comment--archived .comment__author::after {
+  margin-inline-start: var(--sp-2);
+  padding: 0 5px;
+  border: 1px solid var(--rule-hi);
+  color: var(--fg-dim);
+  font-family: var(--t-mono);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+}
+
+.comment__toggle[aria-pressed="true"] {
+  background: var(--fg);
+  border-color: var(--fg);
+  color: var(--bg);
+}
+.comment__archive:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: transparent;
+  color: var(--accent);
+}
+
+/* ── sign-in sessions, and the control that revokes one ────────────────── */
+/* The same three-slot row as a comment, because it is the same shape of row.
+   What differs is the last slot: a user-agent string, displayed verbatim and
+   never cut. */
+
+.session-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.session {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--rule);
+  background: var(--bg-lift);
+  min-width: 0;
+}
+
+/* The row the viewer is holding. Marked three ways — a solid rule down the
+   start edge, a stronger frame, and the `.chip--info` plate the view writes into
+   `.session__meta` — because colour alone must not separate "another device"
+   from "this one". */
+.session--current {
+  border-color: var(--rule-hi);
+  border-inline-start: 4px solid var(--fg);
+}
+
+.session__meta {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--fg-dim);
+  min-width: 0;
+}
+.session__when { font-family: var(--t-mono); font-variant-numeric: tabular-nums; }
+.session__where { font-weight: 700; color: var(--fg); }
+
+.session__actions {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+}
+
+/* Constrained, never truncated: the half that would be cut is the half that
+   tells two devices apart. `anywhere` is what stops one long token from pushing
+   the row wider than the phone. */
+.session__ua {
+  grid-column: 1 / -1;
+  font-family: var(--t-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: .02em;       /* a user-agent string is Latin */
+  color: var(--fg-dim);
+  overflow-wrap: anywhere;
+}
+
+.session__confirm {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-block-start: var(--sp-3);
+  border-block-start: 1px solid var(--accent);
+}
+.session__question { font-size: var(--fs-sm); color: var(--fg); }
+
+.session__revoke:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: transparent;
+  color: var(--accent);
+}
+
+/* ── the contact card ──────────────────────────────────────────────────── */
+/* Every string here arrives from the API at runtime, in any script and at any
+   length. Nothing below fixes a width. */
+
+.contact__name {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.contact__blurb {
+  margin-block-start: var(--sp-2);
+  font-size: var(--fs-md);
+  color: var(--fg-dim);
+  overflow-wrap: anywhere;
+}
+
+/* Label above value: a two-column grid would set its column from the longest
+   value, and one long address would indent every other row across the card. */
+.contact__list {
+  margin-block-start: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--rule);
+  border-block: 1px solid var(--rule);
+}
+
+.contact__label {
+  background: var(--bg);
+  padding: var(--sp-3) 0 0;
+  font-family: var(--t-mono);
+  font-size: var(--fs-xs);
+  color: var(--fg-dim);
+}
+
+.contact__value {
+  background: var(--bg);
+  padding: 0 0 var(--sp-3);
+  font-size: var(--fs-md);
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.contact__actions { margin-block-start: var(--sp-5); }
+
+/* The edit form: the same .field/.input/.textarea/.btn-row vocabulary already carrying the
+   comment composer and the credential field, so filling this card in reads as one more form
+   on the page rather than a bolted-on feature. */
+.contact__edit { margin-block-start: var(--sp-5); }
+
+.contact__form {
+  margin-block-start: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 420px;
+}
+
+.contact__form-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* ── empty / error / skeleton — AND the sign-in card ───────────────────── */
+/* views/auth.js paints the sign-in screen as `.empty` inside a `.panel`, and on
+   a cold signed-out page that card IS the page: there is no menu and no view
+   behind it. Whatever happens to these rules happens to the only screen an
+   anonymous visitor ever sees, so it is styled to be finished on its own. */
+
+.empty {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-6) var(--sp-4);
+  text-align: center;
+  color: var(--fg-dim);
+}
+
+.empty__icon { font-size: 1.6rem; line-height: 1; }
+
+.empty__title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: normal;
+}
+
+.empty__hint { font-size: var(--fs-sm); max-width: 46ch; line-height: 1.55; }
+
+.empty .btn { margin-block-start: var(--sp-2); min-width: 12rem; }
+
+/* A panel that has never loaded. Hazard hatching along the block start, never
+   the accent — a route that failed is not a price. */
+.empty--error {
+  background: var(--bg-lift);
+  border: 1px solid var(--rule-hi);
+}
+.empty--error::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  height: 7px;
+  background-image: var(--hatch);
+}
+.empty--error .empty__title { color: var(--fg); }
+
+/* First paint, before data lands. app.js sets its height inline; this sheet
+   deliberately sets none, and declares no animation — a hatched plate reads as
+   "reserved" without a fourth moving thing on the page. */
+.skeleton {
+  background-color: var(--bg-lift);
+  background-image: var(--hatch);
+  border: 1px solid var(--rule);
+  min-height: 1em;
+}
+
+/* ── the settle / confirmation bar ─────────────────────────────────────── */
+/* Bounded, and only ever on screen while a poll a press started is running.
+   The width is style.css's (it reads --pct); this is what it looks like. */
+
+.settle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-block-start: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--fg-dim);
+}
+
+.settle__bar {
+  flex: 1 1 auto;
+  height: 8px;
+  background: var(--bg-lift);
+  border: 1px solid var(--rule-hi);
+  overflow: hidden;
+  min-width: 90px;
+}
+
+.settle__fill {
+  height: 100%;
+  background: var(--fg);
+  transition: width .3s linear;
+}
+
+.settle .num { font-family: var(--t-mono); color: var(--fg); }
+
+/* ── Hebrew / RTL typography ───────────────────────────────────────────── */
+/* The layout needs nothing here: this sheet is 100% logical, so the box model
+   mirrors on its own. What does not mirror is Latin typographic habit applied
+   to a script with none of the same features, and every rule below exists only
+   to UNDO something this sheet does.
+   CONTRACT: dir="rtl" is on <html>. These are descendant selectors; moving the
+   attribute deeper silently drops the whole block. */
+
+/* Belt to the braces above: no Hebrew-bearing box in this theme is tracked, in
+   either direction. The tracked micro-type this direction usually lives on is
+   confined to boxes whose content is Latin or digits — the stamp, the channel
+   index, the axis, the command labels and a user-agent string. */
+[dir="rtl"] .shell__title,
+[dir="rtl"] .panel__title,
+[dir="rtl"] .stat__value,
+[dir="rtl"] .stat__label,
+[dir="rtl"] .empty__title,
+[dir="rtl"] .tariff__window-name,
+[dir="rtl"] .tariff__lbl,
+[dir="rtl"] .suspend__title { letter-spacing: normal; }
+
+/* Hebrew has no capitals, so `uppercase` is a no-op on the Hebrew half of a
+   string — but not on the Latin half, where it turns "kWh" and "kW" into units
+   that do not exist. Nothing in this sheet uppercases; this is the guard. */
+[dir="rtl"] .table thead th,
+[dir="rtl"] .chip,
+[dir="rtl"] .status,
+[dir="rtl"] .btn { text-transform: none; }
+
+/* ── desktop ───────────────────────────────────────────────────────────── */
+
+@media (min-width: 900px) {
+  .shell__header { padding: var(--sp-4) var(--sp-5); }
+  .shell__main { padding: var(--sp-5) var(--sp-4); gap: var(--sp-5); }
+  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .table { min-width: 0; }
+  .tariff__band { height: 156px; }
+  .tariff__figure-n { font-size: clamp(72px, 6.6vw, 108px); }
+}
+
+/* The status screen is two compartments of very different heights — a tall price panel and a
+   short command panel — so on a wide screen they sit side by side rather than putting the two
+   buttons below the fold. style.css owns WHETHER an inactive view is on screen; what an active
+   one IS is a theme's, and this changes only the active one. */
+@media (min-width: 1100px) {
+  #view-status.is-active {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+/* ── print ─────────────────────────────────────────────────────────────── */
+/* A committed dark look is a screen decision, not a paper one: printing a black
+   page is a defect, not a design. The grid, the rules and the mono figures are
+   what survive onto paper — which is the Swiss half of this direction anyway.
+   style.css already removes the menu and its gutter. */
+
+@media print {
+  :root {
+    --bg: #ffffff;
+    --bg-lift: #ffffff;
+    --fg: #000000;
+    --fg-dim: #444444;
+    --rule: #999999;
+    --rule-hi: #000000;
+    --scan: none;
+    --hatch: none;
+  }
+  body { background: #fff; color: #000; }
+  .shell__header, .shell__footer, .btn, .comment-form, .themeswitch { display: none; }
+  .panel { border: 1px solid #000; }
+}

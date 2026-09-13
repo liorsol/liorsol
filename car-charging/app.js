@@ -27,8 +27,23 @@
 // command that has just changed the charger knows something the cache does not, so it asks for
 // the fetch to be forced. It cannot be reached except from a click.
 
-import { getState, getHistory, getInvoices, refresh, TOKEN_EXPIRED, isChargerError } from './api.js';
+import {
+  getState,
+  getHistory,
+  getInvoices,
+  getSessions,
+  getContact,
+  refresh,
+  TOKEN_EXPIRED,
+  isChargerError,
+} from './api.js';
 import { dateTime, relative } from './views/he.js';
+// The theme layer. It has already run by the time this line executes -- index.html loads
+// theme.js in its own <script type="module"> tag, before this one -- so importing it here is
+// the module registry handing back an evaluated module, not a second fetch and not a second
+// boot. What this file uses it for is two things and no more: the switcher's wiring, and the
+// per-panel renderer a theme may replace.
+import { mountSwitcher, themeView } from './theme.js';
 // The one view imported statically rather than mounted through the table below. The dynamic
 // import exists because five view files were being written concurrently by agents who could not
 // talk to each other, so a broken one had to cost a panel instead of the page (frontend-notes
@@ -47,6 +62,12 @@ const shared = {
   state: null,
   history: null,
   invoices: null,
+  // The viewer's own sign-in sessions, and the contact card. Neither comes out of the hour-old
+  // charger row -- they are read live on the far side -- so neither can be stale and neither
+  // has a fetchedAt. They are fetched in this round and nowhere else, for one reason: a menu
+  // press must fetch nothing, and these two views are behind menu items.
+  signIns: null,
+  contact: null,
   expired: false,
   // The third flag of the mount contract (PLAN §7.10), and it is on the shared object rather
   // than local to this file for one reason: views/controls.js cannot gate a control it has no
@@ -75,7 +96,9 @@ const ctx = { reload: (force) => load(force) };
 
 // Epoch ms per route, so the header can report the age of the *oldest* thing on screen rather
 // than the freshest. Only a successful call updates one.
-const fetchedAt = { state: null, history: null, invoices: null };
+// The two live routes are here for shape only: neither reports a fetchedAt, so neither can
+// move the age in the header. Filtered out below with everything else that is not a number.
+const fetchedAt = { state: null, history: null, invoices: null, signIns: null, contact: null };
 
 // ── The views ──
 //
@@ -90,6 +113,12 @@ const views = [
   { id: 'account', src: './views/account.js', needs: 'state', skel: '140px', fail: 'לא ניתן לטעון את מצב העמדה' },
   // The comment board fetches its own data and owns its own empty states, so nothing gates it.
   { id: 'comments', src: './views/comments.js', needs: null, skel: '120px', fail: 'לא ניתן לטעון את ההערות' },
+  // `live` is the other half of `needs`: the route fills the panel, but it is NOT the hour-old
+  // cached row, so the panel must never wear the stale marker. Hanging the charger data's age
+  // over a session list that was read live in this same round is a lie, and it is the same
+  // reason the comment board above is exempt -- it just gets there through `needs: null`.
+  { id: 'sessions', src: './views/sessions.js', needs: 'signIns', live: true, skel: '160px', fail: 'לא ניתן לטעון את החיבורים' },
+  { id: 'contact', src: './views/contact.js', needs: 'contact', live: true, skel: '120px', fail: 'לא ניתן לטעון את פרטי הקשר' },
 ];
 
 const controls = views[1];
@@ -215,7 +244,7 @@ button.addEventListener('click', onRefresh);
 // Only a panel fed by a cached route wears the marker. The comment board reads its own rows
 // live on every call, so flagging it with the charging data's age would be a lie.
 function frame(body, mount, view) {
-  if (!shared.stale || !view.needs) {
+  if (!shared.stale || !view.needs || view.live) {
     body.replaceChildren(mount);
     return;
   }
@@ -235,7 +264,23 @@ function frame(body, mount, view) {
 }
 
 // ponytail: dynamic import per panel so a missing or broken view costs one panel, not the page
-async function paint(view) {
+//
+// ── THE THEME SEAM, AND IT IS TWO SHAPES FOR ONE REASON ──
+//
+// Three of the six designs render the SAME tariff data in a genuinely different shape -- a
+// radial dial, a stepped 24-hour chart, a typographic timetable -- and no stylesheet turns a
+// row of absolutely positioned slices into a table. So a theme may hand this function a
+// replacement renderer for a panel, keyed on the panel id. It is presentational and it touches
+// no command path: the data it paints is the same `shared` object every base view is given,
+// and nothing about a theme change reaches `/api/*`.
+//
+// The asymmetry below is a capability check, not a list of themes and not a list of panels.
+// A base module that exports `setBody` owns its own repaint loop -- views/controls.js repaints
+// on every sample of the settle and start polls, outside any round this file runs -- so a
+// renderer mounted here would be overwritten by the next sample. Those modules take a BODY
+// BUILDER instead and keep their render. That is the whole mechanism by which a theme can put
+// a slide-to-stop lever on the page without owning the command behind it.
+async function paint(view, themeChange) {
   const body = document.getElementById(view.id);
 
   // Never loaded. On a first load that failed there is no existing DOM to preserve, so the
@@ -247,7 +292,16 @@ async function paint(view) {
 
   try {
     const mod = (view.mod ??= import(view.src));
-    const { render } = await mod;
+    const base = await mod;
+    const custom = await themeView(view.id);
+    // A theme change re-runs a renderer only where the theme actually changed one. Most themes
+    // replace nothing -- a sheet swap is the whole of them -- so the usual switch re-runs no
+    // view at all, and that is what keeps it free of the ONE view that fetches on render: the
+    // comment board reads its own rows every time it is painted. See THEMES.md.
+    if (themeChange && view.mounted && view.painter === custom) return;
+    view.painter = custom;
+    if (base.setBody) base.setBody(custom);
+    const render = base.setBody ? base.render : custom ?? base.render;
     view.el ??= document.createElement('div');
     frame(body, view.el, view);
     render(view.el, shared, ctx);
@@ -256,6 +310,14 @@ async function paint(view) {
     view.mod = null; // drop the rejected promise so a later reload gets another chance
     if (!view.mounted) placeOwn(body, panelError(view));
   }
+}
+
+// Repaint what is already on screen, from data that has already arrived. A theme change runs
+// this and nothing else: no fetch, no reload, no forced round. `test/theme.test.mjs` counts
+// `fetch` across it for the same reason `test/nav.test.mjs` counts it across a menu press.
+async function repaint(themeChange) {
+  if (panelsDetached) return; // the sign-in card is the page; there are no panels to repaint
+  await Promise.all([...views.map((view) => paint(view, themeChange)), paintExpiry()]);
 }
 
 // ── Expiry banner lifecycle ──
@@ -286,7 +348,7 @@ async function paintExpiry() {
 // inherits the page's own padding and measure and needs no rule of its own. What differs is
 // what sits beneath it:
 //
-//   cold and signed out (nothing has ever arrived) -- the five panels behind the menu would be five
+//   cold and signed out (nothing has ever arrived) -- the seven panels behind the menu would be seven
 //     copies of one message, and the owner asked for a message and a button. They are detached
 //     as a set and the card is the page.
 //   signed out mid-visit -- the panels hold the last good round, and blanking data on a failed
@@ -302,20 +364,34 @@ const panels = [...main.children];
 const authMount = h('div');
 main.replaceChildren(authMount, ...panels);
 
+// ── #/contact used to be the one view whose existence the DATA decided ──
+//
+// `{"contact": null}` used to take the menu item and the section away together: an unfillable
+// blank card behind a permanent menu item was a defect, and hiding both was the fix for it. It
+// is not a defect any more. The card is editable from the page itself now (views/contact.js),
+// so a blank card is the ENTRY POINT for filling it in, not a dead end -- "the contacts section
+// doesn't work" was this hiding rule, reported from the one state that could never be filled in
+// from here. So `#/contact` is a plain sixth destination, exactly like the other five, with no
+// predicate of its own and nothing that ever detaches it on its own.
 let panelsDetached = false;
 
 function paintAuthRequired() {
   const cold = shared.authRequired && shared.fetchedAt == null;
+
   if (cold !== panelsDetached) {
     main.replaceChildren(authMount, ...(cold ? [] : panels));
     panelsDetached = cold;
-    // The menu goes with them, and is hidden rather than emptied. A rail offering four
+    // The menu goes with the panels, and is hidden rather than emptied. A rail offering six
     // destinations that are all detached from the document is worse than no rail: every item
-    // leads to a blank page with the one card that matters now scrolled off the top of it.
-    // Hiding the rail is also what gives <body> its gutter back -- see `.nav[hidden] ~ .shell`.
+    // leads to a blank page with the sign-in card scrolled off the top of it. Hiding the rail is
+    // also what gives <body> its gutter back -- see `.nav[hidden] ~ .shell`.
     nav.hidden = cold;
     navToggle.hidden = cold;
     if (cold) drawer(false);
+    // The set of destinations just changed, so the shown view may no longer be one of them:
+    // route() is the one thing that decides what is on screen, so it decides this too rather
+    // than a second piece of code doing it differently.
+    route();
   }
   // views/auth.js creates and removes the card itself, for the same reason the credential field
   // is created and removed: a sign-in control left hidden in the DOM of a signed-in page is a
@@ -333,8 +409,17 @@ function paintAuthRequired() {
 // Three extra D1 reads per press, and no guess about the refresh body's shape.
 async function load(force) {
   if (force) await refresh();
-  const [state, history, invoices] = await Promise.all([getState(), getHistory(), getInvoices()]);
-  const results = { state, history, invoices };
+  // One round fills every view, the two new ones included. They are not added to `refresh()`
+  // above and must not be: that call is what forces an upstream fetch, and neither of these
+  // routes has an upstream to reach past.
+  const [state, history, invoices, signIns, contact] = await Promise.all([
+    getState(),
+    getHistory(),
+    getInvoices(),
+    getSessions(),
+    getContact(),
+  ]);
+  const results = { state, history, invoices, signIns, contact };
 
   let stale = false;
   let expired = false;
@@ -389,10 +474,10 @@ async function load(force) {
   // credential banner would pull a view module down to be told there is no credential problem.
   // The 401 is the only thing this page knows and the card is the whole of what it can say.
   if (panelsDetached) return;
-  await Promise.all([...views.map(paint), paintExpiry()]);
+  await repaint();
 }
 
-// ── The menu: four views, one hash router ──
+// ── The menu: six views, one hash router ──
 //
 // The pattern is `trips/italy-2026/trip.js`, which is the precedent the owner named -- "the
 // same way it was implemented in the travel webpages (either history and routing)". Same three
@@ -413,12 +498,32 @@ async function load(force) {
 //     because its views run for metres; these are one or two panels each, and a restored
 //     offset would be the wrong answer more often than the right one.
 //
-// NOTHING IN HERE FETCHES, and that is structural rather than careful. All four views are
+// NOTHING IN HERE FETCHES, and that is structural rather than careful. All six views are
 // mounted and repainted by the same `load()` round, so a menu press moves a class over DOM that
 // is already holding its data. A view that fetched on entry would put an upstream call behind
 // every menu press, which is the invocation budget the whole one-hour cache rule protects.
 // `test/nav.test.mjs` asserts the absence of the call rather than trusting this paragraph.
-const VIEWS = ['status', 'history', 'invoices', 'comments'];
+// Every destination the MARKUP has. The class toggle below walks this list rather than the
+// reachable one, so a view that has just been taken away has its `.is-active` cleared on the
+// way out and cannot come back still wearing it.
+const VIEWS = ['status', 'history', 'invoices', 'comments', 'sessions', 'contact'];
+// The section and the menu item for every destination, captured ONCE, while everything the
+// markup ships is still in the document.
+//
+// `document.getElementById` is the wrong tool inside route(), and it was a live crash: signed
+// out cold, `paintAuthRequired()` detaches all seven `.view` sections from <main> -- the sign-in
+// card IS the page. A detached element is not findable by id, so every hash change in that state
+// (a bookmarked `#/history`, a Back press) reached `getElementById('view-…').classList` on a null
+// and threw an uncaught TypeError.
+//
+// A reference does not go null, so this is the fix rather than a null check around the same
+// lookup -- and it keeps the property the loop below exists for: a section that has just been
+// taken away still has its `.is-active` cleared on the way out, and therefore cannot be
+// reattached still wearing it. A null check would have skipped exactly that.
+// The map can still hold a null, for a destination listed here that the markup does not carry;
+// that is a wiring mistake rather than a state, and it is skipped rather than thrown on.
+const viewSection = new Map(VIEWS.map((id) => [id, document.getElementById('view-' + id)]));
+const viewLink = new Map(VIEWS.map((id) => [id, document.getElementById('nav-' + id)]));
 const nav = document.getElementById('nav');
 const navToggle = document.getElementById('navtoggle');
 
@@ -443,8 +548,10 @@ function route() {
   if (view === shownView) return;
   shownView = view;
   for (const id of VIEWS) {
-    document.getElementById('view-' + id).classList.toggle('is-active', id === view);
-    const link = document.getElementById('nav-' + id);
+    // Held references, not lookups — a detached section is not findable by id. See the map above.
+    viewSection.get(id)?.classList.toggle('is-active', id === view);
+    const link = viewLink.get(id);
+    if (!link) continue;
     // aria-current is both the announcement and the styling hook -- one source of truth, so
     // the highlighted item and the announced one cannot drift apart.
     if (id === view) link.setAttribute('aria-current', 'page');
@@ -452,6 +559,11 @@ function route() {
   }
   window.scrollTo(0, 0);
 }
+
+// The theme switcher, wired here rather than in theme.js so that this file stays the only
+// thing on the page that decides when a panel repaints. A change repaints what is on screen
+// and does nothing else -- see repaint().
+mountSwitcher(document.getElementById('theme-select'), () => repaint(true));
 
 navToggle.addEventListener('click', () => drawer(!navOpen));
 document.getElementById('navscrim').addEventListener('click', () => drawer(false));

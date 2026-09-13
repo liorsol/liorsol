@@ -114,8 +114,10 @@ test('nothing in the page can fetch on its own', () => {
     'views/auth.js',
     'views/he.js',
     'views/comments.js',
+    'views/contact.js',
     'views/controls.js',
     'views/history.js',
+    'views/sessions.js',
     'views/tariff.js',
   ]) {
     assert.equal(hits(source(name), SELF_MOVING), 0, `${name} grew something self-moving`);

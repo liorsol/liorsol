@@ -1,6 +1,27 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "albania", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8811"], "port": 8811 }
+    {
+      "name": "albania",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8811"
+      ],
+      "port": 8811
+    },
+    {
+      "name": "car-charging-page",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8813",
+        "--directory",
+        "car-charging"
+      ],
+      "port": 8813
+    }
   ]
 }

@@ -88,6 +88,61 @@ function cheapest(slices) {
   return price;
 }
 
+/**
+ * Which tier a price sits in against the published calendar. Pure.
+ *
+ *   'flat'     the calendar offers fewer than two distinct prices. There is no tier to name and
+ *              naming one would invent a window the charger never published
+ *   'peak'     the dearest price in the calendar
+ *   'offpeak'  the cheapest
+ *   'mid'      neither. Israel's TAOZ day has THREE rates, and the middle one used to be
+ *              painted -- and worded -- as the cheap one while the owner was paying ~1.6x the
+ *              true off-peak rate. That is the defect this function exists to make impossible
+ *   'unknown'  this slice carries no price at all
+ *
+ * A four-rate calendar is handled by construction: everything strictly between the dearest and
+ * the cheapest is 'mid'. Nothing here assumes how many rates a day has.
+ *
+ * Exported so a theme expresses the same tiers the strip paints rather than deriving its own —
+ * two themes had a private copy of this before it existed.
+ *
+ * @param {number|string|null} price
+ * @param {Array<object>} slices
+ * @returns {'flat'|'peak'|'mid'|'offpeak'|'unknown'}
+ */
+export function priceTier(price, slices) {
+  if (priceLevels(slices) < 2) return 'flat';
+  const p = num(price);
+  if (p === null) return 'unknown';
+  if (p === dearest(slices)) return 'peak';
+  if (p === cheapest(slices)) return 'offpeak';
+  return 'mid';
+}
+
+// Which tier is running, in words. Five leads for five tiers, and the middle one is the whole
+// point of the list: a day with גבע in it used to read "כרגע הפרוסה הזולה" while the owner was
+// on the middle rate paying about 1.6x the true off-peak price. That is the single most
+// expensive sentence this page can get wrong, because it is the sentence the dashboard exists
+// to print — so there is ONE spelling of it, here, and the theme that repaints this whole
+// paragraph reads it rather than carrying a copy that used to be binary too.
+const TIER_LEAD = {
+  peak: 'כרגע הפרוסה היקרה',
+  mid: 'כרגע פרוסת הביניים — לא היקרה ולא הזולה',
+  offpeak: 'כרגע הפרוסה הזולה',
+  // Fewer than two distinct prices: there is no cheap window to be in or out of.
+  flat: 'כרגע יש מחיר אחד בלוח',
+  // The slice covering this moment carries no price. It is not the cheap one and it is not the
+  // dear one; it is the one that did not say.
+  unknown: 'כרגע הפרוסה הנוכחית, והיא לא נקבה במחיר',
+};
+
+/**
+ * The opening clause of the flip sentence. Pure.
+ * @param {number|string|null} price the live slice's price
+ * @param {Array<object>} slices the published calendar
+ */
+export const tierLead = (price, slices) => TIER_LEAD[priceTier(price, slices)];
+
 // ── pure: price vs panel ────────────────────────────────────────────────────
 //
 // A suspension window is compared against the dearest slices by TIME OF DAY, not by
@@ -217,9 +272,18 @@ function tariffStrip(slices, nowMs) {
   const box = h('div', 'tariff');
   const scroller = h('div', 'scroll-x');
   const band = h('div', 'tariff__band');
-  // With a single price in the calendar nothing is "the dearest" — marking the whole
-  // day --peak would invent a peak window the charger never published.
-  const top = priceLevels(slices) >= 2 ? dearest(slices) : null;
+
+  // The modifier a slice and its legend key wear. THREE now, not two: a TAOZ day has three
+  // rates and the middle one was being drawn in the cheap window's colour.
+  // `flat` and `unknown` keep `--offpeak` rather than introduce a modifier no sheet styles:
+  // with a single price in the calendar nothing is "the dearest", and marking the whole day
+  // --peak would invent a peak window the charger never published. Neither of those two claims
+  // a tier; the legend below carries every real price and the sentence under it says which one
+  // is running.
+  const modifier = (price) => {
+    const tier = priceTier(price, slices);
+    return tier === 'peak' || tier === 'mid' ? tier : 'offpeak';
+  };
 
   // Percentages are of the viewer's local 24 h day, clipped to it.
   const dayStart = new Date(nowMs);
@@ -235,8 +299,7 @@ function tariffStrip(slices, nowMs) {
     const start = clamp(pct(from));
     const end = clamp(pct(to));
     if (end <= start) continue;
-    const isTop = top !== null && num(s.price) === top;
-    const slice = h('div', 'tariff__slice tariff__slice--' + (isTop ? 'peak' : 'offpeak'));
+    const slice = h('div', 'tariff__slice tariff__slice--' + modifier(s.price));
     // CSP blocks style="…"; --start/--end are percentage strings WITH the unit.
     slice.style.setProperty('--start', start.toFixed(1) + '%');
     slice.style.setProperty('--end', end.toFixed(1) + '%');
@@ -265,17 +328,17 @@ function tariffStrip(slices, nowMs) {
     // figure survives sitting in front of Hebrew without a wrapper of its own. "kWh" stays the
     // Latin SI symbol here and in every table header and tile: one spelling of the unit across
     // the page beats a second Hebrew one that has to be kept in step with it.
-    legend.appendChild(h('span', 'tariff__key tariff__key--' + (top !== null && p === top ? 'peak' : 'offpeak'),
+    legend.appendChild(h('span', 'tariff__key tariff__key--' + modifier(p),
       ils(p, 4) + ' ל־kWh, לפני מע״מ' + name));
   }
   if (legend.childNodes.length) box.appendChild(legend);
 
-  box.appendChild(flipLine(slices, nowMs, top));
+  box.appendChild(flipLine(slices, nowMs));
   return box;
 }
 
 // Always rendered — the band is decoration, this sentence is the answer.
-function flipLine(slices, nowMs, top) {
+function flipLine(slices, nowMs) {
   const line = h('p', 'tariff__flip');
   if (!slices.length) {
     line.textContent = 'התשובה האחרונה לא כללה לוח תעריפים, ולכן מועד ההחלפה הבא אינו ידוע.';
@@ -290,8 +353,7 @@ function flipLine(slices, nowMs, top) {
   }
   const price = num(live.price);
   line.appendChild(document.createTextNode(
-    (top === null ? 'כרגע יש מחיר אחד בלוח'
-      : price !== null && price === top ? 'כרגע הפרוסה היקרה' : 'כרגע הפרוסה הזולה')
+    tierLead(price, slices)
     + (live.name ? ' (' + String(live.name) + ')' : '')
     + (price === null ? '' : ', ' + ils(price, 4) + ' ל־kWh לפני מע״מ')
     + ' — '));
@@ -372,10 +434,20 @@ function explainer(session, slices, nowMs) {
   }
 
   if (verdict === 'panel-throttled') {
+    // The second place a middle-tier slice used to be called "the cheap one". This branch is
+    // reached whenever the withholding does not cross a dearest-priced window — which on a
+    // three-rate day includes sitting in גבע, where "הפרוסה הזולה כבר רצה" is simply false.
+    // The verdict is unchanged and correct; only the claim about WHICH slice is running had to
+    // stop being a guess.
+    const live = liveSlice(slices, nowMs);
+    const onCheapest = !!live && priceTier(live.price, slices) === 'offpeak';
     body.appendChild(h('p', 'suspend__title', 'מרוסן על ידי לוח החשמל בבניין'));
     body.appendChild(h('p', 'suspend__detail',
-      'זו אינה החלטת מחיר — זה עיכוב בלבד, ולא נחסך כסף. הפרוסה הזולה כבר רצה, '
-      + 'ולכן ההמתנה קונה זמן ותו לא.' + reported(rawStatusOf(session))));
+      'זו אינה החלטת מחיר — זה עיכוב בלבד, ולא נחסך כסף. '
+      + (onCheapest
+        ? 'הפרוסה הזולה כבר רצה, ולכן ההמתנה קונה זמן ותו לא.'
+        : 'ההמתנה אינה חוצה את החלון היקר, ולכן היא קונה זמן ותו לא.')
+      + reported(rawStatusOf(session))));
     return box;
   }
 

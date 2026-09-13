@@ -11,11 +11,22 @@
 //
 //   A VIEW SWITCH MAKES NO REQUEST.
 //
-// All four views are mounted and repainted by one `load()` round, so a menu press moves a class
+// All six views are mounted and repainted by one `load()` round, so a menu press moves a class
 // over DOM that already holds its data. Put a fetch behind a menu press and an idle page stops
-// being idle -- someone thumbing through four menu items spends four upstream calls, which is
+// being idle -- someone thumbing through six menu items spends six upstream calls, which is
 // the invocation budget the whole one-hour cache rule exists to protect. That is asserted here
 // by counting, not by reading the source.
+//
+// The two newest views are the ones this matters most for: their data does NOT come out of the
+// server's hour-old cached row, so a fetch on entry would look harmless and cost a round trip
+// every single time the menu item is pressed.
+//
+// The item count is fixed at six, always. `#/contact` used to be taken away together with its
+// menu item on `{"contact": null}` -- an unfillable blank card behind a permanent menu item was
+// a defect, so the fix was to hide both. It is not a defect any more: the card is editable from
+// the page itself now, so a blank card is the ENTRY POINT for filling it in, and it has to stay
+// reachable exactly as much as a full one does. This file asserts that directly: `#/contact`
+// routes the same way whether `/api/contact` answers a card or `{"contact": null}`.
 //
 // Ordered and sharing one module instance, like app.test.mjs: app.js bootstraps on import and a
 // page session is one load followed by presses.
@@ -44,6 +55,23 @@ const BODIES = {
   '/api/history': { fetchedAt: AT, stale: false, sessions: [], totals: { count: 0 } },
   '/api/invoices': { fetchedAt: AT, stale: false, invoices: [] },
   '/api/comments': { comments: [] },
+  // The two live routes. Neither carries a fetchedAt or a stale flag -- they are read on the
+  // far side every time -- and both are answered in the same round as the three above, which
+  // is the whole reason the menu can stay fetch-free with six items on it.
+  '/api/sessions': {
+    sessions: [
+      { jti: 'a', createdAt: AT, lastSeen: AT, userAgent: 'Mozilla/5.0 (iPhone)', location: 'IL', current: true },
+    ],
+  },
+  // Mutable: this file exercises BOTH shapes of the menu. `configured` is the six-item page;
+  // `{"contact": null}` is the five-item one, and the round that flips it is a test below.
+  // The value is a placeholder -- nothing real is written into a fixture in this repository.
+  '/api/contact': { contact: { name: 'PLACEHOLDER' } },
+};
+
+/** Put the contact route into one of its two states for the next round. */
+const configureContact = (on) => {
+  BODIES['/api/contact'] = { contact: on ? { name: 'PLACEHOLDER' } : null };
 };
 
 let signedIn = false;
@@ -65,7 +93,7 @@ async function until(predicate, what) {
 
 await import('../app.js');
 
-const VIEWS = ['status', 'history', 'invoices', 'comments'];
+const VIEWS = ['status', 'history', 'invoices', 'comments', 'sessions', 'contact'];
 const view = (name) => dom.get('#view-' + name);
 const link = (name) => dom.get('#nav-' + name);
 const nav = () => dom.get('#nav');
@@ -93,10 +121,41 @@ function onlyShown(name) {
 test('a signed-out page has no menu at all', async () => {
   await until(() => text(dom.get('.shell__main').children[0]).length > 0, 'the first round to paint');
 
-  // The sign-in card is the page in this state. A rail offering four destinations that are all
-  // detached from the document would put the one card that matters below four empty screens.
+  // The sign-in card is the page in this state. A rail offering six destinations that are all
+  // detached from the document would put the one card that matters below six empty screens.
   assert.equal(nav().hidden, true, 'the menu stayed up on a page with nothing behind it');
   assert.equal(toggle().hidden, true, 'the drawer handle stayed up on a signed-out page');
+});
+
+// ── The hash change that used to take the page down, and it was live ──
+//
+// Signed out cold, `paintAuthRequired()` detaches every `.view` section from <main>: the sign-in
+// card IS the page. A detached element is not findable by `document.getElementById`, and route()
+// reached straight into `getElementById('view-' + id).classList` for all six of them -- so ANY
+// hash change in this state threw an uncaught TypeError. It is not a contrived state either: a
+// bookmarked `#/history`, a Back press onto one, or a link the owner sent themselves all land
+// here, on the one screen where the only thing that matters is being able to ask for a sign-in
+// link. The card is still rendered, so the page LOOKS fine and the console is where the failure
+// went.
+//
+// Driven rather than read: the stub's getElementById now returns null for a detached node, the
+// way a browser does, so this test can only pass if route() does not depend on the lookup.
+test('a hash change on a signed-out page does not throw, and leaves the card alone', () => {
+  for (const name of VIEWS) assert.equal(inMain(name), false, `#view-${name} was still in <main>`);
+  const card = () => text(main().children[0]);
+  const before = card();
+  assert.match(before, /\S/, 'the sign-in card was not up on a cold signed-out page');
+
+  // A bookmark, a Back press, a typed hash, and the way back to the default.
+  for (const hash of ['#/history', '#/contact', '#history', '#/nonsense', '#/status', '']) {
+    dom.navigate(hash);
+  }
+
+  assert.equal(card(), before, 'a hash change disturbed the sign-in card');
+  // And no section quietly came back wearing `.is-active` while it was out of the document.
+  for (const name of VIEWS) {
+    assert.equal(inMain(name), false, `#view-${name} was reattached by a hash change`);
+  }
 });
 
 // ── Round 2: signed in ──
@@ -112,18 +171,20 @@ test('the default view is the current status and nothing else', async () => {
   assert.equal(nav().hidden, false, 'the menu did not come back with the data');
   onlyShown('status');
 
-  // The point of the whole change: the tariff and the controls are on screen, the other three
+  // The point of the whole change: the tariff and the controls are on screen, the other five
   // panels are mounted but behind a menu item.
   assert.match(text(view('status')), /\S/, 'the status view came up empty');
   assert.match(text(view('history')), /\S/, 'the history view was never filled');
   assert.match(text(view('invoices')), /\S/, 'the invoices view was never filled');
+  assert.match(text(view('sessions')), /\S/, 'the sessions view was never filled');
+  assert.match(text(view('contact')), /\S/, 'the contact view was never filled');
 });
 
 // ── The budget assertion ──
 
 test('walking the whole menu makes no request', () => {
   const before = calls;
-  for (const name of ['history', 'invoices', 'comments', 'status', 'history']) {
+  for (const name of ['history', 'invoices', 'comments', 'sessions', 'contact', 'status', 'history']) {
     dom.navigate('#/' + name);
   }
   assert.equal(calls, before, 'a menu press reached upstream');
@@ -187,4 +248,74 @@ test('the drawer opens on the handle and closes on the press that navigates', ()
   toggle().handlers.click();
   dom.get('#navscrim').handlers.click();
   assert.equal(nav().classes.has('is-open'), false, 'the scrim did not dismiss the drawer');
+});
+
+// ── #/contact stays reachable whether the card is full or empty ──
+//
+// This used to be "the destination the data can take away": `{"contact": null}` took the menu
+// item and the section away together, on the theory that an unfillable blank card behind a
+// permanent menu item was a defect. It is not a defect any more — the card is editable from the
+// page itself now (views/contact.js), so an empty card is the ENTRY POINT for filling it in, and
+// hiding it was reported back as "the contacts section doesn't work". These tests are the
+// replacement promise: `#/contact` is a plain sixth destination, full or empty, exactly like the
+// other five, with no on/off behaviour left to prove.
+
+const main = () => dom.get('.shell__main');
+const inMain = (name) => main().children.includes(view(name));
+
+/** Let the round finish, including the notes board's own fetch, before counting anything. */
+const settled = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+test('a configured card is a menu item and a routable view', async () => {
+  await settled();
+  assert.equal(link('contact').hidden, false, 'the item was missing while there was a card to show');
+  assert.equal(inMain('contact'), true, 'the section was not in <main> while there was a card to show');
+
+  dom.navigate('#/contact');
+  onlyShown('contact');
+});
+
+test('{"contact": null} does not take the item or the section away — it is now the way to fill it in', async () => {
+  // Standing ON the view when the data goes empty: the worst moment for a hiding rule to fire,
+  // and exactly the state a viewer is in the first time they open this card to fill it in.
+  onlyShown('contact');
+
+  configureContact(false);
+  await refresh().handlers.click();
+  await settled();
+
+  assert.equal(link('contact').hidden, false, 'the empty card lost its menu item');
+  assert.equal(inMain('contact'), true, 'the empty card was detached from <main>');
+  // The other five are untouched either way — this was never about them.
+  for (const name of ['status', 'history', 'invoices', 'comments', 'sessions']) {
+    assert.equal(link(name).hidden, false, `the ${name} item was disturbed by the contact card's own data`);
+    assert.equal(inMain(name), true, `the ${name} section was disturbed by the contact card's own data`);
+  }
+
+  // Still standing on it: an empty card is not a reason to be moved off the view.
+  onlyShown('contact');
+
+  // The deep link still lands there too, same as any other view.
+  dom.navigate('#/status');
+  dom.navigate('#/contact');
+  onlyShown('contact');
+
+  // Six items throughout, and walking them still costs nothing.
+  const before = calls;
+  for (const name of ['history', 'invoices', 'comments', 'sessions', 'contact', 'status']) {
+    dom.navigate('#/' + name);
+  }
+  assert.equal(calls, before, 'a menu press reached upstream');
+});
+
+test('the values coming back changes nothing about reachability, only what the card shows', async () => {
+  configureContact(true);
+  await refresh().handlers.click();
+  await settled();
+
+  assert.equal(link('contact').hidden, false);
+  assert.equal(inMain('contact'), true);
+
+  dom.navigate('#/contact');
+  onlyShown('contact');
 });

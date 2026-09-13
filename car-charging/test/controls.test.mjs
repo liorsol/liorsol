@@ -30,7 +30,8 @@ import { isLiveSession } from '../api.js';
 // reason these are renders rather than greps.
 installDocument();
 
-const { render, renderExpiry, release } = await import('../views/controls.js');
+const module = await import('../views/controls.js');
+const { render, renderExpiry, release, setBody } = module;
 
 const notes = (el) =>
   byClass(el, 'btn-note')
@@ -286,6 +287,170 @@ test('an upstream fault locks the controls, and says which kind of fault it is n
   assert.equal(button(el, 'התחלת טעינה').disabled, true, 'Start stayed live with no link to the charger');
   assert.match(notes(el), /אינה בעיית הרשאה/);
   assert.doesNotMatch(notes(el), /התקינו הרשאה חלופית/, 'a configuration fault sent the owner to paste a credential');
+});
+
+// ── The theme seam, and the one rule about the command path ──
+//
+// Five themes are being written in parallel against THEMES.md, and one of them puts a lever you
+// drag to the end of its slot where the stop button is. A theme may do that. What it may not do
+// is own the command behind it: there is one stop(), one busy flag, one settle poll and one
+// release(ctx, reload, force), and five code paths to a contactor is how this project gets hurt
+// -- it has already shipped two bugs inside this exact window.
+//
+// So the seam hands a builder the gate and two doors and nothing else, and these tests are what
+// says so. They RENDER a theme body, fire its affordance, and read the request that left.
+
+test('a theme body replaces the panel and is handed the gate, the ui state and the two doors', () => {
+  const seen = [];
+  setBody((gateIn, uiIn, pressIn) => {
+    seen.push({ gateIn, uiIn, pressIn });
+    return node('div');
+  });
+  paint({ state: { sessions: [running] } });
+  setBody(null);
+
+  assert.equal(seen.length, 1, 'the theme body was not used');
+  const { gateIn, uiIn, pressIn } = seen[0];
+  assert.equal(gateIn.startOff, true, 'the gate did not travel with the body');
+  assert.equal(gateIn.stopOff, false);
+  assert.equal(gateIn.session.sessionId, 'running-1', 'the body was not told which row is live');
+  assert.match(gateIn.reasons.join(' '), /טעינה כבר רצה/, 'the reason a control is locked did not travel');
+  assert.deepEqual(Object.keys(uiIn).sort(), ['busy', 'busyLabel', 'note', 'settle']);
+  assert.deepEqual(Object.keys(pressIn).sort(), ['start', 'stop'], 'the seam grew a third door');
+});
+
+test('a theme affordance stops the charge through the one command path', async () => {
+  const sent = [];
+  globalThis.fetch = async (path, init) => {
+    sent.push({ path, body: init?.body ? JSON.parse(init.body) : null });
+    if (path.startsWith('/api/charge/settle/')) return Response.json({ session: { completed: true } });
+    return Response.json({ session: { sessionId: 'running-1', completed: false } });
+  };
+
+  let door = null;
+  setBody((_gate, _ui, pressIn) => {
+    door = pressIn;
+    return node('div');
+  });
+  paint({ state: { sessions: [ended, running] } });
+
+  await door.stop();
+  setBody(null);
+
+  const stopCall = sent.find((call) => call.path === '/api/charge/stop');
+  assert.ok(stopCall, 'a theme affordance sent no stop command');
+  assert.equal(stopCall.body.sessionId, 'running-1', 'the theme path picked a different row from the button path');
+  assert.ok(
+    sent.some((call) => call.path.startsWith('/api/charge/settle/')),
+    'the theme path skipped the settle poll -- it must reuse it, never reimplement it'
+  );
+});
+
+test('a theme affordance cannot fire a command the gate has already locked', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    return Response.json({});
+  };
+
+  let door = null;
+  setBody((_gate, _ui, pressIn) => {
+    door = pressIn;
+    return node('div');
+  });
+  // No session: Stop is locked. A default button would be `disabled` and could not be clicked;
+  // a lever is a <div> with a listener and has no such protection, so the guard is on the door.
+  paint({ state: { sessions: [] } });
+  await door.stop();
+  // And the mirror: a charge is running, so Start is locked.
+  paint({ state: { sessions: [running] } });
+  await door.start();
+  setBody(null);
+
+  assert.equal(calls, 0, 'a locked control reached the charger');
+});
+
+// ── A REFUSAL THAT CAN NAME ITS REASON, AND STILL REFUSES ──
+//
+// `press` re-reads the gate at the moment of the call, and that read is the only CURRENT one:
+// app.js mutates the shared view object in place, so the gate a custom affordance was BUILT with
+// can already be out of date by the time a gesture completes -- which is exactly the case a
+// refusal has to explain. Both halves matter: the door must still refuse, and it must come back
+// with something a caller can put on screen. One theme had to split its refusal into two vaguer
+// messages because `undefined` carried no reason at all.
+test('a refused press comes back with the reason, read at the moment of the press', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    return Response.json({});
+  };
+
+  let door = null;
+  setBody((_gate, _ui, pressIn) => {
+    door = pressIn;
+    return node('div');
+  });
+
+  // Built against a page with a charge running: Start is locked.
+  paint({ state: { sessions: [running] } });
+  const held = door.start();
+  assert.equal(held.ok, false, 'a locked door did not report itself refused');
+  assert.match(held.reasons.join(' '), /טעינה כבר רצה/, 'the refusal carried no reason');
+
+  // The page moves under the affordance -- the sign-in ends -- and the SAME door is pressed.
+  // The reason has to be the one that is true now, not the one the builder was handed.
+  paint({ state: { sessions: [running] }, authRequired: true });
+  const bounced = door.stop();
+  assert.equal(bounced.ok, false, 'an ended sign-in did not shut the door');
+  assert.match(
+    bounced.reasons.join(' '),
+    /ההתחברות לדף הסתיימה/,
+    'the refusal quoted a stale reason instead of the one that is true at the moment of the press'
+  );
+  assert.doesNotMatch(bounced.reasons.join(' '), /טעינה כבר רצה/, 'the refusal was read off a stale gate');
+  setBody(null);
+
+  // And the whole point: naming the reason did not open the door.
+  assert.equal(calls, 0, 'a refused press reached the charger');
+});
+
+test('the gate carries staleness, so a body does not have to reach for a CSS ancestor', () => {
+  // It does NOT lock anything: stale data is still the only data there is, and a control that
+  // refused to work whenever the network hiccuped would be its own defect. It is exposed because
+  // a theme that animates a figure while energy flows has to stop moving a number the page can
+  // no longer vouch for, and it used to read that off `.stale`, app.js's wrapper element.
+  const fresh = module.gate({ state: { sessions: [running] }, stale: false });
+  assert.equal(fresh.stale, false);
+  assert.equal(fresh.stopOff, false, 'freshness was made a precondition of stopping');
+
+  const old = module.gate({ state: { sessions: [running] }, stale: true });
+  assert.equal(old.stale, true, 'the gate cannot see staleness at all');
+  assert.equal(old.stopOff, false, 'stale data locked a control it has no business locking');
+  assert.deepEqual(old.reasons, fresh.reasons, 'staleness grew a reason and changed what the panel says');
+});
+
+test('setBody(null) gives the panel its own body back', () => {
+  setBody(() => node('div'));
+  paint({ state: { sessions: [running] } });
+  setBody(null);
+  const el = paint({ state: { sessions: [running] } });
+  assert.ok(button(el, 'עצירה'), 'the default buttons did not come back');
+});
+
+// The surface a theme can reach, pinned. Widening it is how "a theme may change how the stop
+// control looks" becomes "a theme owns the stop command": export onStart, or the settle poll,
+// or the ui object itself, and a theme body can drive the contactor without the gate.
+test('the module exports the seam and nothing that reaches past it', () => {
+  assert.deepEqual(
+    Object.keys(module).sort(),
+    // STANDING_NOTE is a string, not a door: it is the sentence saying there is no charge-now
+    // control and no off-peak scheduler, and it is exported so the five themes that replace this
+    // body render the module's copy instead of each keeping their own.
+    ['STANDING_NOTE', 'gate', 'press', 'release', 'render', 'renderExpiry', 'setBody'],
+    'views/controls.js changed what a theme can reach. The command itself -- onStart, onStop, ' +
+      'the busy flag, both polls -- is module-private on purpose; a theme gets the gate, a ' +
+      'snapshot of the ui state and the two guarded doors, and nothing else.'
+  );
 });
 
 // ── The parameter that has no default, and must not grow one ──

@@ -912,11 +912,37 @@ for the parking question and the release times settled. All of it was verified a
    and its availability on 25.9 could not be verified; the webshop is a session-gated SPA),
    Sentiero 1 and Sentiero 6.
 
-**Pushback that is on the page, deliberately.** Friday is the *worst* release day of the trip:
-one hour, against **five** on Sat/Sun (11:00–13:00 *and* 15:00–18:00), and Deruta→Marmore is only
-77 km / ~1:10. The card says so and proposes going anyway — **the detour costs 35 km and 35
-minutes over the direct route** — then returning at the weekend if it lands well. **The decision
-is the family's and the plan on the page is the Friday one**; don't quietly re-plan it.
+**⚠️ The "Friday gives one hour vs five" line was wrong, and the user caught it.** The honest
+numbers, re-fetched from the official page on 13.9.2026 and pasted here so nobody re-derives them:
+
+```
+DAL 14 AL 30 SETTEMBRE          (the band containing 25 Sep)
+  APERTURA PARCO   Feriali 10.00-18.00   ·  Sab/Dom 10.00-19.00
+  RILASCIO ACQUA   Feriali 11.00-13.00 + 15.00-16.00
+                   Sab/Dom 11.00-13.00 + 15.00-18.00
+OTTOBRE                          (NOT our dates)
+  APERTURA PARCO   Feriali 10.00-17.00
+```
+
+**Friday's total is 3 hours, not 1. The weekend's is 5, not 5-vs-1.** The gap is two hours, not
+four. The "one hour" figure was the *reachable* afternoon window being compared against the
+weekend *total* — two different quantities. Fixed on the page.
+
+**And the old page's "park 10:00–17:00 on weekdays" was October's row, not September's.** That is
+an easy row to grab off that table; the September 14–30 weekday closing time is **18:00**.
+
+**What actually constrains the day is the car, not the schedule.** With the 09:00 Goldcar
+pick-up the convoy leaves Fiumicino ~11:00 and reaches Marmore ~13:30, so the 11:00–13:00 window
+has closed and only 15:00–16:00 is left. **If the pick-up can be moved earlier the morning window
+opens and is the better plan** — arrive 10:35, at Byron by 11:20, 1h40 of water, away at 13:00,
+Deruta by 14:15 with the whole afternoon free. Both timelines are on the card. This is live:
+the family may be amending the booking anyway over the out-of-hours return, and the desk's actual
+opening hour is being checked.
+
+**An hour at the falls is enough**, and the card now says so. For the flat Byron route plus a
+wander, 60 minutes at full flow is the right length and about the maximum a jet-lagged 3-year-old
+will give. The extra weekend hours are slack, not need. The weekend-return suggestion stays on
+the card as an option, not as a correction to the family's decision.
 
 **Other facts now on the card, all from the official site:** tickets €12 / €10 (5–9 and 70+) /
 free 0–4, **6 gate accesses per ticket** (so the optional upper-belvedere stop costs no extra

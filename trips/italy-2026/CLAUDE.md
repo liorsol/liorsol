@@ -802,6 +802,77 @@ R44/04 is still legal here. The page now says **the label on the seat decides** 
 the exact Italian wording could not be verified from an official source (poliziadistato 404s;
 the ACI article page did not render its text). **Verify before repeating either version.**
 
+## Lunch at Marmore — and why the page's picnic advice was reversed
+
+**`Favorito dal 1945 Bistrò`, SS Valnerina 209, Collestatte Piano** — `42.5638626, 12.7274643`,
++39 348 878 7002, ~2.3 km / 4 min from Belvedere Inferiore.
+
+**The whole kitchen is gluten-free and lactose-free** — not a GF menu inside a mixed kitchen.
+Opened March 2025 by Francesco Favorito, a known Italian GF pastry maker. **Every day
+08:00–22:00, continuous, no weekly closing day** — which is the fact that actually decided it:
+it works unchanged for *both* the 15:00 plan and the 11:00 one, where nearly every other
+candidate in the valley shuts its kitchen at 14:00–15:00. €20–30 pp, 4.7 from 115 reviews,
+17 of them tagged "celiac".
+
+**The page's old "picnic from home, and not a discussion" line is gone.** That reasoning was
+sound *while the assumption held that nothing near Marmore could safely feed a coeliac child*.
+It doesn't any more. A picnic now buys allergen control that is available at a table, and costs
+a 30–45 minute Terni supermarket detour on the one day with no slack, by people who have had
+four hours' sleep. **What replaced it: book the restaurant, and carry a small GF emergency bag**
+— covers "they can't seat nine" and "she won't eat it" for the price of one bag and zero minutes.
+
+**Inside the park: nothing is published about allergens by anyone** — not the park, not any
+kiosk. Fine for the other eight; **the coeliac child should not eat inside the gates.** That part
+of the old advice stands and is kept.
+
+⚠️ **Peanut is unresolved and must stay that way on the page.** No venue in the area publishes
+anything. Worse for this one specifically: a GF kitchen leans on nut flours, and this one
+advertises almond pesto and pistachio mortadella. **Tree nuts are not peanuts**, but the
+conversation has to happen explicitly, at booking and again at the table. The page says so twice.
+
+**AIC's directory is member-gated** — the national `Alimentazione Fuori Casa` search needs a
+membership code, and AIC Umbria's own Terni page just redirects to it. **Don't send anyone there
+expecting a list.** And the chavruta point, which is on the page: **a 100% GF kitchen beats an
+AIC-accredited mixed one** for this child, because the failure mode AIC accreditation manages —
+cross-contact — does not exist when there is no gluten in the building. AIC Umbria will answer
+by email (info@celiachiaumbria.it) if the badge is wanted anyway.
+
+**Backup: `Osteria La Cascata`**, SS Valnerina 46, `42.555188, 12.7095499`, +39 0744 080993 —
+500 m from the car park, **Friday 12:00–15:30 continuous**, the longest Friday lunch window found.
+Makes **no GF claim**, so the coeliac child eats from the bag there. Closed Tue/Wed/Thu, an odd
+pattern that can signal seasonal operation — phone-check it.
+
+**Fastest: `La cascata dei sapori`**, Via della Cascata 42, +39 349 109 0231 — walkable from the
+car park, 09:00–23:00, €10–20, takeaway. Not for the coeliac child.
+
+### Two ghosts, and the lesson from the earlier bad pass
+
+**`Trattoria del Buongusto` (Marmore) is permanently closed** and its domain no longer resolves —
+yet it is *still* the top "gluten-free near Marmore" recommendation on several travel blogs,
+**including ones citing its GF menu**. That is almost certainly one of the four non-existent
+restaurants an earlier pass on this project put on the page. **`Trattoria Foco` next door shows
+closed all seven days.** Both are named on the page so nobody re-adds them.
+
+Every venue now on the page was confirmed from a live listing with current reviews and/or its own
+domain. **Keep doing that.** The entry that most looks like a trap — a celebrity chef's
+gluten-free bistro 1.5 km from the car park — is the best-evidenced one in the set.
+
+### Also recorded
+
+The **booking phone script** is on the Marmore card in Italian and Hebrew, with the three
+questions that need explicit answers (nine covers at 13:15 · can we eat in 45 minutes · peanuts
+in the kitchen). **The full waiter scripts already existed** in the food view — AIC's own official
+coeliac wording in `#food/gf` and the correct `arachidi` phrasing in `#food/peanut` — so the card
+links to them rather than duplicating a weaker free translation.
+
+**Autogrill is genuinely in AIC's network** (270+ sites, packaged GF plus frozen GF meals
+reheated in a dedicated microwave — nothing cooked on site, which is what makes it safe). **But
+"270+" is not "all", and Feronia and Flaminia specifically could not be verified.** Fine as an
+opportunistic snack; not a plan for a coeliac child at 06:00.
+
+**The official falls site is `cascatadellemarmore.info`, not `.it`** — the `.it` domain was
+returning 502 throughout. The page already links to `.info`; keep it that way.
+
 ## The comments pass (Sep 2026) — what the family asked for on the boards, and what was done
 
 Eleven comments were read off the live boards, acted on, and then deleted from the DB. **Deleting

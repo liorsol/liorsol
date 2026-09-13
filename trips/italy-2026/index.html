@@ -30,8 +30,20 @@
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
+  /* The page must not pan sideways. Two separate causes, two separate fixes —
+     `user-scalable=no` is NOT one of them: iOS Safari has ignored it since iOS 10,
+     and it would break pinch-zoom for anyone who needs it.
+     1. Something wider than the viewport (a long table, a long URL) makes the whole
+        document pannable, and then a pinch leaves the page visually off-centre.
+        `overflow-x:clip` on both html and body stops that at the root. `clip` rather
+        than `hidden` on purpose: `hidden` on html turns the element into a scroll
+        container and kills `position:sticky` / smooth scrolling inside it.
+     2. The focus zoom on tapping an input is fixed where it is caused — see
+        `.board-form input` below, which is now 16px. */
+  html,body{overflow-x:clip; max-width:100%}
   body{margin:0; background:var(--sand); color:var(--ink);
-    font-family:'Assistant',sans-serif; font-size:17px; line-height:1.7; -webkit-font-smoothing:antialiased}
+    font-family:'Assistant',sans-serif; font-size:17px; line-height:1.7; -webkit-font-smoothing:antialiased;
+    text-size-adjust:100%; -webkit-text-size-adjust:100%}
   h1,h2,h3,h4{font-family:'Suez One',serif; font-weight:400; line-height:1.2; color:var(--sea)}
   .wrap{max-width:980px; margin:0 auto; padding:0 20px}
   a{color:var(--terra-deep)}
@@ -77,6 +89,7 @@
   .wx-day .i{font-size:22px; line-height:1.35}
   .wx-day .t{font-family:'Heebo',sans-serif; font-weight:900; color:var(--sea); font-size:15px}
   .wx-day .w{font-size:11.5px; color:var(--ink-soft)}
+  .wx-h{font-family:'Heebo',sans-serif; font-weight:700; font-size:14px; color:var(--ink-soft); margin:16px 0 0}
   .src{font-size:12px; color:var(--ink-soft); margin:9px 0 0}
   .fx{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px}
   .fx span{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px; padding:5px 11px;
@@ -181,7 +194,10 @@
   .board-form{display:flex; flex-direction:column; gap:8px; background:var(--paper);
     border:1px solid var(--line); border-radius:14px; padding:14px 16px}
   .board-form .row{display:flex; gap:8px; flex-wrap:wrap}
-  .board-form input,.board-form textarea{font-family:'Assistant',sans-serif; font-size:15px;
+  /* 16px is NOT a style choice — it is the threshold below which iOS Safari zooms the
+     whole page in when a field takes focus, and then leaves it panned sideways.
+     Do not lower it. */
+  .board-form input,.board-form textarea{font-family:'Assistant',sans-serif; font-size:16px;
     border:1.5px solid var(--line); border-radius:10px; padding:8px 11px; background:#fff; color:var(--ink); width:100%}
   .board-form input:focus,.board-form textarea:focus{outline:2px solid var(--azure); outline-offset:1px; border-color:var(--azure)}
   .board-form .who{flex:0 0 170px; min-width:130px}
@@ -238,6 +254,21 @@
   details summary:hover{color:var(--sea)}
   details > *:not(summary){margin-top:8px}
 
+  /* A note box that is itself a <details> (user's request, Sep 2026: the note boxes in
+     the day cards open on a tap instead of sitting open). Native element, no JS —
+     it keeps keyboard focus, Ctrl-F inside a closed box, and the print rule below.
+     The note keeps its own box; only the plain `details` chrome above is undone, and
+     the heading is re-styled back into `.nh` with the disclosure arrow in front of it. */
+  details.note{border-top:none; padding-top:15px}
+  details.note > summary{color:var(--terra-deep); font-weight:900; font-size:inherit;
+    align-items:flex-start; gap:8px; margin:0}
+  details.note.q > summary{color:#375072}
+  details.note > summary::before{margin-top:.45em; flex:none; opacity:.75}
+  details.note > summary:hover{color:var(--sea)}
+  details.note > *:not(summary){margin-top:7px}
+  /* Print: a paper copy has no taps, so every box prints open. */
+  @media print{ details.note > summary::before{content:""} }
+
   /* TAGS */
   .tags{display:flex; flex-wrap:wrap; gap:6px; margin:3px 0}
   .tag{font-family:'Heebo',sans-serif; font-weight:700; font-size:12px; padding:3px 10px; border-radius:999px; border:1px solid}
@@ -279,12 +310,33 @@
   .note.q{background:#eef3f8; border-color:#ccdaea}
   .note .nh{font-family:'Heebo',sans-serif; font-weight:900; color:var(--terra-deep); margin-bottom:2px}
   .note.q .nh{color:#375072}
+  /* A numbered list inside a note. Exists because a priority-ordered list written as one
+     run-on paragraph separated by "·" is unreadable on a phone — every item gets its own
+     line. `padding-inline-start` (not `padding-right`) so the markers sit correctly in RTL. */
+  .note .qlist{margin:8px 0 0; padding-inline-start:22px}
+  .note .qlist>li{margin-bottom:7px}
+  .note .qlist>li::marker{font-family:'Heebo',sans-serif; font-weight:900; color:#375072}
+  .note .qlist>li:last-child{margin-bottom:0}
 
   /* tables / lists */
   table.h{width:100%; border-collapse:collapse; margin-top:8px; font-size:14.5px}
   table.h th,table.h td{border:1px solid var(--line); padding:8px 10px; text-align:right; vertical-align:top}
   table.h th{background:var(--sea); color:#fff; font-family:'Heebo',sans-serif; font-weight:700}
   table.h tr:nth-child(even){background:var(--sand-2)}
+
+  /* Live flight status chips. `sched` is the resting state — the dataset only
+     reaches ~3 days ahead, so for most of this page's life that is what shows,
+     and it must read as an answer ("these are the timetable times"), not as a
+     failure. `dir:ltr` on the time because a clock reading is LTR in an RTL page. */
+  .fchip{display:inline-block; font-family:'Heebo',sans-serif; font-weight:700; font-size:12.5px;
+    line-height:1.5; padding:2px 9px; border-radius:999px; white-space:nowrap; border:1.5px solid}
+  .fchip.sched{background:#f2efe8; border-color:#ddd5c5; color:var(--ink-soft); font-weight:500}
+  .fchip.ok   {background:#eaf4ec; border-color:#b6d9bf; color:#20502f}
+  .fchip.done {background:#eef2f8; border-color:#c3d3e6; color:#2f4a6e}
+  .fchip.warn {background:#fdf3e3; border-color:#e8cf9c; color:#7a5410}
+  .fchip.bad  {background:#fbe9e6; border-color:#eab5a9; color:#8c2d18}
+  .fnow{font-family:'Heebo',sans-serif; font-weight:900; font-size:13px; color:#8c2d18; margin-top:3px; direction:ltr; text-align:right}
+  .fterm{font-size:11.5px; color:var(--ink-soft); margin-top:2px}
   .two{display:grid; grid-template-columns:1fr 1fr; gap:14px}
   /* One restaurant, rendered from restaurants.json. */
   .rest{padding:11px 0; border-bottom:1px dashed var(--line-soft)}
@@ -306,7 +358,11 @@
   footer b{color:#f3d79a}
 
   @media (max-width:640px){ body{font-size:16px} .two{grid-template-columns:1fr} }
-  @media print{ nav,.navtoggle,.navscrim{display:none} body{padding-inline-start:0} .view{display:block!important} #view-map{display:none!important} header.hero{padding:24px 0 40px} .card,.region,.note,.tile{box-shadow:none} details summary{display:none} }
+  /* Print. CSS cannot force a closed <details> to reveal its children — that is the
+     `open` attribute's job, so trip.js sets it on `beforeprint` and puts it back after.
+     Here we only drop the "◂ read more" affordance, which means nothing on paper.
+     A NOTE's summary is its heading, though, so that one stays. */
+  @media print{ nav,.navtoggle,.navscrim{display:none} body{padding-inline-start:0} .view{display:block!important} #view-map{display:none!important} header.hero{padding:24px 0 40px} .card,.region,.note,.tile{box-shadow:none} details:not(.note)>summary{display:none} }
 
   /* PREVIEW — one image at the head of a day card, hotlinked from the CDN of the
      ChatGPT research doc. That CDN is not ours and its links expire, so trip.js
@@ -409,11 +465,47 @@
         <b>בערב שלפני, יום חמישי 24 בספטמבר, בסביבות 21:55</b>. <b>לוודא שההזמנה היא ל-24.9</b>,
         ולתכנן את היום ההוא: יציאה לשדה בערב, לא בבוקר.</div>
 
-      <table class="h">
-        <tr><th>טיסה</th><th>המראה</th><th>נחיתה</th><th>מה זה אומר</th></tr>
-        <tr><td><b>הלוך · חמישי 24.9</b><br>Wizz Air <b><a href="https://www.google.com/search?q=W46044+flight+status" target="_blank" rel="noopener">W4 6044</a></b> · <b>טרמינל 3</b> ב-FCO</td><td>תל אביב (TLV) <b>~21:55</b></td><td>רומא (FCO) <b>00:45</b> בשישי 25.9</td><td>יוצאים מהטרמינל ~01:30 ← הסעה ב-02:00</td></tr>
-        <tr><td><b>חזור · רביעי 30.9</b><br>Wizz Air <b><a href="https://www.google.com/search?q=W46041+flight+status" target="_blank" rel="noopener">W4 6041</a></b> · <b>טרמינל 3</b></td><td>רומא (FCO) <b>05:30</b></td><td>תל אביב (TLV) <b>~10:00</b></td><td>מסירת מזוודות נפתחת <b>02:30</b>, נסגרת <b>04:30</b></td></tr>
+      <table class="h" id="flighttbl">
+        <tr><th>טיסה</th><th>המראה</th><th>נחיתה</th><th>סטטוס</th><th>מה זה אומר</th></tr>
+        <tr data-fl="W4 6044" data-date="2026-09-24" data-from="TLV" data-to="FCO">
+          <td><b>הלוך · חמישי 24.9</b> · שתי המשפחות<br>Wizz Air <b>W4 6044</b> · <b>טרמינל 1</b> בנתב״ג · <b>טרמינל 3</b> ב-FCO<br><a href="https://www.flightaware.com/live/flight/WZZ6044" target="_blank" rel="noopener">מעקב חי ב-FlightAware ↖</a></td>
+          <td>תל אביב (TLV) <b>~21:55</b></td>
+          <td>רומא (FCO) <b>00:45</b> בשישי 25.9</td>
+          <td class="fstat"></td>
+          <td>יוצאים מהטרמינל ~01:30 ← הסעה ב-02:00</td></tr>
+        <tr data-fl="W4 6041" data-date="2026-09-29" data-from="FCO" data-to="TLV">
+          <td><b>חזור · שלישי 29.9</b> · <b>משפחה אחת בלבד</b><br>Wizz Air <b>W4 6041</b> · <b>טרמינל 3</b> בשני הצדדים<br><a href="https://www.flightaware.com/live/flight/WZZ6041" target="_blank" rel="noopener">מעקב חי ב-FlightAware ↖</a></td>
+          <td>רומא (FCO) <b>05:30</b></td>
+          <td>תל אביב (TLV) <b>~10:00</b></td>
+          <td class="fstat"></td>
+          <td>מסירת מזוודות <b>02:30–04:30</b> · <b>יום לפני השאר</b></td></tr>
+        <tr data-fl="W4 6041" data-date="2026-09-30" data-from="FCO" data-to="TLV">
+          <td><b>חזור · רביעי 30.9</b> · <b>המשפחה השנייה</b><br>Wizz Air <b>W4 6041</b> · <b>טרמינל 3</b> בשני הצדדים<br><a href="https://www.flightaware.com/live/flight/WZZ6041" target="_blank" rel="noopener">מעקב חי ב-FlightAware ↖</a></td>
+          <td>רומא (FCO) <b>05:30</b></td>
+          <td>תל אביב (TLV) <b>~10:00</b></td>
+          <td class="fstat"></td>
+          <td>מסירת מזוודות <b>02:30–04:30</b></td></tr>
       </table>
+      <p class="src" id="fstat-src">עמודת הסטטוס נמשכת מ<b>לוח הטיסות הפתוח של רשות שדות התעופה</b>
+        (data.gov.il), ומתעדכנת בכל טעינה של הדף. <b>הלוח מגיע כ-3 ימים קדימה בלבד</b> — עד
+        אז השורות יקראו ״לפי לוח הזמנים״, וזו התשובה הנכונה ולא תקלה. ביום הטיסה מופיעים שם
+        הסטטוס, השעה בפועל והטרמינל בנתב״ג. <b>לצד רומא אין מקור חינמי מקביל</b>, ולכן על
+        השער וסרט המזוודות ב-FCO עונה הקישור ל-FlightAware שבכל שורה. הדף לא שומר את הנתון
+        הזה במטמון — סטטוס ישן גרוע מאין סטטוס.</p>
+
+      <div class="note warn"><div class="nh">⚠️ החזרה מתפצלת: משפחה אחת טסה ב-29.9, השנייה ב-30.9</div>
+        <b>אותו מספר טיסה, אותה שעה — יום הפרש.</b> זה לא פרט טכני, זה משנה את סוף הטיול:
+        <ul class="qlist">
+          <li><b>שני לילות פרידה, לא אחד.</b> משפחת 29.9 עוזבת את דרוטה כבר
+            <b>בערב 28.9</b> ונוסעת לשדה בלילה — כלומר <b>הלילה האחרון המשותף הוא 27→28.9</b>.</li>
+          <li><b>שתי החזרות רכב נפרדות</b>, בשני לילות שונים, שתיהן בסביבות 02:30 ובשעה
+            שהדלפק סגור. <a href="#last/carback">נוהל ההחזרה ←</a></li>
+          <li><b>חדר ה-Day-use ל-29.9</b> רלוונטי רק למשפחה שנשארת. מי שטס ב-29.9 צריך
+            את המקבילה שלו <b>ל-28.9</b>. <a data-view="last">היום האחרון ←</a></li>
+          <li><b>הצ׳ק-אאוט בדרוטה</b> — לוודא מול המקום ששתי הדירות לא חייבות להתפנות
+            באותו יום, ומה קורה למשפחה שנשארת לילה נוסף.</li>
+        </ul>
+        <b>לאמת את שני הכרטיסים בנפרד</b> — קל להניח שההזמנות זהות כשמספר הטיסה זהה.</div>
 
       <div class="note"><div class="nh">🎯 המספר שמסדר את כל הלילה האחרון: 02:30</div>
         Wizz Air מפרסמת במפורש ש-<b>ב-FCO דלפקי מסירת המזוודות נפתחים 180 דקות לפני ההמראה
@@ -421,17 +513,14 @@
         כלומר החזרת הרכבים ב-02:30 מתלכדת בדיוק עם פתיחת הדלפקים — <b>אין המתנה מיותרת,
         ואין סיכון.</b> <a data-view="last">התכנית ליום האחרון ←</a></div>
 
-      <div class="note warn"><div class="nh">⚠️ עם דרכון ישראלי אי אפשר לדלג על הדלפק</div>
-        Wizz Air כותבת במפורש: מי שמחזיק מסמכי נסיעה שאינם אירופיים <b>חייב להגיע לדלפק
-        הצ׳ק-אין כדי שהמסמכים ייבדקו וכרטיס העלייה ייחתם</b> — גם למי שטס בלי מזוודה.
-        <b>לא לבנות על ״יש לנו רק תיקי יד, ניכנס ישר לביקורת״.</b></div>
-
       <details><summary>מזוודות, צ׳ק-אין, וסיכון התאריכים שכדאי להכיר</summary>
         <p style="margin:0"><b>⚠️ סוכות 2026 נופל על 26–30 בספטמבר, וערב סוכות הוא 25.9.</b> שתי הטיסות יושבות בתוך שבוע החג הישראלי — בדיוק התקופה שבה Wizz Air משנה שעות ומוסיפה טיסות. <b>לצלם את אישור ההזמנה, ולבדוק את ״Manage Booking״ שבוע לפני</b>: שינוי שעה של חצי שעה בטיסה של 05:30 הוא שינוי בכל תכנית הלילה.</p>
         <p style="margin:0"><b>תא יד חינם: 40×30×20 ס״מ, עד 10 ק״ג</b>, וחייב להיכנס מתחת למושב. <b>WIZZ Priority</b> מאפשר טרולי של <b>55×40×23 ס״מ</b> בתא העליון. המידות אינן כוללות ידיות וגלגלים, אבל ״הגלגלים לא יוסיפו יותר מ-5 ס״מ״. <b>וכרית צוואר אינה פריט נוסף חינם</b> אצלם.</p>
         <p style="margin:0"><b>מזוודות: 10 / 20 / 26 / 32 ק״ג</b> — מקסימום מזוודה אחת של 10 ק״ג לנוסע, ועד 6 פריטים. <b>מחיר עודף משקל בשדה: €13 לק״ג</b>, מה שהופך שקילה בבית לכדאית. <b>עגלת תינוק אחת לילד — חינם.</b></p>
         <p style="margin:0"><b>צ׳ק-אין מקוון חינם</b>, ונפתח 30 יום מראש למי שקנה מושב, או רק <b>24 שעות מראש</b> למי שלא. נסגר 3 שעות לפני. <b>צ׳ק-אין בדלפק בתשלום.</b> כרטיס עלייה חייב להיות בשער <b>לא פחות מ-30 דקות לפני ההמראה</b>. ילדים מתחת ל-14 נרשמים על ידי נוסע מעל 16.</p>
-        <p style="margin:0"><b>טרמינל:</b> רשות שדות התעופה של רומא מציינת ב<b>רשימת המפעילות הרשמית שלה</b> ש-Wizz Air Malta (W4) עובדת מ<b>טרמינל 3</b> — בשני הכיוונים. אתרים שכותבים אחרת סותרים את מפעילת השדה. <b>בתל אביב</b> המקורות פחות ברורים (טרמינל 1 לפי שניים, טרמינל 3 לפי אחד) — <b>לבדוק בכרטיס.</b></p>
+        <p style="margin:0"><b>טרמינל ברומא:</b> רשות שדות התעופה של רומא מציינת ב<b>רשימת המפעילות הרשמית שלה</b> ש-Wizz Air Malta (W4) עובדת מ<b>טרמינל 3</b> — בשני הכיוונים. אתרים שכותבים אחרת סותרים את מפעילת השדה.</p>
+        <p style="margin:0"><b>✅ טרמינל בנתב״ג — נסגר.</b> לוח הטיסות של <b>רשות שדות התעופה עצמה</b> מראה בעקביות, על כל התאריכים שיש בו: <b>W4 6044 ממריאה מטרמינל 1</b>, ו-<b>W4 6041 נוחתת בטרמינל 3</b>. כלומר <b>יוצאים מ-1 וחוזרים ל-3</b>, וזה גם מה שעמודת הסטטוס למעלה תציג ביום עצמו. <b>הכרטיס עדיין הקובע</b> — טרמינל יכול להשתנות — אבל זו כבר לא שאלה פתוחה.</p>
+        <p style="margin:0"><b>ושימו לב לשעת ההמראה:</b> באותו לוח, <b>6044 ממריאה ב-19:40 בחלק מהימים וב-21:55 באחרים</b> — התבנית משתנה לפי יום בשבוע. <b>אל תניחו את השעה מהטבלה הזאת</b>; ביום שבו הטיסה נכנסת לטווח, עמודת הסטטוס תציג את השעה האמיתית.</p>
         <p style="margin:0"><b>בתל אביב:</b> מסירת מזוודות נפתחת 180 דקות לפני ונסגרת 70 דקות לפני — לטיסה של 21:55 זה <b>18:55 עד 20:45</b>. ולזכור שבנתב״ג יש גם בידוק ביטחוני שלא נכנס לחלון הזה.</p>
         <p style="margin:0"><b>הנחיתה בארץ:</b> בוקר יום רביעי, בסביבות 10:00. מי אוסף, ואיך — לסדר לפני הנסיעה, כי אחרי לילה בלי שינה זה לא הזמן לאלתר.</p>
         <p style="margin:0" class="src">שעת ההמראה מ-TLV ושעת הנחיתה בארץ הן ממערכות לוחות זמנים של צד שלישי, לא מהאתר של Wizz Air (שלא נגיש מכאן) — <b>המקורות מסכימים על התבנית השבועית אבל אף אחד מהם לא מאשר את התאריך המסוים.</b> הכרטיס הוא הקובע.</p>
@@ -442,7 +531,12 @@
     <div class="card" id="weather" style="display:none"><h3>🌡️ מזג האוויר <a class="anchor" href="#home/weather" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
       <p class="gist" id="wx-sub"></p>
       <div class="wx-days" id="wx-days"></div>
-      <p class="src">מקור: Open-Meteo · מתעדכן בכל טעינה. סוף ספטמבר באומבריה זו עונת מעבר: הימים נוחים, אבל ההפרש בין שיא היום ללילה גדול, ויש סיכוי לגשם. <b>אחוז הגשם מוצג לצד שם המקום</b> — הוא מה שקובע אם היום הוא יום בריכה או יום עיירה.</p>
+      <!-- Second strip: Rome, same dates. Hidden until the fetch fills it. -->
+      <div id="wx-roma" style="display:none">
+        <p class="wx-h">🏛️ ורומא, לאותם ימים</p>
+        <div class="wx-days" id="wx-roma-days"></div>
+      </div>
+      <p class="src">מקור: Open-Meteo · מתעדכן בכל טעינה. סוף ספטמבר באומבריה זו עונת מעבר: הימים נוחים, אבל ההפרש בין שיא היום ללילה גדול, ויש סיכוי לגשם. <b>אחוז הגשם מוצג לצד שם המקום</b> — הוא מה שקובע אם היום הוא יום בריכה או יום עיירה. <b>רומא חמה בדרך כלל ב-2–4 מעלות מדרוטה</b> — רלוונטי ליום האחרון, שרובו בעיר.</p>
     </div>
 
     <a class="mapbanner" href="#map">
@@ -483,19 +577,36 @@
     </div>
 
     <div class="note q" id="open" style="margin-top:22px"><div class="nh">❓ מה עוד לא סגור — לפי סדר דחיפות</div>
-      <b>1. מקום במיניוואן לתשיעית</b> — ההזמנות נרשמו ל-8 בכוונה, אבל <b>נוסעים תשעה</b>.
-      בחדר זה לא משנה; <b>ברכב כן</b> (<a href="#arrival/meetpoint">למה ←</a>) ·
-      <b>2. חדר Day-use ל-29.9</b> — לא הוזמן, וזה מה שמחזיק את היום האחרון
-      (<a data-view="last">למה ←</a>) ·
-      <b>3. מאיזו חברה הרכבים, ומה כתוב בחוזה על החזרה ב-02:30?</b> אף חברה ב-FCO לא פתוחה
-      בשעה הזאת, האחריות נשארת עלינו עד הבוקר, ושני הרכבים אולי בשני בניינים שונים
-      (<a href="#last/carback">הטבלה ←</a>) ·
-      <b>4. איזו מהשתי כתובות היא הדירה?</b> הן במרחק 7 ק״מ (<a href="#arrival/lodging1">פרטים ←</a>) ·
-      <b>5. הבריכה בדרוטה פתוחה בכלל?</b> אגריטוריזמי באזור סוגרים בריכות ב-7–15 בספטמבר
-      (<a href="#base/house">למה זה משנה ←</a>) ·
-      <b>6. הזמנות מראש</b> — סדנת קרמיקה, רפטינג (שבת 26.9 מלאה), Perugina, Orvieto Underground
-      (<a href="#checklist/book">הרשימה ←</a>) ·
-      <b>7. שלושת ימי הטיול</b> — לא נקבעו בכוונה, בוחרים כל בוקר מ<a data-view="days">בנק הימים</a>.</div>
+      <ol class="qlist">
+        <li><b>כיסאות בטיחות לחמישה ילדים — לא הוזמנו.</b> אישור ההשכרה לא כולל אף כיסא,
+          והחוק האיטלקי דורש מושב הגבהה או כיסא לכל ילד מתחת ל-150 ס״מ. <b>זה הפריט הדחוף
+          ביותר ברשימה</b>, כי בשדה זה יקר ותלוי במלאי.
+          (<a href="#arrival/cars">מה לעשות ←</a> · <a href="#info/seats">הדרישה החוקית ←</a>)</li>
+        <li><b>נהג שני ברכב — לא רשום בהזמנה.</b> ההזמנה נושאת נהג ראשי אחד בלבד.
+          תוספת נהג מהבית היא בקשה שגרתית; בדלפק היא יקרה.
+          (<a href="#arrival/cars">פרטים ←</a>)</li>
+        <li><b>החזרת הרכבים ב-02:30 — ההזמנה רשומה ל-08:30.</b> הטיסה ממריאה ב-05:30, כלומר
+          מחזירים שש שעות לפני הזמן ובשעה שהדלפק סגור. <b>צריך לוודא מול Goldcar שיש תיבת
+          מפתחות ב-FCO ואיפה היא.</b> (<a href="#last/carback">הטבלה ←</a>)</li>
+        <li><b>חדר Day-use ל-29.9</b> — לא הוזמן, וזה מה שמחזיק את היום האחרון.
+          (<a data-view="last">למה ←</a>)</li>
+        <li><b>הזמנות מראש</b> — סדנת קרמיקה, רפטינג (שבת 26.9 מלאה), Perugina,
+          Orvieto Underground. (<a href="#checklist/book">הרשימה ←</a>)</li>
+        <li><b>שלושת ימי הטיול</b> — לא נקבעו בכוונה, בוחרים כל בוקר
+          מ<a data-view="days">בנק הימים</a>.</li>
+      </ol>
+      <details style="margin-top:10px"><summary>מה כבר נסגר מהרשימה הזאת</summary>
+        <p style="margin:0"><b>✅ מקום לתשיעית ברכב.</b> ההזמנה היא על שני רכבים בני <b>5 מקומות</b>
+          כל אחד — עשרה מקומות לתשעה אנשים. השאלה ירדה מהפרק; מה שנשאר ממנה הוא הכיסאות
+          (סעיף 1) ו<b>תא המטען</b>: 3 מזוודות לרכב לפי היצרן, כלומר שש לכל החבורה.
+          (<a href="#arrival/cars">פרטים ←</a>)</p>
+        <p style="margin:0"><b>✅ מאיזו חברה הרכבים.</b> <b>Goldcar</b>, שתי המשפחות, איסוף
+          ב-FCO ב-25.9. (<a href="#arrival/cars">כל הפרטים ←</a>)</p>
+        <p style="margin:0"><b>✅ איזו מהשתי הכתובות היא הדירה.</b> לא רלוונטי — הצ׳ק-אין נסגר
+          בתוך ההסעה והנהג לוקח אותנו ישירות. (<a href="#arrival/lodging1">פרטים ←</a>)</p>
+        <p style="margin:0"><b>✅ הבריכה בדרוטה.</b> המקום ענה במפורש שהיא <b>פעילה</b>.
+          (<a href="#base/house">הבית ←</a>)</p>
+      </details></div>
 
   <section class="talk" data-topic="home" aria-label="הערות כלליות"></section>
   </div>
@@ -517,7 +628,7 @@
     <a class="viewmap" href="#map">🗺️ כל הנקודות על המפה</a></div>
 
   <div class="card" id="agenda-days"><h3>🗓️ ששת הימים <a class="anchor" href="#agenda/agenda-days" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
-    <div class="meta"><span>🛏️ ליל הנחיתה ליד השדה · 4 לילות בדרוטה</span><span>🚗 שתי נסיעות ארוכות: 25.9 למעלה, 29.9 למטה</span></div>
+    <div class="meta"><span>🛏️ ליל הנחיתה ליד השדה · 4 לילות בדרוטה</span><span>🚗 שתי נסיעות ארוכות: 25.9 למעלה, 28–29.9 למטה</span><span>⚠️ <b>החזרה מתפצלת: 29.9 ו-30.9</b></span></div>
 
     <div class="day"><span class="dot"></span><div class="date">חמישי 24.9 · ערב</div>
       <div class="ttl">⚠️ ההמראה מתל אביב היא בערב הזה, ~21:55 — לא בשישי</div>
@@ -528,18 +639,22 @@
       <p><b>✅ הוזמן.</b> שתי דירות באותה קומה, והסעה שמחכה. אחר כך הסעה שנייה ב-08:00 <b>לשניים בלבד</b> שחוזרים לשדה לאסוף את הרכבים. <a data-view="arrival">כל ההוראות ←</a></p></div>
 
     <div class="day"><span class="dot"></span><div class="date">שישי 25.9 · יום</div>
-      <div class="ttl">איסוף שני רכבים ב-FCO ← נסיעה לאומבריה ← צ׳ק-אין בדרוטה</div>
-      <p>~2 שעות נסיעה. <b>לעצור בסופר בדרך</b> — זו ההזדמנות הטובה לקנייה הגדולה, כולל המדף ללא גלוטן, שבכפר קטן לא בהכרח קיים. אחר הצהריים: בריכה ולהתאושש. <a href="#base/house">הבית ←</a> · <a href="#food/shopping">איפה קונים ←</a></p></div>
+      <div class="ttl">איסוף שני רכבים ב-FCO ← <b>מפלי מרמורה</b> ← סופר ← צ׳ק-אין בדרוטה</div>
+      <p><b>⭐ הוחלט: מרמורה נעשה ביום הראשון</b>, בדרך מהשדה צפונה — הוא כמעט על הציר, וזה חוסך יום שלם באמצע הטיול. היום בנוי אחורה מ<b>חלון הזרמת המים</b>. <a href="#days/marmore">התכנית המלאה לשעה ←</a> · <a href="#food/shopping">איפה קונים ←</a></p></div>
 
     <div class="day"><span class="dot"></span><div class="date">שבת 26.9 · ראשון 27.9 · שני 28.9</div>
       <div class="ttl">שלושה ימי טיול — נבחרים כל בוקר מבנק הימים</div>
       <p>לא נקבעו מראש, וזה החלטה ולא עצלנות: אחרי לילה בלי שינה, ועם חמישה ילדים, מזג האוויר והאנרגיה של הבוקר הם מידע טוב יותר מכל מה שאפשר להחליט מהבית. <b>בכל ערב בוחרים את המחר.</b> <a data-view="days">תשע האפשרויות ←</a></p></div>
 
-    <div class="day"><span class="dot"></span><div class="date">שלישי 29.9 · מ-11:00</div>
+    <div class="day"><span class="dot"></span><div class="date">שני 28.9 · ערב — <b>משפחה א׳ בלבד</b></div>
+      <div class="ttl">עזיבת דרוטה ← FCO ← החזרת רכב ~02:30 ← <b>טיסה 29.9 ב-05:30</b></div>
+      <p>המשפחה שחוזרת יום קודם עושה את כל ״היום האחרון״ ב-28.9. <b>חדר Day-use ל-28.9</b>, לא ל-29.9. <a data-view="last">שלוש החלופות ←</a></p></div>
+
+    <div class="day"><span class="dot"></span><div class="date">שלישי 29.9 · מ-11:00 — <b>משפחה ב׳ בלבד</b></div>
       <div class="ttl">צ׳ק-אאוט ← יום ביניים ← <b>חדר Day-use 17:00–23:30</b> ← FCO</div>
       <p>היום שהכי חשוב לתכנן: <b>~15 שעות</b> בין הצ׳ק-אאוט לבין החזרת הרכבים. ⚠️ <b>והצ׳ק-אאוט אולי 10:00 ולא 11:00 — לאמת.</b> <a data-view="last">שלוש החלופות ←</a></p></div>
 
-    <div class="day"><span class="dot"></span><div class="date">רביעי 30.9 · לפנות בוקר</div>
+    <div class="day"><span class="dot"></span><div class="date">רביעי 30.9 · לפנות בוקר — <b>משפחה ב׳</b></div>
       <div class="ttl">החזרת רכבים ~02:15 ← דלפקים נפתחים <b>02:30</b> ← המראה 05:30</div>
       <p>אין דלפק השכרה פעיל בשעה הזאת באף חברה — תיבת מפתחות ותיעוד בצילום, <b>והאחריות על הרכב נשארת עלינו עד הבוקר</b>. <a href="#last/carback">הנוהל המדויק ←</a></p></div>
 
@@ -556,10 +671,11 @@
       <tr><td>שתי הדירות לליל הנחיתה, ליד FCO</td><td>ליל 25.9</td><td><span class="done">✅ הוזמן · צ׳ק-אין בהסעה</span></td></tr>
       <tr><td>הסעה מהשדה</td><td>25.9 · ~02:00</td><td><span class="done">✅ אושר · €40 במזומן</span> · <b>נרשמה ל-8, נוסעים 9</b></td></tr>
       <tr><td>הסעה חזרה לשדה, 2 נפשות</td><td>25.9 · 08:00</td><td><span class="done">✅ אושר · €20 במזומן</span></td></tr>
-      <tr><td>Country House Le Case Coloniche, דרוטה</td><td>25–29.9 · 4 לילות</td><td>לפי התכנון · <b>לאמת שההזמנה קיימת</b></td></tr>
-      <tr><td>שני רכבים ב-FCO</td><td>25.9 בוקר → 30.9 · 02:30</td><td>לפי התכנון · <b>איזו חברה?</b></td></tr>
-      <tr><td><b>חדר Day-use ל-29.9</b></td><td>29.9 · 17:00–23:30</td><td>❌ <b>לא הוזמן — וזה מה שמחזיק את היום האחרון</b></td></tr>
-      <tr><td>ארבעת ימי הטיול</td><td>26–29.9</td><td>פתוחים בכוונה — <a data-view="days">מבנק הימים</a></td></tr>
+      <tr><td>Country House Le Case Coloniche, דרוטה</td><td>25–29.9 · 4 לילות</td><td>✅ אושר מול המקום · 2 דירות בקומת הקרקע · בריכה פעילה<br>⚠️ <b>העזיבה מתפצלת</b> — משפחה אחת יוצאת בערב 28.9</td></tr>
+      <tr><td>שני רכבים ב-FCO — <b>Goldcar</b></td><td>איסוף 25.9 ב-09:00<br>החזרה ~02:30, <b>בשני לילות: 29.9 ו-30.9</b></td><td>✅ הוזמן · Key’n Go, Parking B קומה 4<br>⚠️ <b>כיסאות בטיחות לא הוזמנו</b> · <b>נהג שני לא רשום</b></td></tr>
+      <tr><td><b>חדר Day-use — שניים, לא אחד</b></td><td>משפחה א׳: <b>28.9</b><br>משפחה ב׳: <b>29.9</b><br>שניהם ~17:00–23:30</td><td>❌ <b>לא הוזמנו — וזה מה שמחזיק את היום האחרון</b></td></tr>
+      <tr><td>מפלי מרמורה</td><td>שישי 25.9, בדרך מהשדה</td><td>⭐ <b>הוחלט</b> · <a href="#days/marmore">התכנית לשעה ←</a></td></tr>
+      <tr><td>שלושת ימי הטיול</td><td>26–28.9</td><td>פתוחים בכוונה — <a data-view="days">מבנק הימים</a></td></tr>
     </table>
   </div>
 
@@ -578,10 +694,12 @@
     <div class="meta"><span>🕐 ~<b>02:00</b> (אחרי נחיתה 00:45)</span><span>👥 <b>9</b> נוסעים · ההזמנה ל-8</span><span class="pr">€40 במזומן</span></div>
     <p class="gist">זו ההוראה שהמקום נתן, מילה במילה: המפגש הוא ב<b>רמת היציאות (Departure level) של טרמינל 3, מול דלת מספר 4</b>. שם עומד מיניוואן עם הלוגו <b>PARKING BLU</b>. <b>מתקשרים למקום ברגע שיוצאים מהטרמינל.</b></p>
 
-    <div class="note warn"><div class="nh">⚠️ ההזמנה ל-8, אבל נוסעים תשעה — לוודא שיש מושב</div>
+    <div class="note warn"><div class="nh">⚠️ ההסעה הוזמנה ל-8, אבל נוסעים תשעה — לוודא שיש מושב</div>
+      <b>זו שאלה על המיניוואן של המקום, לא על רכבי ההשכרה</b> — אלה כבר ידועים:
+      שני רכבים בני 5 מקומות, כלומר עשרה. <a href="#arrival/cars">פרטי ההשכרה ←</a><br>
       ההזמנות נרשמו ל-8 <b>בכוונה</b>: הקטנה בת ה-3 ישנה במיטת ההורים, ורוב המקומות בכלל
       לא מופיעים בחיפוש כשמבקשים חדר ל-5. <b>בחדר זה נכון לגמרי.</b><br>
-      <b>ברכב זה סיפור אחר:</b> תשעה גופים צריכים תשעה מושבים, ובאיטליה ילד מתחת ל-150 ס״מ
+      <b>בהסעה זה סיפור אחר:</b> תשעה גופים צריכים תשעה מושבים, ובאיטליה ילד מתחת ל-150 ס״מ
       חייב אמצעי ריסון מותאם — כלומר גם הקטנה צריכה מושב, לא ברכיים.
       <b>מיניוואן שהוזמן ל-8 עשוי להיות רכב של 8 מקומות.</b>
       שיחה אחת עם המקום פותרת את זה: לוודא שהרכב מכיל תשעה, ולשאול אם הם מספקים
@@ -656,9 +774,8 @@
 
     <div class="note"><div class="nh">✅ סוכם מול הבעלים: <b>הצ׳ק-אין נעשה בתוך ההסעה</b></div>
       אין קבלה, אין דלפק ואין טפסים בשתיים וחצי לפנות בוקר: <b>מסדירים את הצ׳ק-אין בנסיעה
-      עצמה, ומגיעים ישר לדירות.</b> זה מייתר את שתי הדאגות הגדולות שהיו כאן —
-      שעת הצ׳ק-אין הרשמית שנגמרת ב-23:00, ובאיזו משתי הכתובות נמצאות הדירות. <b>הנהג לוקח
-      אותנו לאן שצריך.</b><br>
+      עצמה, ומגיעים ישר לדירות.</b> זה מייתר גם את שעת הצ׳ק-אין הרשמית שנגמרת ב-23:00.
+      <b>הנהג לוקח אותנו לאן שצריך.</b><br>
       מה שכן כדאי להחזיק בהישג יד בנסיעה: <b>דרכונים וכרטיס אשראי</b> — זה מה שנדרש בצ׳ק-אין
       רגיל, ואין סיבה להניח שברכב זה שונה.</div>
 
@@ -669,24 +786,71 @@
 
     <details><summary>מה עוד סגור, ומה נשאר לבוקר</summary>
       <p style="margin:0"><b>הצ׳ק-אאוט הוא 10:00</b>, וההסעה של הבוקר יוצאת ב-08:00. זה עובד, אבל בלי מרווח: <b>לארוז בערב, לא בבוקר.</b> אם צריך יותר זמן — לשאול. <a href="#arrival/cars">בוקר ואיסוף הרכבים ←</a></p>
-      <p style="margin:0"><b>הכתובת:</b> ההזמנה נושאת שתי כתובות — Via delle Ombrine 58 בכותרת, ו״Check-in at Via delle Pinne 74״ באותיות הקטנות (החניון של Parking Blu בפוצֶ׳נֶה), במרחק ~7 ק״מ זו מזו. <b>עכשיו שהצ׳ק-אין נעשה ברכב זה כבר לא משנה בהגעה</b> — אבל <b>שווה לשמור את שתיהן בטלפון</b> בכל זאת, למקרה שצריך מונית או ניווט עצמאי באיזשהו שלב. מרחקים: טרמינל 3 ← Via delle Pinne ~7.3 ק״מ / ~10 דקות · ← Via delle Ombrine ~3.7 ק״מ / ~6 דקות. <b>מהמקום לדרוטה ~190 ק״מ / ~2:15–2:25.</b></p>
+      <p style="margin:0"><b>הכתובת:</b> הצ׳ק-אין נסגר בתוך ההסעה והנהג לוקח אותנו ישירות, אז אין כאן מה להכריע. <b>מה שכן שווה — לשמור בטלפון את הכתובת שמופיעה באישור ההזמנה</b>, למקרה שצריך מונית או ניווט עצמאי באיזשהו שלב. מרחקים מטרמינל 3: <b>3.7–7.3 ק״מ, כ-6–10 דקות נסיעה.</b> <b>מהמקום לדרוטה ~190 ק״מ / ~2:15–2:25.</b></p>
       <p style="margin:0"><b>למה לא מלון צמוד לטרמינל:</b> מלון בטרמינל חוסך את ההסעה אבל עולה יותר, ולתשעה אנשים הוא 2–3 חדרים נפרדים בלי מטבח. שתי דירות עם מטבחון פותרות בבוקר את הדבר שאף מלון לא פותר — <b>ארוחת בוקר לחמישה ילדים, כולל אחת עם צליאק, בלי לחכות לחדר אוכל.</b> ההפרש בזמן הוא בערך עשר דקות בכל כיוון, וההסעות כלולות בשני הכיוונים.</p>
       <p style="margin:0"><b>לול לתינוק</b> — יש חינם לגילי 0–3. אם ירצו אותו לקטנה במקום שתישן במיטת ההורים, זו בקשה בהזמנה.</p>
     </details>
   </div>
 
-  <div class="card" id="cars"><h3>🚗 בוקר: הסעה לשניים ואיסוף הרכבים <a class="anchor" href="#arrival/cars" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
-    <div class="meta"><span>🕗 הסעה <b>08:00</b></span><span>👥 <b>2</b> נפשות</span><span class="pr">€20 במזומן</span></div>
-    <p class="gist">שני נהגים חוזרים לשדה ב-08:00, אוספים את <b>שני הרכבים</b> ונוסעים איתם בחזרה למקום. ככה שאר החבורה ישנה עוד שעה, מתארגנת בשקט ולא גוררת מזוודות דרך מתחם השכרת רכב.</p>
-    <div class="note"><div class="nh">מי השניים — לא החלטה של הרגע</div>
-      <b>שני הנהגים שרשומים בחוזה ההשכרה</b>, ולא מי שהתעורר. נהג שלא רשום בחוזה נוסע בלי כיסוי,
-      וזה נכון גם לרכב השני. אם רק אדם אחד רשום, זו בעיה שצריך לפתור <b>מול חברת ההשכרה, מהבית</b>
-      — תוספת נהג היא בקשה שגרתית ולפעמים חינם, בשדה היא כפל תעריף.</div>
+  <div class="card" id="cars"><h3>🚗 בוקר: הסעה לשניים ואיסוף הרכבים ב-Goldcar <a class="anchor" href="#arrival/cars" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <div class="tags"><span class="tag t-all">כולם</span></div>
+    <div class="meta"><span class="done">✅ הוזמן — <b>Goldcar</b>, שתי המשפחות</span><span>🕗 הסעה <b>08:00</b></span><span>👥 <b>2</b> נפשות</span><span class="pr">€20 במזומן להסעה</span></div>
+    <p class="gist">שני נהגים חוזרים לשדה ב-08:00, אוספים את <b>שני הרכבים</b> ונוסעים איתם בחזרה למקום. ככה שאר החבורה ישנה עוד שעה, מתארגנת בשקט ולא גוררת מזוודות דרך מתחם השכרת רכב. <b>שתי המשפחות הזמינו ב-Goldcar</b>, איסוף ב-FCO.</p>
+
+    <div class="note warn"><div class="nh">📍 הרכב לא בטרמינל — הוא ב<b>Parking B, קומה 4</b></div>
+      זה החלק שקל לפספס: אין דלפק Goldcar באולם הנכנסים. יוצאים מהטרמינל, עולים
+      במעלית ל<b>קומה 2</b>, ומשם שילוט ל-<b>Parking B</b> ולקומה <b>4</b>, שם עומד
+      עמדת ה-<b>Key’n Go</b>.
+      <ul class="qlist">
+        <li><b>מטרמינל 3</b> (הטרמינל שלנו): יוצאים מהנכנסים, <b>פונים שמאלה</b>, מעלית
+          ליד בית הקפe <i lang="it" dir="ltr">Semplicemente Roma</i> לקומה 2 → שילוט
+          ל-Parking B, קומה 4.</li>
+        <li><b>מטרמינל 1</b>: יוצאים מהנכנסים, <b>פונים ימינה</b>, שילוט ל-Rent a Car,
+          ובדלפק המודיעין מעלית מימין לקומה 2 → Parking B, קומה 4.</li>
+      </ul>
+      <b>איסוף 25.9 בשעה 09:00</b> · הטלפון של התחנה
+      <a href="tel:+390508075174" dir="ltr">‎+39 050 807 5174</a> ·
+      נ״צ <span dir="ltr">41.795320, 12.253714</span>.
+      <b>הרכב שמור עד שש שעות מהשעה שבהזמנה</b> — כלומר עד ~15:00, אבל לא מעבר לסגירת התחנה.</div>
+
+    <div class="note warn"><div class="nh">🔴 שני דברים לא הוזמנו, ושניהם צריכים טיפול מהבית</div>
+      <ul class="qlist">
+        <li><b>כיסאות בטיחות — אפס.</b> אישור ההזמנה מציג ״Baby seat״ כתוספת בתשלום שלא נרכשה.
+          עם חמישה ילדים והחוק האיטלקי (מושב הגבהה או כיסא עד 150 ס״מ) <b>זה חייב להיסגר
+          לפני הנסיעה</b>: בשדה זה יקר, ובעיקר תלוי במלאי.
+          <a href="#info/seats">מה החוק דורש בדיוק ←</a></li>
+        <li><b>נהג נוסף — לא רשום.</b> ההזמנה נושאת <b>נהג ראשי אחד</b>. מי שנוהג בלי
+          להיות בחוזה נוסע בלי כיסוי. תוספת נהג מהבית היא בקשה שגרתית ולפעמים זולה;
+          בדלפק היא יקרה. <b>לבדוק את זה בשתי ההזמנות בנפרד.</b></li>
+      </ul></div>
+
+    <div class="note"><div class="nh">✅ מה שההזמנה כן סוגרת</div>
+      <ul class="qlist">
+        <li><b>קבוצה E, אוטומט</b>, <i lang="it" dir="ltr">Seat Arona</i> או דומה —
+          <b>5 מקומות</b>, 5 דלתות, מיזוג. שני רכבים = <b>10 מקומות לתשעה אנשים</b>,
+          כלומר שאלת ״איפה יושב התשיעי״ נסגרה.</li>
+        <li><b>תא מטען: ~3 מזוודות לרכב</b> לפי היצרן — <b>שש לכל החבורה</b>. זה המספר
+          שכדאי לארוז מולו, לא מספר המושבים.</li>
+        <li><b>מדיניות דלק Full/Full</b> — מקבלים מלא, מחזירים מלא. <b>לתדלק לפני
+          ההחזרה</b>, אחרת משלמים מחיר תחנה של Goldcar.</li>
+        <li><b>Super Relax Cover כלול</b>, ולכן הפיקדון יורד ל-<b>€100</b> במקום עד €950.
+          בנוסף נתפס <b>פיקדון דלק נפרד</b> — הסכום שלו לא מפורסם.</li>
+        <li><b>הרכב מבוטח לנהיגה באיטליה בלבד.</b> לא רלוונטי לנו, אבל שווה לדעת.</li>
+      </ul></div>
+
+    <div class="note warn"><div class="nh">💳 כרטיס אשראי פיזי, על שם הנהג הראשי — אין תחליף</div>
+      Goldcar כותבת במפורש: <b>VISA או MasterCard בלבד</b>, <b>לא</b> כרטיס דביט,
+      <b>לא</b> American Express, <b>לא</b> Diners, <b>לא</b> מזומן.
+      <b>והכרטיס חייב להיות על שם הנהג הראשי שבחוזה.</b> בלי זה — ולפי הניסוח שלהם —
+      הם רשאים לא למסור את הרכב, <b>ובלי החזר על מה ששולם מראש</b>. זה נכון לכל רכב בנפרד.</div>
+
     <details><summary>מה לקחת לאיסוף, ומה בודקים לפני שיוצאים מהחניון</summary>
-      <p style="margin:0"><b>לקחת:</b> את שני הרישיונות, את כרטיס האשראי שעליו נעשתה ההזמנה (הפיקדון נתפס עליו, ולפעמים חייב להיות של הנהג הראשי), הדרכונים, ואת מספרי ההזמנה.</p>
+      <p style="margin:0"><b>לקחת:</b> את הרישיונות (בתוקף לפחות שנה), את כרטיס האשראי שעליו נעשתה ההזמנה, הדרכונים, ואת מספרי ההזמנה. <b>רישיון בינלאומי (IDP):</b> Goldcar מפנה לבדיקה לפי הרישיון — <b>לבדוק מראש</b>, כי בלעדיו הם לא מוסרים רכב.</p>
+      <p style="margin:0"><b>הצ׳ק-אין המקוון כבר נעשה והמסמכים אושרו</b> — אבל <b>באיטליה עדיין מאמתים אותם פיזית בדלפק.</b> מה ש-Key’n Go קונה הוא <b>תור מהיר</b>, לא דילוג על הדלפק. להירשם בתור מיד עם ההגעה.</p>
       <p style="margin:0"><b>לצלם את הרכב לפני היציאה</b> — סביב־סביב, גלגלים, שמשה, פנים, מד דלק ומד ק״מ. זה שני צילומים לכל רכב וזה מה שמנטרל ויכוח על שריטה בהחזרה, שתתבצע ב-02:30 בלילה בלי נציג בשטח. <a href="#last/carback">נוהל ההחזרה ←</a></p>
-      <p style="margin:0"><b>לבדוק שיש:</b> וסט זוהר ומשולש (חובה חוקית באיטליה, אמור להיות ברכב), ושכיסאות הבטיחות שהוזמנו אכן נמצאים ומתאימים לגילים. <a href="#info/seats">כיסאות בטיחות ←</a></p>
+      <p style="margin:0"><b>לבדוק שיש:</b> וסט זוהר ומשולש (חובה חוקית באיטליה, אמור להיות ברכב), ושמסמכי הרכב בתא הכפפות. <a href="#info/seats">כיסאות בטיחות ←</a></p>
       <p style="margin:0"><b>שני רכבים, לא ואן אחד:</b> בסמטאות של עיירות הגבעה ובחניונים שמתחת לחומות, שני רכבים בינוניים מסתדרים במקום שוואן תשע מקומות נתקע בו. זה גם מה שמאפשר לפצל את היום בין הקבוצות בלי לוותר על אחת מהן.</p>
+      <p class="src" style="margin:0">הפרטים למעלה הם מאישור ההזמנה של משפחה אחת ומתנאי השכירות המצורפים לו (Goldcar Italy, תחנת FCO). <b>ההזמנה של המשפחה השנייה לא נבדקה כאן</b> — אם היא בחבילה אחרת, הפיקדון, מדיניות הדלק ומספר המושבים עשויים להיות שונים. <b>לא פורסמו:</b> שעות הפתיחה של התחנה, סכום פיקדון הדלק, ההשתתפות העצמית, ומגבלת הקילומטרים.</p>
     </details>
   </div>
 
@@ -727,14 +891,19 @@
       <a class="map onmap" href="#map/p:Country+House+Le+Case+Coloniche+Deruta" title="הבית — במפה שלנו">🗺️</a>
     </div>
 
-    <div class="note warn"><div class="nh">⚠️ הבריכה — סביר להניח שהיא כבר סגורה, וזו לא זוטה</div>
-      המקום מנסח את הבריכה כ<b>קיצית</b> (״בריכה בקיץ, אח דולק בחורף״), והאגרגטורים
-      מסמנים אותה כ״בריכה עונתית״. <b>טווח החודשים המדויק לא מפורסם בשום מקום, וגם לא אם
-      היא מחוממת.</b> ומה שמדאיג: אגריטוריזמי אחרים באומבריה מפרסמים סגירה
-      <b>ב-7 עד 15 בספטמבר</b> — כלומר <b>שבועיים לפני שאנחנו מגיעים.</b><br>
-      <b>לשאול בכתב, ולפני שמבטיחים לילדים בריכה.</b> אם התשובה שלילית — זה לא הרס הטיול,
-      אבל זה משנה את ההיגיון של ״לחזור אחר הצהריים״, ואז שווה לתכנן ימים שלמים יותר.
-      גם אם פתוחה: בסוף ספטמבר המים ~20–22°C ויורדים, כלומר <b>טבילה בצהריים לגדולים,
+    <div class="note"><div class="nh">✅ נסגר מול המקום — חמש תשובות, וכולן טובות</div>
+      המשפחה דיברה עם Le Case Coloniche, והם ענו בכתב:
+      <ul class="qlist">
+        <li><b>הבריכה פעילה.</b> זו הייתה השאלה הכי גדולה כאן, והיא נענתה.</li>
+        <li><b>שתי הדירות בקומת הקרקע</b> — לא צמודות זו לזו, אבל <b>קרובות ובאותו מפלס</b>.
+          בלי מדרגות ובלי מעלית, וזה משנה עם ילד בן 3 ועם מזוודות.</li>
+        <li><b>יש מקרר בדירות.</b></li>
+        <li><b>ארוחת בוקר ללא גלוטן — כן</b>, וגם ל<b>מסעדה</b> שלהם יש חלופות ללא גלוטן.
+          ובלשונם: ״השף ישמח לספק אפשרויות מתאימות״. <a data-view="food">אוכל וגלוטן ←</a></li>
+      </ul>
+      <b>מה שכן נשאר:</b> להגיד להם מראש, ובכתב, על <b>הצליאק ועל האלרגיה לבוטנים</b> —
+      ״יש לנו חלופות״ ו״המטבח יודע על אלרגיה לבוטנים״ הם שני דברים שונים.
+      וגם בסוף ספטמבר המים בבריכה הם ~20–22°C ויורדים: <b>טבילה בצהריים לגדולים,
       לא פעילות של יום ולא לבן 3.</b></div>
 
     <div class="note warn"><div class="nh">⚠️ הצ׳ק-אאוט אולי 10:00 ולא 11:00 — וזו שעה שכל היום האחרון תלוי בה</div>
@@ -839,16 +1008,16 @@
       <tr><td>8</td><td><a href="#days/tuscany">טוסקנה — מונטפולצ׳אנו</a></td><td>~1:20–1:45</td><td>נוף וכרמים</td><td>מבוגרים · הנסיעה הארוכה</td></tr>
       <tr><td>9</td><td><a href="#days/rest">דרוטה — יום רגוע</a></td><td>5 ד׳</td><td>קרמיקה + בריכה</td><td>כולם</td></tr>
     </table>
-    <div class="note warn"><div class="nh">⚠️ זמני הנסיעה למעלה נמדדו — וכמה מהם ארוכים ממה שהתכנון המקורי אמר</div>
+    <details class="note warn"><summary class="nh">⚠️ זמני הנסיעה למעלה נמדדו — וכמה מהם ארוכים ממה שהתכנון המקורי אמר</summary>
       אורבייטו היא <b>66 דקות ולא 55</b>, מרמורה <b>65 ולא 50</b>, שקג׳ינו <b>64 ולא 45</b>,
       וגובּיו <b>65 ולא 50</b>. זה לא הבדל טכני: <b>ארבעה מהיעדים המובילים הם כשעה וחצי
       הלוך-חזור יותר ממה שהנחנו</b>, כלומר יום ״קצר״ באזור הוא בפועל 5–6 שעות בחוץ.
-      פרוג׳ה ואסיזי, לעומת זאת, קרובות אף יותר ממה שנכתב.</div>
-    <div class="note"><div class="nh">אם בוחרים שלוש — זה השילוב</div>
+      פרוג׳ה ואסיזי, לעומת זאת, קרובות אף יותר ממה שנכתב.</details>>
+    <details class="note"><summary class="nh">אם בוחרים שלוש — זה השילוב</summary>
       <b>אורבייטו + מרמורה + אסיזי/ספלו.</b> עיר עתיקה, טבע ומים, ועיירות — בלי לחזור על אותו
       סוג יום. אם באחד מהילדים בוער אקשן, מחליפים את אסיזי ב<a href="#days/adventure">פארק
       החבלים</a>. ואם מזג האוויר מתקלקל — <a href="#days/rest">היום הרגוע</a> ו<a href="#days/perugia">פרוג׳ה</a>
-      הם השניים שגשם פוגע בהם פחות מכל.</div>
+      הם השניים שגשם פוגע בהם פחות מכל.</details>>
     <details><summary>שני כללי סידור ששווה לכבד</summary>
       <p style="margin:0"><b>לא שני ימים ארוכים ברצף.</b> <a href="#days/tuscany">טוסקנה</a> היא ~3 שעות נסיעה ביום, ו<a href="#days/adventure">פארק החבלים</a> הוא יום פיזי. אחרי אחד מהם — יום קרוב.</p>
       <p style="margin:0"><b>היום הראשון (25.9) הוא לא יום טיול.</b> אחרי לילה של ארבע שעות שינה, נסיעה של שעתיים וצ׳ק-אין, מה שנשאר זה בריכה וארוחת ערב. לא לתכנן לו אטרקציה.</p>
@@ -870,7 +1039,7 @@
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-adv">הרפתקה וגדולים</span></div>
     <div class="meta"><span>🚗 ~<b>66 דקות</b> · 62 ק״מ</span><span>⭐ הבחירה הראשונה של שני המקורות</span></div>
     <p class="gist">אורבייטו בנויה על גוש סלע טוּפָה געשי, ומתחתיה רשת מנהרות שהאטרוסקים חצבו. השילוב הזה הופך אותה ליום הטוב ביותר עם ילדים באזור: קתדרלה שנראית כמו תיבת תכשיטים, <b>באר עם שני גרמי מדרגות שלא נפגשים</b>, ומערות. אף אחד מהם לא ״עוד כנסייה״.</p>
-    <div class="note warn"><div class="nh">⚠️ הפוניקולר סגור מאז יוני 2026 — ואין תאריך פתיחה</div>
+    <details class="note warn"><summary class="nh">⚠️ הפוניקולר סגור מאז יוני 2026 — ואין תאריך פתיחה</summary>
       כל תיאור של אורבייטו מדבר על הרכבל שעולה לעיר. <b>הוא לא עובד.</b> העירייה הודיעה על
       סגירתו ב-9 ביוני 2026, וההודעה הרשמית האחרונה (יולי 2026) אומרת שנדרשות בדיקות ואישורים
       נוספים לפני שאפשר לתכנן פתיחה. במקומו יש <b>אוטובוס שאטל</b> בין Piazza Matteotti
@@ -878,13 +1047,13 @@
       <br><b>אבל התשובה הטובה יותר היא לא השאטל:</b> חונים ב<b>Campo della Fiera</b>, חניון מקורה
       בצד המערבי של הסלע, ועולים ב<b>מעלית שלו</b> — היא פועלת <b>05:00–02:00</b>, כלומר טווח
       רחב בהרבה מהשאטל, והיציאה ממנה היא פחות מחמש דקות הליכה מהכיכר המרכזית.
-      €1.50 לשעה. <b>זו הדרך לעלות לעיר.</b></div>
-    <div class="note warn"><div class="nh">⚠️ ובדיוק בסוף השבוע שלנו יש מרוץ עלייה שסוגר כביש</div>
+      €1.50 לשעה. <b>זו הדרך לעלות לעיר.</b></details>>
+    <details class="note warn"><summary class="nh">⚠️ ובדיוק בסוף השבוע שלנו יש מרוץ עלייה שסוגר כביש</summary>
       ה-<b>Cronoscalata della Castellana</b>, מרוץ עלייה, מתקיים ב<b>25–27 בספטמבר 2026</b>
       (יום המרוץ — ראשון 27.9). לפי הצו של 2025 הכביש <b>SR 79 bis Orvietana נסגר 07:00–19:00
       בימי המרוץ</b>. <b>להגיע לאורבייטו מכיוון ה-A1 ואורבייטו סקאלו, לא דרך ה-SR 79 bis</b>,
       ולבדוק את דף הצווים של העירייה באותו שבוע. באותם ימים גם פסטיבל הקולנוע של אורבייטו
-      (23–27.9) — כלומר <b>העיר תהיה עמוסה.</b> שווה לשקול לעשות את אורבייטו ב<b>שני 28.9</b> במקום.</div>
+      (23–27.9) — כלומר <b>העיר תהיה עמוסה.</b> שווה לשקול לעשות את אורבייטו ב<b>שני 28.9</b> במקום.</details>>
     <div class="links">
       <a class="map" href="https://www.google.com/maps/search/?api=1&query=Parcheggio+Campo+della+Fiera+Orvieto" target="_blank" rel="noopener">החניון עם המעלית ↖</a>
       <a class="map onmap" href="#map/p:Parcheggio+Campo+della+Fiera+Orvieto" title="Campo della Fiera — במפה שלנו">🗺️</a>
@@ -916,7 +1085,7 @@
     </details>
   </div>
 
-  <div class="card" id="marmore"><h3>🥈 מפלי מרמורה + אגם פידילוקו <a class="anchor" href="#days/marmore" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+  <div class="card" id="marmore"><h3>⭐ מפלי מרמורה — <b>שישי 25.9, בדרך מהשדה</b> <a class="anchor" href="#days/marmore" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
            aria-label="תמונות מהמקום — החליקו הצידה">
@@ -928,35 +1097,179 @@
         <img src="https://images.openai.com/static-rsc-4/Eg_7tr3luoXkrA2jf0L9BZg4AGF1Amf0eKVA6M379eg7C1Zqn1HpMn0Ue4SHgJ9b84MNdothgVLammRwhtIcL51TuqZ3FwWc_V1_-_3wKJqMFguq9RNDJL_MaGH-KzOPvLzFZDZtNGkPAvzuqs-qrS7rrbzQwfCutL3N84-8pZU6LapKxDjZo5F0iek1XYHb?purpose=fullsize" alt="מפלי מרמורה — תמונה 6 מתוך 6" referrerpolicy="no-referrer">
       </div>
     </figure>
-    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-adv">הרפתקה וגדולים</span></div>
-    <div class="meta"><span>🚗 ~<b>65 דקות</b> · 74 ק״מ</span><span class="pr">€12 · 5–9 ו-70+ €10 · <b>0–4 חינם</b></span><span>⏱️ ~3 שעות באתר</span></div>
-    <p class="gist">מפל שהרומאים חצבו לפני 2,200 שנה, ואחד הגבוהים באירופה. הוא גם <b>מפל מבוקר</b>: המים מוסטים לתחנת כוח ומשוחררים בחלונות זמן קבועים. פותחים את הסכר — וקיר מים מופיע. זו התזמורת של היום הזה.</p>
-    <div class="note warn"><div class="nh">⏰ לוח ההזרמה לתאריכים שלנו — מהאתר הרשמי, טווח ״14–30 בספטמבר״</div>
-      <b>שישי 25.9, שני 28.9, שלישי 29.9</b> (ימות חול): הפארק 10:00–17:00 ·
-      <b>המים זורמים 11:00–13:00 ו-15:00–16:00</b>.<br>
-      <b>שבת 26.9 וראשון 27.9</b>: הפארק 10:00–19:00 ·
-      <b>המים זורמים 11:00–13:00 ו-15:00–18:00</b> — כלומר <b>שלוש שעות רצופות אחר הצהריים</b>,
-      הרבה יותר טוב. <b>אם אפשר לבחור, לעשות את מרמורה בסוף שבוע.</b><br>
-      להגיע רבע שעה לפני חלון הפתיחה, לא בשעה עצמה. <b>לאמת באתר קרוב לתאריך</b> — הלוח משתנה לפי עונה.</div>
-    <div class="note warn"><div class="nh">⚠️ שתי כניסות נפרדות, ואין שאטל ביניהן בעונה הזאת</div>
-      <b>Belvedere Superiore</b> (למעלה, ~372 מ׳) ו-<b>Belvedere Inferiore</b> (למטה, ~220 מ׳)
-      הן שתי כניסות עם שני חניונים, בכבישים שונים. השאטל שמחבר ביניהן פועל
-      <b>״רק בעונה הגבוהה״</b> — כלומר להניח שהוא לא עובד בסוף ספטמבר.
-      <b>בוחרים אחד ונשארים בו.</b> להורדה ולעלייה בין השניים ברגל יש את
-      Sentiero 1 — <b>מעל 600 מדרגות לא סדירות</b>, ולא בשביל היום הזה.</div>
+    <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-grand">נגיש ונינוח</span></div>
+    <div class="meta"><span class="done">⭐ <b>הוחלט — יום ראשון של הטיול</b></span><span>💦 <b>המים זורמים 15:00–16:00</b></span><span>🅿️ <b>Belvedere Inferiore</b> (התחתון)</span><span>🚗 FCO ← מרמורה <b>~2:20</b> · מרמורה ← דרוטה <b>~1:10</b></span><span class="pr">€12 · 5–9 ו-70+ €10 · <b>0–4 חינם</b></span></div>
+
+    <p class="gist">מפל שהרומאים חצבו לפני 2,200 שנה, ואחד הגבוהים באירופה. הוא גם <b>מפל מבוקר</b>: רוב היום המים מוסטים לתחנת כוח, והם משוחררים בחלונות זמן קבועים. <b>בשישי 25.9 יש חלון אחד שאפשר להגיע אליו: 15:00–16:00.</b> כל התכנון של היום בנוי אחורה מהשעה הזאת. מגיעים ב-14:45, לא ב-15:00 — צופר מקדים את ההזרמה, והמים עולים בהדרגה על פני כמה דקות.</p>
+
+    <p class="gist"><b>איפה חונים ואיזה מסלול:</b> חונים ב-<b>Belvedere Inferiore</b> (התחתון), שני הרכבים, והולכים בשביל <b>השטוח והסלול</b> אל <b>Piazzale Byron</b> — 300–400 מ׳, בלי מדרגות, <b>עובר עם עגלה</b>. משם רואים את שלושת הקפיצות מלמטה וחזיתית. זו התמונה שכולם מכירים, והיא היחידה שמגיעים אליה בלי לטפס.</p>
+
     <div class="links">
-      <a href="https://cascatadellemarmore.it/orari-e-aperture/" target="_blank" rel="noopener">לוח ההזרמה הרשמי ↖</a>
+      <a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=41.7570,12.2310&amp;destination=42.5541966,12.7154006&amp;travelmode=driving" target="_blank" rel="noopener">🚗 מהדירה בפיומיצ׳ינו למרמורה ↖</a>
+      <a class="map" href="https://www.google.com/maps/dir/?api=1&amp;origin=42.5541966,12.7154006&amp;destination=43.000718,12.421984&amp;waypoints=42.9983969,12.4269567&amp;travelmode=driving" target="_blank" rel="noopener">🚗 ממרמורה לדרוטה, דרך הסופר ↖</a>
+      <a href="https://cascatadellemarmore.info/orari-e-aperture/" target="_blank" rel="noopener">לוח ההזרמה הרשמי ↖</a>
       <a class="map onmap" href="#map/p:Cascata+delle+Marmore+Belvedere+Inferiore" title="מרמורה — במפה שלנו">🗺️</a>
     </div>
-    <details><summary>איזה בלוודרה ואיזה מסלול, ומה יש לקטן</summary>
-      <p style="margin:0"><b>ההמלצה: Belvedere Inferiore.</b> ממנו יוצאים <b>Sentiero 2 ו-3</b>, ש<b>האתר הרשמי מגדיר כ״הקלים והמרשימים ביותר, המתאימים ביותר עם ילדים״</b> — ומוסיף במפורש ש<b>הם לא עבירים בעגלה</b>. שם גם הקופה. Belvedere Superiore מציע את Sentiero 5, שהוא שטוח ונגיש אבל התצפיות על המפל ממנו חלשות.</p>
-      <p style="margin:0">⚠️ <b>אם מגיעים עם עגלה</b> — Superiore ו-Sentiero 5 הם הפתרון, בידיעה שרואים פחות. אין מסלול שגם מרשים וגם עבירlעגלה.</p>
-      <p style="margin:0"><b>⭐ לקטן: ״La Fantacascata״</b> — סיור מודרך של שעה שבו שדון מספר את אגדות המפל, <b>לגילי 3–8, €5</b>, יוצא מ-Belvedere Inferiore. הזמנה: prenotacascata@orologionetwork.it · 0744 67561. זה בדיוק מה שהופך את היום לשלו ולא רק לשל הגדולים.</p>
-      <p style="margin:0"><b>מחירים:</b> €12 מלא · €10 לגילי 5–9 ולמעל 70 · <b>חינם 0–4</b> · ויש <b>תעריף משפחה €6 לילד במשפחה של 2 הורים + 3 ילדים ומעלה</b> — שנמכר <b>בקופה בלבד, לא באינטרנט</b>. עם שתי משפחות שווה לבדוק בקופה מה יוצא זול יותר. ההזמנה המקוונת מומלצת אך <b>לא חובה</b>. הכרטיס כולל ללא תוספת גם את קרסולה, את מוזיאון Hydra ואת הקולנוע ה-6D.</p>
-      <p style="margin:0"><b>⚠️ בטיחות, מהאתר עצמו:</b> ״מדרגות עץ <b>לעיתים רטובות וחלקלקות</b>״ — נעליים סגורות עם סוליית גומי, לא סנדלים. פונצ׳ו או מעיל, כי ליד המפל מתרטבים, ושכבות. ולהחזיק ידיים ליד המים ובמרפסות התצפית.</p>
-      <p style="margin:0"><b>חניה:</b> קווים כחולים בתשלום בשני החניונים. ⚠️ החבילות ״P1 / P2״ שמשלבות חניה עם כרטיס נמכרות <b>ביולי ובאוגוסט בלבד</b> — לא בתאריכים שלנו.</p>
-      <p style="margin:0"><b>אחר הצהריים — אגם פידילוקו</b>, ~15 דקות משם: אגם שקט עם טיילת, סירות פדלים והשכרות. זו החצי השנייה שהופכת את היום מ״ראינו מפל״ ליום שלם, והיא הרבה יותר רגועה — טוב אחרי שהקטן נשרף. <b>עם לוח ההזרמה של סוף השבוע (עד 18:00) אין זמן לשניהם</b> — בסוף שבוע נשארים במפל, בימות חול (הזרמה נגמרת ב-16:00) יש זמן לאגם.</p>
-      <p style="margin:0"><b>אוכל:</b> יש מסעדות באזור, אבל כאן <b>פיקניק מהבית עדיף</b> — לא בגלל המחיר אלא בגלל השליטה: זה היום שבו הצליאק והאלרגיה נסגרים בבית ולא בתפריט זר. <a data-view="food">אוכל ←</a></p>
+
+    <details class="note warn"><summary class="nh">⏰ לוח ההזרמה לשישי 25.9 — מהאתר הרשמי, טבלת 2026</summary>
+      <b>שישי הוא יום חול (<i lang="it" dir="ltr">feriale</i>), ובטווח 14–30 בספטמבר זה אומר:</b>
+      <ul class="qlist">
+        <li><b>הפארק פתוח 10:00–18:00.</b></li>
+        <li><b>המים זורמים 11:00–13:00, ואז 15:00–16:00.</b> ביניהם ומחוצה להם — זרם מינימלי,
+          כלומר טפטוף. זה נורמלי ולא תקלה.</li>
+        <li><b>צופר נשמע רגע לפני ההזרמה</b>, והזרם עולה בהדרגה תוך כמה דקות. האתר לא אומר
+          כמה דקות לפני. <b>להיות במקום ב-14:45.</b></li>
+      </ul>
+      <b>⚠️ החלון של 11:00–13:00 אינו בר-השגה לנו.</b> איסוף הרכבים ב-09:00, ועד שכולם ברכב
+      ויוצאים מפיומיצ׳ינו זה 11:00 — הגעה למרמורה סביב 13:30. <b>לכן 15:00–16:00 הוא החלון,
+      וזה שעה אחת.</b><br>
+      <b>לאמת את הלוח בבוקר עצמו</b> — האתר עצמו מזהיר שהשעות משתנות, ויש תקדים לסגירת
+      שבילים בהתראת מזג אוויר.</details>
+
+    <details class="note warn"><summary class="nh">💬 ושווה לדעת: שישי הוא היום הכי גרוע בטיול למרמורה</summary>
+      <b>שישי נותן שעה של מים. שבת וראשון נותנים חמש</b> — 11:00–13:00 <b>וגם 15:00–18:00</b>.
+      וזה לא רחוק: <b>מדרוטה למרמורה 77 ק״מ, בערך 1:10</b>, כלומר חצי יום מהבסיס.<br>
+      <b>ההצעה, אם רוצים את שתי הטובות:</b> ביום שישי לעצור בכל מקרה — <b>העקיפה עולה 35 ק״מ
+      ו-35 דקות בלבד</b> מעל הנסיעה הישירה, וזה כמעט חינם — לראות את החלון של 15:00,
+      ואם זה עובד טוב, לחזור לשם כמו שצריך ב<b>שבת 26.9 או ראשון 27.9</b> עם חמש שעות מים
+      במקום אחת. ואם זה לא עובד — לא הפסדנו דבר.
+      <b>ההחלטה היא של המשפחה; התכנית כאן היא לשישי.</b></details>
+
+    <details class="note warn"><summary class="nh">⚠️ שתי כניסות, <b>ואין שאטל ביניהן בספטמבר 2026</b> — זה סוגר את השאלה</summary>
+      <b>Belvedere Superiore</b> (למעלה, ~381 מ׳) ו-<b>Belvedere Inferiore</b> (למטה, ~230 מ׳)
+      הן שתי כניסות נפרדות, שני חניונים, שני כבישים.
+      <b>האתר הרשמי מפרסם את התאריכים המדויקים שבהם השאטל פועל ב-2026: אפריל, מאי, יוני,
+      יולי ואוגוסט. ספטמבר — כלום.</b> כלומר ב-25.9 אין שאטל, נקודה.<br>
+      <b>ולכן ״חונים באחד והולכים לשני״ הוא מלכוד:</b> אין דרך חזרה. מה שנשאר הוא
+      <b>Sentiero 1 — מעל 600 מדרגות לא סדירות ו-150 מ׳ טיפוס</b>, שהאתר עצמו מגדיר
+      ״קשה״. עם בת 3 ואחרי לילה בלי שינה זה לא עולה בחשבון.<br>
+      <b>המסקנה: שני הרכבים חונים ב-Inferiore, ונשארים שם.</b></details>
+
+    <details class="note"><summary class="nh">🅿️ למה דווקא התחתון, ולא העליון</summary>
+      <ul class="qlist">
+        <li><b>רק מהתחתון מגיעים לתצפית הטובה בלי לטפס.</b> השביל אל Piazzale Byron שטוח
+          וסלול, והאתר הרשמי כותב במפורש שהגישה לבלוודרה התחתון ולרחבה שמול המפל
+          ״אפשרית ונוחה״.</li>
+        <li><b>מהעליון לא רואים טוב.</b> Sentiero 5 שם אמנם שטוח ונגיש — אבל האתר עצמו
+          כותב שהוא ״אינו מאפשר תצפית טובה על המפל״. שטוח וחסר טעם.</li>
+        <li><b>כל השאר נמצא בתחתון:</b> הקופה, השירותים, הברים, שולחנות הפיקניק, מרכז
+          החינוך הסביבתי, מוזיאון Hydra והקולנוע ה-6D.</li>
+        <li><b>חניה:</b> קווים כחולים ב-Piazzale Fatati — <b>€2 לשעה, €10 ליום</b>, בתשלום
+          10:00–20:00, כרטיס אשראי או מזומן. משם <b>300–400 מ׳ הליכה לקופה</b>.
+          מי שרוצה קצר יותר: <b>P1 ״Ex Viscosa״</b>, 200 מ׳ מהקופה, אותם €10.
+          ⚠️ <b>חבילות החניה המקוונות נמכרות ביולי–אוגוסט בלבד</b> — לא בתאריך שלנו.</li>
+        <li><b>סיכוי שהחניון מלא — נמוך.</b> השאטל כבוי, ההזמנה המקוונת סגורה, והפארק
+          מתייחס לסוף ספטמבר כעונה נמוכה.</li>
+      </ul>
+      <b>⭐ תוספת של 20 דקות, רק אם נשארה אנרגיה:</b> אחרי ההזרמה לנסוע לבלוודרה העליון
+      (<b>6.2 ק״מ, 11 דקות</b>), לעמוד על ה-<i lang="it" dir="ltr">Specola</i> ולהסתכל מלמעלה
+      על הקפיצה הראשונה, ומשם להמשיך לדרוטה. <b>זה לא עולה זמן נסיעה</b> — מהעליון לדרוטה
+      זה 75.8 ק״מ / 65 דקות, כמעט זהה. <b>הכרטיס מאפשר 6 כניסות</b>, אז אין תשלום נוסף על
+      הכניסה; רק חניה.</details>
+
+    <details class="note"><summary class="nh">🥾 המסלולים — מה עושים, ומה מדלגים עליו</summary>
+      <b>עושים: הכניסה ← Piazzale Byron.</b> 300–400 מ׳, שטוח, סלול, <b>בלי מדרגות ועם עגלה</b>,
+      10–15 דקות בקצב איטי. מתיזים עליכם רסס, לא יותר. זו התצפית החזיתית על שלוש הקפיצות.<br>
+      <b>אופציונלי לחצי החזק:</b> <b>Sentiero 4</b> אל Belvedere Pennarossa — ~520 מ׳,
+      ~80 מ׳ טיפוס, רובו מדרגות, 25–35 דקות למעלה. זה המסלול היחיד שמראה את שלוש הקפיצות
+      יחד מגובה. <b>לא לעגלה.</b> הורה אחד נשאר עם הקטנה ב-Byron.
+      <ul class="qlist">
+        <li><b>מדלגים על Sentiero 2</b> (״טבעת הנימפה״) — יפה, אבל <b>יוצאים ממנו רטובים
+          לגמרי</b>, ואחריו יש נסיעה של שעה ורבע.</li>
+        <li><b>מדלגים על ה-Balcone degli Innamorati.</b> סיור מודרך בלבד, במספר מוגבל,
+          €3.50, ומגיעים אליו במדרגות דרך מנהרה — ועומדים <b>ישירות מתחת למים</b>.
+          ⚠️ <b>ולא הצלחנו לאמת שהוא בכלל פועל ב-25.9</b>; מי שרוצה בכל זאת — טלפון
+          <a href="tel:+39074467561" dir="ltr">‎+39 0744 67561</a>.</li>
+        <li><b>מדלגים על Sentiero 1 ועל Sentiero 6.</b> הראשון הוא 600 המדרגות, השני הוא
+          מסלול הליכה ממש.</li>
+      </ul>
+      <b>⚠️ בטיחות, מהאתר עצמו:</b> ״נעלי הליכה או ספורט יציבות, ביגוד עמיד למים קל
+      (פונצ׳ו או שכמייה)״ — <b>נעליים סגורות עם סוליית גומי, לא סנדלים.</b> פונצ׳ו חד-פעמי
+      נמכר בקופה. המדרגות ״לעיתים רטובות וחלקלקות״, ולהחזיק ידיים ליד המים.</details>
+
+    <details class="note"><summary class="nh">🎟️ כרטיסים — ולמה דווקא בקופה ולא באינטרנט</summary>
+      <b>€12 מלא (מגיל 10) · €10 לגילי 5–9 ולמעל 70 · חינם 0–4.</b> הכרטיס מאפשר
+      <b>6 כניסות בשערים</b>, כלומר גם בתחתון וגם בעליון באותו יום, וכולל את קרסולה,
+      את מוזיאון Hydra ואת הקולנוע ה-6D.<br>
+      <b>⭐ תעריף משפחה: €6 לילד</b>, למשפחה של 2 הורים + <b>3 ילדים קטינים ומעלה</b> —
+      ו<b>הוא נמכר בקופה בלבד, לא באינטרנט</b>. האתר אומר את זה במפורש. עם ההרכב שלנו
+      שווה לשאול בקופה לפני שקונים.<br>
+      <b>העלות הצפויה: €88–€96</b> לתשעה (4 מבוגרים €48, הקטנה חינם, וארבעת האחרים
+      €40–€48 לפי גילים) — פחות, אם תעריף המשפחה חל.<br>
+      <b>הזמנה מראש מומלצת אך לא חובה</b>, ובשישי בסוף ספטמבר לא צפוי להיגמר.</details>
+
+    <details class="note"><summary class="nh">🕐 לוח הזמנים של היום, אחורה מ-15:00</summary>
+      <table class="h">
+        <tr><th>שעה</th><th>מה</th></tr>
+        <tr><td><b>08:00</b></td><td>שני נהגים בהסעה מהדירה ל-FCO</td></tr>
+        <tr><td><b>09:00–10:15</b></td><td>Goldcar, Parking B קומה 4. שני רכבים, ניירת, <b>צילום סיבוב מלא</b>. <a href="#arrival/cars">מה לקחת ←</a></td></tr>
+        <tr><td><b>10:30</b></td><td>הרכבים מגיעים לדירה</td></tr>
+        <tr><td><b>10:30–11:00</b></td><td>העמסה של 7 אנשים וכל המזוודות לשני רכבים. <b>שירותים לפני שיוצאים.</b> תמיד לוקח חצי שעה</td></tr>
+        <tr><td><b>11:00</b></td><td><b>יציאה מפיומיצ׳ינו.</b> A91 ← טבעת GRA ← A1dir ← A1 ← יציאה <b>Orte</b> ← SS675 ← SS209</td></tr>
+        <tr><td><b>12:00–12:25</b></td><td><b>העצירה היחידה:</b> דלק + שירותים + קפה ב-<i lang="it" dir="ltr">Feronia</i> או <i lang="it" dir="ltr">Flaminia</i> על ה-A1. שני הרכבים יחד</td></tr>
+        <tr><td><b>13:30</b></td><td><b>הגעה ל-Belvedere Inferiore.</b> חניה, תשלום במכונה</td></tr>
+        <tr><td><b>13:30–14:15</b></td><td>קופה (9 כרטיסים, לשאול על תעריף משפחה), שירותים, <b>ארוחת צהריים</b> בשולחנות הפיקניק. <b>המפל כרגע טפטוף — זה נורמלי</b></td></tr>
+        <tr><td><b>14:15–14:45</b></td><td>הליכה איטית אל <b>Piazzale Byron</b>, ותופסים מקום</td></tr>
+        <tr><td><b>~14:55</b></td><td><b>הצופר.</b> הזרם עולה תוך כמה דקות</td></tr>
+        <tr style="background:#fdf3e3"><td><b>15:00–16:00</b></td><td><b>⭐ המים במלוא העוצמה.</b> אופציונלי: 2 מבוגרים והגדולים עושים Sentiero 4 (~40 דקות הלוך-חזור)</td></tr>
+        <tr><td><b>16:00–16:25</b></td><td>יציאה, שירותים, גלידה, חזרה לרכבים</td></tr>
+        <tr><td><b>16:30</b></td><td><b>יציאה ממרמורה</b> ← SS209 ← SS675 ← E45 צפונה. <i>(אופציונלי: +30 ד׳ לבלוודרה העליון)</i></td></tr>
+        <tr><td><b>17:45</b></td><td><b>הגעה לדרוטה.</b> פורקים, הילדים יוצאים מהרכב</td></tr>
+        <tr><td><b>18:15–19:30</b></td><td><b>הקנייה הגדולה: Conad Superstore</b>, Via Tiberina 44B — <b>1.15 ק״מ, 3 דקות מהבית</b>. שישי <b>08:30–20:00</b>. שני מבוגרים נוסעים, כל השאר קורסים</td></tr>
+      </table>
+      <b>שקיעה 19:03</b> — אין סיכון של חושך.<br>
+      <b>⏳ הזמן האחרון לצאת ממרמורה: 16:30 בנוח · 17:15 הכי מאוחר</b> (הפארק נסגר ב-18:00).
+      אחרי 17:30 מגיעים לסופר בריצה לפני סגירה — ואז עדיף לוותר על הקנייה ולעשות אותה
+      בשבת בבוקר.</details>
+
+    <details class="note"><summary class="nh">🛒 למה הסופר אחרי, בדרוטה, ולא בדרך</summary>
+      <b>Conad Superstore, Via Tiberina 44B, דרוטה</b> — 3 דקות מהבית, שישי 08:30–20:00.
+      (⚠️ יש עוד Conad קטן ב-Via Foscolo בדרוטה שסוגר 13:00–16:30 — <b>לא זה.</b>)<br>
+      לעשות את הקנייה בדרך פירושו תשעה אנשים עייפים ועגלה מלאה בקירור בשני רכבים עמוסים
+      ממילא. <b>מהבית זה שני מבוגרים, רכב ריק ושלוש דקות לכל כיוון</b> — וגם אפשר לקנות
+      לפי מה שיש במטבח במקום לנחש. <a href="#food/shopping">מה קונים ←</a></details>
+
+    <details class="note"><summary class="nh">🛣️ המסלול, האגרה והנ״צ — למקרה שאין ניווט ברכב</summary>
+      <b>⚠️ רכבי Goldcar בקטגוריה הזאת בדרך כלל בלי מערכת ניווט.</b> להניח טלפון בלבד,
+      ו<b>להוריד מפה אופליין של לאציו ואומבריה עוד מהדירה.</b>
+      <ul class="qlist">
+        <li><b>פיומיצ׳ינו ← מרמורה:</b> 149 ק״מ · <b>לתכנן 2:20–2:35</b> עם שני רכבים ועצירה.</li>
+        <li><b>מרמורה ← דרוטה:</b> 77 ק״מ · <b>1:10–1:20</b>. <b>ללא אגרה.</b></li>
+        <li><b>אגרה:</b> רק הקטע A1dir + A1 בין <i lang="it" dir="ltr">Roma Nord</i>
+          ל-<i lang="it" dir="ltr">Orte</i> — <b>כ-€4.60–4.90 לרכב, כלומר ~€10 לשניהם</b>.
+          כל השאר חינם. יש חלופה בלי אגרה (SS4 או SS3) שמוסיפה 45–60 דקות דרך עיירות —
+          <b>לא ביום הזה.</b></li>
+        <li><b>והשאלה החשובה: מרמורה בכלל בדרך?</b> ישיר פיומיצ׳ינו←דרוטה הוא 191 ק״מ / 2:20.
+          דרך מרמורה: 226 ק״מ / 2:55. <b>העקיפה עולה 35 ק״מ ו-35 דקות.</b> כן, זה בדרך.</li>
+      </ul>
+      <b>נ״צ להקלדה ידנית:</b>
+      <div dir="ltr" style="font-family:monospace; font-size:13px; text-align:left; background:#f4f1ea; border-radius:8px; padding:10px; margin-top:6px; overflow-x:auto">
+Belvedere Inferiore (entrance)   42.5541966, 12.7154006<br>
+Piazzale Fatati (parking)        42.5562501, 12.7188867<br>
+Piazzale Byron (the viewpoint)   42.5538187, 12.7132712<br>
+Belvedere Superiore (entrance)   42.5504268, 12.7176030<br>
+Conad Superstore, Deruta         42.9983969, 12.4269567<br>
+Le Case Coloniche, Deruta        43.0007180, 12.4219840
+      </div></details>
+
+    <details class="note warn"><summary class="nh">🅱️ תכנית ב׳ — אם מאחרים בשעתיים ומפספסים את 15:00</summary>
+      <b>לא לשלם €90 בשביל להסתכל על טפטוף.</b>
+      <ul class="qlist">
+        <li><b>המומלץ: לוותר על מרמורה ולנסוע ישר לדרוטה.</b> 191 ק״מ / ~2:20, מגיעים
+          שעתיים מוקדם יותר, כולם ישנים, והסופר פתוח לרווחה. <b>ואז לעשות את מרמורה כמו
+          שצריך בשבת 26.9 או ראשון 27.9</b> — 15:00–18:00, שלוש שעות מים במקום אחת,
+          ומגיעים רעננים.</li>
+        <li><b>אם מישהו מתעקש לראות משהו:</b> לעצור ב-<b>Belvedere Superiore</b>, שנמצא
+          ממש ליד הכביש, לעמוד על המעקה מעל הקפיצה הראשונה עשר דקות, לשלם €2 חניה
+          ולהמשיך. <b>לקנות כרטיס כניסה רק אם באמת נכנסים.</b></li>
+      </ul></details>
+
+    <details><summary>אוכל, שירותים, ומה לא מצאנו</summary>
+      <p style="margin:0"><b>אוכל: פיקניק מהבית, ולא דיון.</b> יש שולחנות פיקניק בשתי הכניסות, ויש ברים וקיוסקים עם פאניני ופיצות (~€5 לפריט) — אבל <b>הפארק לא מפרסם שום מידע על גלוטן או אלרגנים</b>, וקיוסק ליד מפל אינו מטבח מבוקר. <b>להניח ששום דבר שם אינו בטוח לצליאק ולאלרגיה לבוטנים, ולהביא אוכל לשני הילדים.</b> ואין סופרמרקט ליד המפל — הקנייה נעשית בפיומיצ׳ינו לפני היציאה, או בדרוטה בערב. <a data-view="food">אוכל ←</a></p>
+      <p style="margin:0"><b>שירותים:</b> יש בשתי הכניסות ובכמה נקודות בתוך הפארק, חלקם בתשלום. ⚠️ <b>שידת החתלה — לא מצאנו אזכור בשום מקום. להניח שאין</b>, ולהחליף את הקטנה בתא המטען.</p>
+      <p style="margin:0"><b>מזג אוויר וביגוד:</b> סוף ספטמבר בטרני — מקסימום סביב 25°C. הקניון מוצל ולח, והרסס מוריד את התחושה בכ-5 מעלות לעומת החניון. <b>שכבה קלה בתיק, גם ביום שנראה חם.</b></p>
+      <p style="margin:0"><b>אגם פידילוקו</b>, ~15 דקות משם, היה בתכנית המקורית כחצי השנייה של היום. <b>ביום הזה אין לו מקום</b> — יוצאים ב-16:30 כדי להגיע לדרוטה. הוא נשאר אפשרות טובה אם חוזרים למרמורה בסוף השבוע.</p>
+      <p style="margin:0" class="src"><b>מה אומת ומה לא:</b> לוח ההזרמה, שעות הפארק, תאריכי השאטל, המחירים, תעריף המשפחה, הגדרות המסלולים וההמלצות הבטיחותיות — כולם <b>מהאתר הרשמי, נקראו ב-13.9.2026</b>. אורכי המסלולים והפרשי הגובה הם ממקורות משניים ש<b>חלוקים ביניהם עד ±30%</b>. זמני הנסיעה חושבו ללא פקקים. <b>לא אומתו:</b> זמינות ה-Balcone בתאריך שלנו, שעות הפתיחה של תחנת Goldcar, ושעות ה-Conad (מאגרגטור). <b>לאמת את לוח ההזרמה ואת מזג האוויר בבוקר עצמו.</b></p>
     </details>
   </div>
 
@@ -988,13 +1301,13 @@
       <tr><td>14:00–16:00</td><td>ספלו — סמטאות, פרחים, חנויות, גלידה</td></tr>
       <tr><td>16:00 ← 17:00</td><td>יציאה ← בריכה</td></tr>
     </table>
-    <div class="note warn"><div class="nh">⚠️ 2026 היא שנת 800 למות פרנציסקוס — ואסיזי היא מרכז האירועים</div>
+    <details class="note warn"><summary class="nh">⚠️ 2026 היא שנת 800 למות פרנציסקוס — ואסיזי היא מרכז האירועים</summary>
       החגיגות הלאומיות מגיעות לשיאן ב-<b>4 באוקטובר</b>, ארבעה ימים אחרי שאנחנו עוזבים,
       וכוללות גם הצגת גופת הקדוש לציבור. כלומר <b>השבוע האחרון של ספטמבר באסיזי יהיה עמוס
       בצורה חריגה</b>, עם לחץ על חניונים ועל לינה. (זו מסקנה מהתכנית הרשמית, לא הצהרה
       שלה.) <b>לעשות את אסיזי מוקדם בשהות, ביום חול, ולא בסוף השבוע.</b>
       אגב, ה-4 באוקטובר הוא <b>חג לאומי חדש באיטליה מ-2026</b> — נופל על יום ראשון, ולא
-      משפיע עלינו.</div>
+      משפיע עלינו.</details>>
 
     <details><summary>שעות מאומתות, החניה — כולל מלכודת אחת — ולמה ספלו מציל את אחר הצהריים</summary>
       <p style="margin:0"><b>הבזיליקה — כניסה חופשית ובלי כרטיס</b> (״L'ingresso per i visitatori individuali è gratuito e non è richiesto alcun biglietto״), ואין צורך בהזמנה ליחידים. שעות הקיץ, שתקפות לתאריכים שלנו: <b>הכנסייה התחתונה 06:00–19:00 · הכנסייה העליונה 08:30–18:45 · הקריפטה וקבר הקדוש 06:00–18:15</b>.</p>
@@ -1029,14 +1342,14 @@
     <div class="meta"><span>🚗 ~<b>64 דקות</b> · 74 ק״מ</span><span>🎒 פארק 10:00–18:30</span><span class="pr">רפטינג €35 · 3–16 €30</span></div>
     <p class="gist">בעמק הנרה, ליד הכפר שקג׳ינו, יש פארק חבלים גדול עם מסלולים בין צמרות העצים ואומגות — ובנהר עצמו רפטינג משפחתי. זה היום שהגדולים יזכרו, ו<b>הבשורה הטובה: הרפטינג מתאים מגיל 3</b>, כלומר הקטן יכול להשתתף.</p>
 
-    <div class="note warn"><div class="nh">⚠️ בשני התאריכים האפשריים יש מגבלה — צריך לבחור נכון</div>
+    <details class="note warn"><summary class="nh">⚠️ בשני התאריכים האפשריים יש מגבלה — צריך לבחור נכון</summary>
       <b>פארק החבלים פתוח לקהל רק בשבת 26.9 ובראשון 27.9.</b> בשישי 25.9, בשני 28.9
       ובשלישי 29.9 הלוח הרשמי אומר ״פתוח <b>לקבוצות בהזמנה בלבד</b>״ — עם תשעה אנשים
       אולי אנחנו כן קבוצה, אבל <b>זה מחייב טלפון מראש</b> (‎+39 393 417 4717 / 0743 618005).<br>
       <b>אבל הרפטינג הפוך:</b> במערכת ההזמנות של Pangea, <b>שבת 26.9 כבר מלאה</b> (״Posti esauriti״)
       בשתי היציאות. שישי, ראשון, שני ושלישי — פנויים.<br>
       <b>כלומר: ראשון 27.9 הוא היום היחיד שבו שני החלקים עובדים בלי טלפון.</b>
-      אם היום הזה לא מסתדר — או שמזמינים את הפארק מראש כקבוצה, או שעושים רק אחד מהשניים.</div>
+      אם היום הזה לא מסתדר — או שמזמינים את הפארק מראש כקבוצה, או שעושים רק אחד מהשניים.</details>>
 
     <div class="links">
       <a href="https://www.pangea-italia.com/rafting-in-umbria-sul-fiume-nera/" target="_blank" rel="noopener">Pangea — רפטינג ↖</a>
@@ -1089,7 +1402,7 @@
     <div class="tags"><span class="tag t-beach">מים ורוגע</span><span class="tag t-grand">נגיש ונינוח</span><span class="tag t-all">כולם</span></div>
     <div class="meta"><span>🚗 ~<b>52 דקות</b> · 61 ק״מ</span><span>🏰 Rocca del Leone · <b>יום–יום 09:30–19:00</b></span></div>
     <p class="gist">האגם הרביעי בגודלו באיטליה, וקסטיליונה דל לאגו יושבת עליו על לשון יבשה עם מבצר מדיאבלי. זה <b>היום שמוריד הילוך</b> אחרי יום או שניים אינטנסיביים.</p>
-    <div class="note warn"><div class="nh">⚠️ הסירה לאי בוטלה — משבר מים באגם</div>
+    <details class="note warn"><summary class="nh">⚠️ הסירה לאי בוטלה — משבר מים באגם</summary>
       קו הסירות <b>מקסטיליונה דל לאגו</b> אל Isola Maggiore <b>מושבת מ-31 באוגוסט 2026</b>
       בגלל ״משבר מים חמור״. במקומו יש אוטובוס מחליף אל <b>Tuoro Navaccia</b> ומשם הפלגה של
       10 דקות — <b>ולתאריכים 28–29.9 לא פורסם לוח זמנים בכלל.</b>
@@ -1098,7 +1411,7 @@
       (יציאות 08:50, 10:15, 11:30, 13:10, 14:40, 16:10, 17:40; בראשון כל 40 דקות מ-09:00).
       €4.20 לכיוון, €6 הלוך-חזור, <b>ועוד €3 לאדם דמי עגינה</b>.
       <br>⚠️ ועוד שתיים: הכלים שטים ב<b>קיבולת מופחתת</b> ומומלץ להגיע מוקדם לחזרה, ו<b>עגלות
-      פתוחות אסורות לעלייה בכל האגם מאז 29 ביולי 2026</b> — עגלה מקופלת בלבד.</div>
+      פתוחות אסורות לעלייה בכל האגם מאז 29 ביולי 2026</b> — עגלה מקופלת בלבד.</details>>
     <div class="links">
       <a href="https://www.fsbusitalia.it/it/turismo/navigazione-lago-trasimeno.html" target="_blank" rel="noopener">לוח ההפלגות הרשמי ↖</a>
       <a class="map onmap" href="#map/p:Rocca+del+Leone+Castiglione+del+Lago" title="קסטיליונה דל לאגו — במפה שלנו">🗺️</a>
@@ -1129,14 +1442,14 @@
     <div class="meta"><span>🚗 ~<b>18 דקות</b> · 16 ק״מ</span><span>🚇 מיני-מטרו לעיר העליונה</span><span>☔ עובד גם בגשם</span></div>
     <p class="gist">היום עם הכי מעט נהיגה, ולכן הבחירה הנכונה אחרי יום עמוס או ביום שנראה גשום. פרוג׳ה היא עיר גדולה על גבעה, והדרך לעלות אליה היא <b>מיני-מטרו</b> — קרוניות קטנות אוטומטיות שילדים אוהבים — או דרך <b>רוקה פאולינה</b>, מבצר שהפך לעיר תת-קרקעית עם דרגנועים בתוכה, בכניסה חופשית.</p>
 
-    <div class="note warn"><div class="nh">⚠️ שתי סגירות שמכריעות באיזה יום עושים את זה</div>
+    <details class="note warn"><summary class="nh">⚠️ שתי סגירות שמכריעות באיזה יום עושים את זה</summary>
       <b>Perugina / בית השוקולד סגור בשבתות ובראשונים</b> — האתר הרשמי אומר
       ״פתוח שני עד שישי 9:00–13:00 ו-14:00–17:30, <b>סגור בחגים ובימי ראשון</b>״,
       ופתיחה בשבת מוזכרת רק לאוגוסט. כלומר <b>ראשון 27.9 בחוץ, ושבת 26.9 מפוקפקת</b> —
       נשארים <b>שישי 25.9, שני 28.9 או שלישי 29.9</b>. <b>וההזמנה חובה.</b><br>
-      <b>Città della Domenica סגור ביום שלישי 29.9.</b></div>
+      <b>Città della Domenica סגור ביום שלישי 29.9.</b></details>>
 
-    <div class="note warn"><div class="nh">🥜 בית השוקולד ואלרגיה לבוטנים — לא ״בטוח״ ולא ״לא בטוח״, אלא <b>לא ניתן לאמת</b></div>
+    <details class="note warn"><summary class="nh">🥜 בית השוקולד ואלרגיה לבוטנים — לא ״בטוח״ ולא ״לא בטוח״, אלא <b>לא ניתן לאמת</b></summary>
       המדיניות היחידה שמפורסמת היא ״<i>בהזמנה ובכניסה יש להודיע על אלרגיות ואי-סבילויות</i>״.
       אין רשימת אלרגנים לטעימה, ואין שום התייחסות לבוטנים. מה שכן ידוע:
       <b>Baci מכילים 26% אגוזי לוז</b> ונושאים אזהרת ״עלול להכיל אגוזי עץ אחרים״ —
@@ -1148,7 +1461,7 @@
       (1) מה בדיוק מוגש בטעימה, (2) האם בוטנים מטופלים במפעל בסן סיסטו,
       (3) האם אפשר לעשות את הסיור <b>בלי הטעימה</b>. <b>לשמור את התשובה.</b>
       הפתרון הסביר: לעשות את הסיור, לדלג על הטעימה, ולקנות בחנות מוצר עטוף עם תווית
-      אלרגנים מלאה. <a href="#food/peanut">אלרגיה לבוטנים ←</a></div>
+      אלרגנים מלאה. <a href="#food/peanut">אלרגיה לבוטנים ←</a></details>>
 
     <div class="links">
       <a class="map" href="https://www.google.com/maps/search/?api=1&query=Piazza+IV+Novembre+Perugia" target="_blank" rel="noopener">מפה ↖</a>
@@ -1182,17 +1495,17 @@
       <a class="map" href="https://www.google.com/maps/search/?api=1&query=Funivia+Colle+Eletto+Gubbio" target="_blank" rel="noopener">מפה ↖</a>
       <a class="map onmap" href="#map/p:Funivia+Colle+Eletto+Gubbio" title="גובּיו — במפה שלנו">🗺️</a>
     </div>
-    <div class="note"><div class="nh">🕐 השעות בפועל — טווח ״12–30 בספטמבר״</div>
+    <details class="note"><summary class="nh">🕐 השעות בפועל — טווח ״12–30 בספטמבר״</summary>
       <b>שישי 25.9, שבת 26.9, שני 28.9, שלישי 29.9:</b> 09:30–13:15 ו-14:30–19:00 — <b>עם
       הפסקת צהריים</b>, וזה מה שהורס תכנון תמים. <b>ראשון 27.9:</b> רצוף, 09:00–19:30.<br>
       <b>אין סגירה ביום רביעי בספטמבר</b> — ה״סגור ברביעי״ שמופיע באתרי תיירות הוא לוח
       נובמבר–פברואר. ⚠️ ו<b>לא ברור אם המפעיל מתייחס לשבת כיום חול</b> (ואז יש הפסקת
-      צהריים) או כיום חג — שווה טלפון אם מתכננים נסיעה באמצע היום בשבת.</div>
-    <div class="note warn"><div class="nh">⚠️ המחיר לא מפורסם בשום מקום</div>
+      צהריים) או כיום חג — שווה טלפון אם מתכננים נסיעה באמצע היום בשבת.</details>>
+    <details class="note warn"><summary class="nh">⚠️ המחיר לא מפורסם בשום מקום</summary>
       האתר של המפעיל מושבת, ובדיקה של כל הגרסאות השמורות שלו מראה ש<b>דף מחירים לא היה
       קיים שם אף פעם</b>. גם לעירייה אין. אגרגטורים חלוקים (€4 לכיוון / €5–6 הלוך-חזור) —
       <b>לא לסמוך עליהם, להתקשר: ‎075 927 3881.</b> וגם <b>גיל מינימלי לא מפורסם באף מקום</b> —
-      זו שאלה לאותו טלפון.</div>
+      זו שאלה לאותו טלפון.</details>>
     <details><summary>הרכבל, וגם מה יש בעיר עצמה</summary>
       <p style="margin:0"><b>על הרכבל — סוג הכלוב אומת:</b> אתר התיירות של עיריית גובּיו עצמה כותב ש״מפתיע תמיד את המבקרים כי <b>לא יושבים בו אלא עומדים</b>, בבטחה מלאה״. נוסעים בשניים, והוא נע ברציפות — לא עוצר לעלייה. 6 דקות, מגובה 532 מ׳ בעיר ל-803 מ׳ בבזיליקת סנט אובלדו. ילדים קטנים עם מבוגר, אבל <b>לאמת גיל מינימלי</b>. למי שלא רוצה — יש כביש למעלה. הרכבל <b>תלוי במזג אוויר</b> ונעצר ברוח.</p>
       <p style="margin:0"><b>חניה:</b> יש <b>חניון בתשלום ממש בתחנה התחתונה</b> (Via San Girolamo). חינם: San Pietro (מקורה), Cavarello, Via Epicuro (מקורה), Santa Lucia. לעיר עצמה — Piazza 40 Martiri, בתשלום, מיד מתחת למרכז. ⚠️ ה<b>zona monumentale</b> (Via dei Consoli, Via Savelli della Porta) היא ZTL מחמיר — <b>להתייחס אליה כאסורה לרכב שכור.</b> ושאר ה-ZTL סגור בימות חול מ-18:00 ובראשון <b>מ-11:00</b>. <a href="#info/ztl">ZTL ←</a></p>
@@ -1217,12 +1530,12 @@
     <div class="tags"><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span></div>
     <div class="meta"><span>🚗 ~1:20–1:45 לכל כיוון</span><span>⏱️ ~3 שעות נהיגה ביום</span></div>
     <p class="gist">היום הארוך והיפה. מונטפולצ׳אנו היא עיירת גבעה טוסקנית איקונית מעל עמק אורצ׳ה, עם מרתפי יין היסטוריים חצובים בסלע מתחת לרחוב הראשי. פיינצה, חצי שעה משם, היא עיירת רנסנס זעירה עם תצפית שהיא הגלויה של טוסקנה.</p>
-    <div class="note"><div class="nh">זה יום למבוגרים, שהילדים סובלים בכבוד</div>
+    <details class="note"><summary class="nh">זה יום למבוגרים, שהילדים סובלים בכבוד</summary>
       אין כאן אטרקציה אחת גדולה — זה ״טיול חוויה״: רחובות, נופים, חנויות, גלידה, תצפיות.
       <b>שני המקורות חלוקים על משך הנסיעה</b> (~1:15 מול ~1:45–2:00 לכל כיוון), וההפרש הזה הוא
       בין יום ארוך לבין יום ארוך מדי. <b>לבדוק ב-Maps ביום עצמו לפני שמחליטים.</b>
       מה שכן: <b>לא לעשות אותו אחרי יום אקשן</b>, ובמרתפים היין הוא העניין — מה שילדים
-      מתרשמים ממנו זה החביות והמעברים התת-קרקעיים, לא הטעימה.</div>
+      מתרשמים ממנו זה החביות והמעברים התת-קרקעיים, לא הטעימה.</details>>
     <details><summary>לוח זמנים, ומה החלופה אם רוצים טוסקנה בלי הנסיעה הכי ארוכה</summary>
       <table class="h">
         <tr><th>שעה</th><th>מה</th></tr>
@@ -1272,14 +1585,14 @@
     <div class="meta"><span class="free">אין חג לאומי בטווח 25–30.9</span><span>🎭 אבל יש שלושה פסטיבלים</span></div>
     <p class="gist">לא היה בשום מקור מקורי, ושווה יותר מאטרקציה: <b>סוף ספטמבר הוא שיא עונת הפסטיבלים באומבריה.</b> אין אף חג לאומי בטווח התאריכים ואין יום פטרון של אף אחת מהעיירות — כלומר <b>שום דבר לא סגור</b> — אבל יש כמה דברים שקורים רק אז.</p>
 
-    <div class="note"><div class="nh">⭐ I Giochi de le Porte, גואלדו טאדינו — 25–27 בספטמבר</div>
+    <details class="note"><summary class="nh">⭐ I Giochi de le Porte, גואלדו טאדינו — 25–27 בספטמבר</summary>
       <b>זה האירוע המתאים ביותר לילדים שקיים בטווח התאריכים שלנו, והוא נופל בדיוק עליהם.</b>
       פסטיבל ימי-ביניימי עם <b>כאלף משתתפים בתלבושות</b>: תהלוכה היסטורית ב<b>שבת 26.9</b>,
       תחרות בין ״שערי״ העיר ב<b>ראשון 27.9</b>, ותחרויות קשת, בליסטרה ורוגטקה — פלוס ארבע
       טברנות. גואלדו טאדינו נמצאת ~50 ק״מ מצפון-מזרח לדרוטה, כלומר בערך כמו גובּיו.
       <b>שווה לבנות עליו יום</b>: אבירים, חצים ותלבושות עושים לילדים בגילים 3–12 יותר מכל
       כנסייה. ⚠️ צפו לסגירות במרכז ההיסטורי.
-      <a href="https://www.giochideleporte.it/" target="_blank" rel="noopener">האתר ↖</a></div>
+      <a href="https://www.giochideleporte.it/" target="_blank" rel="noopener">האתר ↖</a></details>>
 
     <details><summary>עוד שלושה, ומה בדקנו ואינו בטווח</summary>
       <p style="margin:0"><b>Festival Nazionale dei Primi Piatti, פוליניו — 24–27.9.</b> פסטיבל פסטה, ומשפחתי במובהק. ⚠️ המקור הוא אגרגטור ולא המארגן — לאמת. וכמובן: פסטיבל פסטה הוא מקום מצוין למי שאוכל הכל ומורכב למי שלא. <a href="#food/gf">גלוטן ←</a></p>
@@ -1299,9 +1612,17 @@
 <!-- ======================= LAST DAY ======================= -->
 <div class="view" id="view-last"><div class="wrap pad">
   <a class="back" data-view="home">→ חזרה לבית</a>
-  <div class="region last"><div class="when">שלישי 29.9 · 11:00 — רביעי 30.9 · 05:30</div><h2>היום האחרון</h2>
-    <p>צ׳ק-אאוט ב-11:00, החזרת רכבים ב-02:30, טיסה ב-05:30. זה <b>פער של כ-15 שעות וחצי</b>, וזה היום היחיד בטיול שבו תכנון גרוע נגמר בחמישה ילדים גמורים בטרמינל בשלוש לפנות בוקר.</p>
+  <div class="region last"><div class="when">משפחה אחת: 28.9 → 29.9 · 05:30 · המשפחה השנייה: 29.9 → 30.9 · 05:30</div><h2>היום האחרון</h2>
+    <p>צ׳ק-אאוט, יום שלם, החזרת רכבים ב-02:30, טיסה ב-05:30. זה <b>פער של כ-15 שעות וחצי</b>, וזה היום היחיד בטיול שבו תכנון גרוע נגמר בחמישה ילדים גמורים בטרמינל בשלוש לפנות בוקר. <b>וזה קורה פעמיים</b> — המשפחות חוזרות בהפרש של יממה.</p>
     <a class="viewmap" href="#map/last">🗺️ נקודות היום האחרון</a></div>
+
+  <div class="note warn" style="margin-top:0"><div class="nh">⚠️ הכל בעמוד הזה תקף פעמיים, בהפרש של יום</div>
+    כל הכרטיסים כאן כתובים סביב הציר <b>29.9 → טיסה ב-30.9</b>. <b>למשפחה שטסה ב-29.9
+    אותו יום בדיוק מתרחש יום קודם</b>: צ׳ק-אאוט ויציאה מדרוטה ב-<b>28.9</b>, החזרת רכב
+    בליל <b>28→29.9</b> ב-02:30, טיסה ב-<b>29.9 ב-05:30</b>.<br>
+    <b>מה שזה משנה בפועל:</b> שני חדרי Day-use ולא אחד · שתי החזרות רכב בשני לילות ·
+    ו<b>שני 28.9 הוא היום האחרון המשותף</b>, לא 29.9.
+    <a href="#home/flights">הטבלה המלאה ←</a></div>
 
   <div class="card" id="theproblem"><h3>🎯 מה בעצם צריך לפתור כאן <a class="anchor" href="#last/theproblem" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist">לא ״במה נמלא את הזמן״ אלא שלוש בעיות נפרדות: <b>איפה הילדים מתקלחים וישנים</b>, <b>איפה המזוודות</b>, ו<b>מה עושים ביום עצמו</b> בלי לצבור עייפות לקראת לילה בלי שינה.</p>
@@ -1426,8 +1747,34 @@
   </div>
 
   <div class="card" id="carback"><h3>🔑 החזרת הרכבים ב-02:30 — הנוהל, והדבר שלא ידענו <a class="anchor" href="#last/carback" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
-    <div class="meta"><span>🕝 מחוץ לשעות בכל החברות</span><span>📸 תיעוד בצילום — לא אופציונלי</span></div>
+    <div class="meta"><span class="done">✅ החברה ידועה — <b>Goldcar</b></span><span>🅿️ <b>Parking B, קומה 4</b></span><span>🕝 מחוץ לשעות</span><span>📸 תיעוד בצילום — לא אופציונלי</span></div>
     <p class="gist">בשעה הזאת אין נציג באף חברה — בדקנו את כל עשר החברות ב-FCO, ו<b>אף אחת מהן לא נסגרת אחרי חצות, והמוקדמת שבהן נפתחת ב-07:00</b>. ההחזרה היא ״מחנים, נועלים, מכניסים מפתח לתיבה״.</p>
+
+    <div class="note warn"><div class="nh">🔴 שלוש נקודות שספציפיות ל-Goldcar, ואחת מהן חייבת שיחת טלפון</div>
+      <ul class="qlist">
+        <li><b>ההזמנה רשומה להחזרה ב-08:30, והטיסה ממריאה ב-05:30.</b> כלומר מחזירים
+          <b>כשש שעות לפני הזמן שבחוזה</b>. חוזית זה בסדר — החזרה מוקדמת מותרת, פשוט
+          בלי החזר — אבל היא נופלת בדיוק בשעה שהתחנה סגורה.</li>
+        <li><b>⚠️ תנאי Goldcar כותבים שהחזרה מחוץ לשעות קיימת ״בתחנות מסוימות״ — ולא
+          כותבים אם FCO היא אחת מהן, ולא איפה התיבה.</b> זו השאלה היחידה שאי אפשר לפתור
+          מהדף הזה. <b>לטלפן ל-<a href="tel:+390508075174" dir="ltr">‎+39 050 807 5174</a>
+          ולקבל תשובה בכתב</b> — איפה התיבה בדיוק ב-Parking B, ומה עושים אם היא נעולה.</li>
+        <li><b>ושתי החזרות, לא אחת.</b> משפחה אחת מחזירה בליל <b>28→29.9</b>, השנייה בליל
+          <b>29→30.9</b> — שתיהן בסביבות 02:30. <b>שתי שיחות טלפון, שני סטים של צילומים.</b>
+          <a href="#home/flights">למה הטיסות מתפצלות ←</a></li>
+      </ul></div>
+
+    <div class="note"><div class="nh">✅ מה שכן ידוע על הנוהל של Goldcar</div>
+      <ul class="qlist">
+        <li><b>מחזירים לאותו אזור שממנו אספו</b> — כלומר <b>Parking B, קומה 4</b>, שם עמדת
+          ה-Key’n Go. זה חוסך את החיפוש בין בניינים A/B/C שאר הכרטיס הזה מדבר עליו.</li>
+        <li><b>נזק מדווח על טופס ה-CAI שברכב</b>, והטופס נשאר ברכב או נמסר עם המפתחות.</li>
+        <li><b>מסמכי הרכב נשארים בתא הכפפות</b>, ולא נלקחים לטיסה בטעות.</li>
+        <li><b>לתדלק מלא לפני ההחזרה</b> — המדיניות היא Full/Full, ותחנת הדלק האחרונה
+          לפני השדה היא ההזדמנות האחרונה. <b>לשמור את הקבלה.</b></li>
+        <li><b>חלון הסובלנות לאיחור הוא 29 דקות</b> — לא רלוונטי למי שמחזיר שש שעות מוקדם,
+          אבל כן רלוונטי אם משהו משתבש בדרך.</li>
+      </ul></div>
 
     <div class="note warn"><div class="nh">⚠️ הדבר שחייבים לדעת: החוזה לא נגמר כשמכניסים את המפתח</div>
       זה מופיע בתנאים של כל חברה שהצלחנו לקרוא, וזו הנקודה הקריטית:
@@ -1450,6 +1797,7 @@
 
     <table class="h">
       <tr><th>חברה</th><th>בניין / קומה</th><th>שעות</th><th>החזרה מחוץ לשעות?</th><th>טלפון</th></tr>
+      <tr style="background:#fdf3e3"><td><b>⭐ Goldcar</b> — <b>שלנו</b></td><td><b>B · קומה 4</b><br><span style="font-size:12px">עמדת Key’n Go</span></td><td><b>לא מפורסמות</b> — לא באישור ההזמנה ולא בתנאים</td><td>⚠️ <b>״בתחנות מסוימות״</b> — התנאים מתארים תיבת מפתחות ונוהל CAI, אבל <b>לא אומרים אם FCO כלולה ואיפה התיבה</b>. <b>לטלפן.</b></td><td dir="ltr">+39 050 807 5174</td></tr>
       <tr><td><b>Avis / Budget</b></td><td>A · קומה 2</td><td>07:00–23:59</td><td><b>✅ ״24 שעות ביממה״</b> באתר שלהם. תעריף — לא מפורסם</td><td dir="ltr">+39 06 6501 1531</td></tr>
       <tr><td><b>Noleggiare</b></td><td>A · קומה 4, עמדה 1</td><td>08:00–24:00</td><td><b>✅ הברור מכולן</b> — ״תיבת מפתחות מחוץ לביתן, עמדה 1״. ⚠️ ה-€50 שמצוטט הרבה הוא על <b>איסוף</b> מאוחר, לא על החזרה</td><td dir="ltr">+39 345 118 1209</td></tr>
       <tr><td><b>Hertz</b></td><td>A · קומה 1</td><td>07:00–24:00</td><td>✅ תיבה בדלפק — ⚠️ אבל <b>מחייבת עד הפתיחה</b></td><td dir="ltr">+39 06 6595 5842</td></tr>
@@ -1661,12 +2009,16 @@
     <p class="src">שעות שמסומנות ב-<b>≈</b> מגיעות מאגרגטור שמשקף את Google ולא מהאתר של המסעדה עצמה — אינדיקציה, לא הבטחה. <b>לאמת בטלפון ביום שלפני</b>, במיוחד לקבוצה של תשעה, ובמיוחד אם יש יום סגירה שבועי.</p>
     <div id="rest-list" class="board-empty">טוען את רשימת המסעדות…</div>
     <div class="note warn" style="margin-top:14px"><div class="nh">⚠️ ארבע מסעדות מהתכנון המקורי הוסרו — הן לא קיימות</div>
-      שווה לדעת, כדי שאף אחד לא ינווט אליהן: <b>Osteria Il Borghetto בדרוטה — סגורה סופית</b> ·
-      <b>Osteria del Duca בגובּיו — לא קיימת</b> (כנראה בלבול עם <i>Locanda</i> del Duca, שנמצאת
-      ברשימה למעלה כקצה חוט) · <b>Pani e Vini בפרוג׳ה — לא קיימת</b> (המקום בשם הזה נמצא
-      בלומברדיה, 400 ק״מ משם) · <b>Panificio Bontempi — לא הצלחנו לאמת שהוא קיים</b> באף מקור
-      אמיתי.<br>
-      ובנוסף, תיקון מיקום: <b>Trattoria del Cacciatore אינה בשקג׳ינו</b> אלא 12 ק״מ משם.</div>
+      שווה לדעת, כדי שאף אחד לא ינווט אליהן:
+      <ul class="qlist">
+        <li><b>Osteria Il Borghetto, דרוטה</b> — סגורה סופית.</li>
+        <li><b>Osteria del Duca, גובּיו</b> — לא קיימת. כנראה בלבול עם
+          <i>Locanda</i> del Duca, שנמצאת ברשימה למעלה כקצה חוט.</li>
+        <li><b>Pani e Vini, פרוג׳ה</b> — לא קיימת. המקום בשם הזה נמצא בלומברדיה,
+          400 ק״מ משם.</li>
+        <li><b>Panificio Bontempi</b> — לא הצלחנו לאמת שהוא קיים באף מקור אמיתי.</li>
+        <li><b>תיקון מיקום:</b> <b>Trattoria del Cacciatore אינה בשקג׳ינו</b> אלא 12 ק״מ משם.</li>
+      </ul></div>
     <div class="note" style="margin-top:14px"><div class="nh">💡 שלוש דקות שמשנות ארוחה</div>
       <b>להזמין מקום מראש</b>, ובאותה שיחה להגיד שיש צליאק ואלרגיה לבוטנים. מסעדה כפרית
       באומבריה עם תשעה אנשים בלי הזמנה זה הימור בכל מקרה — ועם ההזמנה מקבלים גם שולחן
@@ -1785,6 +2137,24 @@
   <div class="card" id="seats"><h3>👶 כיסאות בטיחות — ושני דברים שהחוק דורש <a class="anchor" href="#info/seats" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist">חמישה ילדים בשני רכבים, כולל אחד בן 3. באיטליה יש חובת התאמה, יש אכיפה, ויש דרישה נוספת שכמעט אף אחד לא יודע עליה.</p>
 
+    <div class="note warn"><div class="nh">🔴 ובינתיים — <b>לא הוזמן אף כיסא</b></div>
+      אישור ההזמנה של Goldcar מציג ״Baby seat״ כ<b>תוספת בתשלום שלא נרכשה</b>. כלומר
+      נכון להיום שני הרכבים מגיעים בלי שום אמצעי ריסון, מול חמישה ילדים שרובם כנראה
+      מתחת ל-150 ס״מ.<br>
+      <b>מה לעשות, לפי הסדר:</b>
+      <ul class="qlist">
+        <li><b>למדוד את הגובה של כל אחד מהחמישה</b> — זה הקריטריון, לא הגיל, וזה קובע
+          מי צריך כיסא ומי רק מגביה.</li>
+        <li><b>להוסיף להזמנה מהבית</b>, בשתי ההזמנות בנפרד. בדלפק זה יקר יותר ותלוי מלאי,
+          ומלאי שנגמר הוא בעיה שאין לה פתרון בשעה 09:00 בחניון.</li>
+        <li><b>או להביא מהארץ.</b> מגביה קל הוא פריט שטס, והוא גם מבטיח שהילד מכיר אותו.
+          <b>לבדוק מול Wizz Air מה נחשב פריט חינם</b> — אצלם עגלה אחת לילד היא חינם,
+          כיסא בטיחות לא בהכרח. <a href="#home/flights">מדיניות המזוודות ←</a></li>
+        <li><b>ואת התקן ההתראה לבן ה-3 להביא מהארץ בכל מקרה</b> — ראו למטה; הוא זול,
+          קטן, ואין שום ערובה שהשכרה תספק אחד.</li>
+      </ul>
+      <a href="#arrival/cars">פרטי ההשכרה ←</a></div>
+
     <div class="note warn"><div class="nh">⚠️ הקריטריון הוא <b>גובה 150 ס״מ</b>, לא גיל</div>
       סעיף 172 קובע שילד <b>מתחת ל-150 ס״מ</b> חייב אמצעי ריסון מותאם למשקלו.
       ״עד גיל 12״ הוא רק הגיל שבו רוב הילדים מגיעים לגובה הזה — <b>אין לו תוקף חוקי.</b>
@@ -1892,14 +2262,15 @@
   <div class="card" id="must"><h3>🔴 חייב להיות סגור לפני הטיסה <a class="anchor" href="#checklist/must" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <ul class="pill-list">
       <li><b>לוודא שההזמנה לטיסה היא ל-24.9 ולא ל-25.9</b> — ההמראה מתל אביב היא בערב חמישי. <a href="#home/flights">למה ←</a></li>
-      <li><b>לוודא שהמיניוואן מכיל תשעה</b> — ההזמנה נרשמה ל-8 בכוונה, אבל נוסעים 9, ולבת ה-3 צריך מושב ברכב גם לעשר דקות. <a href="#arrival/meetpoint">למה ←</a></li>
+      <li><b>🔴 לאמת את שני כרטיסי החזור בנפרד</b> — משפחה אחת חוזרת ב-<b>29.9</b> והשנייה ב-<b>30.9</b>, <b>באותו מספר טיסה ובאותה שעה</b>. זה בדיוק המקרה שבו קל להניח ששתי ההזמנות זהות. <a href="#home/flights">מה זה משנה ←</a></li>
+      <li><b>🔴 להזמין כיסאות בטיחות — אף אחד לא הוזמן.</b> שני רכבים של Goldcar מגיעים כרגע בלי שום אמצעי ריסון, מול חמישה ילדים. בשדה זה יקר ותלוי מלאי. <a href="#info/seats">מה בדיוק צריך ←</a></li>
       <li><b>לשמור בטלפון את מספר הטלפון מאישור ההזמנה</b> — הוא לא מפורסם בשום מקום. <a href="#arrival/phones">והגיבוי ←</a></li>
-      <li><b>⭐ להזמין חדר Day-use ל-29.9, לחלון 17:00–23:30</b> — כל היום האחרון תלוי בו, וליד השדה אין שום דבר שנמשך אחרי 22:00. <a href="#last/theproblem">למה ←</a></li>
-      <li><b>שני נהגים רשומים בחוזה ההשכרה</b>, ולא אחד. תוספת נהג מהבית זולה בהרבה מבדלפק. <a href="#arrival/cars">למה ←</a></li>
+      <li><b>⭐ להזמין חדר Day-use — ופעמיים.</b> למשפחה שטסה ב-30.9 לחלון של <b>29.9, 17:00–23:30</b>; ולמשפחה שטסה ב-29.9 את המקבילה ב-<b>28.9</b>. ליד השדה אין שום דבר שנמשך אחרי 22:00. <a href="#last/theproblem">למה ←</a></li>
+      <li><b>🔴 להוסיף נהג שני לכל הזמנה.</b> אישור ההזמנה נושא <b>נהג ראשי אחד</b>. מי שנוהג בלי להיות בחוזה נוסע בלי כיסוי. תוספת מהבית זולה בהרבה מבדלפק. <a href="#arrival/cars">למה ←</a></li>
       <li><b>רישיון נהיגה בינלאומי לשני הנהגים</b> — חובה לפי החוק האיטלקי, ו-Avis דורשת אותו במפורש. <a href="#info/driving">למה ←</a></li>
-      <li><b>הוראות החזרת רכב מחוץ לשעות, בכתב</b> — ולאמת שהחזרה ב-02:30 מותרת בחוזה, ובאיזה בניין וקומה. <b>אף חברה ב-FCO לא פתוחה בשעה הזאת.</b> <a href="#last/carback">הנוהל ←</a></li>
-      <li><b>לאמת שיש מסגרת אשראי פנויה</b> לפיקדון של שני רכבים (€300–€600 לכל אחד), ושהכרטיס אשראי אמיתי ולא דביט. <a href="#info/driving">למה ←</a></li>
-      <li><b>לאמת את ההזמנה בדרוטה</b> — התאריכים, מספר היחידות, <b>שעת הצ׳ק-אאוט</b> (אולי 10:00 ולא 11:00), ואם הבריכה בכלל פתוחה בסוף ספטמבר. <a href="#base/house">מה לשאול ←</a></li>
+      <li><b>🔴 לטלפן ל-Goldcar על החזרה מחוץ לשעות</b> — <a href="tel:+390508075174" dir="ltr">‎+39 050 807 5174</a>. התנאים שלהם אומרים שזה קיים ״בתחנות מסוימות״ ו<b>לא אומרים אם FCO כלולה או איפה התיבה</b>. <b>ולזכור: שתי החזרות, בשני לילות שונים (29.9 ו-30.9).</b> <a href="#last/carback">הנוהל ←</a></li>
+      <li><b>כרטיס אשראי פיזי על שם הנהג הראשי, בכל רכב.</b> Goldcar: <b>VISA/MasterCard בלבד</b> — לא דביט, לא Amex, לא Diners, לא מזומן. הפיקדון הצפוי <b>€100</b> (Super Relax כלול) ועוד פיקדון דלק שסכומו לא פורסם. בלי כרטיס מתאים הם רשאים לא למסור רכב, בלי החזר. <a href="#arrival/cars">למה ←</a></li>
+      <li><b>✅ ההזמנה בדרוטה אושרה</b> — 2 דירות בקומת הקרקע, קרובות, מקרר, בריכה פעילה, ואפשרויות ללא גלוטן. <b>מה שנשאר לאמת: שעת הצ׳ק-אאוט</b> (אולי 10:00 ולא 11:00), ו<b>שהעזיבה המפוצלת מסודרת</b> — משפחה אחת יוצאת בערב 28.9 והשנייה ב-29.9. <a href="#base/house">הבית ←</a></li>
       <li><b>תרופות האלרגיה — לפחות שתיים, מפוצלות, בכבודה יד</b>, עם מכתב רופא והשם הגנרי. <b>אי אפשר לקנות מזרק אדרנלין באיטליה בלי מרשם.</b> <a href="#info/health">למה ←</a></li>
       <li><b>התקן נגד שכחת ילד</b> — חובה חוקית לילד מתחת לגיל 4, ולא צריך תקן: כרית לחץ פשוטה מספיקה. <a href="#info/seats">למה ←</a></li>
       <li><b>כיסאות בטיחות</b> — הקריטריון הוא <b>גובה 150 ס״מ</b>, לא גיל. R44/04 עדיין חוקי; R44/01 ו-02 לא. <a href="#info/seats">פרטים ←</a></li>

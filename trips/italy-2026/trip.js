@@ -129,10 +129,33 @@
     });
   });
 
-  // print = everything open
-  window.addEventListener('beforeprint', function(){
-    document.querySelectorAll('details').forEach(function(d){ d.open = true; });
-  });
+  /* print = everything open, and then back exactly as it was.
+     CSS cannot reveal a closed <details> — the `open` attribute is the only switch —
+     so this stays JS. It matters more since the note boxes in the day cards became
+     <details> themselves (user's request, Sep 2026): without this, printing the page
+     would drop most of the warnings on it. `afterprint` restores the previous state so
+     printing does not silently expand the page the family is still reading, and
+     `matchMedia('print')` covers Safari, which fires neither event reliably. */
+  var wasOpen = null;
+  function printOpen(){
+    if(wasOpen) return;                                     // already open for this print
+    wasOpen = [].map.call(document.querySelectorAll('details'), function(d){
+      var before = d.open; d.open = true; return [d, before];
+    });
+  }
+  function printRestore(){
+    if(!wasOpen) return;
+    wasOpen.forEach(function(pair){ pair[0].open = pair[1]; });
+    wasOpen = null;
+  }
+  window.addEventListener('beforeprint', printOpen);
+  window.addEventListener('afterprint', printRestore);
+  if(window.matchMedia){
+    var pmq = window.matchMedia('print');
+    var onPrint = function(e){ (e.matches ? printOpen : printRestore)(); };
+    if(pmq.addEventListener) pmq.addEventListener('change', onPrint);
+    else if(pmq.addListener) pmq.addListener(onPrint);     // Safari < 14
+  }
 })();
 
 /* ============================================================
@@ -276,7 +299,14 @@
   var SPOTS = {
     perugia:   {n:'פרוג׳ה',   lat:43.1122, lng:12.3888, el:493},
     deruta:    {n:'דרוטה',     lat:42.9836, lng:12.4211, el:215},
-    fiumicino: {n:'פיומיצ׳ינו', lat:41.7714, lng:12.2367, el:3}
+    fiumicino: {n:'פיומיצ׳ינו', lat:41.7714, lng:12.2367, el:3},
+    /* Rome city centre (user's request, Sep 2026). NOT the same reading as
+       Fiumicino: the airport is on the coast and Rome sits 25 km inland, which
+       in late September is regularly a 2–4° difference and a different rain
+       probability. The last day is spent in the city, not at the airport, so
+       both are worth having. Same one request — Open-Meteo takes a
+       comma-separated list of coordinates and returns an array. */
+    roma:      {n:'רומא',      lat:41.9028, lng:12.4964, el:21}
   };
   /* where we are meant to be, night by night — mirrors the agenda view.
      The 25th reads Deruta: the night before it is two hours in the dark at
@@ -339,22 +369,180 @@
       sub = 'הטיול עדיין רחוק מכדי תחזית — בינתיים מזג האוויר בפרוג׳ה.';
     }
 
-    var box = document.getElementById('wx-days');
-    days.forEach(function(x){
-      var parts = x.date.split('-');
-      var el = document.createElement('div');
-      el.className = 'wx-day' + (x.date === today ? ' now' : '');
-      [['d', parts[2] + '.' + Number(parts[1])], ['i', icon(x.i)],
-       ['t', round(x.hi) + ' / ' + round(x.lo)],
-       ['w', x.spot + (typeof x.rain === 'number' ? ' · ' + x.rain + '% גשם' : '')]].forEach(function(pair){
-        var s = document.createElement('div');
-        s.className = pair[0]; s.textContent = pair[1]; el.appendChild(s);
+    function paint(box, list){
+      list.forEach(function(x){
+        var parts = x.date.split('-');
+        var el = document.createElement('div');
+        el.className = 'wx-day' + (x.date === today ? ' now' : '');
+        [['d', parts[2] + '.' + Number(parts[1])], ['i', icon(x.i)],
+         ['t', round(x.hi) + ' / ' + round(x.lo)],
+         ['w', x.spot + (typeof x.rain === 'number' ? ' · ' + x.rain + '% גשם' : '')]].forEach(function(pair){
+          var s = document.createElement('div');
+          s.className = pair[0]; s.textContent = pair[1]; el.appendChild(s);
+        });
+        box.appendChild(el);
       });
-      box.appendChild(el);
+    }
+    paint(document.getElementById('wx-days'), days);
+
+    /* Rome, over exactly the dates the first strip ended up showing — so the two
+       rows line up whether we are inside the trip window or on the Perugia
+       fallback. Its own failure is silent: the main strip is already painted. */
+    var rd = daily.roma, rbox = document.getElementById('wx-roma-days'), roma = [];
+    if(rd) days.forEach(function(x){
+      var i = rd.time.indexOf(x.date);
+      if(i < 0) return;
+      roma.push({date:x.date, spot:SPOTS.roma.n, i:rd.weather_code[i],
+                 hi:rd.temperature_2m_max[i], lo:rd.temperature_2m_min[i],
+                 rain:(rd.precipitation_probability_max || [])[i]});
     });
+    if(roma.length){
+      paint(rbox, roma);
+      document.getElementById('wx-roma').style.display = '';
+    }
+
     document.getElementById('wx-sub').textContent = sub;
     card.style.display = '';
   }).catch(function(){});           // no forecast is better than a wrong one
+})();
+
+/* ============================================================
+   Live flight status (user's request, Sep 2026) — the flights table in #home.
+
+   SOURCE: the Israel Airports Authority's own flight board, published as an open
+   dataset on data.gov.il (CKAN `datastore_search`). It was picked over every
+   commercial flight API for one reason that overrides all the others: it is the
+   only candidate that is **CORS-open AND key-free**.
+
+     $ curl -sI -H 'Origin: https://liorsol.github.io' 'https://data.gov.il/api/3/...'
+     HTTP/1.1 200 OK
+     Access-Control-Allow-Origin: *
+
+   Everything else fails one of the two. OpenSky pins ACAO to its own origin;
+   adsb.lol and adsb.fi send no ACAO at all; FlightAware's AeroAPI sends none.
+   AviationStack and AeroDataBox do allow the browser — but both need a key, and
+   **this repo is public**, so the key would ship in plain sight in a file anyone
+   can read. Neither vendor's free key is referrer-locked, so it is a bearer
+   credential and a stranger drains the quota. adr.it (Fiumicino's own board)
+   answers 403 from CloudFront and Wizz Air publishes nothing. No proxy is
+   possible either — GitHub Pages is static, there is no server to put one on.
+
+   WHAT IT COVERS, AND WHAT IT DOES NOT. It is Ben Gurion's board, so it knows
+   our three legs from the TLV end only: the 24.9 departure, and the two
+   arrivals back. There is no free CORS-open Fiumicino source, so the FCO gate
+   and the FCO belt are simply not available — what does come through is the
+   delay, because an arrival's CHPTOL already reflects a late departure from
+   Rome. The FlightAware link in each row is the answer for everything else,
+   and it is rendered unconditionally rather than as an error state.
+
+   THE HORIZON IS ~3 DAYS, AND THAT IS THE FEATURE'S REAL SHAPE. Measured on
+   13.9.2026, the dataset held today−1 … today+3 and the last day was partial.
+   So for most of the time this page exists the answer is legitimately "no row
+   yet", and the trip is weeks out. That is a NORMAL state, not a failure:
+   the row keeps its scheduled times and says so. Three states, no spinner that
+   spins forever:
+     · no row / offline / throw → the static scheduled time stands, muted label
+     · row found                → status chip + the actual/estimated time + terminal
+     · always                   → the FlightAware deep-link
+   `sw-core.js`'s `live()` refuses to cache this host for the same reason it
+   refuses the weather: a stale flight status is worse than none.
+
+   One request per distinct flight number, not per row — 6041 is flown on both
+   return dates, so two fetches cover three rows. `CHSTOL` is matched by date
+   because the dataset holds one row per flight number per day; taking
+   records[0] would show a random day's status.
+
+   UNTRUSTED INPUT: every value below is written with `textContent`. The Hebrew
+   status string is the publisher's own `CHRMINH`, so there is nothing to
+   translate and nothing to interpolate into markup.
+   ============================================================ */
+(function(){
+  var tbl = document.getElementById('flighttbl');
+  if(!tbl || !window.fetch) return;
+  var rows = [].slice.call(tbl.querySelectorAll('tr[data-fl]'));
+  if(!rows.length) return;
+
+  var API = 'https://data.gov.il/api/3/action/datastore_search' +
+            '?resource_id=e83f763b-b7d7-479e-b172-ae981ddc6de5&limit=60&filters=';
+
+  /* CHRMINE is the stable machine value; CHRMINH is the publisher's Hebrew.
+     Prefer the Hebrew, fall back to the English, and colour off the English so
+     a wording change upstream cannot silently turn a cancellation green. */
+  function tone(code){
+    var c = String(code || '').toUpperCase();
+    if(c === 'CANCELED' || c === 'CANCELLED') return 'bad';
+    if(c === 'DELAYED') return 'warn';
+    if(c === 'LANDED' || c === 'FINAL' || c === 'DEPARTED') return 'done';
+    return 'ok';                                   // ON TIME, NOT FINAL, LANDING
+  }
+  function hhmm(s){                                 // "2026-09-24T21:55:00" → "21:55"
+    var m = /T(\d{2}:\d{2})/.exec(s || '');
+    return m ? m[1] : '';
+  }
+
+  function paint(row, rec){
+    var cell = row.querySelector('.fstat');
+    if(!cell) return;
+    cell.textContent = '';
+
+    if(!rec){                                       // the normal state, most of the year
+      var q = document.createElement('span');
+      q.className = 'fchip sched';
+      q.textContent = 'לפי לוח הזמנים';
+      cell.appendChild(q);
+      return;
+    }
+    var chip = document.createElement('span');
+    chip.className = 'fchip ' + tone(rec.CHRMINE);
+    chip.textContent = rec.CHRMINH || rec.CHRMINE || '—';
+    cell.appendChild(chip);
+
+    /* The actual/estimated time, but only when it differs from the scheduled one
+       — repeating an unchanged time adds a number and no information. */
+    var sched = hhmm(rec.CHSTOL), real = hhmm(rec.CHPTOL);
+    if(real && real !== sched){
+      var t = document.createElement('div');
+      t.className = 'fnow';
+      t.textContent = 'בפועל ' + real;
+      cell.appendChild(t);
+    }
+    if(rec.CHTERM){
+      var term = document.createElement('div');
+      term.className = 'fterm';
+      term.textContent = 'טרמינל ' + rec.CHTERM + ' בנתב״ג';
+      cell.appendChild(term);
+    }
+  }
+
+  /* Group the rows by flight number so each number is fetched once.
+     Take the LAST digit run, not "every digit": the carrier code contains one of its
+     own, so stripping non-digits from "W4 6044" yields "46044" and every lookup
+     silently finds nothing. `CHFLTN` in the dataset is the bare number. */
+  var byNum = {};
+  rows.forEach(function(r){
+    var m = /(\d+)\s*$/.exec(r.dataset.fl || '');
+    if(!m) return;
+    (byNum[m[1]] = byNum[m[1]] || []).push(r);
+  });
+
+  Object.keys(byNum).forEach(function(num){
+    var mine = byNum[num];
+    fetch(API + encodeURIComponent(JSON.stringify({CHOPER:'W4', CHFLTN:num})),
+          {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(res){
+        var recs = ((res || {}).result || {}).records || [];
+        mine.forEach(function(row){
+          /* Match on BOTH the date and the direction: 6041 appears as an arrival
+             here, and a same-numbered departure would otherwise match first. */
+          var want = row.dataset.date, dir = row.dataset.to === 'TLV' ? 'A' : 'D';
+          paint(row, recs.filter(function(x){
+            return String(x.CHSTOL || '').slice(0, 10) === want && x.CHAORD === dir;
+          })[0] || null);
+        });
+      })
+      .catch(function(){ mine.forEach(function(row){ paint(row, null); }); });
+  });
 })();
 
 /* ============================================================
@@ -1011,3 +1199,4 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
     navigator.serviceWorker.register('sw.js').catch(function(){});
   });
 }
+

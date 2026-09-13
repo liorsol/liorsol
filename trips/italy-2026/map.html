@@ -57,6 +57,12 @@
   .filters.hide-tx .ic{font-size:1.3em}
   .filters.hide-tx{gap:.3em}                            /* a lone emoji needs far less around it */
   .filters.hide-tx button{padding:.34em .5em}
+  /* The ⭐ sub-row. Smaller, indented, and separated by a hairline so it reads as a
+     second level of the chip above it, not as a second, competing legend. */
+  .filters.sub{font-size:11.5px; padding-top:.45em; border-top:1px solid var(--line-soft,#e2dcd0)}
+  .filters.sub .lbl{flex:0 0 auto; align-self:center; font-family:'Heebo',sans-serif;
+    font-weight:700; opacity:.55; margin-inline-end:.2em; white-space:nowrap}
+  .filters.sub button{padding:.28em .6em}
   #map{flex:1; min-height:0; width:100%}
   @media print{ body{display:block; overflow:visible} #map{flex:none; height:520px} .bar .back,.filters{display:none} }
   .leaflet-popup-content{font-family:'Assistant',sans-serif; direction:rtl; text-align:right; font-size:14.5px; line-height:1.5}
@@ -78,6 +84,7 @@
   <a class="back" href="index.html">→ חזרה לעמוד הטיול</a>
 </div>
 <div class="filters" id="filters"></div>
+<div class="filters sub" id="subfilters" hidden></div>
 
 <div id="map"></div>
 
@@ -95,20 +102,40 @@
 /* `label` is the full name, used in the page title. The chips get `ic` + `tx`
    separately, and fitChips() can drop the words entirely on a phone. */
 var CATS = {
-  lodging: {label:'🛏️ לינה ושדה התעופה', ic:'🛏️', tx:'לינה',   color:'#98452a'},
+  /* `air` was split out of `lodging` (user's request, Sep 2026: "we have 2 lodgings,
+     but more points"). The airport terminal and the car-return complex are not places
+     anyone sleeps, and mixing them in made the lodging chip lie about its own count. */
+  lodging: {label:'🛏️ שתי הלינות',      ic:'🛏️', tx:'לינה',   color:'#98452a'},
+  air:     {label:'✈️ שדה התעופה ורכבים', ic:'✈️', tx:'שדה',   color:'#7a4b8a'},
   base:    {label:'🏡 הבסיס בדרוטה',      ic:'🏡', tx:'הבסיס',  color:'#2f5d3a'},
   days:    {label:'⭐ ימי הטיול',          ic:'⭐', tx:'ימים',   color:'#4a7c59'},
   last:    {label:'🛫 היום האחרון',        ic:'🛫', tx:'אחרון',  color:'#c1613c'},
   food:    {label:'🍽️ מסעדות וקניות',     ic:'🍽️', tx:'אוכל',   color:'#8a6714'}
 };
 
+/* The ⭐ category alone carries 30 pins across eight different day options, and all
+   thirty at once is noise rather than a map (user's request, Sep 2026: "maybe a
+   sub-filter for each plan type, not one for all the plans"). Every day pin already
+   names its card in the `v` field as days-slash-plan, so the plan is derived from data
+   that is already there — this map only supplies the short chip labels. A plan that gains
+   pins needs a line here; one that has none simply never gets a chip. */
+var DAY_PLANS = {
+  orvieto:   {ic:'⛪', tx:'אורבייטו'},
+  marmore:   {ic:'💦', tx:'מרמורה'},
+  assisi:    {ic:'🕊️', tx:'אסיזי'},
+  perugia:   {ic:'🍫', tx:'פרוג׳ה'},
+  adventure: {ic:'🧗', tx:'הרפתקה'},
+  trasimeno: {ic:'🏞️', tx:'טרזימנו'},
+  tuscany:   {ic:'🍷', tx:'טוסקנה'},
+  gubbio:    {ic:'🏰', tx:'גובּיו'}
+};
+
 var PLACES = [
   // ---------------- lodging + the airport ----------------
-  {n:'שדה התעופה פיומיצ׳ינו — טרמינל 3', cat:'lodging', lat:41.795574, lng:12.250329, q:'Rome+Fiumicino+Airport+Terminal+3', note:'נחיתה 25.9 ב-00:45 · המראה 30.9 ב-05:30<br>נכנסים בקומת הקרקע · המיניוואן קומה מעלה, מול דלת 4', v:'arrival/meetpoint'},
-  {n:'🅿️ מתחם החזרת הרכבים ב-FCO', cat:'lodging', lat:41.793704, lng:12.253953, q:'Fiumicino+Airport+Car+Rental+Multipiano', note:'החזרה 30.9 ב-02:30 · <b>שלושה חניונים נפרדים — A, B, C</b>, במרחק ~180 מ׳ זה מזה, לפי חברת ההשכרה. הדלפקים ב-Office Tower 2. הפין הוא מרכז המתחם (±150 מ׳) — לאמת את החניון של החברה שלנו', v:'last/carback'},
-  {n:'Il Nido dei Merli — כתובת הצ׳ק-אין', cat:'lodging', lat:41.804394, lng:12.221218, q:'Via+delle+Pinne+74+Fiumicino', note:'✅ ליל 25.9 — הוזמן, 2 דירות באותה קומה<br><b>הצ׳ק-אין נעשה בתוך ההסעה</b>, אז אין צורך להגיע לכאן לבד.<br><b>Via delle Pinne 74, פוצֶ׳נֶה</b> — כתובת הצ׳ק-אין שבהזמנה, וגם החניון של Parking Blu. ~7 ק״מ / 10 ד׳ מהטרמינל.<br>⚠️ פין ברמת רחוב (±150 מ׳) — הנכס לא קיים ב-OSM', v:'arrival/lodging1'},
-  {n:'Il Nido dei Merli — הכתובת השנייה', cat:'lodging', lat:41.773506, lng:12.233244, q:'Via+delle+Ombrine+58+Fiumicino', note:'<b>Via delle Ombrine 58</b> — הכתובת שבכותרת ההזמנה, וגם המשרד הרשום של מפעילת ההסעות. ~7 ק״מ מהכתובת השנייה ובצד אחר של השדה.<br>מאז שהצ׳ק-אין נסגר בהסעה זה כבר לא קריטי — <b>הפין כאן כדי ששתי הכתובות יהיו בטלפון</b>, למקרה של מונית או ניווט עצמאי', v:'arrival/lodging1'},
-  {n:'Country House Le Case Coloniche', cat:'lodging', lat:43.000718, lng:12.421984, q:'Country+House+Le+Case+Coloniche+Deruta', note:'הבסיס · צ׳ק-אין 25.9 · צ׳ק-אאוט 29.9 ב-11:00<br>~190 ק״מ / ~2:15–2:25 מ-FCO', v:'base/house'},
+  {n:'שדה התעופה פיומיצ׳ינו — טרמינל 3', cat:'air', lat:41.795574, lng:12.250329, q:'Rome+Fiumicino+Airport+Terminal+3', note:'נחיתה 25.9 ב-00:45 · המראה 30.9 ב-05:30<br>נכנסים בקומת הקרקע · המיניוואן קומה מעלה, מול דלת 4', v:'arrival/meetpoint'},
+  {n:'🅿️ מתחם החזרת הרכבים ב-FCO', cat:'air', lat:41.793704, lng:12.253953, q:'Fiumicino+Airport+Car+Rental+Multipiano', note:'<b>Goldcar — Key’n Go, Parking B, קומה 4</b><br>איסוף 25.9 ב-09:00 · <b>החזרה בשני לילות שונים: 29.9 ו-30.9, שתיהן ~02:30</b><br>שלושה חניונים נפרדים — A, B, C, במרחק ~180 מ׳ זה מזה. הפין הוא מרכז המתחם (±150 מ׳)', v:'last/carback'},
+  {n:'Il Nido dei Merli — ליל הנחיתה', cat:'lodging', lat:41.804394, lng:12.221218, q:'Via+delle+Pinne+74+Fiumicino', note:'✅ ליל 25.9 — הוזמן, 2 דירות באותה קומה<br><b>הצ׳ק-אין נעשה בתוך ההסעה</b> — הנהג מביא אותנו, אין צורך לנווט לכאן לבד.<br>~7 ק״מ / 10 ד׳ מהטרמינל.<br>⚠️ פין ברמת רחוב (±150 מ׳) — הנכס לא קיים ב-OSM', v:'arrival/lodging1'},
+  {n:'Country House Le Case Coloniche', cat:'lodging', lat:43.000718, lng:12.421984, q:'Country+House+Le+Case+Coloniche+Deruta', note:'✅ הבסיס — אושר מול המקום · צ׳ק-אין 25.9<br>2 דירות בקומת הקרקע, קרובות · מקרר · בריכה פעילה · אופציות ללא גלוטן<br>⚠️ <b>העזיבה מתפצלת</b>: משפחה אחת יוצאת בערב 28.9, השנייה 29.9<br>~190 ק״מ / ~2:15–2:25 מ-FCO', v:'base/house'},
 
   // ---------------- the base and what is next to it ----------------
   {n:'דרוטה — Piazza dei Consoli', cat:'base', lat:42.982290, lng:12.419588, q:'Deruta+Perugia+centro+storico', note:'בירת הקרמיקה האומברית · סדנאות לילדים בתיאום מראש', v:'base/deruta'},
@@ -116,23 +143,27 @@ var PLACES = [
   {n:'טודי — Piazza del Popolo', cat:'base', lat:42.782293, lng:12.406539, q:'Todi+Piazza+del+Popolo', note:'~20–25 ד׳ · אחת הכיכרות היפות באומבריה · חצי יום', v:'base/around'},
   {n:'מרשיאנו', cat:'base', lat:42.910512, lng:12.337723, q:'Marsciano+Perugia', note:'~12 ק״מ · לא אתר תיירות — כאן אוכלים המקומיים', v:'base/around'},
 
+  {n:'🛒 Conad Superstore, דרוטה', cat:'base', lat:42.9983969, lng:12.4269567, q:'Conad+Superstore+Via+Tiberina+44B+Deruta', note:'<b>הקנייה הגדולה</b> · 1.15 ק״מ / 3 ד׳ מהבית<br>שישי <b>08:30–20:00</b> (לאמת)<br>⚠️ לא ה-Conad הקטן ב-Via Foscolo, שסוגר 13:00–16:30', v:'food/shopping'},
+
   // ---------------- the day-trip catalogue ----------------
   {n:'אורבייטו — הקתדרלה', cat:'days', lat:42.717008, lng:12.113595, q:'Duomo+di+Orvieto', note:'~55–60 ד׳ · הבחירה הראשונה של שני המקורות', v:'days/orvieto'},
   {n:'באר סן פטריציו, אורבייטו', cat:'days', lat:42.722537, lng:12.120447, q:'Pozzo+di+San+Patrizio+Orvieto', note:'באר עם שני גרמי מדרגות שאינם נפגשים · מאות מדרגות — לא לעגלה', v:'days/orvieto'},
   {n:'אורבייטו התת-קרקעית', cat:'days', lat:42.715940, lng:12.113580, q:'Orvieto+Underground+Orvieto+Sotterranea', note:'סיור מודרך בלבד — לבדוק שעות באנגלית והזמנה<br>הפין ±70 מ׳; הקופה ב-Piazza Duomo 23', v:'days/orvieto'},
   {n:'🚞 פוניקולר אורבייטו — התחנה התחתונה', cat:'days', lat:42.723548, lng:12.126151, q:'Funicolare+Orvieto+Scalo', note:'מכאן עולים לעיר · <b>לא נכנסים ברכב לעיר העליונה — ZTL</b>', v:'days/orvieto'},
   {n:'🅿️ Campo della Fiera, אורבייטו', cat:'days', lat:42.716759, lng:12.105104, q:'Parcheggio+Campo+della+Fiera+Orvieto', note:'חניון · חלופה לפוניקולר, עם מעליות לעיר', v:'days/orvieto'},
-  {n:'מפלי מרמורה — Belvedere Superiore', cat:'days', lat:42.550025, lng:12.716870, q:'Cascata+delle+Marmore+Belvedere+Superiore', note:'הכניסה העליונה (~372 מ׳ גובה) · חניון צמוד<br>⚠️ <b>לבדוק את לוח הזרמת המים לתאריך</b>', v:'days/marmore'},
-  {n:'מפלי מרמורה — Belvedere Inferiore', cat:'days', lat:42.556701, lng:12.719191, q:'Cascata+delle+Marmore+Belvedere+Inferiore', note:'הכניסה התחתונה והקופה (~220 מ׳ גובה) · <b>כניסה נפרדת לגמרי</b> — 767 מ׳ באוויר, אבל כביש אחר. להחליט מראש לאיזו נוסעים', v:'days/marmore'},
-  {n:'אגם פידילוקו', cat:'days', lat:42.528947, lng:12.765465, q:'Lago+di+Piediluco', note:'~15 ד׳ מהמפלים · טיילת וסירות פדלים · הפין הוא מרכז האגם', v:'days/marmore'},
+  {n:'מפלי מרמורה — Belvedere Superiore', cat:'days', lat:42.5504268, lng:12.717603, q:'Cascata+delle+Marmore+Belvedere+Superiore', note:'הכניסה העליונה (~381 מ׳) · <b>לא חונים כאן</b> — מכאן לא רואים טוב את המפל<br>⭐ שווה כתוספת של 20 ד׳ <b>אחרי</b> ההזרמה: 6.2 ק״מ / 11 ד׳ מהתחתון, והכרטיס כבר מכסה את הכניסה', v:'days/marmore'},
+  {n:'⭐ מפלי מרמורה — Belvedere Inferiore (כאן חונים)', cat:'days', lat:42.5541966, lng:12.7154006, q:'Cascata+delle+Marmore+Belvedere+Inferiore', note:'<b>שישי 25.9 · המים זורמים 15:00–16:00</b> · הפארק 10:00–18:00<br>הכניסה התחתונה, הקופה, השירותים והפיקניק (~230 מ׳)<br><b>שני הרכבים חונים כאן ונשארים.</b> ⚠️ אין שאטל לבלוודרה העליון בספטמבר', v:'days/marmore'},
+  {n:'🅿️ מרמורה — חניית Piazzale Fatati', cat:'days', plan:'marmore', lat:42.5562501, lng:12.7188867, q:'Piazzale+Fatati+Marmore+Terni', note:'קווים כחולים · <b>€2 לשעה, €10 ליום</b>, בתשלום 10:00–20:00<br>~300–400 מ׳ הליכה לקופה. חלופה קרובה יותר: P1 ״Ex Viscosa״, 200 מ׳', v:'days/marmore'},
+  {n:'📸 מרמורה — Piazzale Byron (התצפית)', cat:'days', plan:'marmore', lat:42.5538187, lng:12.7132712, q:'Piazzale+Byron+Cascata+delle+Marmore', note:'<b>זו התצפית.</b> שלוש הקפיצות מלמטה וחזיתית<br>300–400 מ׳ מהכניסה, <b>שטוח, סלול, עובר עם עגלה</b><br><b>להיות כאן ב-14:45</b>, לא ב-15:00 — צופר מקדים את ההזרמה', v:'days/marmore'},
+  {n:'אגם פידילוקו', cat:'days', lat:42.528947, lng:12.765465, q:'Lago+di+Piediluco', note:'~15 ד׳ מהמפלים · טיילת וסירות פדלים · הפין הוא מרכז האגם<br>⚠️ <b>לא ביום שישי</b> — אין לו זמן בתכנית של היום הראשון. אפשרות טובה אם חוזרים למרמורה בסוף השבוע', v:'days/marmore'},
   {n:'בזיליקת סן פרנצ׳סקו, אסיזי', cat:'days', lat:43.074849, lng:12.605805, q:'Basilica+di+San+Francesco+Assisi', note:'~30–45 ד׳ · כניסה חופשית · <b>כתפיים וברכיים מכוסות</b>', v:'days/assisi'},
   {n:'Rocca Maggiore, אסיזי', cat:'days', lat:43.073370, lng:12.615175, q:'Rocca+Maggiore+Assisi', note:'המצודה מעל העיר — עם ילדים היא עושה יותר מכנסייה', v:'days/assisi'},
   {n:'🅿️ Parcheggio Mojano, אסיזי', cat:'days', lat:43.068361, lng:12.615387, q:'Parcheggio+Mojano+Assisi', note:'חניון תת-קרקעי בתשלום, מחוץ ל-ZTL · יש גם Matteotti ו-Giovanni Paolo II', v:'days/assisi'},
   {n:'ספלו', cat:'days', lat:42.990945, lng:12.671775, q:'Spello+Perugia', note:'~15 ד׳ מאסיזי · אין בה ״אתר״, וזה היתרון אחרי בוקר עמוס', v:'days/assisi'},
   {n:'פרוג׳ה — Piazza IV Novembre', cat:'days', lat:43.112045, lng:12.388769, q:'Piazza+IV+Novembre+Perugia', note:'~20–25 ד׳ · מזרקת Fontana Maggiore בכיכר', v:'days/perugia'},
-  {n:'Rocca Paolina, פרוג׳ה', cat:'days', lat:43.108297, lng:12.388130, q:'Rocca+Paolina+Perugia', note:'עיר תת-קרקעית עם דרגנועים · <b>כניסה חופשית</b> · התכנית הטובה ליום גשום', v:'days/perugia'},
+  {n:'Rocca Paolina, פרוג׳ה', cat:'days', plan:'perugia', lat:43.108297, lng:12.388130, q:'Rocca+Paolina+Perugia', note:'עיר תת-קרקעית עם דרגנועים · <b>כניסה חופשית</b> · התכנית הטובה ליום גשום', v:'days/perugia'},
   {n:'🚇 מיני-מטרו — תחנת Pincetto', cat:'days', lat:43.110239, lng:12.390562, q:'Minimetro+Pincetto+Perugia', note:'הדרך לעלות לעיר העליונה בלי להיכנס ל-ZTL', v:'days/perugia'},
-  {n:'Perugina — בית השוקולד', cat:'days', lat:43.080659, lng:12.333708, q:'Casa+del+Cioccolato+Perugina+San+Sisto', note:'⚠️ <b>אלרגיה לבוטנים — לברר אלרגנים מול המפעיל לפני הזמנה</b>', v:'food/peanut'},
+  {n:'Perugina — בית השוקולד', cat:'days', plan:'perugia', lat:43.080659, lng:12.333708, q:'Casa+del+Cioccolato+Perugina+San+Sisto', note:'⚠️ <b>אלרגיה לבוטנים — לברר אלרגנים מול המפעיל לפני הזמנה</b>', v:'food/peanut'},
   {n:'Città della Domenica', cat:'days', lat:43.113152, lng:12.343254, q:'Citta+della+Domenica+Perugia', note:'פארק המשפחות הראשון באיטליה · ⚠️ בסוף ספטמבר כנראה סופי שבוע בלבד — <b>לאמת לתאריך</b>', v:'days/perugia'},
   {n:'UmbriaActivity Park, שקג׳ינו', cat:'days', lat:42.710576, lng:12.840946, q:'UmbriaActivity+Park+Scheggino', note:'~45–50 ד׳ · פארק חבלים ואומגות · ⚠️ מגבלות גיל וגובה, ותיאום מראש<br>הפין ±300 מ׳ — הפארק פרוש על שטח מיוער', v:'days/adventure'},
   {n:'שקג׳ינו — הכפר', cat:'days', lat:42.712556, lng:12.831366, q:'Scheggino+Perugia', note:'כפר על הנהר, מוכר בפורלים · רפטינג משפחתי בנהר הנרה', v:'days/adventure'},
@@ -176,8 +207,28 @@ tiles.once('tileerror', function(){
   setTimeout(function(){ n.style.opacity = '0'; }, 9000);
 });
 
-var layerGroups = {}, groupBounds = {};
-Object.keys(CATS).forEach(function(k){ layerGroups[k] = L.layerGroup(); groupBounds[k] = []; });
+/* A "lane" is the unit that gets switched on and off. For most categories that is
+   the category; for ⭐ it is the individual day plan, so one plan can be shown
+   without the other seven. Everything downstream — bounds, counts, add/remove —
+   works on lanes, and `laneCat` maps back to the chip that owns each one. */
+function planOf(p){
+  if(p.cat !== 'days') return null;
+  /* Usually the day plan IS the card the pin links to. Not always: the Perugina pin
+     belongs to the Perugia day but links to the peanut-allergy card, because that is
+     what someone tapping it needs to read. An explicit `plan` covers that case. */
+  if(p.plan) return p.plan;
+  return /^days\//.test(p.v || '') ? p.v.slice(5) : null;
+}
+function laneOf(p){ var d = planOf(p); return d ? 'days/' + d : p.cat; }
+
+var layerGroups = {}, groupBounds = {}, laneCat = {}, LANE_KEYS = [];
+function lane(id, cat){
+  if(layerGroups[id]) return;
+  layerGroups[id] = L.layerGroup(); groupBounds[id] = []; laneCat[id] = cat;
+  LANE_KEYS.push(id);          /* addPlaces() can create lanes, so this cannot be a snapshot */
+}
+Object.keys(CATS).forEach(function(k){ if(k !== 'days') lane(k, k); });
+Object.keys(DAY_PLANS).forEach(function(d){ lane('days/' + d, 'days'); });
 
 var byQ = {};
 function addPlaces(){
@@ -194,9 +245,11 @@ function addPlaces(){
   var html = '<b>'+p.n+'</b>' + (p.note ? '<br>'+p.note : '') +
              '<br><a href="'+mapsUrl+'" target="_blank" rel="noopener">מפה / ניווט ↖</a>' +
              (p.v ? ' · <a href="index.html#'+p.v+'" target="_top">מידע באתר ←</a>' : '');
-  p.marker = L.marker([p.lat, p.lng], {icon:icon}).bindPopup(html).addTo(layerGroups[p.cat]);
+  var ln = laneOf(p);
+  lane(ln, p.cat);                       // a day plan with no DAY_PLANS entry still gets a lane
+  p.marker = L.marker([p.lat, p.lng], {icon:icon}).bindPopup(html).addTo(layerGroups[ln]);
   byQ[p.q] = p;
-  groupBounds[p.cat].push([p.lat, p.lng]);
+  groupBounds[ln].push([p.lat, p.lng]);
   });
 }
 
@@ -204,10 +257,25 @@ function addPlaces(){
    absent, so each chip wears its category's pin colour to keep the colour↔category
    key. Categories toggle independently; `shown` is the whole state. */
 var CAT_KEYS = Object.keys(CATS);
-var shown = {}, pinned = null;
+var shown = {}, dayOn = {}, pinned = null;
 
-function setAll(v){ CAT_KEYS.forEach(function(k){ shown[k] = v; }); }
+function setAll(v){
+  CAT_KEYS.forEach(function(k){ shown[k] = v; });
+  Object.keys(DAY_PLANS).forEach(function(d){ dayOn[d] = true; });  // ⭐ off hides them anyway
+}
 function countOn(){ return CAT_KEYS.filter(function(k){ return shown[k]; }).length; }
+function dayCount(){ return Object.keys(DAY_PLANS).filter(function(d){ return dayOn[d]; }).length; }
+/* A lane is drawn when its category is on and — under ⭐ — its own plan is too. */
+function laneVisible(id){
+  if(!shown[laneCat[id]]) return false;
+  var d = id.indexOf('days/') === 0 && id.slice(5);
+  return d ? !!dayOn[d] : true;
+}
+function catCount(k){
+  return LANE_KEYS.reduce(function(n, id){
+    return n + (laneCat[id] === k ? groupBounds[id].length : 0);
+  }, 0);
+}
 
 /* Two hash forms, both fed by links on the trip page:
      #<category>  — open with just that section's pins showing (the per-view maps)
@@ -222,8 +290,14 @@ function fromHash(){
   var h = location.hash.replace(/^#/, '');
   try{ h = decodeURIComponent(h); }catch(e){}
   pinned = h.indexOf('p:') === 0 ? byQ[h.slice(2)] : null;
-  var cat = pinned ? pinned.cat : h;
-  if(CATS[cat]){ setAll(false); shown[cat] = true; }
+  var plan = pinned ? planOf(pinned) : (DAY_PLANS[h] ? h : null);
+  var cat  = pinned ? pinned.cat : (plan ? 'days' : h);
+  if(CATS[cat]){
+    setAll(false); shown[cat] = true;
+    /* Deep-linking a single day pin — or #marmore — narrows ⭐ to that plan too,
+       which is the whole point of the sub-filter. A bare #days shows all eight. */
+    if(plan){ Object.keys(DAY_PLANS).forEach(function(d){ dayOn[d] = d === plan; }); }
+  }
   else setAll(true);
   render(true);
 }
@@ -235,12 +309,12 @@ function fromHash(){
    not one layer of it — ask for a new frame. */
 function render(fit){
   var bounds = [], visible = 0;
-  CAT_KEYS.forEach(function(k){
-    if(shown[k]){
-      layerGroups[k].addTo(map);
-      bounds = bounds.concat(groupBounds[k]);
-      visible += groupBounds[k].length;
-    } else if(map.hasLayer(layerGroups[k])) map.removeLayer(layerGroups[k]);
+  LANE_KEYS.forEach(function(id){
+    if(laneVisible(id)){
+      layerGroups[id].addTo(map);
+      bounds = bounds.concat(groupBounds[id]);
+      visible += groupBounds[id].length;
+    } else if(map.hasLayer(layerGroups[id])) map.removeLayer(layerGroups[id]);
   });
 
   var on = countOn();
@@ -259,6 +333,18 @@ function render(fit){
     b.setAttribute('aria-pressed', k ? !!shown[k] : on === CAT_KEYS.length);
   });
 
+  /* The ⭐ sub-row exists only while ⭐ itself is on — eight more chips on screen
+     when the day pins are hidden anyway would be clutter, not a filter. */
+  var sub = document.getElementById('subfilters'), dn = dayCount();
+  sub.hidden = !shown.days;
+  sub.querySelectorAll('button').forEach(function(b){
+    var d = b.dataset.day;
+    b.classList.toggle('on', d ? !!dayOn[d] : dn === Object.keys(DAY_PLANS).length);
+    b.classList.toggle('some', !d && dn > 0 && dn < Object.keys(DAY_PLANS).length);
+    b.setAttribute('aria-pressed', d ? !!dayOn[d] : dn === Object.keys(DAY_PLANS).length);
+  });
+
+  fitChips();                 /* the sub-row appears and disappears — re-measure both rows */
   map.invalidateSize();
   if(pinned && shown[pinned.cat]){ map.setView([pinned.lat, pinned.lng], 14); pinned.marker.openPopup(); }
   else if(fit && bounds.length) map.fitBounds(bounds, {padding:[30,30]});
@@ -275,12 +361,11 @@ var LEVELS = [                    /* each level's floor: words have to stay read
   {cls:'hide-n',         min:10},
   {cls:'hide-n hide-tx', min:7}
 ];
-function fitChips(){
-  var f = document.getElementById('filters');
-  if(!f.clientWidth) return;      /* laid out while hidden — measuring would shrink to nothing */
+function fitRow(f, base, start){
+  if(!f || f.hidden || !f.clientWidth) return;   /* laid out while hidden — measuring would shrink to nothing */
   for(var i = 0; i < LEVELS.length; i++){
-    f.className = 'filters ' + LEVELS[i].cls;
-    for(var s = CHIP_PX; s >= LEVELS[i].min; s -= 0.5){
+    f.className = base + ' ' + LEVELS[i].cls;
+    for(var s = start; s >= LEVELS[i].min; s -= 0.5){
       f.style.fontSize = s + 'px';
       if(f.scrollWidth <= f.clientWidth) return;
     }
@@ -288,7 +373,13 @@ function fitChips(){
   /* Narrower than six icons will ever go. Shrinking further buys almost nothing —
      emoji come from a bitmap font that stops tracking font-size — so keep them full
      size and let .filters scroll, rather than tiny *and* scrolling. */
-  f.style.fontSize = CHIP_PX + 'px';
+  f.style.fontSize = start + 'px';
+}
+function fitChips(){
+  fitRow(document.getElementById('filters'), 'filters', CHIP_PX);
+  /* The ⭐ sub-row gets the same treatment one step smaller, and keeps its `sub`
+     class — fitRow rewrites className wholesale, so the base has to carry it. */
+  fitRow(document.getElementById('subfilters'), 'filters sub', CHIP_PX - 1.5);
 }
 
 function init(){
@@ -298,7 +389,7 @@ function init(){
     CAT_KEYS.map(function(k){
       return '<button type="button" data-cat="'+k+'" style="--c:'+CATS[k].color+'" title="'+CATS[k].label+'">' +
              '<span class="ic">' + CATS[k].ic + '</span><span class="tx">' + CATS[k].tx + '</span>' +
-             '<span class="n">' + groupBounds[k].length + '</span></button>';
+             '<span class="n">' + catCount(k) + '</span></button>';
     }).join('');
 
   f.addEventListener('click', function(e){
@@ -309,6 +400,30 @@ function init(){
     if(k) shown[k] = !shown[k];
     else  setAll(countOn() < CAT_KEYS.length);   // הכל: all on unless already all on
     render(!k);                                  // only הכל re-frames; a single chip keeps the view
+  });
+
+  /* The ⭐ sub-row. Same chip markup and the same colour variable as ⭐ itself, so it
+     reads as a second level of the one chip above it rather than a second legend.
+     Plans with no pins are skipped — a chip that filters nothing is a lie. */
+  var sf = document.getElementById('subfilters');
+  sf.innerHTML = '<span class="lbl">⭐ לפי יום</span>' +
+    '<button type="button" data-day="">הכל<span class="n">' + catCount('days') + '</span></button>' +
+    Object.keys(DAY_PLANS).filter(function(d){
+      return (groupBounds['days/' + d] || []).length;
+    }).map(function(d){
+      return '<button type="button" data-day="'+d+'" style="--c:'+CATS.days.color+'">' +
+             '<span class="ic">' + DAY_PLANS[d].ic + '</span><span class="tx">' + DAY_PLANS[d].tx + '</span>' +
+             '<span class="n">' + groupBounds['days/' + d].length + '</span></button>';
+    }).join('');
+
+  sf.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-day]');
+    if(!b) return;
+    pinned = null;
+    var d = b.dataset.day, all = Object.keys(DAY_PLANS);
+    if(d) dayOn[d] = !dayOn[d];
+    else  all.forEach(function(x){ dayOn[x] = dayCount() < all.length; });
+    render(!d);
   });
 
   window.addEventListener('hashchange', fromHash);

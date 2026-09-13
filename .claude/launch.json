@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "albania", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8811"], "port": 8811 }
+    { "name": "albania", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8811"], "port": 8811 },
+    { "name": "italy", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8812"], "port": 8812 }
   ]
 }

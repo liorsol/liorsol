@@ -46,7 +46,7 @@ function isTile(url){
    localStorage copy and its own write queue), and a cached temperature or
    exchange rate is worse than no card at all. */
 function live(url){
-  return /firebasedatabase\.app|api\.open-meteo\.com|open\.er-api\.com/.test(url);
+  return /firebasedatabase\.app|api\.open-meteo\.com|open\.er-api\.com|data\.gov\.il/.test(url);
 }
 
 /* Media is never intercepted either, and this one is a correctness fix rather than a

@@ -47,7 +47,7 @@ trips/italy-2026/
 ├── CLAUDE.md              ← this file (canonical project context)
 ├── index.html             ← ★ source of truth — the trip page (content + CSS). Edit here!
 ├── trip.js                ← all behaviour: routing, weather, FX, restaurants, boards
-├── map.html               ← 46 verified pins + the restaurants, one Leaflet/OSM map
+├── map.html               ← 48 verified pins + the restaurants, one Leaflet/OSM map
 ├── restaurants.json       ← ★ read by BOTH index.html and map.html
 ├── sw.js                  ← thin SW stub: V + TILES + CORE, then imports ../sw-core.js
 │                            **Bump `V` on every content change — and on every sw-core.js change**
@@ -81,7 +81,7 @@ the DB rules' `/^[a-z]{2,12}$/`, card→pin and pin→card both ways, every inte
 and the restaurant ids/coordinates. Mutation-checked — a broken pin link and a removed board were
 both confirmed to fail it.
 
-Current state: **47 cards, 10 views, 9 boards, 60 map pins (46 hard-coded + 14 restaurants), all cross-links resolve.**
+Current state: **47 cards, 10 views, 9 boards, 62 map pins (48 hard-coded + 14 restaurants), all cross-links resolve.**
 
 The other check is `node ../sw-core.test.js`, which covers both trips' workers — see the
 [root README](../../README.md#the-trip-pages-tripsalbania-2026-tripsitaly-2026).
@@ -689,21 +689,260 @@ Orvieto 07:00–19:00 on 25–27 September**, which is a reason to shift Orvieto
 
 ## Open questions
 
-1. **Does the minivan seat nine?** The room booking for 8 is settled and correct (see Trip data);
-   the vehicle is the part that does not follow from it. One phone call.
-2. **Which rental company, and what does the contract say about a 02:30 return?** Everything about
-   the last night hangs on it: whether an out-of-hours return is permitted at all, whether there is
-   a fee, which Multipiano to drive to, and where that company's key box is. Also: **are both
-   drivers on the contract?** A second driver is cheap from home and expensive at the desk.
-3. **Is the Deruta booking actually made**, and **is the pool open and heated in late September?**
-   Half the "come back in the afternoon" logic depends on the pool. Also ask for the quiet hours
-   and, if possible, a later check-out on 29.9 — two extra hours that morning is worth more than
-   any attraction added to the last day.
-4. **The day-use room for 29.9** is not booked. It is the load-bearing piece of the last day.
-5. **Advance bookings not yet made:** the Deruta ceramics workshop · the rope park and Nera
+**Four of the six closed in the Sep 2026 comments pass — see "The comments pass" below.** What
+is left:
+
+1. **Child seats: none are booked.** The Goldcar confirmation lists "Baby seat" as an unpurchased
+   extra, and Italian law wants a restraint for every child under 150 cm. Five children, two cars,
+   zero seats. This is now the most urgent item on the page and it is item 1 in `#open`.
+2. **Only one driver is on the booking.** "Add driver" is an unpurchased extra too. Cheap from
+   home, expensive at the desk, and it applies to each family's booking separately.
+3. **Does FCO have an out-of-hours key box, and where?** Goldcar's T&Cs describe the procedure
+   but say it exists "in certain stations" and never say whether FCO is one, nor where the box
+   is. This cannot be resolved from a desk — it needs the call to +39 050 807 5174. It now
+   matters **twice**, on two different nights.
+4. **Two day-use rooms, not one** — 28.9 for the family flying on the 29th, 29.9 for the other.
+   Neither is booked. Still the load-bearing piece of the last day.
+5. **Does the minivan seat nine?** Unchanged, and still about the *property's shuttle* — the hire
+   cars are answered (2 × 5 seats). The card now says so explicitly, because the two were being
+   confused.
+6. **Advance bookings not yet made:** the Deruta ceramics workshop · the rope park and Nera
    rafting (**and the minimum age/height for the 3-year-old, asked with the real ages, not "is it
    suitable for children"**) · Perugina's allergen answer · Orvieto Underground's English tour
    times.
+
+## The comments pass (Sep 2026) — what the family asked for on the boards, and what was done
+
+Eleven comments were read off the live boards, acted on, and then deleted from the DB. **Deleting
+them was the user's instruction, and the record of what they said lives here instead** — the table
+below is now the only copy. `italy2026/comments` is `null`.
+
+**Deleting one takes two calls, not one, and this is the guard working:**
+
+```bash
+curl -XDELETE "$DB/italy2026/comments/home/$ID.json"          # 401 — refused while live
+curl -XPATCH -d '{"a":1757000001000}' "$DB/.../$ID.json"      # 200 — archive it first
+curl -XDELETE "$DB/.../$ID.json"                              # 200 — now it goes
+```
+
+`".write": "newData.exists() || data.child('a').exists()"` is exactly that rule. **A 200 on the
+first call would mean the published rules had drifted** — a permissive `.write` cascading over
+the per-id guard. Ten archive-then-delete pairs all returned 200/200 on 13.9.2026, so **the
+enforcement check the [README](../../README.md#firebase-realtime-database-dynamic-data-sync) says
+has not been re-run since 5 Sep has now effectively been re-run against `italy2026`, and the
+published rules are the real ones.**
+
+| Board | Comment | What happened |
+|---|---|---|
+| `agenda` | Le Case Coloniche replied: GF breakfast + GF in the restaurant, both apartments on the **ground floor**, close together, same level, fridge, **pool is working** | `#house` lost the "the pool is probably closed" warning and gained the five answers. The agenda and the checklist now say the Deruta booking is confirmed. |
+| `agenda` | map filter shows irrelevant pins; two lodgings but more pins; the check-in pin is not relevant; maybe a sub-filter per day plan | See "Map filters" below — the biggest single change in this pass. |
+| `arrival` | "test 2" | Junk. Deleted. |
+| `arrival` | the "which of the two addresses" part is not relevant — remove | Removed from `#lodging1` and `#open`, and the second Il Nido pin was deleted from the map. |
+| `days` | Marmore on day one, straight from the first hotel; plan the departure around the water release; upper or lower car park? | The whole Friday plan — see "Marmore on the first day" below. |
+| `days` | make the note boxes collapse and open on a tap | All 15 `.note` boxes in the days view are now `<details class="note">`. See below. |
+| `home` | remove the "an Israeli passport can't skip the desk" part — obvious, and we have suitcases anyway | Removed. |
+| `home` | the page zooms and loses horizontal balance; it also zooms on focusing a text field; the page should have a fixed width | Two separate causes, two fixes — see below. |
+| `home` | the "what's still open" box is one long line; it should be bullets, one per line | `.note .qlist`, and the same treatment given to the other run-on box (the four non-existent restaurants). |
+| `home` | add a Rome forecast to the weather | A second `.wx-days` strip for Rome city centre over the same dates. |
+
+### The zoom fix — and what it is NOT
+
+`user-scalable=no` was **not** used and must not be: iOS Safari has ignored it since iOS 10, and
+it breaks pinch-zoom for anyone who needs it. The two real causes:
+
+1. **Focus zoom** is caused by an input under 16px, full stop. `.board-form input/textarea` was
+   `15px`; it is `16px`. **Do not lower it.**
+2. **Horizontal pan** comes from something wider than the viewport making the whole document
+   pannable. `html,body{overflow-x:clip; max-width:100%}` stops it at the root. `clip` rather
+   than `hidden`: `hidden` on `html` turns it into a scroll container and kills `position:sticky`
+   and smooth scrolling inside it. Verified in-browser: `scrollWidth - clientWidth === 0`.
+
+### Collapsible note boxes
+
+`<div class="note"><div class="nh">…` became `<details class="note"><summary class="nh">…` — the
+native element, no JS, so keyboard focus, in-page find and print all keep working. Scope is
+**the days view only** (15 boxes). The blocking notes elsewhere stay open by the same rule the
+Albania page uses for the Bovilla gravel road: `#first-thing` carries a comment saying so, and
+the split-return warning in `#flights` is the same kind of thing. **Don't collapse those.**
+
+Print needed a real fix: CSS cannot reveal a closed `<details>`, so `trip.js` opens them all on
+`beforeprint` and **restores the previous state on `afterprint`** — the old handler only opened
+them and left the page expanded afterwards. `matchMedia('print')` covers Safari, which fires
+neither event reliably.
+
+## Live flight status (`#flighttbl`) — and why it is the IAA's open data
+
+The flights table gained a status column, filled from **data.gov.il's CKAN `datastore_search`**
+(resource `e83f763b-b7d7-479e-b172-ae981ddc6de5`, the Israel Airports Authority's own board).
+
+**It won on one criterion that overrides everything else: CORS-open AND key-free.** Verified:
+
+```
+$ curl -sI -H 'Origin: https://liorsol.github.io' 'https://data.gov.il/api/3/action/...'
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+```
+
+Everything else fails one of the two, and it was all actually tested: OpenSky pins ACAO to its
+own origin · adsb.lol and adsb.fi send no ACAO at all · airplanes.live 403s · FlightAware AeroAPI
+sends no ACAO · adr.it (Fiumicino's own board) 403s from CloudFront · Wizz Air publishes nothing.
+AviationStack and AeroDataBox *do* allow the browser — and are still unusable, because
+**this repo is public and neither vendor's key is referrer- or domain-locked**. RapidAPI's own
+docs say the key is account-wide. A key in this repo is a key anyone can spend. There is no
+proxy option either: GitHub Pages is static. **Do not "improve" this by adding a keyed API.**
+
+**The ~3-day horizon is the feature's real shape, not a bug.** Measured 13.9.2026: the dataset
+held today−1 … today+3, last day partial. So the resting state is "no row", which the UI renders
+as a muted `לפי לוח הזמנים` chip — an answer, not a spinner and not an error. Three states:
+no row / offline / throw → scheduled times stand · row → chip + actual time + terminal ·
+always → the FlightAware deep-link (`/live/flight/WZZ6044`), which is what covers the FCO gate
+and belt, since **no free CORS-open Fiumicino source exists**.
+
+Two traps, both hit for real while building this:
+
+- **`"W4 6044".replace(/\D/g,'')` is `"46044"`, not `"6044"`** — the carrier code has a digit in
+  it. Every lookup silently found nothing. Take the last digit run: `/(\d+)\s*$/`.
+- **Match on date AND direction.** The dataset holds one row per flight number per day, and
+  `6041` is an arrival here; `records[0]` is a random day.
+
+`sw-core.js`'s `live()` now also refuses to cache `data.gov.il`, for the same reason it refuses
+the weather.
+
+**A real finding fell out of it:** the IAA's board says, consistently across every date it holds,
+that **W4 6044 departs TLV from Terminal 1 and W4 6041 arrives at Terminal 3**. The page's
+"sources disagree about the Tel Aviv terminal" note is gone. It also shows **6044 departing at
+19:40 on some days and 21:55 on others**, so the weekly pattern varies — the page now warns
+against trusting its own printed departure time.
+
+## The return splits: one family flies 29.9, the other 30.9
+
+Same flight number `W4 6041`, same 05:30, **one day apart** (user, Sep 2026). This is structural,
+not a detail, and it is threaded through `#flights`, `#view-last`, the agenda timeline and the
+checklist:
+
+- **Two day-use rooms** — 28.9 and 29.9.
+- **Two car returns**, nights of 28→29 and 29→30, both ~02:30, both out of hours.
+- **The last common night is 27→28.9**; the family flying on the 29th leaves Deruta on the
+  evening of 28.9.
+- `#view-last` is written around the 29→30 axis and now opens with a note saying everything on
+  it happens a day earlier for the other family. **Don't duplicate the whole view** — it would
+  rot in two places.
+
+Weekdays, since they are easy to get wrong: 24.9 Thu · 25.9 Fri · 26.9 Sat · 27.9 Sun ·
+28.9 Mon · 29.9 Tue · 30.9 Wed.
+
+## Cars: Goldcar, and the Key'n Go kiosk is not in the terminal
+
+From the family's own confirmation + the attached FCO T&Cs. **Both families booked Goldcar; only
+one booking was seen here**, and the page says so.
+
+- **Key'n Go kiosk: Parking B, Level 4.** From T3 — exit arrivals, turn **left**, lift near the
+  *Semplicemente Roma* café to level 2, then signs to Parking B, level 4. From T1 — turn right,
+  signs to Rent a Car, lift on the right at the information desk. Station phone
+  +39 050 807 5174, GPS 41.795320, 12.253714.
+- Pick-up **25.9 09:00** (the earlier OLCI email said 07:00; the confirmation and the validation
+  email both say 09:00, and the contract is written against 09:00). Held **6 hours**.
+- Return booked **30.9 08:30** — six hours *after* the flight leaves. Returning at 02:30 is an
+  early return into a closed station, which is why the key-box question is open.
+- **Group E automatic, Seat Arona or similar, 5 seats, 5 doors, boot ~3 cases.** Two cars = ten
+  seats, so **the "where does the ninth sit" question is closed**; the binding number is now the
+  **boot**, six cases for nine people.
+- Full/Full fuel · Super Relax included, so the deposit is **€100** (vs up to €950) plus a
+  separate, unpublished fuel hold · **Italy only** · 29-minute late tolerance.
+- **VISA/MasterCard credit card, physical, in the main driver's name.** No debit, Amex, Diners
+  or cash — and Goldcar reserves the right to refuse the car with no refund.
+- **Not stated anywhere:** station opening hours, the fuel-hold amount, the excess, the mileage
+  allowance, and whether FCO has out-of-hours return.
+
+🔒 **The booking reference, the driver's name, the QR link and the My Bookings password that were
+in that email are NOT on the page and must never be.** The privacy rule at the top of this file
+covers exactly this. The page carries the station, the procedure, the times and the car — facts
+about a public service — and nothing that identifies the booking.
+
+## Map filters — `air` split out, and a second level under ⭐
+
+The `lodging` chip covered five pins for two lodgings, which is what the user noticed.
+
+- **New `air` category** for the airport terminal and the car-return complex. They are not places
+  anyone sleeps.
+- **The second Il Nido pin is deleted.** It existed only for the two-address ambiguity, which is
+  closed; the survivor is no longer titled "the check-in address".
+- **A second chip row, `#subfilters`, one chip per day plan**, visible only while ⭐ itself is on.
+  It is derived from data already present — a day pin's `v` field names its card — so a new pin
+  needs no filter wiring. `DAY_PLANS` supplies only the short labels. `#p:<q>` and `#<plan>` both
+  narrow ⭐ to the one plan, which is what makes a per-day link from the trip page useful.
+
+Two bugs found and fixed while doing it, both worth knowing:
+
+- **`LANE_KEYS` cannot be a snapshot.** `addPlaces()` creates lanes, and it runs inside `init()`,
+  after module scope. A lane created there was never drawn — one pin silently vanished.
+  `lane()` maintains the list instead.
+- **A day pin's plan is not always its card.** The Perugina pin belongs to the Perugia day but
+  links to the peanut-allergy card, because that is what its reader needs. It carries an explicit
+  `plan:'perugia'`, and `planOf()` prefers that over `v`.
+
+⚠️ **`check-links.py` greps `v:'…'` out of map.html.** A comment containing a literal example in
+that shape fails the `pin → card` check. Describe the field in prose instead.
+
+## Marmore on the first day (user's decision, Sep 2026)
+
+The family chose to do the falls on **Friday 25.9, on the drive from the airport**, and asked
+for the parking question and the release times settled. All of it was verified against
+`cascatadellemarmore.info` (read 13.9.2026, the site serves a table headed **ANNO 2026**).
+
+**The three answers:**
+
+1. **The release window is 15:00–16:00, and it is the only one reachable.** Friday is a
+   *feriale*: park 10:00–18:00, water **11:00–13:00 and 15:00–16:00**. (The page previously said
+   the weekday park closed at 17:00 — wrong for the 14–30 Sept band. Fixed.) The morning slot
+   cannot be made: Goldcar pick-up is 09:00, so the convoy leaves Fiumicino ~11:00 and arrives
+   ~13:30. **A siren precedes the release and the flow ramps over a few minutes** — the page says
+   be at the viewpoint at 14:45, not 15:00.
+2. **Park at Belvedere Inferiore, both cars, and stay there.** The decisive fact is that
+   **the shuttle does not run in September 2026** — the official calendar lists its exact 2026
+   dates (April, May, June, July, August; September has none). So "park at one, walk to the
+   other" has **no return leg**, and the only foot link is Sentiero 1: 600+ irregular steps and
+   ~150 m of climb, which the site itself calls *difficoltoso*. The lower side is also the only
+   one with a flat route to a good view; the site says Sentiero 5 at the upper belvedere
+   *"non consente una buona vista della Cascata"*.
+3. **The walk is the flat paved path to Piazzale Byron** — 300–400 m, no steps, **pushchair-able**,
+   mist rather than a soaking. Sentiero 4 is the optional bolt-on for whoever wants height.
+   Skipped and said so: Sentiero 2 (soaks you, and there is a 75-minute drive after), the
+   **Balcone degli Innamorati** (guided-only, limited numbers, steps, straight under the water —
+   and its availability on 25.9 could not be verified; the webshop is a session-gated SPA),
+   Sentiero 1 and Sentiero 6.
+
+**Pushback that is on the page, deliberately.** Friday is the *worst* release day of the trip:
+one hour, against **five** on Sat/Sun (11:00–13:00 *and* 15:00–18:00), and Deruta→Marmore is only
+77 km / ~1:10. The card says so and proposes going anyway — **the detour costs 35 km and 35
+minutes over the direct route** — then returning at the weekend if it lands well. **The decision
+is the family's and the plan on the page is the Friday one**; don't quietly re-plan it.
+
+**Other facts now on the card, all from the official site:** tickets €12 / €10 (5–9 and 70+) /
+free 0–4, **6 gate accesses per ticket** (so the optional upper-belvedere stop costs no extra
+entry), and the **€6-per-child family rate that is sold at the desk only, never online** — which
+is why the card says buy at the *cassa*. Blue-line parking €2/h, €10/day, payable 10:00–20:00;
+the P1/P2 online packages are July–August only.
+
+**The supermarket moved.** It used to be "somewhere on the drive up". It is now **Conad
+Superstore, Via Tiberina 44B, Deruta — 1.15 km and 3 minutes from the house, Fri 08:30–20:00**,
+done in the evening by two adults with an empty car, rather than by nine tired people with a
+trolley of chilled food in two already-loaded cars. (There is a second, smaller Conad on Via
+Foscolo in Deruta that shuts 13:00–16:30 — the card says which one is not it.)
+
+**Latest departure from Marmore: 16:30 comfortable, 17:15 absolute** (park shuts 18:00, sunset
+19:03). Plan B, if they are two hours late, is **not** to pay €90 to look at a trickle — drive
+straight to Deruta and do Marmore properly at the weekend.
+
+Three new map pins came with it — Piazzale Fatati (the car park), Piazzale Byron (the viewpoint),
+and the Conad — and the two belvedere pins got the **official entrance coordinates**, which
+differ from the ones that were there by 100–500 m. Lake Piediluco stays pinned but its note now
+says it has no place in the Friday plan.
+
+**Unverified and marked as such on the page:** the Balcone's availability on the date, Goldcar's
+station hours, the Conad's hours (aggregator), and every trail length — secondary sources
+disagree by up to ±30%, which is why the recommended route is described as "the flat paved path"
+rather than by a number.
 
 ## Content principles
 

@@ -5,6 +5,7 @@
 --   `sessions`      likewise -- it is the authentication half, and the key that signs the
 --                   cookie is a binding on that service, so nothing else can write it
 --   `login_tokens`  likewise
+--   `contact`       likewise -- GET/PUT /api/contact are routes on that same service
 --   `comments`      is written only by the Pages Function in this repo
 -- None of them ever writes another's table.
 
@@ -58,3 +59,26 @@ CREATE TABLE IF NOT EXISTS login_tokens (
 );
 
 CREATE INDEX IF NOT EXISTS login_tokens_created ON login_tokens (created_at);
+
+-- The charger operator's contact card -- name, phone, whatsapp, email, site, address, blurb.
+-- Previously CONTACT_* vars in the private Worker's wrangler.toml, deliberately left empty: a
+-- var write needs a `wrangler deploy` before it takes effect, and this is meant to be editable
+-- from the page itself, behind the login session, with no redeploy. Moved here for exactly
+-- that reason.
+--
+-- Single-row table, not a general key/value settings table: a settings table invites unrelated
+-- state into a place with no schema of its own -- the next unrelated preference lands here
+-- "just this once" and the table stops meaning anything. This is one idea with a fixed shape,
+-- seven named fields and no more, so a dedicated table is one migration per idea rather than a
+-- junk drawer. `id` is pinned to 1 by the CHECK constraint: there is one operator and one row,
+-- ever.
+CREATE TABLE IF NOT EXISTS contact (
+  id       INTEGER PRIMARY KEY CHECK (id = 1),
+  name     TEXT,
+  phone    TEXT,
+  whatsapp TEXT,
+  email    TEXT,
+  site     TEXT,
+  address  TEXT,
+  blurb    TEXT
+);

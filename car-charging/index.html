@@ -4,7 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>לוח הטעינה</title>
+<!--
+  TWO SHEETS, AND THE ORDER IS THE CONTRACT. style.css is the base every look stands on: the
+  reset, the accessibility floor, bidi and RTL correctness, the [hidden] rule, the router's
+  display contract, the menu mechanics and the geometry of every custom property a JS module
+  sets. themes/classic.css is today's DESIGN, and it is one of six. The theme sheet loads
+  second, so at equal specificity a theme wins.
+
+  `data-theme="classic"` on the link is how theme.js finds the sheet the first frame was
+  painted with: it disables that same element rather than adding a second classic sheet.
+  Every other theme's <link> is created by theme.js the first time it is chosen, and is then
+  toggled with `link.disabled` — so switching back and forth refetches nothing and never
+  flashes an unstyled page.
+-->
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="themes/classic.css" data-theme="classic">
+<!--
+  theme.js is a SEPARATE module tag and it is first on purpose. It has no imports of its own,
+  so it evaluates the moment it arrives, while app.js is still pulling api.js, views/he.js and
+  views/auth.js. That is the whole difference it buys: the CSP below refuses an inline
+  <script>, so the chosen theme cannot be stamped on <html> before a script runs, and the page
+  paints classic for one moment first. Shortening that moment is what this tag is for. Do not
+  try to defeat it with an inline script -- it is blocked silently and reads as a layout bug.
+-->
+<script type="module" src="theme.js"></script>
 <script type="module" src="app.js"></script>
 </head>
 <body>
@@ -20,13 +43,17 @@
   relative paths only, so moving this page to another hostname stays a DNS change.
 
   lang and dir both belong on <html> and nowhere deeper, and neither is decoration:
-  style.css scopes its whole Hebrew typography block to `[dir="rtl"]` as a DESCENDANT
-  selector, and it translates the one word the views are forbidden to write into the DOM
-  -- the "archived" tag on a note -- through `:lang(he)`. Move either attribute onto
-  <body> or a panel and both silently stop matching, which reads as a design regression
+  both style.css and every theme sheet scope their Hebrew typography to `[dir="rtl"]` as a
+  DESCENDANT selector, and style.css translates the one word the views are forbidden to write
+  into the DOM -- the "archived" tag on a note -- through `:lang(he)`. Move either attribute
+  onto <body> or a panel and both silently stop matching, which reads as a design regression
   rather than as a missing attribute.
 
-  ── THE SHAPE OF THIS PAGE: one screen, four views, a menu ──
+  `data-theme` is set on <html> too, by theme.js, and it is the third attribute on this
+  element. It names the sheet that is enabled; it is NOT a styling hook a theme should key
+  off, because a theme's own sheet is only ever on when its own theme is worn.
+
+  ── THE SHAPE OF THIS PAGE: one screen, six views, a menu ──
 
   The owner's requirement, in their own words: "one page with menu ... most of the time we
   should see just current status. History, invoice and commenting should be in menu. The same
@@ -45,14 +72,14 @@
       name an element, so the hash is a route and nothing else. app.js still accepts the
       slashless form, so an old bookmark keeps working.
 
-  A view switch paints nothing and fetches nothing. All four views are mounted and filled by
+  A view switch paints nothing and fetches nothing. All six views are mounted and filled by
   the same `load()` round, so navigating between them is a class toggle over DOM that is
   already there. That is not an optimisation: an upstream call per menu press would break the
   invocation budget the whole one-hour cache rule exists to protect.
 -->
 
 <!-- The menu. app.js hides it whole while nobody is signed in: on that page the sign-in card
-     IS the page, and four menu items leading to four empty views is the opposite of that.
+     IS the page, and six menu items leading to six empty views is the opposite of that.
      It is a sibling of `.shell` on purpose: `.nav[hidden] ~ .shell` is what gives the page
      its desktop gutter back when the rail goes, and `.nav.is-open ~ .navscrim` is what puts
      the scrim up on a phone. Both need the three to stay siblings, in this order. -->
@@ -63,6 +90,8 @@
     <a class="nav__link" id="nav-history"  href="#/history">🔌 טעינות</a>
     <a class="nav__link" id="nav-invoices" href="#/invoices">🧾 עמדה וחיובים</a>
     <a class="nav__link" id="nav-comments" href="#/comments">💬 הערות</a>
+    <a class="nav__link" id="nav-sessions" href="#/sessions">🔑 חיבורים פעילים</a>
+    <a class="nav__link" id="nav-contact"  href="#/contact">📞 יצירת קשר</a>
   </div>
 </nav>
 <div class="navscrim" id="navscrim"></div>
@@ -81,7 +110,35 @@
         <span class="updated__abs">אין עדיין נתונים</span>
         <span class="updated__age">&mdash;</span>
       </p>
-      <button class="btn btn--small" type="button" id="refresh">&#8635; רענון</button>
+      <!-- NOT `.btn--small`, and that is the fix rather than an omission. `.btn--small` is the
+           36px compact button; THEMES.md §8 lists the refresh control among the ones that must
+           clear the 44px `--tap` floor, because it is pressed one-handed, standing next to a
+           charger, by someone who has just walked up to the car. The two statements contradicted
+           each other and two themes resolved it by overriding `#refresh` in their own sheets.
+           Taking the class off resolves it once, here, at the source: a plain `.btn` is `--tap`
+           in every theme, no sheet needs an id rule, and nothing can lower it by forgetting. -->
+      <button class="btn" type="button" id="refresh">&#8635; רענון</button>
+
+      <!-- The theme switcher. A real <select> because it is the native control: keyboard and
+           screen-reader correct for free, a wheel on a phone and a menu on a laptop, and it
+           costs nothing. theme.js fills the options -- it owns the list of themes and their
+           Hebrew names, and a second copy of that list here is a second thing to keep in step.
+
+           IT IS IN THE HEADER AND NOT IN THE MENU, AND THAT IS THE WHOLE POINT OF IT BEING
+           HERE. app.js hides the rail and its handle on a signed-out page -- the sign-in card
+           IS the page -- so a switcher living in the menu is unreachable in exactly the state
+           a viewer would need it: if a chosen theme renders the sign-in card unreadable, they
+           cannot switch away AND cannot sign in, and the only way back is clearing site data.
+           The header is never hidden (paintAuthRequired touches <main>, `nav` and `navtoggle`
+           and nothing else), so this control survives every state the page has.
+
+           Its class is PARENT-NEUTRAL on purpose. A theme selects `.themeswitch` and never
+           reaches it through `.shell__header-inner` or `.nav`, so this block can move again
+           without breaking five sheets written against it. -->
+      <div class="themeswitch">
+        <label class="themeswitch__label" for="theme-select">ערכת נושא</label>
+        <select class="themeswitch__select" id="theme-select"></select>
+      </div>
     </div>
   </header>
 
@@ -127,6 +184,28 @@
       <section class="panel">
         <div class="panel__head"><h2 class="panel__title">הערות</h2></div>
         <div class="panel__body" id="comments"></div>
+      </section>
+    </section>
+
+    <!-- The sign-in sessions of this dashboard, and the revoke control. NOT the charging
+         sessions: those are #/history. One word, two tables, and the page keeps them on
+         opposite sides of the menu so neither screen can be mistaken for the other. -->
+    <section class="view" id="view-sessions">
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">חיבורים פעילים</h2></div>
+        <div class="panel__body" id="sessions"></div>
+      </section>
+    </section>
+
+    <!-- The one destination the data can take away. When /api/contact answers
+         {"contact": null} there is nothing to show and may never be, so app.js hides the menu
+         item AND detaches this section -- together, or `#/contact` would deep-link to a blank
+         panel behind a menu that no longer offers it. Filling the values in on the private
+         half brings both back on the next round; nothing in this directory changes. -->
+    <section class="view" id="view-contact">
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">יצירת קשר</h2></div>
+        <div class="panel__body" id="contact"></div>
       </section>
     </section>
 

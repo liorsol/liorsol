@@ -1,0 +1,1232 @@
+/* ==========================================================================
+   THEME: classic — today's design, and the page's known-good state.
+
+   This is the look the dashboard shipped with, moved out of style.css
+   unchanged. It is the default on a browser that has never chosen and it is
+   never removed from the switcher, because it is the way back from a theme
+   that turns out unreadable in a dim garage.
+
+   It is also the worked example for the other five. Everything here is a
+   theme's to replace: the token block, every colour, every radius, every type
+   size, every border, the panel chrome, the tables, the badges, the banner,
+   the empty states, the nav's paint and the desktop tuning. What it may NOT
+   do is in THEMES.md; the short version is that it is scoped by being a
+   separate <link> rather than by a selector prefix, so nothing here needs a
+   `[data-theme]` ancestor and nothing here may reach outside CSS.
+
+   Vanilla CSS. No framework, no build step, no web font, no remote asset.
+   Mobile-first: 375px is the target, 1440px is the comfortable case.
+
+   Light palette is defined on bare :root. The dark block below redefines only
+   what changes. Never give a colour its only definition inside a media query.
+   ========================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  /* — surfaces & text — */
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f4;
+  --line: #d5dbe1;
+  --line-strong: #b9c2cb;
+  --fg: #14181d;
+  --fg-muted: #57616c;          /* 4.9:1 on --surface */
+  --shadow: 0 1px 2px rgba(16, 24, 32, .06), 0 4px 14px rgba(16, 24, 32, .05);
+  --scrim: rgba(16, 24, 32, .45);
+
+  /* — accent — */
+  --accent: #1059c9;            /* 5.9:1 on --surface */
+  --accent-fg: #ffffff;
+  --accent-soft: #e6eefc;
+  --accent-line: #a9c6f2;
+
+  /* — semantic: good / warn / danger / alt (a 5th hue for one badge) — */
+  --good: #0f6a38;
+  --good-soft: #e3f4ea;
+  --good-line: #9ad1b1;
+
+  --warn: #7c4a00;
+  --warn-soft: #fdf0dc;
+  --warn-line: #e5bc78;
+
+  --danger: #a81f18;
+  --danger-soft: #fdeae8;
+  --danger-line: #eeada7;
+
+  --alt: #5b2ec4;
+  --alt-soft: #efe9fd;
+  --alt-line: #c3aef0;
+
+  --focus: #1059c9;
+
+  /* — radii — */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* — type scale — */
+  /* Hebrew faces sit after the platform UI fonts and before the generic. Font
+     fallback is per-character, so Latin never reaches them and the LTR page is
+     byte-identical. They only catch the platforms whose UI font has no Hebrew:
+     Roboto does not, so Android would otherwise land on an undeclared
+     last-resort face and synthesise the 550/620/650 weights this sheet uses.
+     All three are OS-resident — still no @import, no <link>, no remote asset. */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Noto Sans Hebrew", "Arial Hebrew", Helvetica, Arial, sans-serif;
+  --font-num: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --fs-xs: .75rem;
+  --fs-sm: .8125rem;
+  --fs-md: .9375rem;
+  --fs-lg: 1.0625rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.875rem;
+
+  /* — layout — */
+  --page-max: 1080px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #1e242c;
+    --line: #303840;
+    --line-strong: #454f5a;
+    --fg: #e7edf3;
+    --fg-muted: #9aa4af;        /* 6.0:1 on --surface */
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 14px rgba(0, 0, 0, .3);
+
+    --accent: #6cb0ff;
+    --accent-fg: #0d1117;
+    --accent-soft: #13263f;
+    --accent-line: #2d558c;
+
+    --good: #5fd37c;
+    --good-soft: #10281a;
+    --good-line: #2c6b40;
+
+    --warn: #e9b949;
+    --warn-soft: #2a2010;
+    --warn-line: #6b5220;
+
+    --danger: #ff8a80;
+    --danger-soft: #2c1512;
+    --danger-line: #75302a;
+
+    --alt: #bda2ff;
+    --alt-soft: #1d1633;
+    --alt-line: #4a3a80;
+
+    --focus: #6cb0ff;
+  }
+}
+
+body {
+  font: var(--fs-md) / 1.55 var(--font);
+  background: var(--bg);
+  color: var(--fg);
+}
+
+:focus-visible { border-radius: var(--r-sm); }
+
+/* ── page shell ────────────────────────────────────────────────────────── */
+
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell__header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: var(--sp-4);
+}
+
+.shell__header-inner,
+.shell__main,
+.shell__footer-inner {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+}
+
+.shell__header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.shell__title {
+  font-size: var(--fs-xl);
+  font-weight: 650;
+  letter-spacing: -.01em;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.shell__main {
+  flex: 1 1 auto;
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.shell__footer {
+  border-top: 1px solid var(--line);
+  padding: var(--sp-4);
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+}
+
+/* last-updated: absolute timestamp + relative age, always both. */
+.updated {
+  flex: 1 1 100%;
+  order: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+}
+
+.updated__abs { font-variant-numeric: tabular-nums; }
+
+.updated__age {
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: var(--fs-xs);
+}
+
+/* Age crosses the cache horizon — the data is old but not flagged stale. */
+.updated[data-age="old"] .updated__age {
+  background: var(--warn-soft);
+  border-color: var(--warn-line);
+  color: var(--warn);
+}
+
+@media (min-width: 700px) {
+  .updated { flex: 0 1 auto; order: 0; }
+}
+
+/* ── views ─────────────────────────────────────────────────────────────── */
+/* `.shell__main` is a flex column and a view is a flex ITEM; the active one is
+   a flex column of its own, which is what re-creates the panel stack the old
+   single-page shell had — same spacing, same measure, one screen's worth.
+   The display switch itself is style.css's; only the rhythm is here. */
+
+.view { gap: var(--sp-4); }
+
+/* ── panels (one per view) ─────────────────────────────────────────────── */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.panel__title {
+  font-size: var(--fs-lg);
+  font-weight: 620;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.panel__body { padding: var(--sp-4); min-width: 0; }
+.panel__body--flush { padding: 0; }
+
+/* ── buttons ───────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: var(--fs-md);
+  font-weight: 550;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .15s, border-color .15s, opacity .15s;
+}
+
+.btn:hover:not(:disabled) { background: var(--surface-2); border-color: var(--fg-muted); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.btn--primary:hover:not(:disabled) { filter: brightness(1.08); background: var(--accent); border-color: var(--accent); }
+
+.btn--danger {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+  color: var(--danger);
+}
+.btn--danger:hover:not(:disabled) { background: var(--danger-soft); border-color: var(--danger); }
+
+.btn--quiet { border-color: transparent; background: transparent; color: var(--accent); }
+.btn--small { min-height: 36px; padding: var(--sp-1) var(--sp-3); font-size: var(--fs-sm); }
+
+.btn--icon {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  border-radius: var(--r-md);
+  font-size: var(--fs-lg);
+  line-height: 1;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* Busy / in-flight. Set .is-busy AND aria-busy="true"; keep the button disabled
+   so a second press cannot fire. The label stays visible on purpose. */
+.btn.is-busy { cursor: progress; }
+
+.btn.is-busy::before {
+  content: "";
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: spin .7s linear infinite;
+  flex: none;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Slowed, not stopped: a frozen spinner on a disabled button reads as a stuck
+   command, which is the opposite of what it has to say. */
+@media (prefers-reduced-motion: reduce) {
+  .btn.is-busy::before { animation-duration: 2.4s; }
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+.btn-row > .btn { flex: 1 1 160px; }
+
+/* The default controls body (views/controls.js's own render(), which is what classic wears —
+   every other theme supplies its own body builder with its own rhythm) stacks a status badge
+   and the button row as plain block siblings with no gap between them: a status--suspendedev
+   badge landed flush against "עצירה" / "התחלת טעינה" below it, reported directly by the owner.
+   `.btn-note` already carries its own top margin (below); the badge does not, and cannot be
+   given one everywhere — `.status` also sits inline in a table cell and in the tariff panel,
+   where a top margin would misalign it. Scoped to the one adjacency that is actually missing
+   it. */
+.status + .btn-row { margin-block-start: var(--sp-3); }
+
+/* Explains why controls are disabled. Never rely on the dimming alone. */
+.btn-note {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+
+/* ── form fields ───────────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.field__label { font-size: var(--fs-sm); font-weight: 550; }
+
+.input,
+.textarea {
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  color: var(--fg);
+}
+
+.textarea { min-height: 84px; resize: vertical; line-height: 1.5; }
+.input::placeholder, .textarea::placeholder { color: var(--fg-muted); opacity: 1; }
+.input:focus-visible, .textarea:focus-visible { border-color: var(--focus); }
+
+.form-error {
+  color: var(--danger);
+  font-size: var(--fs-sm);
+  font-weight: 550;
+}
+
+/* ── stat tiles ────────────────────────────────────────────────────────── */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--sp-3) var(--sp-4);
+  min-width: 0;
+}
+
+/* The cap is the normal case, not the exception — measured at dir=rtl: 30px at
+   320 (the grid drops to one column), 21.8px at 375 (the reported break),
+   25.5px at 414, and 30px at every width from 480 up. It gives up size only
+   where the alternative was a broken number. `19cqi` is style.css's
+   calibration against the container context it establishes on `.stat`; a theme
+   that sizes this value has to keep the min(). */
+.stat__value {
+  font-size: min(var(--fs-2xl), 19cqi);
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__unit { font-size: var(--fs-lg); font-weight: 550; color: var(--fg-muted); margin-inline-start: 2px; }
+
+.stat__label {
+  margin-top: var(--sp-1);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+
+.stat__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+.stat__delta--up { background: var(--good-soft); color: var(--good); }
+.stat__delta--down { background: var(--danger-soft); color: var(--danger); }
+
+/* A tile whose point is money saved. */
+.stat--good .stat__value { color: var(--good); }
+
+/* ── tables (session history, invoices) ────────────────────────────────── */
+
+.table-wrap { border-radius: 0 0 var(--r-lg) var(--r-lg); }
+
+.table {
+  width: 100%;
+  min-width: 620px;             /* below this the columns stop being readable */
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--sp-3);
+  /* Correct in LTR, and the fallback in RTL. style.css carries the [dir="rtl"]
+     override: these cells are `unicode-bidi: plaintext`, and under plaintext
+     `start`/`end` resolve against the CELL CONTENT's direction, not the
+     page's — which is right for glyph order and wrong for a column edge. */
+  text-align: start;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-2);
+  color: var(--fg-muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.table td.num,
+.table th.num { text-align: end; font-variant-numeric: tabular-nums; }
+
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover td { background: var(--surface-2); }
+
+/* The row of a session that is still running. */
+.table tbody tr.is-live td { background: var(--accent-soft); }
+
+/* ── chips (stop reason, and any short inline tag) ─────────────────────── */
+
+.chip {
+  display: inline-block;
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--fg-muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chip--ok     { background: var(--good-soft);   border-color: var(--good-line);   color: var(--good); }
+.chip--info   { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+.chip--warn   { background: var(--warn-soft);   border-color: var(--warn-line);   color: var(--warn); }
+.chip--bad    { background: var(--danger-soft); border-color: var(--danger-line); color: var(--danger); }
+
+/* ── status badge — seven states ───────────────────────────────────────── */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  align-self: start;            /* never stretch inside a flex column */
+}
+
+/* The dot is decoration; the badge's own text carries the meaning. */
+.status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.status--available    { background: var(--good-soft);   border-color: var(--good-line);   color: var(--good); }
+.status--preparing    { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+.status--charging     { background: var(--good);        border-color: var(--good);        color: var(--surface); }
+.status--suspendedevse{ background: var(--warn-soft);   border-color: var(--warn-line);   color: var(--warn); }
+.status--suspendedev  { background: var(--alt-soft);    border-color: var(--alt-line);    color: var(--alt); }
+.status--finishing    { background: var(--surface-2);   border-color: var(--line-strong); color: var(--fg); }
+.status--faulted      { background: var(--danger);      border-color: var(--danger);      color: var(--surface); }
+
+@media (prefers-color-scheme: dark) {
+  /* filled badges: dark surface text on a light-ish fill */
+  .status--charging,
+  .status--faulted { color: #0d1117; }
+}
+
+/* Charging is the one state worth animating. */
+.status--charging::before { animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .status--charging::before { animation: none; } }
+
+/* ── suspension explainer — the product's whole point ──────────────────── */
+/* Two variants of one underlying state. The glyph that separates them is
+   style.css's, because dropping it would leave colour as the only difference. */
+
+.suspend {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-inline-start-width: 4px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  min-width: 0;
+}
+
+.suspend::before {
+  font-size: var(--fs-lg);
+  line-height: 1.3;
+  flex: none;
+}
+
+.suspend__body { min-width: 0; }
+
+.suspend__title {
+  font-size: var(--fs-md);
+  font-weight: 650;
+}
+
+.suspend__detail {
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+.suspend__amount {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Good: deliberately waiting for the cheap window. Money is being saved. */
+.suspend--price {
+  background: var(--good-soft);
+  border-color: var(--good-line);
+  border-inline-start-color: var(--good);
+}
+.suspend--price::before { color: var(--good); }
+.suspend--price .suspend__title { color: var(--good); }
+.suspend--price .suspend__amount { color: var(--good); }
+
+/* Neutral/warning: the building's panel is limiting us. Pure delay, no saving. */
+.suspend--panel {
+  background: var(--warn-soft);
+  border-color: var(--warn-line);
+  border-inline-start-color: var(--warn);
+}
+.suspend--panel::before { color: var(--warn); }
+.suspend--panel .suspend__title { color: var(--warn); }
+
+/* Neither cause established yet. */
+.suspend--unknown { border-inline-start-color: var(--line-strong); }
+.suspend--unknown::before { color: var(--fg-muted); font-weight: 700; }
+
+/* ── tariff strip — 24h band, two price slices ─────────────────────────── */
+/* Geometry (the direction pin, the absolute placement, --start/--end/--at)
+   is style.css's. Everything below is the paint. */
+
+.tariff { min-width: 0; }
+
+.tariff__band {
+  height: 34px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  min-width: 280px;
+}
+
+.tariff__slice--peak { background: var(--warn-soft); border-inline: 1px solid var(--warn-line); }
+/* The third rate. A TAOZ day is peak / mid / off-peak and the middle one used to
+   be drawn in the cheap window's green. `--alt` is this palette's third accent
+   and it is the one hue that is neither of the other two; the dashed edge is the
+   non-colour half of the difference, because three fills that differ only by hue
+   are two too many to tell apart in a dim garage. */
+.tariff__slice--mid { background: var(--alt-soft); border-inline: 1px dashed var(--alt-line); }
+.tariff__slice--offpeak { background: var(--good-soft); }
+
+.tariff__now {
+  inset-block: -2px;
+  width: 2px;
+  background: var(--fg);
+}
+.tariff__now::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline-start: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fg);
+}
+
+.tariff__scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--sp-1);
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 280px;
+}
+
+.tariff__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  margin-top: var(--sp-3);
+  font-size: var(--fs-sm);
+}
+
+.tariff__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-muted);
+}
+.tariff__key::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  flex: none;
+}
+.tariff__key--peak::before { background: var(--warn-soft); border-color: var(--warn-line); }
+.tariff__key--mid::before { background: var(--alt-soft); border-color: var(--alt-line); border-style: dashed; }
+.tariff__key--offpeak::before { background: var(--good-soft); border-color: var(--good-line); }
+
+.tariff__flip {
+  margin-top: var(--sp-3);
+  font-size: var(--fs-md);
+}
+.tariff__flip strong { font-variant-numeric: tabular-nums; }
+
+/* ── expiry banner ─────────────────────────────────────────────────────── */
+/* Full-bleed, loud, and it stays until the credential is replaced.
+   The input + install button live in .expiry__form, which the view module
+   CREATES only while expiry is active and REMOVES on success — [hidden] is
+   not enough; the field must be absent from the DOM when healthy. */
+
+.expiry {
+  background: var(--danger-soft);
+  border-block: 1px solid var(--danger-line);
+  border-inline-start: 4px solid var(--danger);
+  padding: var(--sp-4);
+  color: var(--fg);
+}
+
+.expiry__inner {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.expiry__title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.expiry__text { font-size: var(--fs-md); overflow-wrap: anywhere; }
+
+.expiry__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: flex-end;
+}
+.expiry__form .field { flex: 1 1 220px; }
+.expiry__form .btn { flex: 0 0 auto; }
+
+.expiry__error {
+  color: var(--danger);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.expiry__ok {
+  color: var(--good);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* ── stale marker ──────────────────────────────────────────────────────── */
+/* Stale data stays fully readable. It is labelled, not dimmed into uselessness. */
+
+.stale {
+  position: relative;
+  border-inline-start: 3px solid var(--warn-line);
+  padding-inline-start: var(--sp-3);
+}
+
+.stale__flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--sp-2);
+  padding: 2px var(--sp-3);
+  border-radius: var(--r-pill);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-line);
+  color: var(--warn);
+  font-size: var(--fs-xs);
+  font-weight: 650;
+}
+.stale__age { font-variant-numeric: tabular-nums; }
+
+/* ── comment board ─────────────────────────────────────────────────────── */
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+.comment-form__actions {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.comment-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+/* Three slots, and the view module appends meta, actions, text in that order. */
+.comment {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-1) var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  min-width: 0;
+}
+
+.comment__meta {
+  grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+  min-width: 0;
+}
+.comment__author { font-weight: 650; color: var(--fg); font-size: var(--fs-sm); }
+.comment__time { font-variant-numeric: tabular-nums; }
+
+.comment__text {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  font-size: var(--fs-md);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;        /* comments are plain text, set with textContent */
+}
+
+.comment__actions {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  gap: var(--sp-1);
+  align-self: start;
+}
+
+/* Done: struck through and quieter, still legible. */
+.comment--done { background: var(--surface-2); }
+.comment--done .comment__text { text-decoration: line-through; color: var(--fg-muted); }
+
+/* Archived: visually distinct from both open and done — dashed, inset, tagged.
+   The tag's WORD is style.css's, in both languages; this is its pill. */
+.comment--archived {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--line-strong);
+  margin-inline-start: var(--sp-4);
+}
+.comment--archived .comment__author::after {
+  margin-inline-start: var(--sp-2);
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--fg-muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.comment__toggle[aria-pressed="true"] {
+  background: var(--good-soft);
+  border-color: var(--good-line);
+  color: var(--good);
+}
+
+.comment__archive:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+  color: var(--danger);
+}
+
+.comments__filter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+.comments__filter input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+.comments__filter label { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); cursor: pointer; }
+
+/* ── sign-in sessions ──────────────────────────────────────────────────── */
+/* The same three-slot grid as `.comment` — meta, actions, then a full-width
+   block — because it is the same shape of row and reproducing it keeps the two
+   lists reading as one design. What differs is the last slot: a comment holds
+   prose the owner typed, this holds a user-agent string that is displayed
+   verbatim and never parsed, so it wraps instead of being cut. */
+
+.session-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.session {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  min-width: 0;
+}
+
+/* The row the viewer is holding. Marked three ways — an accent ground, a stronger
+   edge and the chip the view writes into `.session__meta` — because colour alone
+   must not be what separates "another device" from "this one". */
+.session--current {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.session__meta {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  min-width: 0;
+}
+
+.session__when { font-variant-numeric: tabular-nums; }
+.session__where { font-weight: 600; color: var(--fg); }
+
+.session__actions {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+}
+
+/* Constrained, never truncated: the half that would be cut off is the half that
+   tells two devices apart. `anywhere` is what stops one long token from pushing
+   the card wider than the phone. */
+.session__ua {
+  grid-column: 1 / -1;
+  font-family: var(--font-num);
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+/* The second step. It is inside the row it is asking about, so there is never a
+   question on screen without the device it refers to. */
+.session__confirm {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-block-start: var(--sp-3);
+  border-block-start: 1px dashed var(--line-strong);
+}
+
+.session__question {
+  font-size: var(--fs-sm);
+  color: var(--fg);
+}
+
+.session__revoke:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: var(--danger-line);
+  color: var(--danger);
+}
+
+/* ── contact card ──────────────────────────────────────────────────────── */
+/* Every string in here comes from the API at runtime; the sheet knows the shape
+   and never a value. Nothing has a fixed width: a name, an address or a blurb can
+   be any length in any script. */
+
+.contact__name {
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  color: var(--fg);
+}
+
+.contact__blurb {
+  margin-block-start: var(--sp-2);
+  font-size: var(--fs-md);
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Label above value rather than beside it: a two-column grid would set its
+   column from the longest value, and one long address would then indent every
+   other row across the card. */
+.contact__list {
+  margin-block-start: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.contact__label {
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  color: var(--fg-muted);
+}
+
+.contact__value {
+  font-size: var(--fs-md);
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.contact__actions { margin-block-start: var(--sp-5); }
+
+/* The edit form: same .field/.input/.textarea/.btn-row vocabulary as the comment composer
+   and the credential field above, so filling this card in looks like every other form on
+   the page rather than a bolted-on feature. */
+.contact__edit { margin-block-start: var(--sp-5); }
+
+.contact__form {
+  margin-block-start: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 420px;
+}
+
+.contact__form-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* ── empty / error / loading states ────────────────────────────────────── */
+/* Also the sign-in card: views/auth.js paints it as `.empty` inside a `.panel`,
+   so whatever happens to these rules happens to the only screen an anonymous
+   visitor ever sees. */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-6) var(--sp-4);
+  text-align: center;
+  color: var(--fg-muted);
+}
+
+.empty__icon { font-size: 1.75rem; line-height: 1; opacity: .8; }
+.empty__title { font-size: var(--fs-md); font-weight: 600; color: var(--fg); }
+.empty__hint { font-size: var(--fs-sm); max-width: 44ch; }
+
+.empty--error {
+  border: 1px solid var(--danger-line);
+  border-radius: var(--r-md);
+  background: var(--danger-soft);
+}
+.empty--error .empty__title { color: var(--danger); }
+
+/* Skeleton placeholder for the first paint before data lands. app.js sets its
+   height inline; the sheet deliberately sets none. */
+.skeleton {
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  min-height: 1em;
+  animation: fade 1.4s ease-in-out infinite;
+}
+@keyframes fade { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* ── settle progress (post-stop, bounded) ──────────────────────────────── */
+
+.settle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  /* Same gap this file gives every other block in the controls stack. .settle only ever follows
+     the button row or a reason paragraph (views/controls.js §6), never leads the panel, so an
+     unconditional top margin is safe here in a way it is not on `.status` above. */
+  margin-block-start: var(--sp-3);
+}
+
+.settle__bar {
+  flex: 1 1 auto;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+  min-width: 80px;
+}
+
+/* The width is style.css's (it reads --pct). This is what it looks like. */
+.settle__fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width .3s linear;
+}
+
+/* ── the menu ──────────────────────────────────────────────────────────── */
+/* The rail/drawer mechanics are style.css's. This is the paint, plus the one
+   thing a theme owns entirely: what the theme switcher at the foot looks like. */
+
+.nav {
+  background: var(--surface);
+  border-inline-end: 1px solid var(--line);
+}
+
+.nav__bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-4) var(--sp-3);
+}
+
+.nav__brand {
+  font-size: var(--fs-lg);
+  font-weight: 650;
+  padding: 0 var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+/* `min-height: var(--tap)` is the whole reason these are comfortable on a
+   phone: this dashboard is read one-handed standing next to a charger. */
+.nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  color: var(--fg);
+  text-decoration: none;
+  font-size: var(--fs-md);
+  font-weight: 550;
+}
+
+.nav__link:hover { background: var(--surface-2); }
+
+/* aria-current is the styling hook AND the announcement — one source of truth,
+   so what is highlighted and what a screen reader calls current cannot drift. */
+.nav__link[aria-current="page"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.nav.is-open { box-shadow: var(--shadow); }
+.nav.is-open ~ .navscrim { background: var(--scrim); }
+
+/* ── the theme switcher ────────────────────────────────────────────────── */
+/* Selected by its own class and never through a parent. It sits in the header
+   today, which is the one region no state hides; a theme that reached it as
+   `.shell__header-inner .themeswitch` would break the day it moves. */
+
+.themeswitch {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.themeswitch__label {
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.themeswitch__select {
+  min-height: var(--tap);
+  max-width: 10rem;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  color: var(--fg);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+/* ── Hebrew / RTL typography ───────────────────────────────────────────── */
+/* Layout needs nothing here: the sheet is 100% logical properties, so the box
+   model mirrors on its own. What does NOT mirror on its own is Latin
+   typographic habit applied to a script that has none of the same features.
+   Both rules below exist only to UNDO something this sheet does, which is why
+   they travel with it rather than with the base.
+   CONTRACT: dir="rtl" goes on <html>. These are descendant selectors; putting
+   the attribute deeper (on <body>, on a panel) silently drops the whole block. */
+
+/* Negative tracking is a Latin display trick. Hebrew tells ב/כ, ד/ר and ה/ח
+   apart by small gaps, and tightening is exactly what closes them. */
+[dir="rtl"] .shell__title,
+[dir="rtl"] .stat__value { letter-spacing: normal; }
+
+/* Hebrew has no capitals, so `uppercase` is a no-op on the Hebrew half of a
+   header — but not on the Latin half: it turns the unit symbols "kWh" and "kW"
+   into "KWH"/"KW", which are wrong, not merely loud. Positive tracking has the
+   same legibility cost as negative here. Both go; the size, weight and muted
+   colour still separate the header row from the body. */
+[dir="rtl"] .table thead th {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* ── desktop ───────────────────────────────────────────────────────────── */
+
+@media (min-width: 900px) {
+  .shell__main { padding: var(--sp-5) var(--sp-4); gap: var(--sp-5); }
+  .shell__header { padding: var(--sp-4) var(--sp-5); }
+  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .table { min-width: 0; }
+  .comment { grid-template-columns: 1fr auto; }
+}
+
+/* ── print: the history table, nothing else ────────────────────────────── */
+
+@media print {
+  .shell__header, .shell__footer, .btn, .comment-form, .themeswitch { display: none; }
+  .panel { border: 0; box-shadow: none; }
+}

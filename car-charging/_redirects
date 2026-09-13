@@ -13,9 +13,18 @@
 
 /README.md      /  302
 /CLAUDE.md      /  302
+/THEMES.md      /  302
 /schema.sql     /  302
 /.assetsignore  /  302
 /test/*         /  302
+
+# NOT listed, and deliberately: /themes/*. That directory IS the site -- six stylesheets and
+# their optional renderer modules, fetched by the page itself. This file is a DENYLIST, so a
+# path with no rule is served, which is what `themes/<slug>.css` needs. `_routes.json` pins the
+# Function to /api/*, so a request for one of them never invokes a Worker.
+# test/authz.test.mjs walks this directory and passes anything ending .html/.css/.js, so a new
+# theme sheet needs nothing here; a new DOC beside the page still fails that test until it is
+# added above.
 
 # Local wrangler dev state. Measured 2026-09-12: this WAS being served --
 # /.wrangler/cache/wrangler-account.json returned 200 with the account name in it, and the

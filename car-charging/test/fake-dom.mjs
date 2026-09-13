@@ -9,6 +9,20 @@
 // one directly, which is a click for every purpose that matters here. Anything this file cannot
 // answer honestly belongs in the browser pass, not in a stub that fakes an answer.
 
+function adopt(parent, kid) {
+  parent.children.push(kid);
+  kid.parentNode = parent;
+  kid.attached = true;
+}
+
+function detach(kid) {
+  const parent = kid.parentNode;
+  if (!parent) return;
+  const at = parent.children.indexOf(kid);
+  if (at >= 0) parent.children.splice(at, 1);
+  kid.parentNode = null;
+}
+
 export function node(tag) {
   // `classes` and `attrs` are kept SEPARATE from `className`, which stays the thing the
   // querySelector stubs below match on. A view's static class ("panel__body") is written once
@@ -21,6 +35,16 @@ export function node(tag) {
   const self = {
     tagName: tag,
     children: [],
+    // Parentage, because three things need it and none of them can be faked around:
+    //   · `replaceWith` is a swap INSIDE a parent, and the SVG theme replaces the tariff band
+    //     with a dial that way. Without it that theme could not be exercised here at all;
+    //   · a detached node is one `document.getElementById` returns null for, which is the
+    //     signed-out hash change app.js used to throw on;
+    //   · `remove()` on a node that is still in a list has to leave the list.
+    parentNode: null,
+    // "has been in a tree at some point". A node that was never appended anywhere is not
+    // detached, it is simply free-standing — a distinction getElementById below depends on.
+    attached: false,
     className: '',
     textContent: '',
     disabled: false,
@@ -54,8 +78,8 @@ export function node(tag) {
     },
     append(...kids) {
       for (const kid of kids) {
-        if (kid.tagName === '#fragment') self.children.push(...kid.children);
-        else self.children.push(kid);
+        if (kid.tagName === '#fragment') for (const grandkid of kid.children) adopt(self, grandkid);
+        else adopt(self, kid);
       }
     },
     appendChild(kid) {
@@ -64,8 +88,24 @@ export function node(tag) {
     },
     remove() {
       self.removed = true;
+      detach(self);
+    },
+    // The browser's own: swap this node for the given ones, in place, inside its parent. A node
+    // with no parent has nothing to be replaced in and the call is a no-op rather than a throw.
+    replaceWith(...kids) {
+      const parent = self.parentNode;
+      if (!parent) return;
+      const at = parent.children.indexOf(self);
+      if (at < 0) return;
+      parent.children.splice(at, 1, ...kids);
+      self.parentNode = null;
+      for (const kid of kids) {
+        kid.parentNode = parent;
+        kid.attached = true;
+      }
     },
     replaceChildren(...kids) {
+      for (const old of self.children) if (old.parentNode === self) old.parentNode = null;
       self.children = [];
       self.append(...kids);
     },
@@ -105,16 +145,49 @@ export function installDocument() {
     return registry.get(key);
   };
 
+  // <head> and <html>. theme.js appends one <link> per theme it has ever worn and stamps the
+  // chosen slug on `documentElement.dataset.theme`, so both have to be real nodes a test can
+  // count children on -- that count IS the assertion that a switch reuses a sheet instead of
+  // refetching one.
+  const head = node('head');
+  const documentElement = node('html');
+
   globalThis.document = {
     createElement: node,
+    // Namespaced creation, for the one theme that draws in SVG. The namespace is recorded and
+    // otherwise ignored: nothing here lays out or paints, and what the tests need to read off an
+    // SVG node is its tag, its attributes and its text. Note that a real SVG element's
+    // `className` is a read-only SVGAnimatedString, which is why that theme sets `class` through
+    // setAttribute — so these nodes carry it in `attrs`, not in `className`.
+    createElementNS: (ns, tag) => {
+      const created = node(tag);
+      created.namespaceURI = ns;
+      return created;
+    },
     createDocumentFragment: () => node('#fragment'),
     createTextNode: (value) => {
       const n = node('#text');
       n.textContent = String(value);
       return n;
     },
-    getElementById: (id) => get('#' + id),
+    head,
+    documentElement,
+    // A node that has been taken OUT of the tree is not one this can find, exactly as in a
+    // browser. That is not a detail: signed out cold, app.js detaches all seven `.view` sections
+    // from <main>, and any hash change then asks for one of them by id -- a bookmarked
+    // `#/history`, a Back press. It used to get an element here and null in the product, which
+    // is how an uncaught TypeError shipped. A node that was never in a tree at all is a
+    // different thing and is still served: that is just a registry entry the markup would have.
+    getElementById: (id) => {
+      const found = registry.get('#' + id);
+      if (found && found.attached && found.parentNode === null) return null;
+      return found || get('#' + id);
+    },
     querySelector: (sel) => get(sel, sel === '#refresh' ? 'button' : 'div'),
+    // Only theme.js calls this, and only to adopt the `classic` <link> the real markup ships.
+    // There is no markup here, so it finds none and theme.js creates its own -- which is the
+    // same code path a second theme takes and is therefore the one worth exercising.
+    querySelectorAll: () => [],
   };
 
   get('#refresh', 'button');
@@ -131,6 +204,8 @@ export function installDocument() {
     history: ['history'],
     invoices: ['account'],
     comments: ['comments'],
+    sessions: ['sessions'],
+    contact: ['contact'],
   };
   for (const [view, ids] of Object.entries(LAYOUT)) {
     const section = get('#view-' + view, 'section');
@@ -175,5 +250,31 @@ export function installDocument() {
     listeners.hashchange?.();
   };
 
-  return { get, registry, navigate };
+  return { get, registry, navigate, head, documentElement };
+}
+
+/**
+ * A localStorage stand-in. `mode` is 'ok' (a working store), 'absent' (no global at all, which
+ * is what a `node --test` process has by default) or 'hostile' (every access THROWS, which is
+ * what a private window and a browser set to block site data actually do -- the throw is on the
+ * property access, not on the call, so a guard has to wrap the whole expression).
+ */
+export function installStorage(mode) {
+  if (mode === 'absent') {
+    delete globalThis.localStorage;
+    return null;
+  }
+  if (mode === 'hostile') {
+    globalThis.localStorage = {
+      get getItem() { throw new DOMException('blocked', 'SecurityError'); },
+      get setItem() { throw new DOMException('blocked', 'SecurityError'); },
+    };
+    return null;
+  }
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => (store.has(key) ? store.get(key) : null),
+    setItem: (key, value) => store.set(key, String(value)),
+  };
+  return store;
 }

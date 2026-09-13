@@ -142,9 +142,13 @@ product — that trade was made knowingly.
 In this directory — the whole public half, a Cloudflare Pages project, no build step:
 
 ```
-car-charging/index.html                  the markup shell: the menu and four empty view sections
-car-charging/{app.js,api.js,style.css}   app shell + hash router, transport, design system
-car-charging/views/                      account, auth, comments, controls, he, history, tariff
+car-charging/index.html                  the markup shell: the menu and six empty view sections
+car-charging/{app.js,api.js,style.css}   app shell + hash router, transport, the BASE sheet
+car-charging/theme.js                    which stylesheet the page wears; loaded before app.js
+car-charging/themes/<slug>.{css,js}      the six designs; classic is the default and the way back
+car-charging/THEMES.md                   the contract a theme is written against
+car-charging/views/                      account, auth, comments, contact, controls, he,
+                                         history, sessions, tariff
 car-charging/functions/api/[[path]].js   Pages Function: authorises, owns the comment board,
                                          forwards everything else to the private half
 car-charging/schema.sql                  D1 schema: cache, comments, sessions, login_tokens
@@ -220,6 +224,54 @@ value that means nothing is plugged in; the states that require an EV say so; an
 unreported status and any value this page has never met render as themselves and claim nothing
 about the cable**. Falling through to "nothing connected" is a lie in the direction that looks
 safest, and upstream has already handed this project an undocumented enum value once.
+
+## Six looks, one app — the theme layer
+
+The owner wanted all five design explorations shipped and switchable, not one of them chosen.
+So the page wears a theme, `data-theme` on `<html>`, and the full contract is `THEMES.md`. Four
+things about it that are not obvious:
+
+- **`style.css` is no longer the design.** It is the base every look stands on — reset, a11y
+  floor, bidi/RTL correctness, the `[hidden]` rule, the router's display contract, the menu
+  mechanics `app.js` toggles, and the geometry of every custom property a view sets from JS. It
+  holds no colour, no border and no type size. `themes/classic.css` is the old sheet's paint,
+  moved, and it is the default on a browser that has never chosen and the way back from a theme
+  that turns out unreadable in a dim garage.
+- **The CSP means there is a flash and it is accepted.** `script-src 'self'; style-src 'self'`
+  refuses an inline `<script>` and an inline `<style>`, silently, so the chosen theme cannot be
+  stamped before a script runs. `theme.js` is its own `<script type="module">` tag *before*
+  `app.js` precisely so it does not wait for app.js's import graph — measured, the chosen
+  sheet's request starts ~0.1 ms after `theme.js` evaluates and a full round trip before
+  `api.js`/`he.js`/`auth.js` finish. Do not try to defeat the rest with an inline script.
+- **Switching is `link.disabled`, never a swapped `href` — and it needs the `_headers` rule.**
+  Measured in a browser: 12 switches between five loaded themes flip the `<link>` flags
+  synchronously inside the change handler, exactly one sheet live each time, repaint in the
+  same turn or the next frame, 0.4–3.3 ms. **Re-enabling a disabled sheet refetches it unless
+  its cache entry is still fresh** — a revalidation is not enough, the sheet has to be in hand
+  before it can apply — so under the platform default (`max-age=0, must-revalidate`) twelve
+  switches pulled **431 KB**. Hence `/themes/* → Cache-Control: public, max-age=300` in
+  `_headers`, which takes it to zero. Five minutes and not more because these files carry no
+  content hash, so the cache entry is the only thing that can go stale against a freshly
+  deployed base sheet. `test/theme.test.mjs` pins the rule; deleting it fails nothing else and
+  turns the switcher into a round trip per press.
+- **The outgoing sheet is not dropped until the incoming one has loaded.** Otherwise the first
+  switch to each theme shows a frame of `style.css` alone, which has no colour, no border and
+  no type size in it. Readiness is tracked in a `Set` rather than read off `link.sheet`:
+  disabling a link sets `.sheet` to null in Chromium, so probing it reports "never loaded"
+  about every theme already worn, which made every switch *back* take the slow path and left
+  two sheets live.
+- **The switcher is in the header, not in the menu, and that is not taste.** `app.js` hides the
+  rail and its handle on a signed-out page, so a switcher in the menu is unreachable in the one
+  state it is most needed: a theme that renders the sign-in card unreadable would leave the
+  viewer unable to switch away *and* unable to sign in, with clearing site data as the only way
+  back. `paintAuthRequired()` touches `<main>`'s children, `nav.hidden` and `navtoggle.hidden`
+  and nothing else, so the header survives every state. Its class is `.themeswitch` —
+  parent-neutral, and themes are told to select it by that class and never through an ancestor.
+- **A theme may replace a view's renderer but never the command.** `views/controls.js` hands a
+  theme a *body builder* — the gate, a snapshot of the in-flight state, and two guarded doors —
+  and keeps `onStart`, `onStop`, the busy flag, both polls and `release()` module-private.
+  `test/controls.test.mjs` pins that export list. Five code paths to a contactor is how this
+  gets hurt, and two bugs have already shipped inside that window.
 
 ## Commands force the fetch; nothing else does
 

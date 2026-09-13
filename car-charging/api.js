@@ -149,6 +149,47 @@ export function getInvoices() {
   return request('/api/invoices');
 }
 
+// ── The viewer's own sign-in sessions ──
+//
+// One row per sign-in, `lastSeen` first, with `current: true` on exactly one -- the browser
+// making this call. Nothing upstream of the charger is involved: these rows are this system's
+// own, which is why they carry no `fetchedAt` and nothing here can be stale or forced.
+//
+// It rides the ordinary load round for one reason: a menu press must fetch nothing.
+export function getSessions() {
+  return request('/api/sessions');
+}
+
+// The one destructive call on this page that is not a charger command, and the only one with
+// no undo at all -- the comment board archives, this deletes. The answer's `self` says whether
+// the row that was deleted is the caller's own: `{ self: true }` means this browser has just
+// been signed out and every later call is a 401. views/sessions.js acts on that.
+//
+// A 404 means the row was already gone, which is the same end state and never an error to
+// shout about.
+export function revokeSession(jti) {
+  return request('/api/sessions/' + encodeURIComponent(jti), { method: 'DELETE' });
+}
+
+// ── The contact card ──
+//
+// Whatever the private half is configured with, or `{ contact: null }` when it is configured
+// with nothing -- a blank card, not an error. NOTHING in this repository knows what any of
+// those values are, and nothing here may learn: this file and the view it feeds carry the
+// shape and never a value. See views/contact.js.
+export function getContact() {
+  return request('/api/contact');
+}
+
+// The one write on this card. It replaces all seven fields in a single call — the page saves the
+// whole form at once, never a partial field — and the server always answers with what it now
+// holds, so the caller never has to guess whether a value landed. Like postComment, this is a
+// SAVE: a press, not a load, so unlike every read above it may reach upstream (D1, not the
+// charger) on its own.
+export function updateContact(fields) {
+  return request('/api/contact', { method: 'PUT', ...jsonBody(fields) });
+}
+
 // ── What counts as a live session — one definition, three readers ──
 //
 // The projection puts a stop timestamp, a stop reason and a completed flag on *every* row it

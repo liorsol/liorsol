@@ -1,0 +1,1414 @@
+/* ==========================================================================
+   THEME: editorial — עיתון
+
+   AXIS: typography and whitespace. The owner opens this page to ask one
+   question, so the page answers it in a SENTENCE, set large enough to read at
+   arm's length while holding a charging cable. Everything else on the screen
+   is supporting detail set beneath it, the way a standfirst and a body column
+   sit under a headline.
+
+   What that means concretely, and what separates it from "classic with more
+   whitespace":
+
+     · there are no cards. A panel has no ground, no edge and no radius; a
+       section begins with a full-measure hairline and a small kicker, and the
+       space between sections does the work a border used to do;
+     · the type scale is the design. 28px on a phone and up to 52px on a
+       laptop for the lead, against a 15px body — a 3.5x range, where classic's
+       widest is 1.9x;
+     · NOTHING is a pill and nothing is rounded. Every corner is square. The
+       status badge is a dateline with a rule down its inline-start edge, not a
+       lozenge; chips are outlined tags;
+     · colour is nearly absent. Warm paper, warm ink, one restrained accent
+       (a deep green) used for exactly four things: the price figure's
+       underline, the current tariff row, money that was saved, and focus.
+       Every other distinction is made with WEIGHT, RULE STYLE and INVERSION —
+       which is also why this theme reads correctly for a viewer who cannot
+       separate two hues;
+     · the loudest thing the page can do is invert: paper becomes ink. That is
+       reserved for the expiry banner, a faulted connector and an armed stop.
+
+   Vanilla CSS, no build step, no remote asset, OS-resident families only.
+   Logical properties throughout. 375px is the target; 1440px is the
+   comfortable case.
+
+   TYPE, AND WHY THERE IS NO SERIF. An editorial direction reaches for a serif
+   by reflex. On this page that would be a bug: the serif faces that are
+   actually resident across macOS, iOS, Android and Windows do not agree on
+   Hebrew coverage, and font fallback is per-character — the Latin would set in
+   the serif, the Hebrew would drop to an undeclared face at another x-height,
+   and the whole column would come apart while every glyph stayed legible. So
+   the text face is the known-good Hebrew-covering stack, and the editorial
+   voice comes from scale, measure, rules and rhythm instead. The mono face is
+   used ONLY on runs that are digits and punctuation — clock times and the
+   hours column — never on anything that can hold a Hebrew letter.
+
+   Weights are 400/500/600/700 only. Nothing here asks a face for 550 or 620.
+
+   Light palette on bare :root; the dark block redefines only what changes.
+   ========================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  /* — paper & ink — */
+  --ed-paper: #fbfaf7;
+  --ed-paper-2: #f1efe8;
+  --ed-ink: #1c1b17;
+  --ed-ink-2: #636057;          /* 6.1:1 on paper */
+  --ed-rule: #d8d4c9;           /* the working hairline */
+  --ed-rule-2: #e8e5dc;         /* the faint one, decorative only */
+  --ed-on-ink: #fbfaf7;         /* type on an inverted block */
+
+  /* — the one accent — */
+  --ed-accent: #2f5d46;         /* 7.2:1 on paper */
+  --ed-wash: #e9efeb;           /* the only tint in the sheet */
+  --ed-scrim: rgb(28 27 23 / .5);
+
+  /* the base sheet reads this for its focus outline and nothing else */
+  --focus: #2f5d46;
+
+  /* — the spacing scale (names are the base's; values are this theme's) —
+     Bigger than classic across the board, because whitespace is half the
+     design. app.js and three view modules build these property names by
+     string concatenation, so the NAMES may not move. */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 14px;
+  --sp-4: 20px;
+  --sp-5: 34px;
+  --sp-6: 52px;
+
+  --tap: 44px;
+  --nav-w: 232px;
+
+  /* — type —
+     The stack is the one THEMES.md records as resident on macOS, iOS, Android
+     and Windows with Hebrew in the chain. The mono stack is applied only where
+     the content cannot contain a Hebrew character. */
+  --ed-text: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+             "Noto Sans Hebrew", "Arial Hebrew", Helvetica, Arial, sans-serif;
+  --ed-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Roboto Mono", monospace;
+
+  --fs-micro: .75rem;           /* 12 */
+  --fs-small: .8125rem;         /* 13 */
+  --fs-body: .9375rem;          /* 15 */
+  --fs-mid: 1.0625rem;          /* 17 */
+  --fs-large: 1.3125rem;        /* 21 */
+  --fs-huge: 1.625rem;          /* 26 */
+
+  /* The headline. 28px on a 375px phone, 52px from ~790px up. */
+  --ed-lead: clamp(1.75rem, 6.6vw, 3.25rem);
+
+  --page-max: 60rem;
+  --ed-measure: 46ch;           /* prose that is meant to be read, not scanned */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ed-paper: #131310;
+    --ed-paper-2: #1e1d18;
+    --ed-ink: #efede6;
+    --ed-ink-2: #9c978a;        /* 6.4:1 on paper */
+    --ed-rule: #34312a;
+    --ed-rule-2: #26241f;
+    --ed-on-ink: #131310;
+
+    --ed-accent: #8fbfa4;       /* 9.0:1 on paper */
+    --ed-wash: #1b241f;
+    --ed-scrim: rgb(0 0 0 / .62);
+
+    --focus: #8fbfa4;
+  }
+}
+
+/* ── the page ──────────────────────────────────────────────────────────── */
+
+body {
+  background: var(--ed-paper);
+  color: var(--ed-ink);
+  font-family: var(--ed-text);
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+  hyphens: none;
+}
+
+/* Hebrew has no capitals and its letters are told apart by small interior
+   gaps, so nothing in this sheet uppercases or tracks. Stated once here and
+   enforced again on the table head below, which is where a design sheet
+   usually smuggles it back in. */
+[dir="rtl"] body { letter-spacing: normal; }
+
+:focus-visible { outline-offset: 3px; }
+
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ed-paper);
+}
+
+/* ── masthead ──────────────────────────────────────────────────────────── */
+/* Small on purpose. The page title is not the headline; the sentence in the
+   status panel is. A big "טעינה" at the top would compete with it. */
+
+.shell__header {
+  background: var(--ed-paper);
+  border-block-end: 1px solid var(--ed-rule);
+  padding: var(--sp-2) var(--sp-4);
+}
+
+.shell__header-inner,
+.shell__main,
+.shell__footer-inner {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+}
+
+.shell__header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+}
+
+.shell__title {
+  font-size: var(--fs-mid);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: normal;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.shell__main {
+  flex: 1 1 auto;
+  padding: var(--sp-5) var(--sp-4) var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+
+/* app.js keeps the sign-in card's mount in <main> at all times and empties it when
+   nobody needs the card. As a flex item it still collects the column gap, which on a
+   signed-in page opens 34px of nothing under the header. */
+.shell__main > div:empty { display: none; }
+
+.shell__footer {
+  border-block-start: 1px solid var(--ed-rule);
+  padding: var(--sp-4);
+  color: var(--ed-ink-2);
+  font-size: var(--fs-small);
+}
+
+.shell__footer-inner { max-width: min(var(--page-max), 60ch); }
+
+/* the dateline: an absolute stamp and its age, always both */
+.updated {
+  flex: 1 1 100%;
+  order: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  color: var(--ed-ink-2);
+  font-size: var(--fs-small);
+}
+
+.updated__abs { font-variant-numeric: tabular-nums; }
+
+.updated__age {
+  font-size: var(--fs-micro);
+  border-block-end: 1px solid var(--ed-rule);
+}
+
+/* Past the cache horizon. Told by weight and a doubled rule as well as by
+   ink, so it is not a colour-only difference. */
+.updated[data-age="old"] .updated__age {
+  color: var(--ed-ink);
+  font-weight: 600;
+  border-block-end: 2px solid var(--ed-ink);
+}
+
+@media (min-width: 700px) {
+  .updated { flex: 0 1 auto; order: 0; }
+}
+
+/* ── views & panels ────────────────────────────────────────────────────── */
+/* A panel is not a card. It is a section of a printed page: a rule across the
+   measure, a small kicker, then the body. */
+
+.view { gap: var(--sp-6); }
+
+.panel {
+  background: none;
+  border: 0;
+  min-width: 0;
+}
+
+.panel__head {
+  border-block-start: 1px solid var(--ed-ink);
+  padding-block: var(--sp-2) var(--sp-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.panel__title {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ed-ink);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* An h3 the view modules append inside a body ("טעינה פעילה", "תקופות חיוב").
+   Same class, a lighter rule, so the hierarchy is visible without a second
+   type size. */
+.panel__body > .panel__title {
+  border-block-start: 1px solid var(--ed-rule);
+  padding-block-start: var(--sp-3);
+}
+
+.panel__body { padding: 0; min-width: 0; }
+.panel__body--flush { padding: 0; }
+
+/* ── the lead sentence ─────────────────────────────────────────────────── */
+/* The whole reason this theme exists. themes/editorial.js composes it from
+   views/he.js's judgements; this is only its setting. */
+
+.ed-lead {
+  font-size: var(--ed-lead);
+  line-height: 1.3;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-wrap: balance;
+  max-inline-size: 22ch;
+  padding-block: var(--sp-4) 0;
+}
+
+/* the standfirst: everything the lead could not carry, still large, muted */
+.ed-lead__deck {
+  display: block;
+  margin-block-start: .42em;
+  font-size: max(1rem, .38em);
+  line-height: 1.55;
+  color: var(--ed-ink-2);
+  max-inline-size: var(--ed-measure);
+  text-wrap: pretty;
+}
+
+.ed-lead__deck > span { display: block; }
+.ed-lead__deck > span + span { margin-block-start: .35em; }
+
+/* The money figure is the fact the page exists for, so it is the one thing in
+   the sentence that carries the accent — as a rule under it, not as coloured
+   type, which keeps the sentence one ink. */
+.ed-money {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-block-end: max(2px, .045em) solid var(--ed-accent);
+  padding-block-end: .04em;
+}
+
+/* Digits and punctuation only. No Hebrew ever reaches this class, so a mono
+   face with no Hebrew coverage cannot hurt it. */
+.ed-clock {
+  font-family: var(--ed-mono);
+  font-weight: 600;
+  font-size: .94em;
+  letter-spacing: normal;
+}
+
+/* A Latin unit token glued to its figure and read as one left-to-right
+   object. `isolate` is what <bdi> already does; it is declared here too so
+   the rule is visible next to the thing it protects. */
+.ed-unit,
+.ed-clock,
+.ed-money,
+.ed-hours { unicode-bidi: isolate; }
+
+.ed-lead__vat {
+  font-size: .52em;
+  font-weight: 400;
+  color: var(--ed-ink-2);
+  white-space: nowrap;
+}
+
+@media (min-width: 900px) {
+  .ed-lead { padding-block-start: var(--sp-5); }
+}
+
+/* ── the tariff timetable ──────────────────────────────────────────────── */
+/* The band is replaced by themes/editorial.js with a printed timetable: one
+   row per window, the running one marked. See the report for why the base
+   sheet's "the axis does not mirror" ruling does not reach a table. */
+
+.ed-sched { margin-block-start: var(--sp-5); }
+
+.ed-sched__kicker {
+  font-size: var(--fs-micro);
+  color: var(--ed-ink-2);
+  margin-block-end: var(--sp-2);
+}
+
+/* the marker on the window that is running now: accent, weight AND a word */
+.ed-sched tbody tr[aria-current="true"] th,
+.ed-sched tbody tr[aria-current="true"] td { color: var(--ed-ink); }
+
+/* The marker is a border on a transparent track every row already carries,
+   so the running window is marked without any row shifting by 3px. */
+.ed-sched tbody th {
+  border-inline-start: 3px solid transparent;
+  padding-inline-start: var(--sp-2);
+}
+
+.ed-sched tbody tr[aria-current="true"] th {
+  color: var(--ed-accent);
+  font-weight: 700;
+  border-inline-start-color: var(--ed-accent);
+}
+
+.ed-now {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  color: var(--ed-accent);
+  margin-inline-start: var(--sp-2);
+  white-space: nowrap;
+}
+
+/* THE THREE RATES, AS TYPE. An Israeli TAOZ day has peak, mid and off-peak, and
+   this theme has no coloured band to put them in — the timetable is the band. So
+   the tier is a weight ladder on the rate itself, heaviest at the top of the
+   price ladder, and the figure printed beside it is the non-colour half of the
+   difference and cannot be lost. `--flat` and `--unknown` claim no tier and are
+   deliberately left at the table's own weight. */
+/* Qualified by `.table td` because that rule sets `font-weight: 400` on every
+   cell and is (0,1,1); a bare `.ed-rate--peak` ties on weight, loses on source
+   order, and the ladder silently flattens to one weight while the colours still
+   change — which is colour alone, and §8 says no. Measured in a browser: all
+   three came back 400 before this was qualified. Tabular figures come from
+   `.table td.num`, which these cells already carry. */
+.table td.ed-rate--peak { font-weight: 700; color: var(--ed-ink); }
+.table td.ed-rate--mid { font-weight: 600; color: var(--ed-ink); }
+.table td.ed-rate--offpeak { font-weight: 400; color: var(--ed-ink-2); }
+
+.ed-hours {
+  font-family: var(--ed-mono);
+  font-size: var(--fs-small);
+  color: var(--ed-ink-2);
+  white-space: nowrap;
+}
+
+/* the base's own flip sentence, kept whenever the lead could not say it */
+.tariff__flip {
+  margin-block-start: var(--sp-4);
+  font-size: var(--fs-body);
+  color: var(--ed-ink-2);
+  max-inline-size: var(--ed-measure);
+}
+.tariff__flip strong { font-weight: 600; color: var(--ed-ink); }
+
+/* ── stat tiles ────────────────────────────────────────────────────────── */
+/* No box. A hairline over each figure, the figure, then its name — the way a
+   table of figures is set in print. */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  column-gap: var(--sp-4);
+  min-width: 0;
+}
+
+.stat {
+  border-block-start: 1px solid var(--ed-rule);
+  padding-block: var(--sp-3) var(--sp-4);
+  min-width: 0;
+}
+
+/* The min() is style.css's calibration against the container context it
+   establishes on .stat, and it is why a figure never breaks inside itself.
+   A theme that sizes this value has to keep it. */
+.stat__value {
+  font-size: min(var(--fs-huge), 19cqi);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__unit {
+  font-size: .6em;
+  font-weight: 400;
+  color: var(--ed-ink-2);
+  margin-inline-start: .4em;
+}
+
+.stat__label {
+  display: block;
+  margin-block-start: var(--sp-1);
+  font-size: var(--fs-micro);
+  color: var(--ed-ink-2);
+}
+
+/* the tile whose point is money not spent — the one positive use of accent */
+.stat--good .stat__value { color: var(--ed-accent); }
+
+/* The `.stat__value` alignment ruling moved to style.css, beside the table-cell
+   rule it is a copy of: it is bidi correctness a theme cannot discover it broke,
+   not paint, so it belongs to the base and to every theme rather than to this one. */
+
+/* ── tables ────────────────────────────────────────────────────────────── */
+
+.table-wrap { border-block-start: 1px solid var(--ed-rule-2); }
+
+.table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font-size: var(--fs-small);
+}
+
+/* the timetable is three columns and must never scroll on a phone */
+.ed-table--slim { min-width: 0; }
+
+.table th,
+.table td {
+  padding-block: var(--sp-3);
+  padding-inline-end: var(--sp-4);
+  text-align: start;
+  vertical-align: baseline;
+  font-weight: 400;
+  border-block-end: 1px solid var(--ed-rule-2);
+  white-space: nowrap;
+}
+
+.table thead th {
+  padding-block-start: 0;
+  border-block-end: 1px solid var(--ed-ink);
+  color: var(--ed-ink-2);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  /* Never uppercase and never track: this row is half Hebrew and half unit
+     symbols, and uppercase turns "kWh" into something that is wrong rather
+     than merely loud. */
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.table tbody th { font-weight: 500; color: var(--ed-ink); }
+.table td.num,
+.table th.num { font-variant-numeric: tabular-nums; }
+.table tbody tr:last-child td,
+.table tbody tr:last-child th { border-block-end: 0; }
+.table tbody tr:hover td { background: var(--ed-paper-2); }
+
+/* A charge that is still running. Ground plus weight, never ground alone. */
+.table tbody tr.is-live td,
+.table tbody tr.is-live th {
+  background: var(--ed-wash);
+  font-weight: 600;
+  color: var(--ed-ink);
+}
+
+/* ── chips ─────────────────────────────────────────────────────────────── */
+/* Outlined tags, square, and told apart by rule STYLE and inversion rather
+   than by four hues. The chip's own text always carries the meaning. */
+
+.chip {
+  display: inline-block;
+  padding: 1px var(--sp-2);
+  border: 1px solid var(--ed-rule);
+  background: none;
+  color: var(--ed-ink-2);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip--ok   { border-color: var(--ed-accent); color: var(--ed-accent); }
+.chip--info { border-color: var(--ed-ink); color: var(--ed-ink); }
+.chip--warn { border-style: dashed; border-color: var(--ed-ink); color: var(--ed-ink); }
+.chip--bad  { background: var(--ed-ink); border-color: var(--ed-ink); color: var(--ed-on-ink); }
+
+/* ── the connector status badge ────────────────────────────────────────── */
+/* A dateline, not a lozenge: a rule down the inline-start edge, the label in
+   ink. Seven painted states plus the bare one upstream has handed this page
+   before. Every one of them is separated by rule style or inversion; the
+   badge's own text is what carries the state. */
+
+.status {
+  display: inline-block;
+  align-self: start;
+  padding-inline-start: var(--sp-2);
+  border-inline-start: 3px solid var(--ed-rule);
+  color: var(--ed-ink-2);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.status--available     { border-inline-start-color: var(--ed-ink-2); }
+.status--preparing     { border-inline-start-color: var(--ed-ink); color: var(--ed-ink); }
+.status--charging      { border-inline-start-color: var(--ed-accent); color: var(--ed-accent); }
+.status--suspendedevse { border-inline-start-style: dashed; border-inline-start-color: var(--ed-ink); color: var(--ed-ink); }
+.status--suspendedev   { border-inline-start-style: dotted; border-inline-start-color: var(--ed-ink); color: var(--ed-ink); }
+.status--finishing     { border-inline-start-color: var(--ed-rule); color: var(--ed-ink); }
+
+/* the loudest thing a badge can do, and it needs no hue */
+.status--faulted {
+  background: var(--ed-ink);
+  border-inline-start-color: var(--ed-ink);
+  color: var(--ed-on-ink);
+  padding-inline: var(--sp-2);
+}
+
+/* THE ONE AMBIENT ANIMATION ON THE PAGE, and it is information rather than
+   decoration: while it runs, energy is moving into the car. A slow rule that
+   fills from the inline-start edge under the badge. */
+.status--charging {
+  position: relative;
+  padding-block-end: 3px;
+}
+.status--charging::after {
+  content: "";
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0;
+  height: 2px;
+  background: var(--ed-accent);
+  transform-origin: right center;   /* physical: transform-origin has no logical keyword; the page is RTL, so a fill begins at the right */
+  animation: ed-deliver 3.6s linear infinite;
+}
+
+@keyframes ed-deliver { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ── the suspension explainer ──────────────────────────────────────────── */
+/* The judgement this product exists to make. The two variants must never be
+   told apart by colour: style.css gives each its own glyph, the view gives
+   each its own words, and this sheet gives each its own rule style. */
+
+.suspend {
+  display: flex;
+  gap: var(--sp-3);
+  margin-block-start: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-inline-start: 3px solid var(--ed-rule);
+  background: none;
+  min-width: 0;
+}
+
+.suspend::before {
+  font-size: var(--fs-mid);
+  line-height: 1.4;
+  flex: none;
+  color: var(--ed-ink-2);
+}
+
+.suspend__body { min-width: 0; }
+
+.suspend__title {
+  font-size: var(--fs-mid);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.suspend__detail {
+  margin-block-start: var(--sp-1);
+  font-size: var(--fs-small);
+  color: var(--ed-ink-2);
+  max-inline-size: var(--ed-measure);
+  overflow-wrap: anywhere;
+}
+
+.suspend__amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Deliberately waiting out the expensive window: money is being saved, so it
+   gets the accent — the same accent the saved-money tile gets, and nothing
+   else on the page. */
+.suspend--price { border-inline-start-color: var(--ed-accent); }
+.suspend--price::before,
+.suspend--price .suspend__title,
+.suspend--price .suspend__amount { color: var(--ed-accent); }
+
+/* The building's panel is throttling us. Pure delay, no saving — so it is ink
+   and a dashed rule, never the accent. */
+.suspend--panel { border-inline-start-style: dashed; border-inline-start-color: var(--ed-ink); }
+.suspend--panel::before,
+.suspend--panel .suspend__title { color: var(--ed-ink); }
+
+/* Neither cause established. */
+.suspend--unknown { border-inline-start-style: dotted; }
+.suspend--unknown::before { font-weight: 700; }
+
+/* ── buttons ───────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--ed-ink-2);
+  border-radius: 0;
+  background: none;
+  color: var(--ed-ink);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .16s ease-out, border-color .16s ease-out, color .16s ease-out;
+}
+
+.btn:hover:not(:disabled) { background: var(--ed-paper-2); border-color: var(--ed-ink); }
+
+/* the solid black button of a printed form */
+.btn--primary {
+  background: var(--ed-ink);
+  border-color: var(--ed-ink);
+  color: var(--ed-on-ink);
+  font-weight: 600;
+}
+.btn--primary:hover:not(:disabled) { background: var(--ed-ink); border-color: var(--ed-ink); color: var(--ed-on-ink); }
+
+/* Stop is the dangerous control and it is deliberately the quietest thing in
+   its row until it is armed. See themes/editorial.js: it takes two presses. */
+.btn--danger {
+  border-color: var(--ed-ink-2);          /* 6.0:1 — an enabled control's edge has to be seen */
+  border-inline-start-width: 3px;         /* the theme's "pay attention" mark, same as a badge's */
+  color: var(--ed-ink-2);
+  font-weight: 400;
+}
+.btn--danger:hover:not(:disabled):not([data-armed]) { color: var(--ed-ink); border-color: var(--ed-ink); background: none; }
+.btn--danger:disabled { border-style: dashed; }
+
+/* armed: the page inverts, which is the loudest register it has */
+.btn--danger[data-armed] {
+  background: var(--ed-ink);
+  border-color: var(--ed-ink);
+  color: var(--ed-on-ink);
+  font-weight: 700;
+}
+
+.btn--small { min-height: 36px; padding: 0 var(--sp-3); font-size: var(--fs-small); }
+
+/* AFTER --small on purpose: the comment board's icon buttons carry both
+   classes, and a 36px destructive target is below the floor. */
+.btn--icon {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  font-size: var(--fs-mid);
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  color: var(--ed-ink-2);
+  border-color: var(--ed-rule);
+  border-style: dashed;
+  background: none;
+}
+
+.btn--primary:disabled { color: var(--ed-ink-2); }
+
+.btn.is-busy { cursor: progress; }
+.btn.is-busy::before {
+  content: "";
+  width: .85em;
+  height: .85em;
+  border: 2px solid currentColor;
+  border-block-start-color: transparent;
+  border-radius: 50%;
+  animation: ed-spin .8s linear infinite;
+  flex: none;
+}
+
+@keyframes ed-spin { to { transform: rotate(360deg); } }
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+/* Never rely on dimming to explain a locked control. */
+.btn-note {
+  margin-block-start: var(--sp-2);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  color: var(--ed-ink-2);
+  max-inline-size: var(--ed-measure);
+}
+
+/* ── the control deck ──────────────────────────────────────────────────── */
+/* themes/editorial.js builds this body. The problem it solves: this theme
+   puts a large sentence at the top of the status screen, which pushes the two
+   controls below the fold on a phone — and the owner opens this page to press
+   stop. So WHILE A CHARGE IS RUNNING the control panel pins itself to the
+   bottom of the viewport and stays one thumb-reach away; the rest of the time
+   it sits in the flow where it belongs. The class is set by the builder from
+   the gate, so the page can never pin a deck with nothing to stop. */
+
+.ed-deck { display: block; }
+
+.ed-deck__act {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  padding-block: var(--sp-3);
+  border-block-start: 1px solid var(--ed-rule);
+}
+
+.ed-deck__act .btn { flex: 1 1 auto; }
+
+/* The badge takes its own line: at 375px a dateline plus two 44px controls do not
+   share one row without one of them going below the touch floor. */
+.ed-deck__state { flex: 1 1 100%; }
+
+/* the second-press prompt; empty until the stop is armed */
+.ed-deck__arm {
+  flex: 1 1 100%;
+  margin-block-start: 0;
+  font-weight: 600;
+  color: var(--ed-ink);
+}
+.ed-deck__arm:empty { display: none; }
+
+.panel:has(.ed-deck--pinned) {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 30;
+  background: var(--ed-paper);
+  border-block-start: 1px solid var(--ed-ink);
+  padding-block-end: var(--sp-2);
+  /* bleed to the gutters so nothing scrolls visibly past the bar's edges */
+  margin-inline: calc(var(--sp-4) * -1);
+  padding-inline: var(--sp-4);
+}
+
+/* Pinned, the panel is a control bar: its kicker becomes a caption on it and every
+   block gap is cut, because at 375px this bar is a fifth of the screen and the page
+   it is sitting on top of is the thing being read. Measured: 168px before, 140px after. */
+.panel:has(.ed-deck--pinned) .panel__head {
+  border-block-start: 0;
+  padding-block: var(--sp-1) 0;
+}
+
+.panel:has(.ed-deck--pinned) .panel__title {
+  font-size: var(--fs-micro);
+  color: var(--ed-ink-2);
+}
+
+.panel:has(.ed-deck--pinned) .ed-deck__act {
+  border-block-start: 0;
+  padding-block: var(--sp-2);
+}
+
+.panel:has(.ed-deck--pinned) .btn-note { margin-block-start: var(--sp-1); }
+
+/* The one thing the bar does not need to carry at the bottom of the screen:
+   the standing explanation of a control this product does not have. It is
+   still in the document and still read aloud in order; it just stops taking
+   a third of a phone screen while a charge is running. */
+.panel:has(.ed-deck--pinned) .ed-deck__standing {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* ── the settle / confirmation progress ────────────────────────────────── */
+/* A rule that fills. The width comes from --pct, which the builder sets
+   through the style object because the CSP refuses a style attribute. */
+
+.settle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-block-start: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--ed-ink-2);
+}
+
+.settle__bar {
+  flex: 1 1 auto;
+  min-width: 80px;
+  height: 2px;
+  background: var(--ed-rule);
+  overflow: hidden;
+}
+
+.settle__fill {
+  height: 100%;
+  background: var(--ed-accent);
+  transition: width .3s linear;
+}
+
+/* ── form fields ───────────────────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.field__label { font-size: var(--fs-small); font-weight: 600; }
+
+.input,
+.textarea {
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--ed-paper);
+  border: 1px solid var(--ed-ink-2);
+  border-radius: 0;
+  color: var(--ed-ink);
+  font-family: inherit;
+  font-size: var(--fs-body);
+}
+
+.textarea { min-height: 96px; resize: vertical; line-height: 1.6; }
+.input::placeholder, .textarea::placeholder { color: var(--ed-ink-2); opacity: 1; }
+.input:focus-visible, .textarea:focus-visible { border-color: var(--ed-accent); }
+
+/* ── the expiry banner ─────────────────────────────────────────────────── */
+/* It means every control on the page is dead, and it stays up across every
+   view. A page this quiet cannot raise its voice in colour, so it inverts:
+   paper becomes ink. This is the only full-bleed block in the theme. */
+
+.expiry {
+  background: var(--ed-ink);
+  color: var(--ed-on-ink);
+  padding: var(--sp-5) var(--sp-4);
+}
+
+.expiry__inner {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.expiry__title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--fs-large);
+  font-weight: 700;
+  line-height: 1.35;
+}
+.expiry__title::before { font-size: var(--fs-body); }
+
+.expiry__text {
+  font-size: var(--fs-body);
+  max-inline-size: var(--ed-measure);
+  overflow-wrap: anywhere;
+}
+
+.expiry__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: flex-end;
+}
+.expiry__form .field { flex: 1 1 240px; }
+.expiry__form .btn { flex: 0 0 auto; }
+
+/* the field and its button live on inverted ground and have to be legible there */
+.expiry .field__label { color: var(--ed-on-ink); }
+.expiry .input {
+  background: none;
+  border-color: var(--ed-on-ink);
+  color: var(--ed-on-ink);
+}
+.expiry .input::placeholder { color: var(--ed-on-ink); opacity: .7; }
+.expiry .btn--primary {
+  background: var(--ed-on-ink);
+  border-color: var(--ed-on-ink);
+  color: var(--ed-ink);
+}
+.expiry .btn--primary:hover:not(:disabled) {
+  background: var(--ed-on-ink);
+  border-color: var(--ed-on-ink);
+  color: var(--ed-ink);
+}
+.expiry :focus-visible { outline-color: var(--ed-on-ink); }
+
+.expiry__error,
+.expiry__ok {
+  font-size: var(--fs-small);
+  font-weight: 700;
+}
+
+/* ── the stale marker ──────────────────────────────────────────────────── */
+/* Stale data stays fully readable. It is labelled, never dimmed. */
+
+.stale {
+  border-inline-start: 2px dashed var(--ed-ink-2);
+  padding-inline-start: var(--sp-3);
+}
+
+.stale__flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-block-end: var(--sp-2);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  color: var(--ed-ink);
+}
+
+.stale__age { font-variant-numeric: tabular-nums; font-weight: 500; }
+
+/* ── the comment board ─────────────────────────────────────────────────── */
+/* Notes in a margin: hairline-separated entries, no boxes. */
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-block-end: var(--sp-5);
+}
+
+.comment-form__actions {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.comments__filter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-block-end: var(--sp-3);
+  font-size: var(--fs-small);
+  color: var(--ed-ink-2);
+  border-block-start: 1px solid var(--ed-rule-2);
+}
+.comments__filter label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  cursor: pointer;
+}
+.comments__filter input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ed-accent);
+}
+
+.comment-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Three slots, and the view appends meta, actions, text in that order. */
+.comment {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-1) var(--sp-3);
+  padding-block: var(--sp-3);
+  border-block-start: 1px solid var(--ed-rule-2);
+  background: none;
+  min-width: 0;
+}
+
+.comment__meta {
+  grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-micro);
+  color: var(--ed-ink-2);
+  min-width: 0;
+}
+
+.comment__author { font-weight: 700; color: var(--ed-ink); font-size: var(--fs-small); }
+.comment__time { font-variant-numeric: tabular-nums; }
+
+.comment__actions {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  gap: var(--sp-1);
+  align-self: start;
+}
+
+.comment__text {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  font-size: var(--fs-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-inline-size: var(--ed-measure);
+}
+
+.comment--done .comment__text { text-decoration: line-through; color: var(--ed-ink-2); }
+
+/* Archived: set in, in lighter ink, with the tag style.css supplies. */
+.comment--archived { margin-inline-start: var(--sp-5); }
+.comment--archived .comment__text { color: var(--ed-ink-2); }
+.comment--archived .comment__author::after {
+  margin-inline-start: var(--sp-2);
+  padding-inline: var(--sp-1);
+  border: 1px solid var(--ed-rule);
+  color: var(--ed-ink-2);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+}
+
+/* The board's two icon controls keep their 44px target and lose their box: a note is a
+   line of type, and four boxed squares beside every two lines of it is the loudest thing
+   on the screen. The glyph carries the control, and the edge comes back on hover/focus. */
+.comment__actions .btn { border-color: transparent; }
+.comment__actions .btn:hover:not(:disabled),
+.comment__actions .btn:focus-visible { border-color: var(--ed-ink-2); }
+
+.comment__toggle[aria-pressed="true"] {
+  border-color: var(--ed-accent);
+  color: var(--ed-accent);
+}
+
+.comment__archive:hover:not(:disabled) {
+  background: var(--ed-ink);
+  border-color: var(--ed-ink);
+  color: var(--ed-on-ink);
+}
+
+/* ── sign-in sessions ──────────────────────────────────────────────────── */
+/* The same shape of row as a note, because it is the same shape of thing. */
+
+.session-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.session {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-2) var(--sp-3);
+  padding-block: var(--sp-3);
+  border-block-start: 1px solid var(--ed-rule-2);
+  min-width: 0;
+}
+
+/* The row the viewer is holding. Marked three ways — a tinted ground, a solid
+   edge and the chip the view writes into the meta line — because "this
+   device" and "another device" must never differ by colour alone. */
+.session--current {
+  background: var(--ed-wash);
+  border-inline-start: 3px solid var(--ed-accent);
+  padding-inline-start: var(--sp-3);
+}
+
+.session__meta {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-small);
+  color: var(--ed-ink-2);
+  min-width: 0;
+}
+
+.session__when { font-variant-numeric: tabular-nums; }
+.session__where { font-weight: 600; color: var(--ed-ink); }
+
+.session__actions {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+}
+
+/* Latin, punctuation-heavy, displayed verbatim and never cut. style.css gives
+   it its own bidi paragraph; this lets it wrap. */
+.session__ua {
+  grid-column: 1 / -1;
+  font-family: var(--ed-mono);
+  font-size: var(--fs-micro);
+  line-height: 1.5;
+  color: var(--ed-ink-2);
+  overflow-wrap: anywhere;
+}
+
+.session__confirm {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-block-start: var(--sp-3);
+  border-block-start: 1px dashed var(--ed-ink-2);
+}
+
+.session__question { font-size: var(--fs-body); font-weight: 600; color: var(--ed-ink); }
+
+.session__revoke:hover:not(:disabled) {
+  background: var(--ed-ink);
+  border-color: var(--ed-ink);
+  color: var(--ed-on-ink);
+}
+
+/* ── the contact card ──────────────────────────────────────────────────── */
+/* Every string here arrives at runtime. Nothing has a fixed width. */
+
+.contact__name {
+  font-size: var(--fs-large);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.contact__blurb {
+  margin-block-start: var(--sp-2);
+  font-size: var(--fs-body);
+  color: var(--ed-ink-2);
+  max-inline-size: var(--ed-measure);
+  overflow-wrap: anywhere;
+}
+
+/* Label above value: a two-column list would set its column from the longest
+   value, and one long address would then indent every other row. */
+.contact__list {
+  margin-block-start: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+}
+
+.contact__label {
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  color: var(--ed-ink-2);
+  border-block-start: 1px solid var(--ed-rule-2);
+  padding-block-start: var(--sp-3);
+}
+
+.contact__value {
+  font-size: var(--fs-body);
+  padding-block-end: var(--sp-3);
+  overflow-wrap: anywhere;
+}
+
+.contact__actions { margin-block-start: var(--sp-5); }
+
+/* The edit form: the same .field/.input/.textarea/.btn-row vocabulary already carrying the
+   comment composer and the credential field, so filling this card in reads as one more form
+   on the page rather than a bolted-on feature. */
+.contact__edit { margin-block-start: var(--sp-5); }
+
+.contact__form {
+  margin-block-start: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 420px;
+}
+
+.contact__form-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* ── empty, error, and the sign-in card ────────────────────────────────── */
+/* views/auth.js paints the sign-in card as an .empty inside a .panel, so
+   whatever happens here happens to the only screen an anonymous visitor sees.
+   Start-aligned rather than centred: this is a page of type, and a centred
+   block in a left-ragged column reads as a stray card. */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding-block: var(--sp-5);
+  text-align: start;
+  color: var(--ed-ink-2);
+}
+
+.empty__icon { font-size: var(--fs-large); line-height: 1; opacity: .55; }
+
+.empty__title {
+  font-size: var(--fs-large);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ed-ink);
+  max-inline-size: 24ch;
+}
+
+.empty__hint {
+  font-size: var(--fs-body);
+  max-inline-size: var(--ed-measure);
+}
+
+.empty .btn { margin-block-start: var(--sp-3); }
+
+/* A panel that has never loaded. A rule and a weight, not a red box. */
+.empty--error {
+  border-inline-start: 3px solid var(--ed-ink);
+  padding-inline-start: var(--sp-4);
+  background: var(--ed-paper-2);
+}
+.empty--error .empty__title { color: var(--ed-ink); font-weight: 700; }
+.empty--error .empty__icon { opacity: 1; }
+
+/* ── the first-paint skeleton ──────────────────────────────────────────── */
+/* app.js sets its height through the style object; this sheet sets none. */
+
+.skeleton {
+  background: var(--ed-paper-2);
+  border-block-start: 1px solid var(--ed-rule);
+  animation: ed-fade 1.6s ease-in-out infinite;
+}
+
+@keyframes ed-fade { 50% { opacity: .5; } }
+
+/* ── the menu ──────────────────────────────────────────────────────────── */
+/* The rail and the drawer are style.css's mechanics. This is their paint. An
+   index of destinations, set as words on a rule. */
+
+.nav {
+  background: var(--ed-paper);
+  border-inline-end: 1px solid var(--ed-rule);
+}
+
+.nav__bar {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+}
+
+.nav__brand {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--ed-ink-2);
+  padding-block-end: var(--sp-3);
+  margin-block-end: var(--sp-2);
+  border-block-end: 1px solid var(--ed-ink);
+}
+
+.nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding-inline: var(--sp-2);
+  border-inline-start: 2px solid transparent;
+  color: var(--ed-ink-2);
+  text-decoration: none;
+  font-size: var(--fs-body);
+  font-weight: 500;
+}
+
+.nav__link:hover { color: var(--ed-ink); background: var(--ed-paper-2); }
+
+/* aria-current is the styling hook AND the announcement, so what is
+   highlighted and what a screen reader calls current cannot drift. */
+.nav__link[aria-current="page"] {
+  color: var(--ed-ink);
+  font-weight: 700;
+  border-inline-start-color: var(--ed-accent);
+}
+
+.nav.is-open { border-inline-end-color: var(--ed-ink); }
+.nav.is-open ~ .navscrim { background: var(--ed-scrim); }
+
+/* ── the theme switcher ────────────────────────────────────────────────── */
+/* Selected by its own class and never through a parent: it is in the header
+   today and it is allowed to move. */
+
+.themeswitch {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.themeswitch__label {
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  color: var(--ed-ink-2);
+  white-space: nowrap;
+}
+
+.themeswitch__select {
+  min-height: var(--tap);
+  max-width: 10rem;
+  padding: 0 var(--sp-2);
+  background: var(--ed-paper);
+  border: 1px solid var(--ed-ink-2);
+  border-radius: 0;
+  color: var(--ed-ink);
+  font-family: inherit;
+  font-size: var(--fs-small);
+  cursor: pointer;
+}
+
+/* ── desktop ───────────────────────────────────────────────────────────── */
+
+@media (min-width: 900px) {
+  .shell__header { padding: var(--sp-4) var(--sp-5); }
+  .shell__main { padding: var(--sp-5) var(--sp-5) var(--sp-6); gap: var(--sp-6); }
+  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .table { min-width: 0; }
+  .ed-deck__act .btn { flex: 0 1 auto; min-width: 180px; }
+  .panel:has(.ed-deck--pinned) {
+    margin-inline: calc(var(--sp-5) * -1);
+    padding-inline: var(--sp-5);
+  }
+}
+
+/* ── motion floor ──────────────────────────────────────────────────────── */
+/* style.css kills transitions for everyone who asked. Animations are each
+   theme's own, because the right reduced state differs: the ambient charging
+   rule and the skeleton stop outright, since neither says anything a still
+   frame cannot, while the busy spinner SLOWS rather than freezing — a frozen
+   spinner on a disabled button reads as a stuck command, which is the
+   opposite of what it has to say. */
+
+@media (prefers-reduced-motion: reduce) {
+  .status--charging::after { animation: none; transform: scaleX(1); }
+  .skeleton { animation: none; }
+  .btn.is-busy::before { animation-duration: 2.4s; }
+}
+
+/* ── print ─────────────────────────────────────────────────────────────── */
+/* The active view is what prints, and on paper this design is already a
+   printed page. The chrome goes; the rules stay. */
+
+@media print {
+  .shell__header,
+  .shell__footer,
+  .themeswitch,
+  .btn,
+  .comment-form { display: none; }
+  .panel { border: 0; }
+  .table tbody tr:hover td { background: none; }
+}

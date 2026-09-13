@@ -15,7 +15,7 @@ browser
   v
 Pages project "car-charging"        <- this directory, deployed as-is
   |
-  +-- /            index.html, app.js, api.js, style.css, views/
+  +-- /            index.html, app.js, api.js, theme.js, style.css, views/, themes/
   +-- /api/*       functions/api/[[path]].js
          |
          +-- /api/auth/*      the sign-in door: the one route open to a caller
@@ -58,6 +58,21 @@ rediscover:
   `fetch` rather than trusting this sentence.
 
 Signed out, the menu is hidden and the views are detached as a set: the sign-in card is the page.
+
+### Six looks, one app
+
+`data-theme` on `<html>`, a `<select>` in the header, the choice in `localStorage`, and
+`classic` — today's design — as the default and the way back. `style.css` is the base every look
+stands on; `themes/<slug>.css` is the design and `themes/<slug>.js` optionally replaces a view's
+renderer. The whole contract is in `THEMES.md`; the mechanism's own rules are in `CLAUDE.md`.
+`themes/` carries no `_redirects` rule on purpose: it is part of the site.
+
+**The switcher is in the header and not in the menu, and that is a recovery property.** The
+menu is hidden on a signed-out page, so a switcher inside it is unreachable in exactly the
+state a viewer would need it: a theme that renders the sign-in card unreadable would leave them
+unable to switch away *and* unable to sign in, with clearing site data as the only way out. Its
+class is `.themeswitch` — parent-neutral, so a theme styles it by that class alone and the
+block can move again without breaking five sheets.
 
 **The gate is application code, not an edge product.** Nothing is authenticated before this
 directory runs: the Function receives every request, asks the private service one body-less
@@ -282,7 +297,13 @@ one of them fails *silently* in production if it breaks:
   lands on the status view rather than on a blank page;
 - an unrecognised connector status is rendered as itself and **never** falls through to "nothing
   is connected" — a car plugged in and idle reports a connector state with zero sessions, so the
-  session list cannot answer whether a cable is in the car.
+  session list cannot answer whether a cable is in the car;
+- an unrecognised stored theme falls back to `classic` rather than leaving the page unstyled, a
+  `localStorage` that throws renders the default instead of taking the page down, a theme change
+  makes **no** request, and every theme sheet in `themes/` styles every screen rather than only
+  the status view — the failure that is invisible from the screen a theme was designed on;
+- a theme may supply its own stop affordance but cannot reach past the gate to the command:
+  `views/controls.js` exports the seam and nothing else, and that export list is pinned.
 
 **One writer per table, and this is a hard rule:** the private upstream service owns `cache`,
 `sessions` and `login_tokens`; this Function owns `comments`. Neither ever writes the other's

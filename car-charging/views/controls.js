@@ -101,6 +101,20 @@ const ui = {
 // the command note all have to make the same denial, and three hand-written versions of it is
 // three chances for one of them to drift back into sounding like an expiry.
 const NOT_A_CREDENTIAL = ' זו אינה בעיית הרשאה, ואין מה לחדש באפליקציה של העמדה.';
+
+// ── THE STANDING NOTE — one spelling, one place ──
+//
+// The absence of a charge-now control and of an off-peak scheduler is a safety decision, not a
+// gap in the work: the request that writes the setting has never been observed on the wire, and
+// guessing it closes a contactor on real hardware and buys energy at roughly 2.79x the low
+// tariff (CLAUDE.md, "Do not guess"). The sentence is therefore a guarantee rather than copy.
+//
+// It used to be a literal here AND a verbatim copy in each of the five themes that replace this
+// body -- six places to drift, and six chances for one of them to quietly drop it. Every body
+// that paints this panel now renders THIS constant, and test/theme.test.mjs drives each theme's
+// builder and fails the one whose output does not contain it.
+export const STANDING_NOTE =
+  'תזמון טעינה אל תוך החלון הזול אינו מוצע כאן: הבקשה מעולם לא נלכדה, וניחוש שלה היה מדליק את העמדה במחיר השיא.';
 const FAULT = {
   [CHARGER_UNREACHABLE]: {
     title: 'אין כרגע קשר לעמדה',
@@ -145,9 +159,79 @@ export function render(el, state, ctx) {
   paint();
 }
 
-function paint() {
-  if (!mount) return;
-  const { el, view } = mount;
+// ── THE THEME SEAM, AND WHY IT IS A BODY AND NOT A RENDERER ──
+//
+// A theme may replace what this panel LOOKS like, including the affordance that fires a stop: a
+// button, a press-and-hold, a lever you drag to the end of its slot. It may not replace what the
+// panel DOES. Five code paths to a contactor is how this project gets hurt, and it has already
+// shipped two bugs inside this exact window -- an unforced reload that repainted a stopped
+// charge as still running, and a released busy flag that re-enabled Start while the session it
+// had just created was still invisible to the page.
+//
+// So the seam hands a theme a builder, not a renderer, and the builder is called with:
+//
+//   build(gate, ui, press) -> Node
+//
+//   gate   what this module has already decided: the raw status, the live session, and
+//          startOff / stopOff / reasons. A builder READS it. It does not re-derive it -- the
+//          gating chain below is the only place that ordering exists, and it is ordered by
+//          which instruction is true rather than by which condition is checked first.
+//   ui     a snapshot of the in-flight state: busy, busyLabel, settle, note. Read-only.
+//   press  { start, stop }. These are the only two doors. Each is the existing handler behind
+//          the same gate the default buttons are disabled by, so an affordance cannot fire a
+//          command the panel has already said is locked. An accepted press returns the
+//          command's promise; a refused one returns `{ ok: false, reasons }` read off the gate
+//          as it stands AT THE MOMENT OF THE PRESS, which is the only reason a late refusal can
+//          honestly quote -- the gate a builder was handed may already be a repaint behind.
+//
+// Everything the command is made of stays here and is not reachable from a theme: onStart,
+// onStop, the busy flag, the settle poll, the start-confirmation poll, failureText, and
+// release(ctx, reload, force) -- the single exit whose `force` parameter has no default.
+//
+// It is a BODY rather than a render because this panel repaints itself outside app.js's round:
+// every sample of either poll calls paint(). A renderer mounted by app.js would be overwritten
+// by the next sample a second later.
+let body = null;
+
+/** Install (or, with null, remove) a theme's body builder. app.js calls this; nothing else. */
+export function setBody(build) {
+  body = typeof build === 'function' ? build : null;
+}
+
+// A refusal that can name its own reason, and nothing more than that.
+//
+// `press` re-reads the gate at the moment of the call, and that read is the only CURRENT one:
+// app.js mutates the shared view object in place, so the gate a custom affordance was built with
+// can already be out of date by the time a gesture completes -- which is exactly the case a
+// refusal has to explain. A bare `undefined` left a theme with nothing to say but "it did not
+// leave", and one theme had to split its refusal into two vaguer messages to stay honest.
+//
+// It widens nothing. `reasons` is a copy of sentences the panel is already rendering; the
+// command, the busy flag, both polls and release() stay module-private and unreachable, and the
+// door still refuses. Naming the reason is the whole of it.
+const refusal = (g) => ({ ok: false, reasons: g.reasons.slice() });
+
+/**
+ * The two doors, each behind the gate the default buttons are disabled by. An accepted command
+ * returns its promise, so a caller can await it exactly as a click handler does; a refused one
+ * returns `{ ok: false, reasons }` read off the gate as it stands at the moment of the press.
+ */
+export const press = {
+  start: () => {
+    const g = gate(mount?.view);
+    return g.startOff ? refusal(g) : onStart();
+  },
+  stop: () => {
+    const g = gate(mount?.view);
+    return g.stopOff ? refusal(g) : onStop();
+  },
+};
+
+/**
+ * Why each control is or is not available. Exported for a theme's body builder; the default
+ * body below is its first caller. Pure: it reads the mounted view and `ui` and touches no DOM.
+ */
+export function gate(view) {
   const status = chargerStatus(view);
   const session = liveSession(view);
   const expired = view?.expired === true;
@@ -161,22 +245,15 @@ function paint() {
   // Not a credential problem, and never rendered as one. See FAULT below.
   const fault = FAULT[view?.chargerFault] ? view.chargerFault : null;
   const loaded = !!view?.state;
+  // app.js's own marker: what is painted is the freshest thing there is, and it is old. It does
+  // NOT gate anything -- stale data is still the only data there is, and locking a control over
+  // it would be the page refusing to work whenever the network hiccuped. It is here because a
+  // body builder had no other way to see it: one theme animates a figure while energy is
+  // flowing and had to reach staleness through a CSS ancestor (`.stale .nflow …`) to know when
+  // to stop moving a number the page can no longer vouch for.
+  const stale = view?.stale === true;
 
-  const frag = document.createDocumentFragment();
-
-  // Status badge. The name is always the badge's own text — the colour is decoration only.
-  // Suffixes are lower-case with no separator; anything outside the seven known states gets a
-  // bare .status rather than a class invented from an unrecognised string.
-  if (status) {
-    // Hebrew is the label; the protocol's own spelling rides on the title. The owner needs to
-    // be able to read "SuspendedEVSE" off the badge when something is wrong, and the tariff
-    // panel names the same raw state in its prose for the phone, where a title is unreachable.
-    const badge = make('span', statusClass(status), statusLabel(status));
-    badge.title = String(status);
-    frag.append(badge);
-  }
-
-  // Why each button is or is not available. A disabled control always carries its reason.
+  // A disabled control always carries its reason.
   const reasons = [];
   let startOff = false;
   let stopOff = false;
@@ -224,6 +301,39 @@ function paint() {
     reasons.push('העצירה נעולה כי אין טעינה שרצה.');
   }
 
+  // Last, so it reads after the reason the gate above gave, in both bodies.
+  if (ui.busy) reasons.push('פקודת טעינה בדרך; שתי הפקודות נעולות עד שתתקבל תשובה.');
+
+  return { status, session, expired, authRequired, fault, loaded, stale, reasons, startOff, stopOff };
+}
+
+function paint() {
+  if (!mount) return;
+  const { el, view } = mount;
+  const g = gate(view);
+
+  // A theme's body. It gets the gate, a snapshot of the in-flight state and the two doors; it
+  // does not get the module, and it cannot reach the command path from here.
+  if (body) {
+    el.replaceChildren(body(g, { ...ui }, press));
+    return;
+  }
+
+  const { status, reasons, startOff, stopOff } = g;
+  const frag = document.createDocumentFragment();
+
+  // Status badge. The name is always the badge's own text — the colour is decoration only.
+  // Suffixes are lower-case with no separator; anything outside the seven known states gets a
+  // bare .status rather than a class invented from an unrecognised string.
+  if (status) {
+    // Hebrew is the label; the protocol's own spelling rides on the title. The owner needs to
+    // be able to read "SuspendedEVSE" off the badge when something is wrong, and the tariff
+    // panel names the same raw state in its prose for the phone, where a title is unreachable.
+    const badge = make('span', statusClass(status), statusLabel(status));
+    badge.title = String(status);
+    frag.append(badge);
+  }
+
   const row = make('div', 'btn-row');
   const startBtn = make('button', 'btn btn--primary', 'התחלת טעינה');
   startBtn.type = 'button';
@@ -236,12 +346,15 @@ function paint() {
   if (ui.busy === 'start') setBusy(startBtn, ui.busyLabel);
   if (ui.busy === 'stop') setBusy(stopBtn, ui.busyLabel);
 
-  startBtn.addEventListener('click', onStart);
-  stopBtn.addEventListener('click', onStop);
+  // Through `press`, not through onStart/onStop directly, so the default body and a theme's use
+  // the one guarded door. The buttons are already disabled when the gate says so; this is the
+  // belt to that brace, and it is what makes an affordance safe by construction rather than by
+  // each affordance remembering.
+  startBtn.addEventListener('click', press.start);
+  stopBtn.addEventListener('click', press.stop);
   row.append(startBtn, stopBtn);
   frag.append(row);
 
-  if (ui.busy) reasons.push('פקודת טעינה בדרך; שתי הפקודות נעולות עד שתתקבל תשובה.');
   for (const reason of reasons) frag.append(make('p', 'btn-note', reason));
 
   // Bounded settle progress. --pct is a bare number and must be set through the style object:
@@ -266,13 +379,7 @@ function paint() {
 
   if (ui.note) frag.append(make('p', 'btn-note', ui.note.text));
 
-  frag.append(
-    make(
-      'p',
-      'btn-note',
-      'תזמון טעינה אל תוך החלון הזול אינו מוצע כאן: הבקשה מעולם לא נלכדה, וניחוש שלה היה מדליק את העמדה במחיר השיא.'
-    )
-  );
+  frag.append(make('p', 'btn-note', STANDING_NOTE));
 
   el.replaceChildren(frag);
 }

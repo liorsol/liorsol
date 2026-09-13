@@ -738,7 +738,9 @@ physical box exists.
 
 **The same error was made about Europcar** — called a documented "no" for 02:30 by the same
 method. **The user has personally returned a Europcar out of hours into a key box.** Two wrong
-calls from one bad inference.
+calls from one bad inference. A follow-up found Europcar publishes an *Automated Key Collection
+Service* page and **nothing suggesting they structurally exclude a 02:30 return**; the lived
+experience stands.
 
 🔒 **The rule this leaves behind: the absence of a field in structured data is not evidence of
 absence in the world.** Structured data is good for confirming a positive (Autovia's `keybox`
@@ -746,13 +748,27 @@ field genuinely discriminates, 38 true / 20 false of 58) and bad for proving a n
 vendor's own prose contradicts an inference drawn from their JSON, **the prose wins** — and when
 a user's first-hand experience contradicts either, **the experience wins.**
 
-### Where it actually stands
+### Where it actually stands — FCO HAS a key depot
 
-**Not "replace the booking".** The open question is narrow and factual: **is FCO one of the "most
-offices" with a box, or a reduced-hours exception — and what is the fee?** The page asks exactly
-that, in writing, at **fco@goldcar.com** (preferred over the phone for the paper trail; the
-`+39 050 807 5174` on the booking is the Italy call centre, and the station is
-**+39 06 65 048 104**).
+**✅ Verified from Goldcar's own FCO office page:** *"A secure key depot is available outside
+office hours."* — https://www.goldcar.es/us/offices/goldcar-rome-fiumicino-airport-office/
+**So FCO is one of the "most offices" with a box, not a reduced-hours exception.** Not "replace
+the booking".
+
+**What is genuinely unknown is now only two things:** where the box physically is (published
+nowhere), and what an out-of-hours return costs.
+
+⚠️ **On the fee — the earlier reading was right and should not be re-litigated:** the Italy
+Tariff Guide's *"Service outside opening hours (where available) — 40 € per rental"* line
+**describes collection only** (*"It is possible to collect the reserved vehicle… outside normal
+office hours"*), and the guide has **no return-side equivalent**. FAQ 290 confirms a fee exists
+but **no document anywhere prices it**. **Don't assume €40.**
+
+**And there is no way to add it online:** no such field in the booking engine, and **FAQ 329
+confirms a Key'n Go booking cannot be modified, only cancelled**. So it is arranged directly with
+the station — which is why the page says to email now rather than assume it resolves on the night.
+**fco@goldcar.com** (preferred over phone for the paper trail; `+39 050 807 5174` on the booking
+is the Italy call centre, the station is **+39 06 65 048 104**).
 
 Three things to ask, all on the page: where the box physically is · what an out-of-hours return
 costs · **whether it must be selected in advance** — FAQ 290's "when taking out this option"
@@ -780,8 +796,11 @@ theirs. **~5 independent reports** (Murcia, Mallorca, Malpensa, Bergamo, 2021–
 return followed by a disputed damage or "late return" charge — none at FCO, but consistent.
 Photograph everything, including the box with the key in it, timestamped.
 
-⚠️ **Unresolved:** Goldcar's own station sheet gives coordinates on **Via Portuense, 2.7 km
-off-airport**, conflicting with the Key'n Go kiosk at Multipiano B level 4 in the confirmation.
+**✅ The address conflict is resolved:** the station sheet giving **Via Portuense, 2.7 km
+off-airport** carries embedded metadata dating it to **April 2014** — it is stale. **Multipiano B
+level 4, as printed on the confirmation, is correct**, and matches every booking platform. (Their
+office page also mentions *Torre Uffici 2* — that is the counter building, not the Key'n Go
+kiosk.)
 
 ### The travelators — nothing to do with any rental company
 

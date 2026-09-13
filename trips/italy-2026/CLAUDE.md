@@ -711,6 +711,97 @@ is left:
    suitable for children"**) · Perugina's allergen answer · Orvieto Underground's English tour
    times.
 
+## The 02:30 car return — contested, and the retracted evidence is worth remembering
+
+**Do not re-litigate this from one source. Two research passes reached opposite verdicts.**
+
+**Saying Goldcar FCO DOES take an out-of-hours return** — all three are Goldcar's own:
+- The FCO station page: *"A secure key depot is available outside office hours."*
+  https://www.goldcar.es/en-us/car-rental/locations/italy/rome/rome-fiumicino-airport/
+- Their FAQ: use the key drop-box outside the office when it is closed.
+  https://www.goldcarhelp.com/en/faqs/348-where-do-i-deposit-the-keys-upon-return
+- **The FCO rental contract itself** has a section headed *"Out-of-hours" return Service* —
+  keys drop off box, CAI damage form, registration papers in the glove box.
+  https://www.goldcar.es/api/v1/terminos/downloadPdf/q/FCO/en
+
+**Saying it does NOT:** Goldcar's machine-readable station data carries a separate
+`businessType: "AFTER"` window; **Alicante and Málaga have one, Fiumicino has only
+`"NORMAL"` 07:30–22:59**, as do the other Italian stations checked. And the contract clause
+says "in certain stations" **without naming FCO**.
+
+**The probable reconciliation, not confirmed:** `AFTER` is likely out-of-hours **collection** —
+the Goldcar Italia tariff guide prices *"Service outside opening hours (where available)"* at
+**€40 and describes only collecting the car** — while return-by-box is a different thing.
+**There is no out-of-hours *return* fee anywhere in that tariff guide.**
+
+⚠️ **RETRACTED, do not reuse:** an early pass cited DiscoverCars' *"Key box available: No"* for
+FCO. Probing ~25 DiscoverCars supplier pages found **not one "Key box: Yes"** anywhere — the
+field is globally unpopulated, so "No" is a default, not a finding. It was briefly on the page
+and has been removed.
+
+**No first-hand account of anyone returning a Goldcar at FCO between midnight and 06:00 was
+found at all.** Not evidence of absence, but not confirmation either.
+
+### The part that has nothing to do with Goldcar, and may matter more
+
+**ADR's own FAQ** (https://www.adr.it/faq) says the Easy Parking multi-storeys are open **H24**
+with 24/7 staffed assistance points — so *driving in* at 02:30 is fine — but that the moving
+walkways in the pedestrian tunnels run **05:01–24:00**. **At 02:30 the travelators are off**,
+and whether the tunnel is open and lit at that hour **could not be verified**. Nine people, two
+cars' worth of luggage, sleeping children and a 3-year-old, from Parking B level 4 to Terminal 3.
+**This is true for every rental company at FCO**, so it is not solved by rebooking, and it should
+be settled before any decision about the cars. ADR: +39 06 8898 1981.
+
+### What is certain and bad regardless
+
+The FCO contract states the rental **does not end when the keys go in the box** — the car stays
+in its space until the station opens and inspects it. A 02:30 drop against an 07:30 opening is
+**~5 hours of unattended car that is still contractually theirs**, in a garage whose only staff
+work for Easy Parking. And there are **~5 independent reports (Murcia, Mallorca, Malpensa,
+Bergamo, 2021–2026) of a box return followed by a disputed damage or "late return" charge** —
+**none at FCO**, but the pattern is consistent, and the Malpensa one arrived dressed as lateness
+after a pre-06:00 drop. Photographs are the only defence, including one of the box with the key
+in it, timestamped.
+
+### Opening hours here are not trustworthy
+
+Four sources give four answers: 07:30–22:59 · 08:00–21:59 · 08:00–midnight · "closes 23:00".
+Against that, a dated first-hand report (23 Dec 2023) found the office shut at **20:30** and the
+key machine shut at **21:30**. **Treat 07:30 as a claim, not a fact** — which also means the
+"move the pick-up earlier to catch the morning water release" plan needs a phone call, not a
+website.
+
+### Booking mechanics
+
+**A Key'n Go booking cannot be amended — only cancelled.** Free until **48 h before pick-up =
+23 Sep 09:00**, €50 after. So moving the pick-up time is a cancel-and-rebook, which is why the
+return question and the collection time should be decided together.
+
+**Phone numbers: three are in circulation and none is confirmed against the others.**
+`+39 050 807 5174` printed on the booking is Goldcar's **Italy call centre**, per their own
+T&Cs. `+39 06 6504 8104` (per ADR) and `+39 06 4520 9634` are both offered as the station.
+The page lists all three with what each is believed to be.
+
+## Car seats — the family brings their own (user, Sep 2026)
+
+Not rented. **Boosters for most of the children, one full seat for one of them** — which is much
+easier than it first looked: backless boosters are essentially cushions, so the boot (~3 cases
+per car, the binding number) only really loses the one full seat. Plan which car that seat rides
+in at home.
+
+What the page checks instead of "order seats": the orange label must read **R44/04 or R129** —
+R44/01 and /02 are illegal in Italy, not merely discouraged — heights measured rather than
+guessed against the **150 cm** threshold, and **Wizz Air's treatment of a car seat marked
+UNVERIFIED** because wizzair.com is unreachable from this environment (one pushchair per child
+is free; a car seat is not confirmed to be).
+
+⚠️ **A claim was put on the page and then corrected**: "in Italy a backless booster is only
+allowed from 125 cm". That is the **R129 standard's own type-approval limit**, not an Italian
+rule — an **R44/04** booster is approved by weight from 15 kg and carries no such limit, and
+R44/04 is still legal here. The page now says **the label on the seat decides** and flags that
+the exact Italian wording could not be verified from an official source (poliziadistato 404s;
+the ACI article page did not render its text). **Verify before repeating either version.**
+
 ## The comments pass (Sep 2026) — what the family asked for on the boards, and what was done
 
 Eleven comments were read off the live boards, acted on, and then deleted from the DB. **Deleting

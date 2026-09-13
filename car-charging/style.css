@@ -156,7 +156,16 @@ button, input, textarea, select { font: inherit; color: inherit; }
    direction and the whole line reassembles itself in front of the reader. */
 .session__ua,
 .contact__value,
-.tariff__flip strong { unicode-bidi: plaintext; }
+.tariff__flip strong,
+/* The read-only half of the contact card was in this set from the start
+   (`.contact__value`); the EDIT form's own `<input>`/`<textarea>` were not, and a phone or
+   WhatsApp number is exactly the shape that breaks without it: no strong character anywhere
+   in "+972500000000", so the page direction alone decided where the leading "+" landed and it
+   rendered after the digits instead of before them. Measured in the contact edit form at
+   dir="rtl". The name/address/blurb fields already read fine either way — their first
+   character is Hebrew, a strong character of its own — so this costs them nothing. */
+.input,
+.textarea { unicode-bidi: plaintext; }
 
 /* Hebrew has no ascenders or descenders: the letters fill the x-height band
    almost solidly, so identical leading reads noticeably denser than Latin. A
@@ -386,6 +395,131 @@ button, input, textarea, select { font: inherit; color: inherit; }
    language fact, not a layout one. :lang(he) also matches lang="he-IL". */
 .comment--archived .comment__author::after { content: "archived"; }
 :lang(he) .comment--archived .comment__author::after { content: "בארכיון"; }
+
+/* ── the history and invoice tables become cards below their readable width ──
+   `.table` used to carry a `min-width: 620px` in classic and rely on `.table-wrap` to scroll it
+   sideways below that — a fallback the owner looked at on a real 375px phone and rejected: a
+   seven-column table dragged sideways under a thumb "is not nice," and it is not a design. Below
+   the same 620px this project already named as the floor a table can be read at, each `<tr>`
+   becomes a card and each `<td>` prints its own column's meaning beside its value, so nothing
+   is told apart only by a position in a row that no longer exists.
+   THIS IS THE BASE'S rather than four copies in four themes: no theme replaces the `history` or
+   `account` renderer (THEMES.md §7), so every theme wears the exact same table markup, and the
+   mechanism below is identical for all of them by construction. Colour, border and radius still
+   come from each theme's own tokens, read the same defensive way the focus outline above reads
+   `--focus` — `var(token, fallback)` — so a theme that defines them gets its own look and the
+   two themes outside this project's scope still render something legible if they define none of
+   their own.
+   THE ONE THING THIS BLOCK DUPLICATES ON PURPOSE: the header text. A selector cannot read a
+   `<th>` at render time and print it beside an unrelated `<td>` in a different row, and neither
+   `views/history.js` nor `views/account.js` is a file a theme (or this base sheet) may edit to
+   carry a `data-label` — THEMES.md is explicit that the view modules are out of reach here. So
+   every label below is a second, hand-kept copy of a string those two modules already write once.
+   ponytail: if a header's wording changes there, these go stale silently. The upgrade path is a
+   `data-label` attribute set by those two modules — one line in each — which would let every rule
+   below collapse to `content: attr(data-label) ": "` and delete this whole comment. Until then,
+   `test/*.test.mjs` renders those two views directly and would not catch a drift here; only
+   reading the two files side by side would.
+   The saved-amount header's own wording branches on whether the payload carried a VAT rate
+   ("… לפני מע״מ" vs "… כולל מע״מ", views/history.js `render()`); the label below drops that
+   clause rather than trying to reproduce a runtime branch in CSS — "נחסך" alone still names the
+   column, and the value cell never carried the clause either. */
+@media (max-width: 619.98px) {
+  #history .table-wrap,
+  #account .table-wrap {
+    overflow-x: visible;
+  }
+
+  #history .table-wrap table.table,
+  #account .table-wrap table.table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Visually hidden, not display:none: this repeats `.sr-only` verbatim rather than adding the
+     class, because the class is a view module's to add and neither of these two may be edited
+     here. A screen reader still gets the real column headers once; a sighted reader gets the
+     per-row label generated below instead of a sideways scroll. */
+  #history .table-wrap table.table thead,
+  #account .table-wrap table.table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  #history .table-wrap table.table tbody,
+  #account .table-wrap table.table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+  }
+
+  #history .table-wrap table.table tr,
+  #account .table-wrap table.table tr {
+    display: block;
+    border: 1px solid var(--line, currentColor);
+    border-radius: var(--r-md, 4px);
+    background: var(--surface-2, transparent);
+    padding: var(--sp-3);
+  }
+
+  #history .table-wrap table.table td,
+  #account .table-wrap table.table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding-block: var(--sp-1);
+    border-block-end: 1px solid var(--line, currentColor);
+    white-space: normal;
+  }
+
+  #history .table-wrap table.table td:last-child,
+  #account .table-wrap table.table td:last-child {
+    border-block-end: 0;
+  }
+
+  /* The label is generated content, not a second row of markup, so it carries no meaning of its
+     own the way the ⚠/✓ prefixes above do not — it repeats a string the view already rendered
+     once, in the one header row this rule hides. font-weight only: colour is a theme's. */
+  #history .table-wrap table.table td::before,
+  #account .table-wrap table.table td::before {
+    font-weight: 600;
+  }
+
+  /* #history — views/history.js's seven columns, in the order that module writes them. */
+  #history .table-wrap table.table td:nth-child(1)::before { content: "התחלה"; }
+  #history .table-wrap table.table td:nth-child(2)::before { content: "משך"; }
+  #history .table-wrap table.table td:nth-child(3)::before { content: "אנרגיה (kWh)"; }
+  #history .table-wrap table.table td:nth-child(4)::before { content: "עלות (₪ כולל מע״מ)"; }
+  #history .table-wrap table.table td:nth-child(5)::before { content: "הספק ממוצע (kW)"; }
+  #history .table-wrap table.table td:nth-child(6)::before { content: "נחסך (₪)"; }
+  #history .table-wrap table.table td:nth-child(7)::before { content: "סיבת עצירה"; }
+
+  /* #account holds two tables and no wrapper class tells them apart, so the selectors below lean
+     on the one structural fact THEMES.md §4.8 already pins: the connectors table is nested inside
+     the FIRST child of the panel body (views/account.js's `chargerBlock`, appended first whenever
+     there is a charger to show), and the invoices table is the `.table-wrap` that follows the
+     "תקופות חיוב" heading as a direct sibling. Neither reading depends on the other table's
+     presence, so an empty connector list or a not-yet-closed invoice period cannot make one
+     selector pick up the other table's columns. */
+  #account > div:first-child .table-wrap table.table td:nth-child(1)::before { content: "מחבר"; }
+  #account > div:first-child .table-wrap table.table td:nth-child(2)::before { content: "מצב"; }
+  #account > div:first-child .table-wrap table.table td:nth-child(3)::before { content: "מוכן"; }
+  #account > div:first-child .table-wrap table.table td:nth-child(4)::before { content: "עודכן"; }
+
+  #account h3.panel__title ~ .table-wrap table.table td:nth-child(1)::before { content: "תקופה"; }
+  #account h3.panel__title ~ .table-wrap table.table td:nth-child(2)::before { content: "מצב"; }
+  #account h3.panel__title ~ .table-wrap table.table td:nth-child(3)::before { content: "אנרגיה (kWh)"; }
+  #account h3.panel__title ~ .table-wrap table.table td:nth-child(4)::before { content: "₪ לפני מע״מ"; }
+  #account h3.panel__title ~ .table-wrap table.table td:nth-child(5)::before { content: "₪ כולל מע״מ"; }
+}
 
 /* ── motion floor ──────────────────────────────────────────────────────── */
 /* Transitions are killed for everyone who asked, here, once, so no theme can

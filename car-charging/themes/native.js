@@ -47,6 +47,75 @@ function el(tag, cls, text) {
   return node;
 }
 
+// ── the prototype's own icons, restored ──
+//
+// The prototype never labelled the cable's ends or the live-activity kicker with emoji; it drew
+// them as inline SVG, the same pictograms iOS itself would use. Emoji render however the host
+// font stack feels like that day — a different weight, a different colour, sometimes a different
+// drawing entirely — which is exactly the "not implemented as in the design" gap the icons here
+// close. `document.createElementNS` is real in `test/fake-dom.mjs` (the SVG-building `gauge`
+// theme is exercised by the same stub), so there is no longer a technical reason to fall back to
+// text for a shape this simple.
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function svgEl(tag, attrs) {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const name in attrs) node.setAttribute(name, attrs[name]);
+  return node;
+}
+
+function icon(children, attrs) {
+  const node = svgEl('svg', Object.assign({ viewBox: '0 0 24 24', 'aria-hidden': 'true' }, attrs));
+  for (const child of children) node.append(child);
+  return node;
+}
+
+const STROKE = { fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
+
+/** The kicker's own mark, beside "החשמל זורם" — a filled bolt, exactly the prototype's. */
+function boltIcon() {
+  return icon(
+    [svgEl('path', { d: 'M13.4 2 5.1 13.1a.62.62 0 0 0 .5 1h4.6l-1 7.3a.5.5 0 0 0 .9.36l8.4-11.2a.62.62 0 0 0-.5-1h-4.6l1-7.2A.5.5 0 0 0 13.4 2Z' })],
+    { fill: 'currentColor' }
+  );
+}
+
+/** The station: the source, at the inline start, where reading begins on this page. */
+function stationIcon() {
+  return icon(
+    [
+      svgEl('rect', { x: '3.4', y: '3.2', width: '9.6', height: '17.6', rx: '2.2' }),
+      svgEl('path', { d: 'M13 8.6h2.7a2 2 0 0 1 2 2v5.6a1.65 1.65 0 0 0 3.3 0v-5.4' }),
+      svgEl('path', { d: 'M8.9 7.2 6.3 11.5h2.3l-.6 3.4 2.7-4.3H8.4l.5-3.4Z', fill: 'currentColor', stroke: 'none' }),
+    ],
+    STROKE
+  );
+}
+
+/** The car: the destination, at the inline end. */
+function carIcon() {
+  return icon(
+    [
+      svgEl('path', { d: 'M2.6 15.1v-2.6l1.8-3.9A2 2 0 0 1 6.2 7.4h6.9a2 2 0 0 1 1.6.8l2.5 3.3 1.6.5a1.5 1.5 0 0 1 1.1 1.45v1.65h-2.2' }),
+      svgEl('path', { d: 'M8.9 15.1h3.6' }),
+      svgEl('circle', { cx: '5.5', cy: '15.4', r: '1.9' }),
+      svgEl('circle', { cx: '16.4', cy: '15.4', r: '1.9' }),
+    ],
+    STROKE
+  );
+}
+
+/** The plug beside "התחלת טעינה" — the prototype's start button never went bare either. */
+function plugIcon() {
+  return icon(
+    [
+      svgEl('rect', { x: '4.5', y: '10.5', width: '15', height: '10', rx: '2.5' }),
+      svgEl('path', { d: 'M8 10.5V7.2a4 4 0 0 1 8 0v3.3' }),
+    ],
+    { fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }
+  );
+}
+
 // ── the flow readout ────────────────────────────────────────────────────────
 //
 // THE ONLY CONTINUOUS ANIMATION ON THE PAGE, AND IT IS A READOUT.
@@ -87,6 +156,8 @@ function liveCard(gate) {
   const card = el('section', 'nla' + (flowing ? '' : held ? ' nla--held' : ' nla--idle'));
 
   const head = el('div', 'nla__head');
+  // The bolt, restored: the prototype's live-activity head is never bare text.
+  head.append(boltIcon());
   // The kicker is about the CABLE, not about the session: #tariff already carries "טעינה פעילה"
   // and the same badge a screen-height above, and two copies of one sentence on one screen is
   // how a reader stops reading either.
@@ -110,10 +181,14 @@ function liveCard(gate) {
   if (flowing) flow.style.setProperty('--flow-dur', flowDuration(kw).toFixed(2) + 's');
   // The station is at the inline start, where reading begins on this page, and the car at the
   // inline end. The CSS sends the dashes from one to the other along the same axis.
-  flow.append(el('span', 'nflow__end', '🔌'));
+  const stationEnd = el('span', 'nflow__end');
+  stationEnd.append(stationIcon());
+  const carEnd = el('span', 'nflow__end');
+  carEnd.append(carIcon());
+  flow.append(stationEnd);
   const cable = el('div', 'nflow__cable');
   cable.append(el('div', 'nflow__dash'));
-  flow.append(cable, el('span', 'nflow__end', '🚗'));
+  flow.append(cable, carEnd);
   card.append(flow);
 
   // ONE figure, and it is the one nothing else on this screen shows. The energy, the cost and
@@ -391,8 +466,12 @@ function controls(gate, ui, press) {
   // the bug this project keeps fixing, so this is not conditional on anything.
   for (const reason of gate.reasons) box.append(el('p', 'btn-note', reason));
 
-  const startBtn = el('button', 'btn btn--primary', 'התחלת טעינה');
+  // `.nstart`, not the shared `.btn.btn--primary`: the prototype draws Start as its own
+  // full-width plate with a plug icon, the same way `.nstop` below is its own gesture rather
+  // than a borrowed button class. Still wired through `press.start` only.
+  const startBtn = el('button', 'nstart');
   startBtn.type = 'button';
+  startBtn.append(plugIcon(), el('span', null, 'התחלת טעינה'));
   startBtn.disabled = gate.startOff || ui.busy !== null;
   if (ui.busy === 'start') {
     // Busy is four things at once: the class, the real attribute so a second press cannot land,

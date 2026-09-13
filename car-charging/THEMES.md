@@ -372,8 +372,17 @@ div.table-wrap
 div.empty        or   div.empty.empty--error                          no rows / no data
 ```
 
-`.table` has `min-width: 620px` in classic and scrolls inside `.table-wrap` on a phone. If
-your type is wider, raise it; the container is already an overflow scroller in the base sheet.
+**Below 620px the table stops being a table.** The base sheet turns every `#history` / `#account`
+row into a stacked card: `<thead>` goes visually-hidden (still read aloud, never `display: none`),
+each `<tr>` becomes a bordered block, and each `<td>` grows a `::before` carrying its column's
+label. That lives in `style.css` rather than in a theme because no theme replaces the `history`
+or `account` renderer (§7), so all six inherit it and none may undo it.
+
+Above 620px it is an ordinary table with `min-width: 620px`, and `.table-wrap` is still an
+overflow scroller behind it. If your type is wider than the default, raise the `min-width` — but
+do not reach for sideways scrolling on a phone as the answer. It was the answer once, and the
+owner's verdict on it was "it's not nice": seven columns cut off at the edge of a 375px screen is
+a fallback wearing the costume of a design.
 
 ### 4.8 `#/invoices` — `views/account.js`, in a `--flush` panel
 

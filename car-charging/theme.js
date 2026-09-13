@@ -43,7 +43,7 @@ const THEMES = [
   ['gauge', 'מחוגים'],
   ['terminal', 'טרמינל'],
   ['editorial', 'עיתון'],
-  ['native', 'מערכת'],
+  ['native', 'זכוכית'],
   ['switch', 'מתג'],
 ];
 

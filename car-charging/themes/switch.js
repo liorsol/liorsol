@@ -153,6 +153,33 @@ function announce(text) {
   el.live.textContent = text;
 }
 
+// ── the lock icon on the bolted cover plate ──
+//
+// Inline SVG only, no remote asset, built with `createElementNS` exactly as `gauge` builds its
+// dial — `test/fake-dom.mjs` carries that call for precisely this reason, so there is no excuse
+// left to fall back to a glyph for a padlock this simple.
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function lockIcon() {
+  const s = document.createElementNS(SVG_NS, 'svg');
+  s.setAttribute('viewBox', '0 0 16 16');
+  s.setAttribute('aria-hidden', 'true');
+  s.setAttribute('fill', 'none');
+  s.setAttribute('stroke', 'currentColor');
+  s.setAttribute('stroke-width', '1.5');
+  s.setAttribute('stroke-linejoin', 'round');
+  const arc = document.createElementNS(SVG_NS, 'path');
+  arc.setAttribute('d', 'M4 7V5a4 4 0 0 1 8 0v2');
+  const body = document.createElementNS(SVG_NS, 'rect');
+  body.setAttribute('x', '2.8');
+  body.setAttribute('y', '7');
+  body.setAttribute('width', '10.4');
+  body.setAttribute('height', '7');
+  body.setAttribute('rx', '1.6');
+  s.append(arc, body);
+  return s;
+}
+
 // ── build ──
 
 function create() {
@@ -189,7 +216,20 @@ function create() {
   gripB.setAttribute('aria-hidden', 'true');
   el.lever.append(gripA, face, gripB);
 
-  el.slot.append(flow, trail, detent, markOn, markOff, el.lever);
+  // The bolted cover plate. The prototype's illustration for "every control on this page is
+  // dead" is not a greyed-out lever — it is a physical plate bolted over the slot, because that
+  // state is not "this button is disabled", it is "this switch cannot be reached at all". Shown
+  // only while `action` is null and nothing is in flight (build() below), which is exactly the
+  // gate.reasons case this panel already renders in words underneath — the plate says the same
+  // thing the way the equipment idiom says it.
+  el.cover = make('div', 'sw__cover');
+  el.cover.hidden = true;
+  const coverIcon = lockIcon();
+  el.coverTitle = make('b', 'sw__cover-title', 'המתג מכוסה');
+  el.coverBody = make('span', 'sw__cover-body', 'הסיבה כתובה מתחת למתג.');
+  el.cover.append(coverIcon, el.coverTitle, el.coverBody);
+
+  el.slot.append(flow, trail, detent, markOn, markOff, el.lever, el.cover);
 
   // The arming readout. Visual only: the lever's own position is the same fact, and a screen
   // reader being read a percentage on every frame of a pull is noise, not information.
@@ -390,6 +430,11 @@ function build(gate, ui, press) {
   attr(el.lever, 'aria-busy', busy ? 'true' : null);
 
   el.slot.dataset.action = action || 'none';
+  // The plate bolts on only for the genuinely dead case — neither direction open, nothing in
+  // flight, and not the temporary "parked" pause a timed-out poll leaves standing. `unpark()`
+  // still needs a bare lever to take hold of; a plate over it would be one more thing to clear
+  // before the owner could even ask for the last known position back.
+  el.cover.hidden = !(!action && !busy && !parked);
   node.dataset.phase = busy ? (ui.settle ? 'sent' : 'sending') : parked ? 'unconfirmed' : ui.settle?.done ? 'confirmed' : 'armed';
   // The one ambient animation on the page, and it is information rather than decoration: energy
   // is flowing down the rail behind the lever.

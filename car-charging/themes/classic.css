@@ -339,6 +339,16 @@ body {
 }
 .btn-row > .btn { flex: 1 1 160px; }
 
+/* The default controls body (views/controls.js's own render(), which is what classic wears —
+   every other theme supplies its own body builder with its own rhythm) stacks a status badge
+   and the button row as plain block siblings with no gap between them: a status--suspendedev
+   badge landed flush against "עצירה" / "התחלת טעינה" below it, reported directly by the owner.
+   `.btn-note` already carries its own top margin (below); the badge does not, and cannot be
+   given one everywhere — `.status` also sits inline in a table cell and in the tariff panel,
+   where a top margin would misalign it. Scoped to the one adjacency that is actually missing
+   it. */
+.status + .btn-row { margin-block-start: var(--sp-3); }
+
 /* Explains why controls are disabled. Never rely on the dimming alone. */
 .btn-note {
   margin-top: var(--sp-2);
@@ -1073,6 +1083,10 @@ body {
   gap: var(--sp-3);
   font-size: var(--fs-sm);
   color: var(--fg-muted);
+  /* Same gap this file gives every other block in the controls stack. .settle only ever follows
+     the button row or a reason paragraph (views/controls.js §6), never leads the panel, so an
+     unconditional top margin is safe here in a way it is not on `.status` above. */
+  margin-block-start: var(--sp-3);
 }
 
 .settle__bar {

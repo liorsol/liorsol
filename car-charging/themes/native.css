@@ -63,11 +63,17 @@
   --shadow: 0 1px 2px rgba(16, 18, 26, .05), 0 10px 26px -18px rgba(16, 18, 26, .30);
   --shadow-card: 0 1px 2px rgba(10, 92, 47, .06), 0 14px 30px -16px rgba(10, 92, 47, .34);
 
-  /* — accent (blue: navigation, selection, progress) — */
-  --accent: #0a5ccc;            /* 6.15:1 on --surface */
-  --accent-fg: #ffffff;         /* 6.15:1 on --accent */
-  --accent-soft: #e6eefc;
-  --accent-line: #a8c4f0;
+  /* — accent —
+     The prototype has exactly one accent hue and spends it on everything: the
+     nav-bar current tab, the refresh pill, every primary button, the focus
+     ring, and the live-activity card. It is the same green as --good below on
+     purpose — restoring that is the whole point, not a coincidence — because
+     splitting "charging" from "chrome" into two hues is precisely the drift
+     that cost this sheet its identity. */
+  --accent: #0a5c2f;             /* 8.11:1 white text; == --good, one material */
+  --accent-fg: #ffffff;
+  --accent-soft: #e4f1e8;
+  --accent-line: #8fc0a4;
 
   /* — semantic — */
   --good: #0a5c2f;              /* 8.12:1 on --surface, 6.98:1 on --good-soft */
@@ -86,7 +92,7 @@
   --alt-soft: #ecebfa;
   --alt-line: #ada6e8;
 
-  --focus: #0a5ccc;
+  --focus: #0a5c2f;
 
   /* — the translucent chrome —
      0.86 alpha over the page grey: composited over anything this page can put
@@ -159,10 +165,10 @@
     --shadow: 0 0 0 .5px rgba(255, 255, 255, .06), 0 14px 32px -20px rgba(0, 0, 0, .9);
     --shadow-card: 0 0 0 .5px rgba(120, 255, 170, .10), 0 16px 34px -18px rgba(0, 0, 0, .95);
 
-    --accent: #6cb0ff;          /* 7.53:1 on --surface */
-    --accent-fg: #06121f;       /* 8.34:1 on --accent */
-    --accent-soft: #12253c;
-    --accent-line: #2d558c;
+    --accent: #30d158;          /* == --good, one material in dark too */
+    --accent-fg: #06170d;       /* 9.14:1 on --accent */
+    --accent-soft: #10291a;
+    --accent-line: #3a8a53;
 
     --good: #30d158;            /* 8.42:1 on --surface, 8.40:1 on --la-bg */
     --good-soft: #10291a;
@@ -180,7 +186,7 @@
     --alt-soft: #1d1633;
     --alt-line: #4a3a80;
 
-    --focus: #6cb0ff;
+    --focus: #30d158;
 
     --chrome: rgba(12, 12, 14, .84);
     --chrome-solid: #0f0f11;
@@ -1268,6 +1274,58 @@ h3.panel__title {
   min-width: 0;
 }
 
+/* ── the start button ──────────────────────────────────────────────────── */
+/* The prototype never draws Start as the same pill every other button on the
+   page wears: it is a full-width plate with its own icon, because it is the
+   one other thing on this panel that closes a contactor. Restoring `.nstart`
+   in place of the shared `.btn.btn--primary` is the other half of "different
+   buttons" — not only the stop gesture, the start affordance too. */
+.nstart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 50px;
+  border: 0;
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  color: var(--fg-muted);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform var(--t-press) var(--ease-out), background-color var(--t-press) ease,
+    opacity var(--t-press) ease;
+}
+.nstart svg { width: 1.0625rem; height: 1.0625rem; flex: none; opacity: .85; }
+
+/* Filled with the one accent only while it can actually be pressed — a
+   disabled control reads as inert metal, never as a lit button nobody can
+   reach, which is the sunk-grey the prototype gives it. */
+.nstart:not(:disabled):not(.is-busy) {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.nstart:active:not(:disabled) { transform: scale(.98); }
+.nstart:disabled { cursor: not-allowed; }
+
+.nstart.is-busy { cursor: progress; }
+.nstart.is-busy::before {
+  content: "";
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: nspin .7s linear infinite;
+  flex: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nstart:not(:disabled):not(.is-busy):hover { filter: brightness(1.08); }
+}
+
 /* ── the live activity card ────────────────────────────────────────────── */
 
 .nla {
@@ -1302,6 +1360,16 @@ h3.panel__title {
   flex-wrap: wrap;
 }
 
+/* The bolt beside the kicker, restored: the prototype's live-activity head
+   is never bare text, it is an icon plus a kicker, and the icon carries the
+   card's colour exactly as the kicker text does. */
+.nla__head svg {
+  width: 1.1875rem;
+  height: 1.1875rem;
+  flex: none;
+  fill: currentColor;
+}
+
 .nla__kicker {
   font-size: var(--fs-sm);
   font-weight: 700;
@@ -1326,14 +1394,17 @@ h3.panel__title {
 .nla--idle .nflow { color: var(--fg-muted); }
 .nla--held .nflow { color: var(--warn); }
 
-/* The two ends of the cable. They are text, not an asset: this page may load
-   no remote asset of any kind, and the fake DOM the suite renders against has
-   no SVG namespace. */
+/* The two ends of the cable: a station pictogram and a car pictogram, exactly
+   the pair the prototype drew. Inline SVG only — no remote asset of any kind —
+   and the fake DOM the suite renders against now carries `createElementNS`, so
+   these can be built and asserted on like gauge's dial. */
 .nflow__end {
   flex: none;
-  font-size: var(--fs-xl);
+  width: 1.625rem;
+  height: 1.625rem;
   line-height: 1;
 }
+.nflow__end svg { display: block; width: 100%; height: 100%; }
 
 .nflow__cable {
   position: relative;
@@ -1744,11 +1815,13 @@ h3.panel__title {
      that is still in flight reads as a stuck command, which is the opposite
      of what it has to say. */
   .btn.is-busy::before,
+  .nstart.is-busy::before,
   .nsending__spin { animation-duration: 2.4s; }
 
   /* No press-scale, no drawer slide. The drawer's transform is style.css's
      and its transition is already killed above. */
   .btn:active:not(:disabled),
+  .nstart:active:not(:disabled),
   .nav__link:active { transform: none; }
 }
 
@@ -1761,6 +1834,7 @@ h3.panel__title {
   .shell__footer,
   .themeswitch,
   .btn,
+  .nstart,
   .nstop,
   .comment-form { display: none; }
   .panel__body { box-shadow: none; padding: 0; }

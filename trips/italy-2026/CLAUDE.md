@@ -711,76 +711,115 @@ is left:
    suitable for children"**) · Perugina's allergen answer · Orvieto Underground's English tour
    times.
 
-## The 02:30 car return — contested, and the retracted evidence is worth remembering
+## The 02:30 car return — RESOLVED: replace the booking
 
-**Do not re-litigate this from one source. Two research passes reached opposite verdicts.**
+**Three research passes; the third settled it. Don't reopen from one source.**
 
-**Saying Goldcar FCO DOES take an out-of-hours return** — all three are Goldcar's own:
-- The FCO station page: *"A secure key depot is available outside office hours."*
-  https://www.goldcar.es/en-us/car-rental/locations/italy/rome/rome-fiumicino-airport/
-- Their FAQ: use the key drop-box outside the office when it is closed.
-  https://www.goldcarhelp.com/en/faqs/348-where-do-i-deposit-the-keys-upon-return
-- **The FCO rental contract itself** has a section headed *"Out-of-hours" return Service* —
-  keys drop off box, CAI damage form, registration papers in the glove box.
-  https://www.goldcar.es/api/v1/terminos/downloadPdf/q/FCO/en
+### The finding that closes it
 
-**Saying it does NOT:** Goldcar's machine-readable station data carries a separate
-`businessType: "AFTER"` window; **Alicante and Málaga have one, Fiumicino has only
-`"NORMAL"` 07:30–22:59**, as do the other Italian stations checked. And the contract clause
-says "in certain stations" **without naming FCO**.
+Goldcar's station data (embedded in the Nuxt payload of each station page,
+`goldcar.es/en-us/places/car-rental-italy/roma/rome-fiumicino-airport/`) defines activity
+windows per station, with a distinct `businessType: "AFTER"` for out-of-hours return.
 
-**The probable reconciliation, not confirmed:** `AFTER` is likely out-of-hours **collection** —
-the Goldcar Italia tariff guide prices *"Service outside opening hours (where available)"* at
-**€40 and describes only collecting the car** — while return-by-box is a different thing.
-**There is no out-of-hours *return* fee anywhere in that tariff guide.**
+- **FCO has one window only: `"NORMAL" 07:30–22:59`. No `AFTER` at all.**
+- **And every `AFTER` window Goldcar has anywhere — Alicante, Málaga, Barcelona, Madrid — is
+  `23:01–23:59`. It never crosses midnight.**
 
-⚠️ **RETRACTED, do not reuse:** an early pass cited DiscoverCars' *"Key box available: No"* for
-FCO. Probing ~25 DiscoverCars supplier pages found **not one "Key box: Yes"** anywhere — the
-field is globally unpopulated, so "No" is a default, not a finding. It was briefly on the page
-and has been removed.
+So **"out-of-hours" at Goldcar is a late-evening product, not an overnight one, and no Goldcar
+station on earth can be booked for a 02:30 return.** Escalating, or switching to another Goldcar
+station, cannot produce it. Corroborated by their own FAQ 103 (*"Non è possibile riconsegnare
+l'auto fuori dall'orario accordato nel contratto"*) and FAQ 313 (Key'n Go keys are issued during
+office hours only).
 
-**No first-hand account of anyone returning a Goldcar at FCO between midnight and 06:00 was
-found at all.** Not evidence of absence, but not confirmation either.
+⚠️ **Their marketing page does say a key depot is available outside office hours.** That is
+generic copy contradicting their own station record. **Expect a phone agent to read it aloud.**
+Ask for written confirmation *for FCO at 02:30*, never a general statement — and prefer
+**fco@goldcar.com** over the phone, for the paper trail.
 
-### The part that has nothing to do with Goldcar, and may matter more
+⚠️ **RETRACTED, do not reuse:** DiscoverCars' *"Key box available: No"*. Probing ~25 of their
+supplier pages found **no supplier anywhere reading "Yes"** — the field is unpopulated, so "No"
+is a default. It was briefly on the page and is gone.
 
-**ADR's own FAQ** (https://www.adr.it/faq) says the Easy Parking multi-storeys are open **H24**
-with 24/7 staffed assistance points — so *driving in* at 02:30 is fine — but that the moving
-walkways in the pedestrian tunnels run **05:01–24:00**. **At 02:30 the travelators are off**,
-and whether the tunnel is open and lit at that hour **could not be verified**. Nine people, two
-cars' worth of luggage, sleeping children and a 3-year-old, from Parking B level 4 to Terminal 3.
-**This is true for every rental company at FCO**, so it is not solved by rebooking, and it should
-be settled before any decision about the cars. ADR: +39 06 8898 1981.
+**Anecdotes:** zero first-hand accounts of a successful after-hours Goldcar drop at FCO. What
+exists instead is **three independent reports of arriving to a closed desk** (22:15, 23:50, and a
+phone-ahead refusal), one of which lost a six-day booking with no refund.
 
-### What is certain and bad regardless
+### The recommendation on the page
 
-The FCO contract states the rental **does not end when the keys go in the box** — the car stays
-in its space until the station opens and inspects it. A 02:30 drop against an 07:30 opening is
-**~5 hours of unattended car that is still contractually theirs**, in a garage whose only staff
-work for Easy Parking. And there are **~5 independent reports (Murcia, Mallorca, Malpensa,
-Bergamo, 2021–2026) of a box return followed by a disputed damage or "late return" charge** —
-**none at FCO**, but the pattern is consistent, and the Malpensa one arrived dressed as lateness
-after a pre-06:00 drop. Photographs are the only defence, including one of the box with the key
-in it, timestamped.
+**Enterprise / Locauto** (= Alamo / National, one desk). Only supplier winning on both axes:
+documented **€0** out-of-hours return with a **named box location** (*"nel parcheggio, a sinistra
+della porta della cabina per il check-in"*), a written liability end (*"nel momento in cui un
+dipendente ispeziona il veicolo il giorno lavorativo successivo"*), and the **earliest opening at
+FCO, 07:00**. **Book the replacement, confirm it, then cancel Goldcar** — cancelling first leaves
+them carless.
 
-### Opening hours here are not trustworthy
+**⭐ And one call that could beat it: Avis publishes a *staffed* desk, Building A level 2,
+23:30–06:30.** If real and open to non-members, the car is handed to a human at 02:30, the
+agreement closes on the spot, and **the liability tail disappears entirely** — which is the
+largest residual risk in the Enterprise plan. Two reasons not to bank on it: "Preferred Service"
+is Avis's loyalty tier and may be members-only, and the record is hand-typed with three typos in
+one line, which is what stale data looks like. **+39 06 6501 1531.** Same call confirms the
+building — an **undated** banner says Avis FCO moves from Multipiano B4 to **E2** from 8 July.
 
-Four sources give four answers: 07:30–22:59 · 08:00–21:59 · 08:00–midnight · "closes 23:00".
-Against that, a dated first-hand report (23 Dec 2023) found the office shut at **20:30** and the
-key machine shut at **21:30**. **Treat 07:30 as a claim, not a fact** — which also means the
-"move the pick-up earlier to catch the morning water release" plan needs a phone call, not a
-website.
+### The method that cracked it, reused
 
-### Booking mechanics
+The `businessType` trick worked twice more. **Europcar is also a documented NO for 02:30**:
+station `FCOT01` returns `AFTER 00:00–00:59` plus `NORMAL 07:00–23:59`, so 02:30 falls outside
+both — while their own on-page FAQ claims a 24-hour key box. **Trust the JSON over the FAQ.**
+**Autovia** exposes `keybox: true/false` per station and the field genuinely discriminates
+(38 true / 20 false of 58), so it is real data — but **don't book them: pick-up is Palazzina OPEN
+and drop-off is Multipiano B4**, and hunting an unfamiliar level at 02:30 is where a schedule
+breaks. **Hertz** has a per-location policy endpoint (`rentalTerms.jsp?KEYWORD=OOH&EOAG=FCOT50`);
+FCO returns text that **omits any key safe box while Ciampino's names one**, and their T&Cs gate
+it to *"solo previo nostro consenso"* — a weak yes.
 
-**A Key'n Go booking cannot be amended — only cancelled.** Free until **48 h before pick-up =
-23 Sep 09:00**, €50 after. So moving the pick-up time is a cancel-and-rebook, which is why the
-return question and the collection time should be decided together.
+### Certain regardless of company
 
-**Phone numbers: three are in circulation and none is confirmed against the others.**
-`+39 050 807 5174` printed on the booking is Goldcar's **Italy call centre**, per their own
-T&Cs. `+39 06 6504 8104` (per ADR) and `+39 06 4520 9634` are both offered as the station.
-The page lists all three with what each is believed to be.
+The FCO contract: **the rental does not end when the keys go in the box** — the car stays put
+until the station opens and inspects it. **~5 hours of unattended car still contractually
+theirs.** And **~5 independent reports (Murcia, Mallorca, Malpensa, Bergamo, 2021–2026) of a box
+return followed by a disputed damage or "late return" charge** — none at FCO, but consistent.
+Photograph everything including the box with the key in it, timestamped. Note Maggiore's tail runs
+**to 12:00 noon**.
+
+### Booking mechanics, and a marketing claim with nothing behind it
+
+**Key'n Go cannot be amended, only cancelled.** Free until **48 h before pick-up = 23 Sep 09:00**,
+€50 after (or the rental cost if lower). ⚠️ **The "Cancellation guarantee due to unforeseen
+circumstances" bundled in the pack has no found substance** — the phrase appears only as a
+marketing bullet on the page for a *different* Goldcar pack, is undefined there, and **those words
+appear nowhere in the FCO T&Cs**. Treat it as marketing for the standard 48h rule; don't trade
+on it.
+
+### Phone numbers and one unresolved conflict
+
+`+39 050 807 5174` on the booking is the **Italy call centre**. Goldcar's own station sheet
+(`s3-eu-west-1.amazonaws.com/goldcar/goldcarweb/pdf/fco.pdf`) gives **+39 06 65 048 104** and
+**fco@goldcar.com**. ⚠️ **That same sheet gives coordinates on Via Portuense, 2.7 km off-airport**,
+conflicting with the Key'n Go kiosk at Multipiano B level 4 in the confirmation. Unresolved.
+
+### The travelators — nothing to do with any rental company
+
+**ADR's FAQ confirms the Easy Parking multi-storeys are open H24 with 24/7 staffed assistance**,
+so driving in at 02:30 is fine. The **05:01–24:00 travelator window is from a secondary source
+(Telepass), NOT from ADR's own page** — the page is marked accordingly. Whether the tunnel is open
+and lit at 02:30 **could not be verified**. Nine people and two cars of luggage from level 4 to
+T3. **True for every company in the building**, so no rebooking fixes it. ADR: +39 06 8898 1981.
+
+### What this changed at Marmore
+
+Enterprise opens **07:00** vs Goldcar's 07:30, and **nothing at FCO opens earlier**. A clean 07:00
+collection reaches the falls ~10:30 and catches **~1¾ hours of the 11:00–13:00 release**, which is
+a materially better day. **But the real lever is the queue, not the opening hour** — six
+independent reports describe 1–3.5 hour pick-up queues at FCO. The page therefore keeps
+**15:00–16:00 as the plan** and says: if you are actually off the airport before 08:45, switch to
+the morning window.
+
+### Still open, and needing a browser rather than more fetching
+
+sixt.com and TripAdvisor 403 from this environment. TripAdvisor's *"Hertz Fiumicino after-hours
+drop-off"* thread is the likeliest place for a real first-hand FCO night-drop account. OK Mobility
+remains UNKNOWN — **"not found", not "no"**.
 
 ## Car seats — the family brings their own (user, Sep 2026)
 

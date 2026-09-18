@@ -46,15 +46,21 @@
   .filters button:hover{border-color:var(--azure); color:var(--sea)}
   /* On = the category's own pin colour, which is what a legend would otherwise say. */
   .filters button.on{background:var(--c,var(--sea)); border-color:var(--c,var(--sea)); color:#fff}
-  .filters button.some{background:#8d9a8e; border-color:#8d9a8e; color:#fff}   /* הכל, partly selected */
+  /* Partly selected — worn by הכל and by ⭐, each for the row below it. Grey rather
+     than the category colour on purpose: "some of this" must not read as "all of this". */
+  .filters button.some{background:#8d9a8e; border-color:#8d9a8e; color:#fff}
   .filters .n{font-weight:500; opacity:.62; margin-inline-start:.4em}
   .filters .tx{margin-inline-start:.35em}
   /* Two steps fitChips() falls back to before shrinking further: drop the counts,
      then drop the words and let the emoji carry the category (it already does on
-     the pins). הכל keeps its word — three characters, and no emoji says "all". */
+     the pins). הכל keeps its word — three characters, and no emoji says "all".
+     At that level the sub-row's ״⭐ לפי יום״ caption goes too: the ⭐ chip directly
+     above it already says which row this is, and the caption is a fixed ~70px that
+     eight day chips cannot fit around. */
   .filters.hide-n .n{display:none}
   .filters.hide-tx .tx{display:none}
   .filters.hide-tx .ic{font-size:1.3em}
+  .filters.hide-tx .lbl{display:none}
   .filters.hide-tx{gap:.3em}                            /* a lone emoji needs far less around it */
   .filters.hide-tx button{padding:.34em .5em}
   /* The ⭐ sub-row. Smaller, indented, and separated by a hairline so it reads as a
@@ -62,7 +68,10 @@
   .filters.sub{font-size:11.5px; padding-top:.45em; border-top:1px solid var(--line-soft,#e2dcd0)}
   .filters.sub .lbl{flex:0 0 auto; align-self:center; font-family:'Heebo',sans-serif;
     font-weight:700; opacity:.55; margin-inline-end:.2em; white-space:nowrap}
-  .filters.sub button{padding:.28em .6em}
+  /* :not() so it loses to .hide-tx's tighter padding rather than beating it on
+     source order — the sub-row keeping .6em at the icon-only level was half of
+     why it still scrolled after fitRow had run out of levels. */
+  .filters.sub:not(.hide-tx) button{padding:.28em .6em}
   #map{flex:1; min-height:0; width:100%}
   @media print{ body{display:block; overflow:visible} #map{flex:none; height:520px} .bar .back,.filters{display:none} }
   .leaflet-popup-content{font-family:'Assistant',sans-serif; direction:rtl; text-align:right; font-size:14.5px; line-height:1.5}
@@ -80,11 +89,11 @@
 <script>if(window.top !== window.self) document.documentElement.className = 'embed';</script>
 
 <div class="bar">
-  <h1 id="title">🗺️ מפת המסלול — כל המקומות בתכנית</h1>
+  <h1>🗺️ מפת המסלול</h1>
   <a class="back" href="index.html">→ חזרה לעמוד הטיול</a>
 </div>
 <div class="filters" id="filters"></div>
-<div class="filters sub" id="subfilters" hidden></div>
+<div class="filters sub" id="subfilters"></div>
 
 <div id="map"></div>
 
@@ -129,6 +138,16 @@ var DAY_PLANS = {
   tuscany:   {ic:'🍷', tx:'טוסקנה'},
   gubbio:    {ic:'🏰', tx:'גובּיו'}
 };
+/* Each day gets its own shade rather than its own colour (user's request, Sep 2026:
+   "a slightly different colour per day — maybe only in hue, light to dark"). It is the
+   ⭐ hue at eight lightnesses, so the day pins still read as one family on the map and
+   the chip↔pin key survives; eight unrelated colours would have broken both. Derived
+   from the list, so adding a plan re-spaces the ramp instead of needing a new hex. */
+var DAY_KEYS = Object.keys(DAY_PLANS);
+DAY_KEYS.forEach(function(d, i){
+  /* 50%→29% — the floor is where white chip text is still comfortable. */
+  DAY_PLANS[d].color = 'hsl(137 26% ' + (50 - i * (21 / (DAY_KEYS.length - 1))).toFixed(1) + '%)';
+});
 
 var PLACES = [
   // ---------------- lodging + the airport ----------------
@@ -219,7 +238,6 @@ function planOf(p){
   if(p.plan) return p.plan;
   return /^days\//.test(p.v || '') ? p.v.slice(5) : null;
 }
-function laneOf(p){ var d = planOf(p); return d ? 'days/' + d : p.cat; }
 
 var layerGroups = {}, groupBounds = {}, laneCat = {}, LANE_KEYS = [];
 function lane(id, cat){
@@ -233,7 +251,10 @@ Object.keys(DAY_PLANS).forEach(function(d){ lane('days/' + d, 'days'); });
 var byQ = {};
 function addPlaces(){
   PLACES.forEach(function(p){
-  var c = CATS[p.cat];
+  var pl = planOf(p);
+  /* A day pin wears its own day's shade, not the flat ⭐ green — same hue, so the
+     chip above it and the pin below still obviously belong together. */
+  var c = (pl && DAY_PLANS[pl]) || CATS[p.cat];
   var icon = L.divIcon({
     className:'', html:'<div class="pin" style="background:'+c.color+'"><span>●</span></div>',
     iconSize:[26,26], iconAnchor:[13,26], popupAnchor:[0,-24]
@@ -245,7 +266,7 @@ function addPlaces(){
   var html = '<b>'+p.n+'</b>' + (p.note ? '<br>'+p.note : '') +
              '<br><a href="'+mapsUrl+'" target="_blank" rel="noopener">מפה / ניווט ↖</a>' +
              (p.v ? ' · <a href="index.html#'+p.v+'" target="_top">מידע באתר ←</a>' : '');
-  var ln = laneOf(p);
+  var ln = pl ? 'days/' + pl : p.cat;
   lane(ln, p.cat);                       // a day plan with no DAY_PLANS entry still gets a lane
   p.marker = L.marker([p.lat, p.lng], {icon:icon}).bindPopup(html).addTo(layerGroups[ln]);
   byQ[p.q] = p;
@@ -255,21 +276,31 @@ function addPlaces(){
 
 /* The chips are the only filter UI — Leaflet's own layers control is deliberately
    absent, so each chip wears its category's pin colour to keep the colour↔category
-   key. Categories toggle independently; `shown` is the whole state. */
+   key. Categories toggle independently; `shown` is the whole state.
+
+   ⚠️ **⭐ has no entry in `shown`.** It is on exactly when at least one of its days is,
+   and `catOn()` is the only place that is decided. Storing a separate flag for it was
+   the bug behind two passes of "the filter still isn't right": clicking ⭐ off left all
+   eight days set, unchecking all eight by hand left the category set, and those two
+   identical-looking maps then coloured the ⭐ chip differently — white one way, grey the
+   other. A derived value cannot disagree with itself. **Do not reintroduce `shown.days`.** */
 var CAT_KEYS = Object.keys(CATS);
 var shown = {}, dayOn = {}, pinned = null;
 
 function setAll(v){
-  CAT_KEYS.forEach(function(k){ shown[k] = v; });
-  Object.keys(DAY_PLANS).forEach(function(d){ dayOn[d] = true; });  // ⭐ off hides them anyway
+  CAT_KEYS.forEach(function(k){ if(k !== 'days') shown[k] = v; });
+  setDays(v);                     /* days are part of "everything", in both directions */
 }
-function countOn(){ return CAT_KEYS.filter(function(k){ return shown[k]; }).length; }
-function dayCount(){ return Object.keys(DAY_PLANS).filter(function(d){ return dayOn[d]; }).length; }
-/* A lane is drawn when its category is on and — under ⭐ — its own plan is too. */
+function setDays(v){ DAY_KEYS.forEach(function(d){ dayOn[d] = v; }); }
+function dayCount(){ return DAY_KEYS.filter(function(d){ return dayOn[d]; }).length; }
+function allDays(){ return dayCount() === DAY_KEYS.length; }
+function catOn(k){ return k === 'days' ? dayCount() > 0 : !!shown[k]; }
+function countOn(){ return CAT_KEYS.filter(catOn).length; }
+function allOn(){ return countOn() === CAT_KEYS.length && allDays(); }
+/* A lane is drawn when its category is on — and a day lane's category IS its own day. */
 function laneVisible(id){
-  if(!shown[laneCat[id]]) return false;
   var d = id.indexOf('days/') === 0 && id.slice(5);
-  return d ? !!dayOn[d] : true;
+  return d ? !!dayOn[d] : !!shown[laneCat[id]];
 }
 function catCount(k){
   return LANE_KEYS.reduce(function(n, id){
@@ -293,10 +324,12 @@ function fromHash(){
   var plan = pinned ? planOf(pinned) : (DAY_PLANS[h] ? h : null);
   var cat  = pinned ? pinned.cat : (plan ? 'days' : h);
   if(CATS[cat]){
-    setAll(false); shown[cat] = true;
+    setAll(false);                       /* clears the days too, so ⭐ starts off */
     /* Deep-linking a single day pin — or #marmore — narrows ⭐ to that plan too,
        which is the whole point of the sub-filter. A bare #days shows all eight. */
-    if(plan){ Object.keys(DAY_PLANS).forEach(function(d){ dayOn[d] = d === plan; }); }
+    if(cat !== 'days') shown[cat] = true;
+    else if(plan)      dayOn[plan] = true;
+    else               setDays(true);
   }
   else setAll(true);
   render(true);
@@ -308,45 +341,49 @@ function fromHash(){
    point (a hash) and the הכל chip — which changes the whole selection at once,
    not one layer of it — ask for a new frame. */
 function render(fit){
-  var bounds = [], visible = 0;
+  var bounds = [];
   LANE_KEYS.forEach(function(id){
     if(laneVisible(id)){
       layerGroups[id].addTo(map);
       bounds = bounds.concat(groupBounds[id]);
-      visible += groupBounds[id].length;
     } else if(map.hasLayer(layerGroups[id])) map.removeLayer(layerGroups[id]);
   });
 
-  var on = countOn();
-  var only = on === 1 && CAT_KEYS.filter(function(k){ return shown[k]; })[0];
-  document.getElementById('title').textContent =
-    pinned            ? '📍 ' + pinned.n
-    : on === CAT_KEYS.length ? '🗺️ מפת המסלול — כל ' + PLACES.length + ' המקומות בתכנית'
-    : on === 0        ? '🗺️ מפת המסלול — לא נבחרה אף קטגוריה'
-    : only            ? CATS[only].label + ' — ' + visible + ' נקודות'   /* labels already carry an emoji */
-                      : '🗺️ ' + visible + ' מקומות · ' + on + ' קטגוריות';
+  /* The `<h1>` is static (user's request, Sep 2026). It used to be a live readout of
+     the selection, which meant the one element above the map changed length on every
+     tap — two lines, then one, then two — and shoved the map down and up under the
+     finger doing the tapping. The chips already say what is selected, each in its own
+     fixed place, so the readout was restating them at the cost of a moving layout. */
+  var on = countOn(), full = allOn();
 
+  /* Three states, not two: fully on, partly on (grey), off. ⭐ gets the partly-on
+     state from its own sub-row, and הכל from both rows at once — that is what makes
+     each of them readable as "the ALL button for the level below it". */
   document.querySelectorAll('#filters button').forEach(function(b){
     var k = b.dataset.cat;
-    b.classList.toggle('on', k ? !!shown[k] : on === CAT_KEYS.length);
-    b.classList.toggle('some', !k && on > 0 && on < CAT_KEYS.length);
-    b.setAttribute('aria-pressed', k ? !!shown[k] : on === CAT_KEYS.length);
+    /* Both summary chips read the same three-state rule off the level below them:
+       all of it → the colour, some of it → grey, none of it → white. */
+    var isOn   = k ? (k === 'days' ? allDays() : !!shown[k]) : full;
+    var isSome = k === 'days' ? (dayCount() > 0 && !allDays())
+               : k            ? false
+                              : (on > 0 && !full);
+    b.classList.toggle('on', isOn);
+    b.classList.toggle('some', isSome);
+    b.setAttribute('aria-pressed', isOn || isSome);
   });
 
-  /* The ⭐ sub-row exists only while ⭐ itself is on — eight more chips on screen
-     when the day pins are hidden anyway would be clutter, not a filter. */
-  var sub = document.getElementById('subfilters'), dn = dayCount();
-  sub.hidden = !shown.days;
-  sub.querySelectorAll('button').forEach(function(b){
+  /* ⚠️ The ⭐ sub-row is **always on screen**, including with no day selected (user's
+     request, Sep 2026): "the idea is to remove all, then choose only those I want to
+     see". A picker you clear cannot vanish on being cleared — that is the one moment
+     it is needed. It has no הכל of its own: the ⭐ chip above it is that button. */
+  document.querySelectorAll('#subfilters button').forEach(function(b){
     var d = b.dataset.day;
-    b.classList.toggle('on', d ? !!dayOn[d] : dn === Object.keys(DAY_PLANS).length);
-    b.classList.toggle('some', !d && dn > 0 && dn < Object.keys(DAY_PLANS).length);
-    b.setAttribute('aria-pressed', d ? !!dayOn[d] : dn === Object.keys(DAY_PLANS).length);
+    b.classList.toggle('on', !!dayOn[d]);
+    b.setAttribute('aria-pressed', !!dayOn[d]);
   });
 
-  fitChips();                 /* the sub-row appears and disappears — re-measure both rows */
   map.invalidateSize();
-  if(pinned && shown[pinned.cat]){ map.setView([pinned.lat, pinned.lng], 14); pinned.marker.openPopup(); }
+  if(pinned && catOn(pinned.cat)){ map.setView([pinned.lat, pinned.lng], 14); pinned.marker.openPopup(); }
   else if(fit && bounds.length) map.fitBounds(bounds, {padding:[30,30]});
 }
 
@@ -362,7 +399,7 @@ var LEVELS = [                    /* each level's floor: words have to stay read
   {cls:'hide-n hide-tx', min:7}
 ];
 function fitRow(f, base, start){
-  if(!f || f.hidden || !f.clientWidth) return;   /* laid out while hidden — measuring would shrink to nothing */
+  if(!f || !f.clientWidth) return;               /* not laid out yet — measuring would shrink it to nothing */
   for(var i = 0; i < LEVELS.length; i++){
     f.className = base + ' ' + LEVELS[i].cls;
     for(var s = start; s >= LEVELS[i].min; s -= 0.5){
@@ -397,9 +434,14 @@ function init(){
     if(!b) return;
     pinned = null;                       // stop re-zooming to a deep-linked pin
     var k = b.dataset.cat;
-    if(k) shown[k] = !shown[k];
-    else  setAll(countOn() < CAT_KEYS.length);   // הכל: all on unless already all on
-    render(!k);                                  // only הכל re-frames; a single chip keeps the view
+    /* Both summary chips are plain select-all / clear-all over the level below them
+       (user's request, Sep 2026): anything showing → clear it and go white, nothing
+       showing → bring it all back. Partly-selected clears, so one tap always empties
+       and the next always fills — never a state you cannot leave in one tap. */
+    if(k === 'days') setDays(!dayCount());
+    else if(k)       shown[k] = !shown[k];
+    else             setAll(!countOn());
+    render(!k);                          // only הכל re-frames; a single chip keeps the view
   });
 
   /* The ⭐ sub-row. Same chip markup and the same colour variable as ⭐ itself, so it
@@ -407,11 +449,10 @@ function init(){
      Plans with no pins are skipped — a chip that filters nothing is a lie. */
   var sf = document.getElementById('subfilters');
   sf.innerHTML = '<span class="lbl">⭐ לפי יום</span>' +
-    '<button type="button" data-day="">הכל<span class="n">' + catCount('days') + '</span></button>' +
-    Object.keys(DAY_PLANS).filter(function(d){
+    DAY_KEYS.filter(function(d){
       return (groupBounds['days/' + d] || []).length;
     }).map(function(d){
-      return '<button type="button" data-day="'+d+'" style="--c:'+CATS.days.color+'">' +
+      return '<button type="button" data-day="'+d+'" style="--c:'+DAY_PLANS[d].color+'">' +
              '<span class="ic">' + DAY_PLANS[d].ic + '</span><span class="tx">' + DAY_PLANS[d].tx + '</span>' +
              '<span class="n">' + groupBounds['days/' + d].length + '</span></button>';
     }).join('');
@@ -420,10 +461,8 @@ function init(){
     var b = e.target.closest('button[data-day]');
     if(!b) return;
     pinned = null;
-    var d = b.dataset.day, all = Object.keys(DAY_PLANS);
-    if(d) dayOn[d] = !dayOn[d];
-    else  all.forEach(function(x){ dayOn[x] = dayCount() < all.length; });
-    render(!d);
+    dayOn[b.dataset.day] = !dayOn[b.dataset.day];
+    render(false);
   });
 
   window.addEventListener('hashchange', fromHash);

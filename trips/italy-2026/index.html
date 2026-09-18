@@ -323,6 +323,9 @@
   table.h th,table.h td{border:1px solid var(--line); padding:8px 10px; text-align:right; vertical-align:top}
   table.h th{background:var(--sea); color:#fff; font-family:'Heebo',sans-serif; font-weight:700}
   table.h tr:nth-child(even){background:var(--sand-2)}
+  /* The ZTL map link sits under the town name as a second line, deliberately
+     quieter than it — the town is the row's label, the map is one way in. */
+  .ztlmap{display:inline-block; margin-top:3px; font-size:12.5px; font-weight:600; white-space:nowrap}
 
   /* Live flight status chips. `sched` is the resting state — the dataset only
      reaches ~3 days ahead, so for most of this page's life that is what shows,
@@ -1012,12 +1015,12 @@
       אורבייטו היא <b>66 דקות ולא 55</b>, מרמורה <b>65 ולא 50</b>, שקג׳ינו <b>64 ולא 45</b>,
       וגובּיו <b>65 ולא 50</b>. זה לא הבדל טכני: <b>ארבעה מהיעדים המובילים הם כשעה וחצי
       הלוך-חזור יותר ממה שהנחנו</b>, כלומר יום ״קצר״ באזור הוא בפועל 5–6 שעות בחוץ.
-      פרוג׳ה ואסיזי, לעומת זאת, קרובות אף יותר ממה שנכתב.</details>>
+      פרוג׳ה ואסיזי, לעומת זאת, קרובות אף יותר ממה שנכתב.</details>
     <details class="note"><summary class="nh">אם בוחרים שלוש — זה השילוב</summary>
       <b>אורבייטו + מרמורה + אסיזי/ספלו.</b> עיר עתיקה, טבע ומים, ועיירות — בלי לחזור על אותו
       סוג יום. אם באחד מהילדים בוער אקשן, מחליפים את אסיזי ב<a href="#days/adventure">פארק
       החבלים</a>. ואם מזג האוויר מתקלקל — <a href="#days/rest">היום הרגוע</a> ו<a href="#days/perugia">פרוג׳ה</a>
-      הם השניים שגשם פוגע בהם פחות מכל.</details>>
+      הם השניים שגשם פוגע בהם פחות מכל.</details>
     <details><summary>שני כללי סידור ששווה לכבד</summary>
       <p style="margin:0"><b>לא שני ימים ארוכים ברצף.</b> <a href="#days/tuscany">טוסקנה</a> היא ~3 שעות נסיעה ביום, ו<a href="#days/adventure">פארק החבלים</a> הוא יום פיזי. אחרי אחד מהם — יום קרוב.</p>
       <p style="margin:0"><b>היום הראשון (25.9) הוא לא יום טיול.</b> אחרי לילה של ארבע שעות שינה, נסיעה של שעתיים וצ׳ק-אין, מה שנשאר זה בריכה וארוחת ערב. לא לתכנן לו אטרקציה.</p>
@@ -1047,13 +1050,13 @@
       <br><b>אבל התשובה הטובה יותר היא לא השאטל:</b> חונים ב<b>Campo della Fiera</b>, חניון מקורה
       בצד המערבי של הסלע, ועולים ב<b>מעלית שלו</b> — היא פועלת <b>05:00–02:00</b>, כלומר טווח
       רחב בהרבה מהשאטל, והיציאה ממנה היא פחות מחמש דקות הליכה מהכיכר המרכזית.
-      €1.50 לשעה. <b>זו הדרך לעלות לעיר.</b></details>>
+      €1.50 לשעה. <b>זו הדרך לעלות לעיר.</b></details>
     <details class="note warn"><summary class="nh">⚠️ ובדיוק בסוף השבוע שלנו יש מרוץ עלייה שסוגר כביש</summary>
       ה-<b>Cronoscalata della Castellana</b>, מרוץ עלייה, מתקיים ב<b>25–27 בספטמבר 2026</b>
       (יום המרוץ — ראשון 27.9). לפי הצו של 2025 הכביש <b>SR 79 bis Orvietana נסגר 07:00–19:00
       בימי המרוץ</b>. <b>להגיע לאורבייטו מכיוון ה-A1 ואורבייטו סקאלו, לא דרך ה-SR 79 bis</b>,
       ולבדוק את דף הצווים של העירייה באותו שבוע. באותם ימים גם פסטיבל הקולנוע של אורבייטו
-      (23–27.9) — כלומר <b>העיר תהיה עמוסה.</b> שווה לשקול לעשות את אורבייטו ב<b>שני 28.9</b> במקום.</details>>
+      (23–27.9) — כלומר <b>העיר תהיה עמוסה.</b> שווה לשקול לעשות את אורבייטו ב<b>שני 28.9</b> במקום.</details>
     <div class="links">
       <a class="map" href="https://www.google.com/maps/search/?api=1&query=Parcheggio+Campo+della+Fiera+Orvieto" target="_blank" rel="noopener">החניון עם המעלית ↖</a>
       <a class="map onmap" href="#map/p:Parcheggio+Campo+della+Fiera+Orvieto" title="Campo della Fiera — במפה שלנו">🗺️</a>
@@ -1386,7 +1389,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       בצורה חריגה</b>, עם לחץ על חניונים ועל לינה. (זו מסקנה מהתכנית הרשמית, לא הצהרה
       שלה.) <b>לעשות את אסיזי מוקדם בשהות, ביום חול, ולא בסוף השבוע.</b>
       אגב, ה-4 באוקטובר הוא <b>חג לאומי חדש באיטליה מ-2026</b> — נופל על יום ראשון, ולא
-      משפיע עלינו.</details>>
+      משפיע עלינו.</details>
 
     <details><summary>שעות מאומתות, החניה — כולל מלכודת אחת — ולמה ספלו מציל את אחר הצהריים</summary>
       <p style="margin:0"><b>הבזיליקה — כניסה חופשית ובלי כרטיס</b> (״L'ingresso per i visitatori individuali è gratuito e non è richiesto alcun biglietto״), ואין צורך בהזמנה ליחידים. שעות הקיץ, שתקפות לתאריכים שלנו: <b>הכנסייה התחתונה 06:00–19:00 · הכנסייה העליונה 08:30–18:45 · הקריפטה וקבר הקדוש 06:00–18:15</b>.</p>
@@ -1428,7 +1431,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       <b>אבל הרפטינג הפוך:</b> במערכת ההזמנות של Pangea, <b>שבת 26.9 כבר מלאה</b> (״Posti esauriti״)
       בשתי היציאות. שישי, ראשון, שני ושלישי — פנויים.<br>
       <b>כלומר: ראשון 27.9 הוא היום היחיד שבו שני החלקים עובדים בלי טלפון.</b>
-      אם היום הזה לא מסתדר — או שמזמינים את הפארק מראש כקבוצה, או שעושים רק אחד מהשניים.</details>>
+      אם היום הזה לא מסתדר — או שמזמינים את הפארק מראש כקבוצה, או שעושים רק אחד מהשניים.</details>
 
     <div class="links">
       <a href="https://www.pangea-italia.com/rafting-in-umbria-sul-fiume-nera/" target="_blank" rel="noopener">Pangea — רפטינג ↖</a>
@@ -1490,7 +1493,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       (יציאות 08:50, 10:15, 11:30, 13:10, 14:40, 16:10, 17:40; בראשון כל 40 דקות מ-09:00).
       €4.20 לכיוון, €6 הלוך-חזור, <b>ועוד €3 לאדם דמי עגינה</b>.
       <br>⚠️ ועוד שתיים: הכלים שטים ב<b>קיבולת מופחתת</b> ומומלץ להגיע מוקדם לחזרה, ו<b>עגלות
-      פתוחות אסורות לעלייה בכל האגם מאז 29 ביולי 2026</b> — עגלה מקופלת בלבד.</details>>
+      פתוחות אסורות לעלייה בכל האגם מאז 29 ביולי 2026</b> — עגלה מקופלת בלבד.</details>
     <div class="links">
       <a href="https://www.fsbusitalia.it/it/turismo/navigazione-lago-trasimeno.html" target="_blank" rel="noopener">לוח ההפלגות הרשמי ↖</a>
       <a class="map onmap" href="#map/p:Rocca+del+Leone+Castiglione+del+Lago" title="קסטיליונה דל לאגו — במפה שלנו">🗺️</a>
@@ -1526,7 +1529,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       ״פתוח שני עד שישי 9:00–13:00 ו-14:00–17:30, <b>סגור בחגים ובימי ראשון</b>״,
       ופתיחה בשבת מוזכרת רק לאוגוסט. כלומר <b>ראשון 27.9 בחוץ, ושבת 26.9 מפוקפקת</b> —
       נשארים <b>שישי 25.9, שני 28.9 או שלישי 29.9</b>. <b>וההזמנה חובה.</b><br>
-      <b>Città della Domenica סגור ביום שלישי 29.9.</b></details>>
+      <b>Città della Domenica סגור ביום שלישי 29.9.</b></details>
 
     <details class="note warn"><summary class="nh">🥜 בית השוקולד ואלרגיה לבוטנים — לא ״בטוח״ ולא ״לא בטוח״, אלא <b>לא ניתן לאמת</b></summary>
       המדיניות היחידה שמפורסמת היא ״<i>בהזמנה ובכניסה יש להודיע על אלרגיות ואי-סבילויות</i>״.
@@ -1540,7 +1543,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       (1) מה בדיוק מוגש בטעימה, (2) האם בוטנים מטופלים במפעל בסן סיסטו,
       (3) האם אפשר לעשות את הסיור <b>בלי הטעימה</b>. <b>לשמור את התשובה.</b>
       הפתרון הסביר: לעשות את הסיור, לדלג על הטעימה, ולקנות בחנות מוצר עטוף עם תווית
-      אלרגנים מלאה. <a href="#food/peanut">אלרגיה לבוטנים ←</a></details>>
+      אלרגנים מלאה. <a href="#food/peanut">אלרגיה לבוטנים ←</a></details>
 
     <div class="links">
       <a class="map" href="https://www.google.com/maps/search/?api=1&query=Piazza+IV+Novembre+Perugia" target="_blank" rel="noopener">מפה ↖</a>
@@ -1579,12 +1582,12 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       הפסקת צהריים</b>, וזה מה שהורס תכנון תמים. <b>ראשון 27.9:</b> רצוף, 09:00–19:30.<br>
       <b>אין סגירה ביום רביעי בספטמבר</b> — ה״סגור ברביעי״ שמופיע באתרי תיירות הוא לוח
       נובמבר–פברואר. ⚠️ ו<b>לא ברור אם המפעיל מתייחס לשבת כיום חול</b> (ואז יש הפסקת
-      צהריים) או כיום חג — שווה טלפון אם מתכננים נסיעה באמצע היום בשבת.</details>>
+      צהריים) או כיום חג — שווה טלפון אם מתכננים נסיעה באמצע היום בשבת.</details>
     <details class="note warn"><summary class="nh">⚠️ המחיר לא מפורסם בשום מקום</summary>
       האתר של המפעיל מושבת, ובדיקה של כל הגרסאות השמורות שלו מראה ש<b>דף מחירים לא היה
       קיים שם אף פעם</b>. גם לעירייה אין. אגרגטורים חלוקים (€4 לכיוון / €5–6 הלוך-חזור) —
       <b>לא לסמוך עליהם, להתקשר: ‎075 927 3881.</b> וגם <b>גיל מינימלי לא מפורסם באף מקום</b> —
-      זו שאלה לאותו טלפון.</details>>
+      זו שאלה לאותו טלפון.</details>
     <details><summary>הרכבל, וגם מה יש בעיר עצמה</summary>
       <p style="margin:0"><b>על הרכבל — סוג הכלוב אומת:</b> אתר התיירות של עיריית גובּיו עצמה כותב ש״מפתיע תמיד את המבקרים כי <b>לא יושבים בו אלא עומדים</b>, בבטחה מלאה״. נוסעים בשניים, והוא נע ברציפות — לא עוצר לעלייה. 6 דקות, מגובה 532 מ׳ בעיר ל-803 מ׳ בבזיליקת סנט אובלדו. ילדים קטנים עם מבוגר, אבל <b>לאמת גיל מינימלי</b>. למי שלא רוצה — יש כביש למעלה. הרכבל <b>תלוי במזג אוויר</b> ונעצר ברוח.</p>
       <p style="margin:0"><b>חניה:</b> יש <b>חניון בתשלום ממש בתחנה התחתונה</b> (Via San Girolamo). חינם: San Pietro (מקורה), Cavarello, Via Epicuro (מקורה), Santa Lucia. לעיר עצמה — Piazza 40 Martiri, בתשלום, מיד מתחת למרכז. ⚠️ ה<b>zona monumentale</b> (Via dei Consoli, Via Savelli della Porta) היא ZTL מחמיר — <b>להתייחס אליה כאסורה לרכב שכור.</b> ושאר ה-ZTL סגור בימות חול מ-18:00 ובראשון <b>מ-11:00</b>. <a href="#info/ztl">ZTL ←</a></p>
@@ -1614,7 +1617,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       <b>שני המקורות חלוקים על משך הנסיעה</b> (~1:15 מול ~1:45–2:00 לכל כיוון), וההפרש הזה הוא
       בין יום ארוך לבין יום ארוך מדי. <b>לבדוק ב-Maps ביום עצמו לפני שמחליטים.</b>
       מה שכן: <b>לא לעשות אותו אחרי יום אקשן</b>, ובמרתפים היין הוא העניין — מה שילדים
-      מתרשמים ממנו זה החביות והמעברים התת-קרקעיים, לא הטעימה.</details>>
+      מתרשמים ממנו זה החביות והמעברים התת-קרקעיים, לא הטעימה.</details>
     <details><summary>לוח זמנים, ומה החלופה אם רוצים טוסקנה בלי הנסיעה הכי ארוכה</summary>
       <table class="h">
         <tr><th>שעה</th><th>מה</th></tr>
@@ -1671,7 +1674,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       טברנות. גואלדו טאדינו נמצאת ~50 ק״מ מצפון-מזרח לדרוטה, כלומר בערך כמו גובּיו.
       <b>שווה לבנות עליו יום</b>: אבירים, חצים ותלבושות עושים לילדים בגילים 3–12 יותר מכל
       כנסייה. ⚠️ צפו לסגירות במרכז ההיסטורי.
-      <a href="https://www.giochideleporte.it/" target="_blank" rel="noopener">האתר ↖</a></details>>
+      <a href="https://www.giochideleporte.it/" target="_blank" rel="noopener">האתר ↖</a></details>
 
     <details><summary>עוד שלושה, ומה בדקנו ואינו בטווח</summary>
       <p style="margin:0"><b>Festival Nazionale dei Primi Piatti, פוליניו — 24–27.9.</b> פסטיבל פסטה, ומשפחתי במובהק. ⚠️ המקור הוא אגרגטור ולא המארגן — לאמת. וכמובן: פסטיבל פסטה הוא מקום מצוין למי שאוכל הכל ומורכב למי שלא. <a href="#food/gf">גלוטן ←</a></p>
@@ -2177,19 +2180,28 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <h4 style="margin-top:16px">השעות בפועל, לפי עיירה, לתאריכים שלנו</h4>
     <table class="h">
       <tr><th>עיירה</th><th>מתי ה-ZTL פעיל</th><th>איפה חונים</th></tr>
-      <tr><td><b>פרוג׳ה</b></td><td><b>הפוך ממה שמצפים:</b> הכניסה <b>מותרת</b> בימות חול 13:00–24:00 ובשבת-ראשון 07:00–24:00 — כלומר ZTL בבוקר. אבל Via dei Priori, Corso Cavour, Viale Indipendenza ו-Via Bontempi <b>סגורים 24/7</b> בכל מקרה</td><td><b>Pian di Massiano — חינם, ~3,000 מקומות</b>, ואז מיני-מטרו (€1.50, 70 דקות). או Saba Partigiani + <b>הדרגנועים של רוקה פאולינה, חינם, 06:15–02:00</b></td></tr>
+      <tr><td><b>פרוג׳ה</b><br><a href="https://www.accessibilitacentristorici.it/ztl/umbria/perugia/mappa" target="_blank" rel="noopener" class="ztlmap">מפת ה-ZTL ↖</a></td><td><b>הפוך ממה שמצפים:</b> הכניסה <b>מותרת</b> בימות חול 13:00–24:00 ובשבת-ראשון 07:00–24:00 — כלומר ZTL בבוקר. אבל Via dei Priori, Corso Cavour, Viale Indipendenza ו-Via Bontempi <b>סגורים 24/7</b> בכל מקרה</td><td><b>Pian di Massiano — חינם, ~3,000 מקומות</b>, ואז מיני-מטרו (€1.50, 70 דקות). או Saba Partigiani + <b>הדרגנועים של רוקה פאולינה, חינם, 06:15–02:00</b></td></tr>
       <tr><td><b>אסיזי</b></td><td>⚠️ <b>אין שעות קבועות</b> — אסיזי מפרסמת צו נפרד לכל תקופה. <b>5 מצלמות פעילות מינואר 2026, והאכיפה מלאה מיולי</b></td><td><b>Giovanni Paolo II</b> (הקרוב לבזיליקה, ולפני המצלמה של via Marconi) או <b>Mojano</b>. €2.00 לשעה, מקסימום יומי €18</td></tr>
-      <tr><td><b>אורבייטו</b></td><td><b>עד 30.9 השער הראשי פעיל כל יום 10:00–16:00 ו-17:00–22:30.</b> שני שערים נוספים <b>24/7</b></td><td><b>Campo della Fiera</b> (620 מקומות, ~€1.50/ש׳) + <b>מעלית 05:00–02:00</b>. או Piazza della Pace ליד הרכבת — <b>חינם</b></td></tr>
-      <tr><td><b>טודי</b></td><td><b>בראשון 27.9: 09:00–20:00.</b> בשבת 26.9 — לא חל (המשטר של ערבי חג נגמר ב-21.9)</td><td>Porta Orvietana, Viale di Montesanto — <b>עם מעלית</b> למרכז</td></tr>
+      <tr><td><b>אורבייטו</b><br><a href="https://www.accessibilitacentristorici.it/ztl/umbria/orvieto/mappa" target="_blank" rel="noopener" class="ztlmap">מפת ה-ZTL ↖</a></td><td><b>עד 30.9 השער הראשי פעיל כל יום 10:00–16:00 ו-17:00–22:30.</b> שני שערים נוספים <b>24/7</b></td><td><b>Campo della Fiera</b> (620 מקומות, ~€1.50/ש׳) + <b>מעלית 05:00–02:00</b>. או Piazza della Pace ליד הרכבת — <b>חינם</b></td></tr>
+      <tr><td><b>טודי</b><br><a href="https://www.accessibilitacentristorici.it/ztl/umbria/todi/mappa" target="_blank" rel="noopener" class="ztlmap">מפת ה-ZTL ↖</a></td><td><b>בראשון 27.9: 09:00–20:00.</b> בשבת 26.9 — לא חל (המשטר של ערבי חג נגמר ב-21.9)</td><td>Porta Orvietana, Viale di Montesanto — <b>עם מעלית</b> למרכז</td></tr>
       <tr><td><b>דרוטה</b></td><td><b>לא נמצא ZTL.</b> יש חניות מוקצות לתושבים במרכז — לא מצלמות</td><td>״Parcheggio centro storico״, Via Circonvallazione Nord</td></tr>
-      <tr><td><b>גובּיו</b></td><td>1.5–30.9: השערים <b>סגורים בימות חול 18:00–06:00, ובראשון מ-11:00</b>. ⚠️ ה<b>zona monumentale</b> (Via dei Consoli) — להתייחס אליה כאסורה לרכב שכור</td><td>Piazza 40 Martiri (בתשלום, מיד מתחת למרכז). חינם: החניון של הרכבל, התיאטרון הרומי</td></tr>
-      <tr><td><b>מונטפולצ׳אנו</b></td><td>⚠️ <b>1.5–30.9: פעיל 24 שעות ביממה.</b> 8 מצלמות — 4 בכניסה ו-4 <b>ביציאה</b>. <b>אין פטור לרכב חשמלי או היברידי</b></td><td><b>Piazzale Pietro Nenni</b> — ~200 מקומות, €1.50/ש׳, ויש <b>מעלית</b> לגני Poggiofanti</td></tr>
+      <tr><td><b>גובּיו</b><br><a href="https://www.accessibilitacentristorici.it/ztl/umbria/gubbio/mappa" target="_blank" rel="noopener" class="ztlmap">מפת ה-ZTL ↖</a></td><td>1.5–30.9: השערים <b>סגורים בימות חול 18:00–06:00, ובראשון מ-11:00</b>. ⚠️ ה<b>zona monumentale</b> (Via dei Consoli) — להתייחס אליה כאסורה לרכב שכור</td><td>Piazza 40 Martiri (בתשלום, מיד מתחת למרכז). חינם: החניון של הרכבל, התיאטרון הרומי</td></tr>
+      <tr><td><b>מונטפולצ׳אנו</b><br><a href="https://www.accessibilitacentristorici.it/ztl/toscana/montepulciano/mappa" target="_blank" rel="noopener" class="ztlmap">מפת ה-ZTL ↖</a></td><td>⚠️ <b>1.5–30.9: פעיל 24 שעות ביממה.</b> 8 מצלמות — 4 בכניסה ו-4 <b>ביציאה</b>. <b>אין פטור לרכב חשמלי או היברידי</b></td><td><b>Piazzale Pietro Nenni</b> — ~200 מקומות, €1.50/ש׳, ויש <b>מעלית</b> לגני Poggiofanti</td></tr>
       <tr><td><b>פיינצה</b></td><td>⚠️ <b>פעיל 24/7, בלי שינוי עונתי.</b> ⚠️ <b>Piazza Dante היא אחת מארבע נקודות הכניסה</b> — לא לכוון אליה כחניה</td><td><b>P1, Via degli Archi</b> — 220 מקומות, €1.70/ש׳</td></tr>
-      <tr><td><b>קורטונה</b></td><td>עד 30.9: ZTL <b>אדום</b> פעיל 10:00–04:00 · ZTL <b>צהוב</b> 10:00–15:00 ו-16:00–04:00</td><td><b>Spirito Santo</b>, Viale Cesare Battisti — מחוץ לחומות, €1.50/ש׳</td></tr>
+      <tr><td><b>קורטונה</b><br><a href="https://www.accessibilitacentristorici.it/ztl/toscana/cortona/mappa" target="_blank" rel="noopener" class="ztlmap">מפת ה-ZTL ↖</a></td><td>עד 30.9: ZTL <b>אדום</b> פעיל 10:00–04:00 · ZTL <b>צהוב</b> 10:00–15:00 ו-16:00–04:00</td><td><b>Spirito Santo</b>, Viale Cesare Battisti — מחוץ לחומות, €1.50/ש׳</td></tr>
       <tr><td><b>קסטיליונה דל לאגו</b></td><td>⚠️ <b>1.4–30.9: פעיל 24 שעות, שבעה ימים בשבוע</b></td><td>277 מקומות בתשלום סביב המרכז — Via Belvedere, Piazza Dante. €0.50 לחצי שעה ואז €1.40/ש׳</td></tr>
       <tr><td><b>ספלו</b></td><td>לא נמצא ZTL עם מצלמות, אבל יש אזורים בהיתר. המרכז להולכי רגל</td><td>חינם: Via della Liberazione, Via Circonvallazione, המתחם הספורטיבי לשעבר</td></tr>
-      <tr><td><b>טרני</b></td><td>השערים פעילים <b>24 שעות</b>, וקיים אזור להולכי רגל 24/7. יש הקלה נסיונית בשישי-ראשון 09:00–21:00 — <b>לא לסמוך עליה</b></td><td>חניון מקורה <b>San Francesco</b> — ~500 מקומות, 24 שעות, מקסימום יומי €15</td></tr>
+      <tr><td><b>טרני</b><br><a href="https://www.accessibilitacentristorici.it/ztl/umbria/terni/mappa" target="_blank" rel="noopener" class="ztlmap">מפת ה-ZTL ↖</a></td><td>השערים פעילים <b>24 שעות</b>, וקיים אזור להולכי רגל 24/7. יש הקלה נסיונית בשישי-ראשון 09:00–21:00 — <b>לא לסמוך עליה</b></td><td>חניון מקורה <b>San Francesco</b> — ~500 מקומות, 24 שעות, מקסימום יומי €15</td></tr>
     </table>
+    <div class="note"><div class="nh">🗺️ מאיפה המפות — ואיפה אין</div>
+      <p style="margin:0">הקישורים בטבלה מובילים ל-<a href="https://www.accessibilitacentristorici.it/" target="_blank" rel="noopener">accessibilitacentristorici.it</a>,
+      אתר שמרכז את ה-ZTL של מאות ערים באיטליה — לכל עיירה מפת גוגל עם <b>גבולות ה-ZTL, מיקום המצלמות (varchi) והחניונים</b>,
+      וגם השעות ומי מורשה להיכנס. זה האתר לפתוח בו לפני שנוסעים לעיירה שלא בטבלה.</p>
+      <p style="margin:0">⚠️ <b>חמש מהעיירות שלנו לא נמצאות שם:</b> <b>אסיזי</b> (דווקא המסובכת מכולן — בשבילה
+      צריך את הצו של העירייה עצמה, ראו למעלה), <b>פיינצה</b>, <b>קסטיליונה דל לאגו</b>, וגם <b>דרוטה</b>
+      ו<b>ספלו</b> — שתי האחרונות פשוט כי אין בהן ZTL עם מצלמות.</p>
+      <p style="margin:0">האתר הוא צד שלישי ולא עירייה, והשעות שם יכולות לפגר אחרי צו חדש — <b>המפה והמצלמות
+      שימושיות, השעות בטבלה שלמעלה מאומתות מול העיריות. בשטח, השלט גובר על שניהם.</b> שווה לרענן שבוע לפני.</p></div>
 
     <div class="note warn" style="margin-top:14px"><div class="nh">⚠️ קורטונה — הדרגנועים לא עובדים</div>
       הדרגנועים בין החניון של Spirito Santo לכיכר גריבלדי <b>מושבתים מ-28 באוגוסט 2026</b>

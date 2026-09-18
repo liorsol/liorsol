@@ -81,7 +81,7 @@ the DB rules' `/^[a-z]{2,12}$/`, card→pin and pin→card both ways, every inte
 and the restaurant ids/coordinates. Mutation-checked — a broken pin link and a removed board were
 both confirmed to fail it.
 
-Current state: **47 cards, 10 views, 9 boards, 62 map pins (48 hard-coded + 14 restaurants), all cross-links resolve.**
+Current state: **47 cards, 10 views, 9 boards, 64 map pins (48 hard-coded + 16 restaurants), all cross-links resolve.**
 
 The other check is `node ../sw-core.test.js`, which covers both trips' workers — see the
 [root README](../../README.md#the-trip-pages-tripsalbania-2026-tripsitaly-2026).
@@ -975,6 +975,52 @@ Print needed a real fix: CSS cannot reveal a closed `<details>`, so `trip.js` op
 them and left the page expanded afterwards. `matchMedia('print')` covers Safari, which fires
 neither event reliably.
 
+## The second comments pass (Sep 2026) — three comments, same deal as the first
+
+Read off the live boards, acted on, then archive-then-deleted. **The table below is again the only
+copy**, and `italy2026/comments` is `null`. The two-call delete guard behaved exactly as the first
+pass documents it — `DELETE` 401 while live, `PATCH {"a":…}` 200, `DELETE` 200 — so the published
+rules are still the real per-field ones.
+
+| Board | Comment | What happened |
+|---|---|---|
+| `home` | The map filter misbehaves: main הכל should clear/show everything *including* the day filter · the second-level הכל is redundant and should be the ימים button, which should clear/show all days and doesn't · הכל should go grey when only part is selected · each day should be a slightly different shade, light→dark · the filter buttons should resize so there is no scrolling — "the main filter does it, but misses" | See "The second pass" under [Map filters](#map-filters--air-split-out-and-a-second-level-under-). **Took two rounds** — the first fixed the symptoms and left `shown.days` in place, so ⭐ still went grey instead of white when its last day was unchecked. The follow-up ("clicking ימים should add/remove all day filters and change to white; same manually; same for הכל") is what forced deriving the category from its days. |
+| `days` | `״>״` shows up in all sorts of places, it shouldn't | **13 × `</details>>`** — a stray `>` left behind by the `.note` → `<details>` conversion of the previous pass. Removed. See below. |
+| `info` | ZTL — `accessibilitacentristorici.it` centralises this; put links to the relevant maps | Seven of the twelve table rows gained a direct map link, and a note says which five are missing and why. See below. |
+
+### The `>` — and what it says about that kind of edit
+
+`<div class="note">…</div>` became `<details class="note">…</details>`, and the closing half was
+done with a replacement that appended rather than replaced: **13 of the 15 boxes ended `</details>>`.**
+The browser dropped the unmatched `>` into the text node after the element, so it rendered as a
+literal `>` under thirteen note boxes and broke nothing — no console error, no failing check.
+**`check-links.py` cannot see this class of bug and was not extended to**: it checks structure, not
+stray text. The check that does catch it is a text-node scan for `>` outside tags, which is worth
+re-running after any bulk tag rewrite:
+
+```python
+# every visible text node containing a '>' — should be zero
+from html.parser import HTMLParser   # see the pass's scratch script; 4 lines of handle_data
+```
+
+### The ZTL map links
+
+`accessibilitacentristorici.it/ztl/<regione>/<comune>/mappa` — a third-party portal that puts each
+comune's ZTL on a Google map **with the camera gates (`varchi`) and the car parks on it**, which is
+exactly the thing the page's table could only describe in words. All seven verified live.
+
+| On the portal | Not on it |
+|---|---|
+| Perugia, Orvieto, Todi, Gubbio, Terni (Umbria) · Cortona, Montepulciano (Toscana) | **Assisi** — the most complicated ZTL of the trip, and the portal does not have it, so the page's existing instruction to read the comune's own ordinance PDF stands and must not be softened · Pienza · Castiglione del Lago · Deruta and Spello, which legitimately have no camera ZTL |
+
+⚠️ **The missing towns return HTTP 200, not 404** — a ~39 KB soft-404 shell versus ~320 KB for a
+real page. **Never add a link here from the URL pattern alone**; fetch it and check the `<title>`
+reads `ZTL <town>: Mappa, Orari, Telecamere, Parcheggi`.
+
+The note under the table says in Hebrew that the portal is a third party whose hours can lag a new
+ordinance, that **the table's own hours are the verified ones**, and that the sign on the ground
+beats both. Keep that framing — the link is for the map, not for the hours.
+
 ## Live flight status (`#flighttbl`) — and why it is the IAA's open data
 
 The flights table gained a status column, filled from **data.gov.il's CKAN `datastore_search`**
@@ -1088,6 +1134,72 @@ Two bugs found and fixed while doing it, both worth knowing:
 
 ⚠️ **`check-links.py` greps `v:'…'` out of map.html.** A comment containing a literal example in
 that shape fails the `pin → card` check. Describe the field in prose instead.
+
+### The second pass (Sep 2026) — three-state chips, and ⭐ became the sub-row's הכל
+
+The sub-row shipped above works, but the two rows did not know about each other. The user's
+comment is in the table below; four separate things were wrong, and three of them were the same
+bug wearing different clothes — **"is everything on?" was answered from the category row alone,
+ignoring the day row underneath it.**
+
+- **⚠️ `shown.days` no longer exists, and must not come back.** ⭐ had *two* pieces of state — the
+  category flag and the eight days — and they could disagree. Tapping ⭐ off left all eight days
+  set; unchecking all eight by hand left the category set. Two identical-looking maps, two
+  internal states, and the ⭐ chip coloured white one way and grey the other. It took a second
+  round of "the filter still isn't right" to see that the two rows were the same control.
+  `catOn('days')` is now `dayCount() > 0`, derived, and a derived value cannot disagree with
+  itself. `setAll(v)` sets the days to `v` **in both directions** for the same reason.
+- **`allOn()` is the single answer to "is everything on?"**, and the title, the הכל chip and the
+  ⭐ chip all read it. Before: six chips on with ⭐ narrowed to one day made הכל look fully-on, so
+  tapping it *hid the map* instead of restoring it, and the title claimed all 64 places while 60
+  were drawn.
+- **Both summary chips are plain select-all / clear-all**, on one rule: *anything showing → clear
+  it; nothing showing → bring it all back.* Partly-selected clears, so one tap always empties and
+  the next always fills. The sub-row's own הכל chip is **deleted** — it was a second control for
+  a state its parent chip should have been showing.
+- **Grey (`.some`) is a real third state on both** — ⭐ greys when its days are partial, הכל greys
+  when anything at all is partial, days included. White means genuinely nothing.
+
+⚠️ **The ⭐ sub-row is always on screen — it does not hide when no day is selected.** It used to
+hide whenever ⭐ was off, which read as tidy right up until ⭐ off *became* "no days selected".
+The user's own description of the workflow settles it: **"remove all, then choose only those I
+want to see."** A picker that vanishes the moment you clear it vanishes at the one moment it is
+needed. `sub.hidden` is gone, and so is the `hidden` attribute in the markup.
+
+> Noted in passing, because the next person to reach for `hidden` on one of these rows will hit
+> it: it never worked. An author `display:flex` beats the UA sheet's `[hidden]{display:none}` at
+> any specificity, so every "hide" left the row on screen with its chips still tabbable. A
+> `.filters[hidden]{display:none}` rule fixes it — it is not in the file, because nothing sets
+> `hidden` any more and dead CSS rots.
+
+### The `<h1>` is static
+
+`🗺️ מפת המסלול`, and `render()` does not touch it (user's request, Sep 2026). It used to be a
+live readout — *"🗺️ 59 מקומות · 6 קטגוריות"*, *"📍 מפלי מרמורה"*, *"כל 64 המקומות בתכנית"* — which
+meant **the one element above the map changed length on every tap**, wrapping to two lines and
+back, shoving the map down and up under the finger doing the tapping. The chips already say what
+is selected, each in a fixed place. Measured: `.bar` is 63 px through every state now.
+
+`visible`, `only` and the per-render `fitChips()` went with it — nothing reflows above the map
+any more, so there is nothing to re-measure on a toggle. `fitChips()` still runs on load and on
+`resize`. **If the header ever becomes dynamic again, `fitChips()` has to come back into
+`render()`.**
+- **Each day plan has its own shade**, `hsl(137 26% …)` from 50% down to 29%, derived from
+  `DAY_KEYS` so adding a plan re-spaces the ramp. Chips *and* pins wear it. One hue on purpose:
+  eight unrelated colours would have broken the chip↔pin key that the chips exist to be.
+
+**The sub-row scrolled, and `fitRow` was not the culprit** — it had already run out of levels. Two
+CSS rules were:
+
+1. `.filters.sub button{padding:.28em .6em}` and `.filters.hide-tx button{padding:.34em .5em}`
+   have **equal specificity**, and `.sub` came later, so the sub-row never got the tight padding
+   it was falling back to. It is `.filters.sub:not(.hide-tx) button` now. **Do not re-order these
+   two rules instead — `:not()` is what states the intent.**
+2. The `⭐ לפי יום` caption is a fixed ~70px that never hid. `.filters.hide-tx .lbl{display:none}`.
+   Safe precisely because ⭐ sits directly above it and now means what the caption said.
+
+Verified in-browser at 375px: both rows `scrollWidth - clientWidth === 0`, and all six toggle
+paths plus `#marmore` / `#days` / `#food` / no-hash re-checked.
 
 ## Marmore on the first day (user's decision, Sep 2026)
 

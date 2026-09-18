@@ -23,3 +23,9 @@ package-lock.json
 # deployed from outside this repo; see car-charging/CLAUDE.md. If this line ever
 # starts mattering, something has already gone wrong.
 car-charging/proxy.js
+
+# impeccable ships a 12MB darwin-arm64 binary and a 1MB font index. Useful locally,
+# dead weight in a public repo's permanent history -- and it is the only compiled
+# binary any of these skills carries. Reinstall it rather than committing it.
+.claude/skills/impeccable/
+.agents/skills/impeccable/

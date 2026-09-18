@@ -215,7 +215,7 @@ div.shell
                     > div.panel__body#tariff
       section.panel > … > div.panel__body#controls
     section.view#view-history   … div.panel__body.panel__body--flush#history
-    section.view#view-invoices  … div.panel__body.panel__body--flush#account
+    section.view#view-invoices  … div.panel__body#account            (NOT flush — see §4.8)
     section.view#view-comments  … div.panel__body#comments
     section.view#view-sessions  … div.panel__body#sessions
     section.view#view-contact   … div.panel__body#contact
@@ -388,23 +388,41 @@ do not reach for sideways scrolling on a phone as the answer. It was the answer 
 owner's verdict on it was "it's not nice": seven columns cut off at the edge of a 375px screen is
 a fallback wearing the costume of a design.
 
-### 4.8 `#/invoices` — `views/account.js`, in a `--flush` panel
+### 4.8 `#/invoices` — `views/account.js`, in an ORDINARY panel body
+
+**This panel is no longer `--flush`, and `#history` beside it still is.** The modifier strips a
+panel's padding so a table too wide to fit can run edge to edge and scroll; the billed periods
+stopped being a table. Your `.panel__body` padding is what insets everything here, and the view
+sets no padding of its own any more — it used to paint the inset back on from the CSSOM, which
+left the connector rows touching both panel borders and the download button flush on the bottom
+edge the moment the layout changed.
 
 ```
 div
   span.chip.chip--ok | .chip.chip--bad | .chip          the link to the charger
   p                                                     the off-peak schedule, UNCLASSED <p>
 div.table-wrap > table.table                            the connectors
-  tbody > tr > td | td.num
+  tbody > tr > td[data-label] | td.num[data-label]
              > td > span.status.status--<state>[title]  or  span.chip
              > td > span.chip[.chip--ok|--warn]
 div.empty                                               no connectors reported
 h3.panel__title                                         "תקופות חיוב"
-div.table-wrap > table.table  or  div.empty  or  div.empty.empty--error
+div                                                     ×0–N, ONE CARD PER BILLED PERIOD
+  div.btn-row > h4.panel__title + span.chip[.chip--ok]  the window, and the operator's status
+  div.stat-grid > div.stat                              ×0–4 — a tile only when its figure came
+  p.btn-note                                            VAT, and the operator's document number
+  div.btn-row > a.btn.btn--primary                      the invoice PDF — ABSENT when there is none
+div.empty  or  div.empty.empty--error                   nothing billed yet / the route failed
 ```
 
-That unclassed `<p>` is real: it carries an upstream string of unknown length that is never
-translated. Do not assume every block in a panel body has a class.
+Two things not to assume. That unclassed `<p>` is real: it carries an upstream string of unknown
+length that is never translated, so do not assume every block in a panel body has a class. And
+**every element in the invoice card is optional** — a period whose payload carried no money draws
+no `.stat-grid` at all, and one with no document draws no `.btn-row`. A rule that assumes a tile
+grid is followed by a button row will be wrong on a real row.
+
+`h4.panel__title` is the card's heading and it is the same class as the panel's own `h3`, one
+level down. If your sheet sizes `.panel__title` off its element rather than its class, size both.
 
 ### 4.9 `#/comments` — `views/comments.js`
 

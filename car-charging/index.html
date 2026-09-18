@@ -176,7 +176,14 @@
     <section class="view" id="view-invoices">
       <section class="panel">
         <div class="panel__head"><h2 class="panel__title">העמדה והחיובים</h2></div>
-        <div class="panel__body panel__body--flush" id="account"></div>
+        <!-- NOT `--flush`, and #history beside it still is. The modifier exists so a table too
+             wide to fit can run edge to edge and scroll; this panel stopped being a table. It is
+             a charger summary and one card per billed period -- a heading, four stat tiles, a
+             note and a download button -- and every one of those needs the panel's own inset. It
+             was flush while the bills were a five-column table, and the leftovers of that read
+             as a bug: the connector rows touched both panel borders and the download button sat
+             flush against the bottom edge. -->
+        <div class="panel__body" id="account"></div>
       </section>
     </section>
 

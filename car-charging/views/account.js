@@ -38,14 +38,14 @@ function spaced(node, step) {
   return node;
 }
 
-// app.js mounts this view inside a .panel__body--flush so a wide table can run edge to edge.
-// Everything that is not a table therefore has to carry the panel's own inset itself. Read
-// from the DOM rather than assumed, so it still looks right if the shell drops the modifier.
-function inset(root, node, top) {
-  const flush = typeof root.closest === 'function' && root.closest('.panel__body--flush');
-  if (flush) node.style.setProperty('padding', (top ? 'var(--sp-4) ' : '0 ') + 'var(--sp-4) 0');
-  return node;
-}
+// THERE IS NO `inset()` HERE ANY MORE, and its absence is the fix rather than a deletion for
+// tidiness. This view used to mount inside a `.panel__body--flush` -- padding stripped so a wide
+// table could run edge to edge -- and every block that was not a table had to paint the panel's
+// inset back on itself from the CSSOM. That was already fragile and it broke the moment the
+// billed periods stopped being a table: the connector rows ran into both panel borders and the
+// download button sat flush on the bottom edge, because the helper only ever set the inline
+// padding and never a bottom one. index.html drops the modifier, the panel pads itself in every
+// theme, and the special case is gone from both sides.
 
 // Both stamps on this screen are moments rather than days -- when a connector last reported,
 // when a period was billed -- so both carry the clock. An unparseable value is shown verbatim
@@ -94,7 +94,7 @@ function table(headings) {
 
 // ── charger ─────────────────────────────────────────────────────────────────
 
-function chargerBlock(charger, root) {
+function chargerBlock(charger) {
   const box = h('div');
   const head = h('div');
   head.appendChild(charger.ocppConnected === true
@@ -108,7 +108,7 @@ function chargerBlock(charger, root) {
   head.appendChild(spaced(h('p', null, 'תוכנית שעות השפל, כפי שהעמדה מדווחת אותה: '
     + (charger.offPeakState === null || charger.offPeakState === undefined
       ? 'לא מדווח' : String(charger.offPeakState))), 2));
-  box.appendChild(inset(root || box, head, true));
+  box.appendChild(head);
 
   const connectors = Array.isArray(charger.connectors) ? charger.connectors : [];
   if (!connectors.length) {
@@ -235,7 +235,7 @@ function footnote(r) {
   return parts.length ? h('p', 'btn-note', parts.join(' · ')) : null;
 }
 
-function invoiceCard(r, root) {
+function invoiceCard(r) {
   const card = h('div');
 
   const head = h('div', 'btn-row');
@@ -249,13 +249,13 @@ function invoiceCard(r, root) {
     chip.title = String(state);
     head.appendChild(chip);
   }
-  card.appendChild(inset(root, head, true));
+  card.appendChild(head);
 
   const grid = figures(r);
-  if (grid) card.appendChild(inset(root, spaced(grid, 3)));
+  if (grid) card.appendChild(spaced(grid, 3));
 
   const note = footnote(r);
-  if (note) card.appendChild(inset(root, spaced(note, 3)));
+  if (note) card.appendChild(spaced(note, 3));
 
   // The document. Absent when the operator issued none — no disabled button, no "not available
   // yet": a control that cannot work is worse than no control on a screen read one-handed.
@@ -268,15 +268,14 @@ function invoiceCard(r, root) {
     // holds when somebody edits that file. Same reasoning as the contact card's two links.
     link.rel = 'noopener noreferrer';
     row.appendChild(link);
-    card.appendChild(inset(root, spaced(row, 3)));
+    card.appendChild(spaced(row, 3));
   } else {
-    card.appendChild(inset(root, spaced(h('p', 'btn-note',
-      'לתקופה הזו לא צורפה חשבונית להורדה.'), 3)));
+    card.appendChild(spaced(h('p', 'btn-note', 'לתקופה הזו לא צורפה חשבונית להורדה.'), 3));
   }
   return card;
 }
 
-function invoiceBlock(invoices, root) {
+function invoiceBlock(invoices) {
   if (!invoices) {
     return emptyBlock('לא ניתן לטעון את תקופות החיוב',
       'עדיין לא הגיעו נתוני חיוב. לחצו רענון כדי לנסות שוב.', true);
@@ -290,7 +289,7 @@ function invoiceBlock(invoices, root) {
   }
 
   const box = h('div');
-  for (const r of rows) box.appendChild(spaced(invoiceCard(r, root || box), 5));
+  for (const r of rows) box.appendChild(spaced(invoiceCard(r), 5));
   return box;
 }
 
@@ -305,9 +304,9 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
     el.appendChild(emptyBlock('לא ניתן לטעון את מצב העמדה',
       'עדיין לא הגיע מצב עמדה. לחצו רענון כדי לנסות שוב.', true));
   } else {
-    el.appendChild(chargerBlock(payload.charger, el));
+    el.appendChild(chargerBlock(payload.charger));
   }
 
-  el.appendChild(inset(el, spaced(h('h3', 'panel__title', 'תקופות חיוב'), 5)));
-  el.appendChild(spaced(invoiceBlock(app.invoices, el), 3));
+  el.appendChild(spaced(h('h3', 'panel__title', 'תקופות חיוב'), 5));
+  el.appendChild(spaced(invoiceBlock(app.invoices), 3));
 }

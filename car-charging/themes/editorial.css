@@ -1128,20 +1128,64 @@ body {
   padding-inline-start: var(--sp-3);
 }
 
-.session__meta {
+/* THE ROW OPENS WITH WHAT THE DEVICE IS. It used to open with three stamps run
+   together and leave the identity to a raw user-agent string at the bottom, which
+   is the complaint this answers: on a list of two browsers, "which one am I about
+   to cut off" was the one question the row did not answer. Now the caption
+   views/sessions.js derives is the largest thing on the row, the three facts sit
+   under it as labelled pairs, and the raw string keeps its place at the bottom
+   under a caption of its own -- because the derived label is a shortcut to it and
+   never a replacement for it. A row this page cannot caption renders no
+   `.session__device` at all, so nothing here may assume one is present. */
+
+.session__ident {
   grid-column: 1;
   grid-row: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--sp-1) var(--sp-2);
-  font-size: var(--fs-small);
-  color: var(--ed-ink-2);
   min-width: 0;
 }
 
-.session__when { font-variant-numeric: tabular-nums; }
-.session__where { font-weight: 600; color: var(--ed-ink); }
+.session__device {
+  font-size: var(--fs-mid);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ed-ink);
+}
+
+/* Three labelled facts, and the LABEL IS BESIDE THE VALUE rather than glued to
+   the front of it. Two columns on a phone; from 620px the pairs sit side by side
+   as label-over-value, which is the same grid read the other way -- `column` flow
+   over two rows -- and costs no second markup. */
+.session__facts {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--sp-1) var(--sp-3);
+  align-items: baseline;
+  min-width: 0;
+  font-size: var(--fs-small);
+}
+
+@media (min-width: 620px) {
+  .session__facts {
+    grid-template-columns: none;
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    justify-content: start;
+    gap: 0 var(--sp-5);
+  }
+}
+
+.session__key { color: var(--ed-ink-2); }
+
+.session__val {
+  font-weight: 600;
+  color: var(--ed-ink);
+  font-variant-numeric: tabular-nums;
+}
 
 .session__actions {
   grid-column: 2;
@@ -1149,10 +1193,31 @@ body {
   align-self: start;
 }
 
+
+/* THE RAW AGENT STRING AND ITS CAPTION, as one block. They are two elements
+   because the caption cannot wrap the string (style.css gives `.session__ua` its
+   own bidi paragraph, and Hebrew inside it would flip the whole line), so the
+   ground under both is what makes them read as one section instead of a Hebrew
+   line on the right and a Latin line on the left with nothing joining them.
+   It also carries the grid placement both children used to carry themselves. */
+.session__agent {
+  grid-column: 1 / -1;
+  border-block-start: 1px solid var(--ed-rule-2);
+  padding-block-start: var(--sp-2);
+}
+
+/* The caption over the raw agent string. It is a SIBLING of `.session__ua` and
+   not a wrapper: that box is in style.css's plaintext set so a Latin string keeps
+   its own reading order, and a Hebrew word inside it would be the first strong
+   character and flip the whole line. Grouping them is this sheet's job instead. */
+.session__ua-label {
+  font-size: var(--fs-micro);
+  color: var(--ed-ink-2);
+}
+
 /* Latin, punctuation-heavy, displayed verbatim and never cut. style.css gives
    it its own bidi paragraph; this lets it wrap. */
 .session__ua {
-  grid-column: 1 / -1;
   font-family: var(--ed-mono);
   font-size: var(--fs-micro);
   line-height: 1.5;
@@ -1194,26 +1259,55 @@ body {
   overflow-wrap: anywhere;
 }
 
-/* Label above value: a two-column list would set its column from the longest
-   value, and one long address would then indent every other row. */
+/* LABEL BESIDE VALUE, in two columns, and the old ruling above it is reversed.
+   That ruling said a two-column grid takes its column width from the longest
+   VALUE, so one long address indents every other row. That is true of `auto`
+   columns and it is not what this is: the first column is `max-content` over the
+   LABELS -- four short Hebrew words -- and the value column is `1fr`, so a long
+   address wraps inside its own cell and moves nothing.
+   What the stacked version cost, which is why the owner asked: each pair was two
+   full-width lines, so four fields filled the card with eight rows of mostly
+   empty space and the eye had to travel the whole panel to pair a value with its
+   label. Rows now divide with a hairline and read across.
+   Below 480px the grid drops back to one column: a phone cannot hold a label
+   column beside a mail address without hyphenating one of them. */
 .contact__list {
   margin-block-start: var(--sp-5);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: var(--sp-4);
+}
+
+/* Every row but the first divides from the one above. The two children of a pair
+   are consecutive siblings, so "from the second pair on" is everything past the
+   first two items -- no wrapper element and no class the view has to write. */
+.contact__list > :not(:first-child):not(:nth-child(2)) {
+  border-block-start: 1px solid var(--ed-rule-2);
+  padding-block-start: var(--sp-3);
+  margin-block-start: var(--sp-3);
 }
 
 .contact__label {
   font-size: var(--fs-micro);
   font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
   color: var(--ed-ink-2);
-  border-block-start: 1px solid var(--ed-rule-2);
-  padding-block-start: var(--sp-3);
 }
 
 .contact__value {
   font-size: var(--fs-body);
-  padding-block-end: var(--sp-3);
+  color: var(--ed-ink);
   overflow-wrap: anywhere;
+}
+
+@media (max-width: 479.98px) {
+  .contact__list { grid-template-columns: 1fr; }
+  .contact__list > :nth-child(2n) { padding-block-start: var(--sp-1); }
+  .contact__list > :not(:first-child):not(:nth-child(2)) { margin-block-start: 0; }
+  .contact__list > :nth-child(2n+1):not(:first-child) {
+    margin-block-start: var(--sp-3);
+  }
 }
 
 .contact__actions { margin-block-start: var(--sp-5); }

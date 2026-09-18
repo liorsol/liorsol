@@ -154,13 +154,19 @@ test('the view carries no contact detail of its own', () => {
   assert.doesNotMatch(SOURCE, /\d[\d\s().-]{5,}\d/, 'a number long enough to be a phone number is written into the view');
   assert.doesNotMatch(SOURCE, /\+\d{2,}/, 'an international dialling prefix is written into the view');
 
-  // Every absolute URL in the file, against the one that is allowed. WhatsApp's link host is
-  // the MECHANISM the contract names — it belongs to nobody in this system and identifies
-  // nobody — and the number that completes it comes from the payload. Anything else is a
-  // hostname this repository has no business knowing.
+  // Every absolute URL in the file, against the two that are allowed. Both are MECHANISMS
+  // rather than identities: a chat host and a map host, each belonging to nobody in this system
+  // and naming nobody in it, and what completes either one comes from the payload. Anything
+  // else is a hostname this repository has no business knowing.
+  //
+  // THIS LIST DOES NOT GROW ON CONVENIENCE. A host earns a line here only when the card has to
+  // hand a payload value to something outside the page and the host itself says nothing about
+  // who the operator is. A vendor's own portal, a shortener, an analytics or tile endpoint —
+  // none of those pass that test, and each would put a fact about this system in a public repo.
+  const ALLOWED = new Set(['https://wa.me/', 'https://www.google.com/maps/search/?api=1&query=']);
   const urls = SOURCE.match(/https?:\/\/[^\s'"`)]*/g) ?? [];
   for (const url of urls) {
-    assert.equal(url, 'https://wa.me/', `the view names a host of its own: ${url}`);
+    assert.ok(ALLOWED.has(url), `the view names a host of its own: ${url}`);
   }
 });
 

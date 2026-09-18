@@ -197,6 +197,23 @@ button, input, textarea, select { font: inherit; color: inherit; }
    next to the cell rule it is a copy of. */
 [dir="rtl"] .stat__value { text-align: right; }
 
+/* THE THIRD BOX WITH THE SAME DEFECT, found the same way — by looking at the
+   rendered contact card rather than at this sheet. `.contact__value` is in the
+   plaintext set above and routinely holds a run that opens with a Latin
+   character or a digit: a phone number, a mail address, a URL. It therefore
+   resolved LTR and aligned itself to the LEFT edge of a card whose Hebrew label
+   sat on the right, with the whole panel's width between a label and the value
+   it names. The value still READS left to right, which is correct and is what
+   `plaintext` is for; only the alignment was wrong, and `text-align` does not
+   touch bidi order.
+   `.session__ua` is deliberately NOT in this rule although it is in the same
+   set. It is the one box here that is long enough to wrap, and a wrapped Latin
+   run aligned to the right is ragged down its left edge — which is the edge the
+   eye follows when reading it. It stays left, and each theme groups it with its
+   own Hebrew caption instead, so the pair reads as one block rather than as a
+   string that drifted. */
+[dir="rtl"] .contact__value { text-align: right; }
+
 /* ── the router's display contract ─────────────────────────────────────── */
 /* <main> holds seven `.view` sections and exactly one wears `.is-active`;
    app.js moves that class from `location.hash`. `display: none` takes a flex
@@ -294,20 +311,27 @@ button, input, textarea, select { font: inherit; color: inherit; }
    what they mean are a contract between the module and whatever sheet is on;
    the SIZE, the colour and the shape are a theme's. */
 
-/* RULING: the tariff band is a TIME AXIS and does not mirror under dir="rtl".
-   Midnight is at the left edge and the day runs rightwards in both page
-   directions — like a clock face, a scrubber or a Gantt row, none of which
-   mirror in Hebrew. The scale labels (00 06 12 18 24) are the proof: mirrored,
-   they read 24 → 00 left-to-right, and a reader has to invert the axis before
-   reading the price. Pinning `direction` here also pins the CONTRACT:
-   `inset-inline-start` on a box whose own direction is ltr always resolves to
-   `left`, so --start/--end/--at keep meaning "percent of the day from
-   midnight" with no change to the view module and no dependence on what the
-   page direction happens to be.
-   The legend and .tariff__flip are prose and are deliberately left to mirror. */
-.tariff .scroll-x,
-.tariff__band,
-.tariff__scale { direction: ltr; }
+/* RULING, REVERSED BY THE OWNER: the tariff band MIRRORS with the page.
+   Midnight sits at the RIGHT edge and the day runs leftwards, so the axis reads
+   in the same direction as everything around it. This sheet used to pin
+   `direction: ltr` on the three boxes below and argue the opposite — that a time
+   axis is a clock face and does not mirror in Hebrew. The owner read the shipped
+   page and asked for it the other way round, in those words; that is the call,
+   and it is theirs.
+   Nothing had to change in views/tariff.js and nothing did. --start/--end/--at
+   still mean "percent of the day from midnight": the slices and the now marker
+   are placed with `inset-inline-start`, which resolves to `right` once these
+   boxes inherit the page's rtl, and the scale is a `justify-content:
+   space-between` flex row whose items reverse for free. So the contract the old
+   pin was protecting is kept by the logical properties themselves rather than by
+   freezing the direction.
+   ONE THING DOES NOT MIRROR FOR FREE and it is the reason to read this before
+   moving a marker: `transform: translateX(-50%)`, the usual way to centre a
+   label on its own coordinate, is PHYSICAL. It keeps pointing left when the box
+   around it flips, which puts the label a full width away from the moment it
+   names. themes/terminal.css's `.tariff__nowtag--mid` is the one that does this
+   and it carries the flipped sign with its own note.
+   The legend and .tariff__flip are prose and mirror as they always did. */
 
 .tariff__band { position: relative; overflow: hidden; }
 
@@ -335,6 +359,22 @@ button, input, textarea, select { font: inherit; color: inherit; }
    It also sits in a flex row that mirrors around it, so a fill that grew
    leftwards would grow away from its own "Settling…" label. */
 .settle__fill { width: calc(var(--pct, 0) * 1%); }
+
+/* ── the one link inside a value ───────────────────────────────────────── */
+/* The contact card's address opens a map (views/contact.js). It is the only
+   anchor on the page that sits INSIDE a line of content rather than being a
+   `.btn`, and no theme sheet styles a bare `a` — so left alone it renders in
+   the UA's own blue, in the middle of six designs that each define their own
+   ink. This rule is the a11y floor rather than paint: `color: inherit` hands
+   the colour back to whatever `.contact__value` a theme painted, and the
+   underline is what says "this opens something" WITHOUT colour, which is the
+   same rule every state on this page is held to. A theme may restyle it; a
+   theme that ignores it still gets a link that reads as one. */
+.contact__map {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
 
 /* ── a figure never breaks inside itself ───────────────────────────────── */
 /* `1,111.3` over `3₪` reads as two numbers, in the one panel this dashboard
@@ -410,20 +450,13 @@ button, input, textarea, select { font: inherit; color: inherit; }
    `--focus` — `var(token, fallback)` — so a theme that defines them gets its own look and the
    two themes outside this project's scope still render something legible if they define none of
    their own.
-   THE ONE THING THIS BLOCK DUPLICATES ON PURPOSE: the header text. A selector cannot read a
-   `<th>` at render time and print it beside an unrelated `<td>` in a different row, and neither
-   `views/history.js` nor `views/account.js` is a file a theme (or this base sheet) may edit to
-   carry a `data-label` — THEMES.md is explicit that the view modules are out of reach here. So
-   every label below is a second, hand-kept copy of a string those two modules already write once.
-   ponytail: if a header's wording changes there, these go stale silently. The upgrade path is a
-   `data-label` attribute set by those two modules — one line in each — which would let every rule
-   below collapse to `content: attr(data-label) ": "` and delete this whole comment. Until then,
-   `test/*.test.mjs` renders those two views directly and would not catch a drift here; only
-   reading the two files side by side would.
-   The saved-amount header's own wording branches on whether the payload carried a VAT rate
-   ("… לפני מע״מ" vs "… כולל מע״מ", views/history.js `render()`); the label below drops that
-   clause rather than trying to reproduce a runtime branch in CSS — "נחסך" alone still names the
-   column, and the value cell never carried the clause either. */
+   THE LABEL IS READ OFF THE CELL, not written here. `views/history.js` and `views/account.js`
+   each build their header from one list of columns and stamp every body cell's `data-label` from
+   that same list, so `attr(data-label)` below is the header string itself rather than a copy of
+   it. This block used to hold sixteen hand-kept copies with nothing that could catch them going
+   stale, and they DID go stale — a renamed column and a deleted one both survived here for a
+   release. `test/mobile-layout.test.mjs` now asserts the two modules stamp every cell, which is
+   the half a stylesheet cannot check. */
 @media (max-width: 619.98px) {
   #history .table-wrap,
   #account .table-wrap {
@@ -487,38 +520,15 @@ button, input, textarea, select { font: inherit; color: inherit; }
 
   /* The label is generated content, not a second row of markup, so it carries no meaning of its
      own the way the ⚠/✓ prefixes above do not — it repeats a string the view already rendered
-     once, in the one header row this rule hides. font-weight only: colour is a theme's. */
-  #history .table-wrap table.table td::before,
-  #account .table-wrap table.table td::before {
+     once, in the one header row this rule hides. font-weight only: colour is a theme's.
+     A cell with no `data-label` renders an empty ::before rather than a stray colon, so a future
+     table that forgets to stamp one degrades to the plain value. */
+  #history .table-wrap table.table td[data-label]::before,
+  #account .table-wrap table.table td[data-label]::before {
+    content: attr(data-label);
     font-weight: 600;
   }
 
-  /* #history — views/history.js's seven columns, in the order that module writes them. */
-  #history .table-wrap table.table td:nth-child(1)::before { content: "התחלה"; }
-  #history .table-wrap table.table td:nth-child(2)::before { content: "משך"; }
-  #history .table-wrap table.table td:nth-child(3)::before { content: "אנרגיה (kWh)"; }
-  #history .table-wrap table.table td:nth-child(4)::before { content: "עלות (₪ כולל מע״מ)"; }
-  #history .table-wrap table.table td:nth-child(5)::before { content: "הספק ממוצע (kW)"; }
-  #history .table-wrap table.table td:nth-child(6)::before { content: "נחסך (₪)"; }
-  #history .table-wrap table.table td:nth-child(7)::before { content: "סיבת עצירה"; }
-
-  /* #account holds two tables and no wrapper class tells them apart, so the selectors below lean
-     on the one structural fact THEMES.md §4.8 already pins: the connectors table is nested inside
-     the FIRST child of the panel body (views/account.js's `chargerBlock`, appended first whenever
-     there is a charger to show), and the invoices table is the `.table-wrap` that follows the
-     "תקופות חיוב" heading as a direct sibling. Neither reading depends on the other table's
-     presence, so an empty connector list or a not-yet-closed invoice period cannot make one
-     selector pick up the other table's columns. */
-  #account > div:first-child .table-wrap table.table td:nth-child(1)::before { content: "מחבר"; }
-  #account > div:first-child .table-wrap table.table td:nth-child(2)::before { content: "מצב"; }
-  #account > div:first-child .table-wrap table.table td:nth-child(3)::before { content: "מוכן"; }
-  #account > div:first-child .table-wrap table.table td:nth-child(4)::before { content: "עודכן"; }
-
-  #account h3.panel__title ~ .table-wrap table.table td:nth-child(1)::before { content: "תקופה"; }
-  #account h3.panel__title ~ .table-wrap table.table td:nth-child(2)::before { content: "מצב"; }
-  #account h3.panel__title ~ .table-wrap table.table td:nth-child(3)::before { content: "אנרגיה (kWh)"; }
-  #account h3.panel__title ~ .table-wrap table.table td:nth-child(4)::before { content: "₪ לפני מע״מ"; }
-  #account h3.panel__title ~ .table-wrap table.table td:nth-child(5)::before { content: "₪ כולל מע״מ"; }
 }
 
 /* ── motion floor ──────────────────────────────────────────────────────── */

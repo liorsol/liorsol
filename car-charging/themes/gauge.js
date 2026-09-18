@@ -6,14 +6,15 @@
 // the same circle, so "the whole charge sat inside the cheap window" is a SHAPE rather than a
 // number you have to compare against two other numbers.
 //
-// THE "DOES NOT MIRROR" RULING (THEMES.md §10.4): it applies, and more strongly than it does to
-// the band it replaces. `style.css` pins `direction: ltr` on the horizontal band because a time
-// axis with labelled coordinates has one reading order. A dial is not an axis — it is an
-// instrument face, and every clock, speedometer and pressure gauge the owner has ever read runs
-// clockwise from the top in every locale, Hebrew included. Mirroring it would put 06:00 where
-// the hand of every other dial in their life points at 18:00. So the dial is built in absolute
-// geometry (angles from the top, clockwise) and inherits no direction at all; only the prose
-// around it mirrors, which is correct because prose is the thing that mirrors in Hebrew.
+// THE DIAL DOES NOT MIRROR, and its reason is its own rather than the band's. The horizontal
+// band it replaces used to be pinned `direction: ltr` on the argument that a time axis has one
+// reading order; the owner overruled that and the band now mirrors with the page (style.css).
+// None of it reaches here. A dial is not an axis — it is an instrument face, and every clock,
+// speedometer and pressure gauge the owner has ever read runs clockwise from the top in every
+// locale, Hebrew included. Mirroring it would put 06:00 where the hand of every other dial in
+// their life points at 18:00. So the dial is built in absolute geometry (angles from the top,
+// clockwise) and inherits no direction at all; only the prose around it mirrors, which is
+// correct because prose is the thing that mirrors in Hebrew.
 //
 // ── WHY THIS RENDERER COMPOSES RATHER THAN REPLACES ──
 //

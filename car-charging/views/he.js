@@ -37,12 +37,25 @@ export const LOCALE = 'he-IL';
 
 const DATE_TIME = { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
 const DAY_TIME = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+// The all-digit stamp: DD.MM.YYYY HH:MM. The session table asked for it by name and it is the
+// only place on the page that wears it -- a column of dates is read by SCANNING, and "11 בספט׳"
+// beside "3 באוק׳" puts the day, the month name and the separator in three different widths, so
+// nothing lines up under the next. Prose keeps the month's name: DATE_TIME above is what the
+// header, the comment board and the connector row still use, and this does not replace them.
+// he-IL's own numeric pattern is already dot-separated, so this is Intl's output and not a
+// hand-built string; `hour12: false` because he-IL would otherwise print 2-digit hours as 12h.
+const NUMERIC = {
+  day: '2-digit', month: '2-digit', year: 'numeric',
+  hour: '2-digit', minute: '2-digit', hour12: false,
+};
 
 const dateTimeFmt = new Intl.DateTimeFormat(LOCALE, DATE_TIME);
 const dayTimeFmt = new Intl.DateTimeFormat(LOCALE, DAY_TIME);
+const numericFmt = new Intl.DateTimeFormat(LOCALE, NUMERIC);
 // The payload's "local" stamps are wall-clock times stamped as if UTC, so reading them back in
 // UTC is what makes them show the charger's own local time. See views/history.js.
 const dayTimeUtcFmt = new Intl.DateTimeFormat(LOCALE, { ...DAY_TIME, timeZone: 'UTC' });
+const numericUtcFmt = new Intl.DateTimeFormat(LOCALE, { ...NUMERIC, timeZone: 'UTC' });
 const dateFmt = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' });
 const timeFmt = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' });
 const relFmt = new Intl.RelativeTimeFormat(LOCALE, { numeric: 'auto' });
@@ -60,6 +73,8 @@ const rel = (value, unit) => relFmt.format(value, unit).replace(GLOSS, '');
 export const dateTime = (ms) => (Number.isFinite(ms) ? dateTimeFmt.format(ms) : '—');
 export const dayTime = (ms) => (Number.isFinite(ms) ? dayTimeFmt.format(ms) : '—');
 export const dayTimeUtc = (ms) => (Number.isFinite(ms) ? dayTimeUtcFmt.format(ms) : '—');
+export const numeric = (ms) => (Number.isFinite(ms) ? numericFmt.format(ms) : '—');
+export const numericUtc = (ms) => (Number.isFinite(ms) ? numericUtcFmt.format(ms) : '—');
 export const date = (ms) => (Number.isFinite(ms) ? dateFmt.format(ms) : '—');
 export const time = (ms) => (Number.isFinite(ms) ? timeFmt.format(ms) : '—');
 

@@ -773,10 +773,11 @@ h3.panel__title {
 .suspend--unknown::before { color: var(--fg-muted); font-weight: 700; }
 
 /* ── the tariff band ───────────────────────────────────────────────────── */
-/* style.css pins `direction: ltr` here: the band is a TIME AXIS and does not
-   mirror — midnight at the left edge, the day running rightwards, like a
-   clock face. This sheet inherits that ruling and only supplies the material:
-   a sunk track with the slices reading as two depths of the same surface. */
+/* The band mirrors with the page — midnight at the RIGHT edge, the day running
+   leftwards — because the owner asked for it that way; style.css carries the
+   ruling and the one physical transform it does not cover. This sheet inherits
+   whatever that says and only supplies the material: a sunk track with the
+   slices reading as two depths of the same surface. */
 
 .tariff { min-width: 0; }
 
@@ -1086,19 +1087,64 @@ h3.panel__title {
   box-shadow: inset 0 0 0 1px var(--accent-line);
 }
 
-.session__meta {
+/* THE ROW OPENS WITH WHAT THE DEVICE IS. It used to open with three stamps run
+   together and leave the identity to a raw user-agent string at the bottom, which
+   is the complaint this answers: on a list of two browsers, "which one am I about
+   to cut off" was the one question the row did not answer. Now the caption
+   views/sessions.js derives is the largest thing on the row, the three facts sit
+   under it as labelled pairs, and the raw string keeps its place at the bottom
+   under a caption of its own -- because the derived label is a shortcut to it and
+   never a replacement for it. A row this page cannot caption renders no
+   `.session__device` at all, so nothing here may assume one is present. */
+
+.session__ident {
   grid-column: 1;
   grid-row: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--sp-1) var(--sp-2);
-  font-size: var(--fs-sm);
-  color: var(--fg-muted);
   min-width: 0;
 }
-.session__when { font-variant-numeric: tabular-nums; }
-.session__where { font-weight: 700; color: var(--fg); }
+
+.session__device {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: var(--fg);
+}
+
+/* Three labelled facts, and the LABEL IS BESIDE THE VALUE rather than glued to
+   the front of it. Two columns on a phone; from 620px the pairs sit side by side
+   as label-over-value, which is the same grid read the other way -- `column` flow
+   over two rows -- and costs no second markup. */
+.session__facts {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--sp-1) var(--sp-3);
+  align-items: baseline;
+  min-width: 0;
+  font-size: var(--fs-sm);
+}
+
+@media (min-width: 620px) {
+  .session__facts {
+    grid-template-columns: none;
+    grid-template-rows: auto auto;
+    grid-auto-flow: column;
+    justify-content: start;
+    gap: 0 var(--sp-5);
+  }
+}
+
+.session__key { color: var(--fg-muted); }
+
+.session__val {
+  font-weight: 600;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
 
 .session__actions {
   grid-column: 2;
@@ -1107,10 +1153,33 @@ h3.panel__title {
 }
 .session__actions .btn { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-strong); }
 
+
+/* THE RAW AGENT STRING AND ITS CAPTION, as one block. They are two elements
+   because the caption cannot wrap the string (style.css gives `.session__ua` its
+   own bidi paragraph, and Hebrew inside it would flip the whole line), so the
+   ground under both is what makes them read as one section instead of a Hebrew
+   line on the right and a Latin line on the left with nothing joining them.
+   It also carries the grid placement both children used to carry themselves. */
+.session__agent {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 0 0 1px var(--line);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+/* The caption over the raw agent string. It is a SIBLING of `.session__ua` and
+   not a wrapper: that box is in style.css's plaintext set so a Latin string keeps
+   its own reading order, and a Hebrew word inside it would be the first strong
+   character and flip the whole line. Grouping them is this sheet's job instead. */
+.session__ua-label {
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+}
+
 /* Constrained, never truncated: the half that would be cut is the half that
    tells two devices apart. */
 .session__ua {
-  grid-column: 1 / -1;
   font-family: var(--font-num);
   font-size: var(--fs-xs);
   line-height: 1.5;
@@ -1154,13 +1223,32 @@ h3.panel__title {
   overflow-wrap: anywhere;
 }
 
-/* Label above value: a two-column grid would take its column from the longest
-   value, and one long address would then indent every other row. */
+/* LABEL BESIDE VALUE, in two columns, and the old ruling above it is reversed.
+   That ruling said a two-column grid takes its column width from the longest
+   VALUE, so one long address indents every other row. That is true of `auto`
+   columns and it is not what this is: the first column is `max-content` over the
+   LABELS -- four short Hebrew words -- and the value column is `1fr`, so a long
+   address wraps inside its own cell and moves nothing.
+   What the stacked version cost, which is why the owner asked: each pair was two
+   full-width lines, so four fields filled the card with eight rows of mostly
+   empty space and the eye had to travel the whole panel to pair a value with its
+   label. Rows now divide with a hairline and read across.
+   Below 480px the grid drops back to one column: a phone cannot hold a label
+   column beside a mail address without hyphenating one of them. */
 .contact__list {
   margin-block-start: var(--sp-5);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: var(--sp-4);
+}
+
+/* Every row but the first divides from the one above. The two children of a pair
+   are consecutive siblings, so "from the second pair on" is everything past the
+   first two items -- no wrapper element and no class the view has to write. */
+.contact__list > :not(:first-child):not(:nth-child(2)) {
+  border-block-start: 1px solid var(--line);
+  padding-block-start: var(--sp-3);
+  margin-block-start: var(--sp-3);
 }
 
 .contact__label {
@@ -1174,6 +1262,15 @@ h3.panel__title {
   font-size: var(--fs-md);
   color: var(--fg);
   overflow-wrap: anywhere;
+}
+
+@media (max-width: 479.98px) {
+  .contact__list { grid-template-columns: 1fr; }
+  .contact__list > :nth-child(2n) { padding-block-start: var(--sp-1); }
+  .contact__list > :not(:first-child):not(:nth-child(2)) { margin-block-start: 0; }
+  .contact__list > :nth-child(2n+1):not(:first-child) {
+    margin-block-start: var(--sp-3);
+  }
 }
 
 .contact__actions { margin-block-start: var(--sp-5); }

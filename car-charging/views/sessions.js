@@ -10,11 +10,26 @@
 // a cookie and lives here. Nothing in this file imports `isLiveSession` or touches
 // `state.state.sessions`, and nothing here should ever learn to.
 //
-// THE USER-AGENT IS DISPLAYED AND NEVER PARSED. The schema says "never parsed" and that is a
-// rule rather than a note: no "iPhone", no "Chrome 130", no icon chosen from a substring. A
-// derived label is a guess about a string upstream never promised, printed on the row someone is
-// about to revoke. A long one is constrained by the stylesheet -- `.session__ua` wraps -- and is
-// never sliced, because the half that would be cut is the half that identifies the device.
+// THE USER-AGENT IS NOW READ, AND THE RAW STRING IS STILL PRINTED. The rule here used to be
+// "displayed and never parsed", on the grounds that a derived label is a guess about a string
+// upstream never promised, printed on the row someone is about to revoke. The owner overruled it:
+// the list was unreadable in practice, because "which browser is this" was only answerable by
+// decoding `Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 …` in
+// your head while standing next to a charger.
+//
+// The old rule's REASON was sound and survives as three constraints on `device()` below, which
+// are what keep a guess from ever being the thing a viewer revokes on:
+//
+//   1. the raw string is still rendered, in full, verbatim, underneath. The derived label is a
+//      shortcut to it and never a replacement for it, so a wrong guess is always visibly a guess;
+//   2. an unrecognised agent produces NO label rather than a wrong one. There is no "Unknown"
+//      chip and no fallback: the row simply shows the raw string on its own, which is exactly
+//      what every row did before this change;
+//   3. nothing branches on it. It is text. No icon, no colour, no sort order, no revoke
+//      behaviour -- the `jti` is the identity and the label is a caption.
+//
+// It is still never sliced, because the half that would be cut is the half that identifies the
+// device; `.session__ua` wraps instead.
 //
 // REVOKING IS IMMEDIATE AND IRREVERSIBLE. The comment board's ✕ archives a row that stays in the
 // table and stays readable; this deletes a row and the next request from that browser is a 401.
@@ -89,6 +104,54 @@ const words = (session) => (session.current === true ? WORDS.current : WORDS.oth
 // formatter here would reintroduce the CLDR gloss that module exists to strip.
 const ago = (ms) => (Number.isFinite(ms) ? relative(ms - Date.now()) : '—');
 
+// ── the derived device label ──
+//
+// Two ordered tables, first match wins, and the ORDER IS THE WHOLE CORRECTNESS OF THIS. Every
+// entry below is a token a browser deliberately puts in its own agent string; none is inferred
+// from a version number and none is a heuristic over free text.
+//
+// The orders are not alphabetical and cannot be sorted:
+//   · iPhone and iPad come before Mac because iOS writes "like Mac OS X" into its own agent --
+//     a Mac test placed first calls every iPhone on this list a Mac;
+//   · Edge writes "Edg/", Opera writes "OPR/" and Chrome-on-iOS writes "CriOS/", and all four of
+//     those ALSO write "Chrome/"; every Chromium browser and Safari itself write "Safari/". So
+//     the list runs most specific to least and Safari is last, which is the only order in which
+//     Safari means Safari.
+// A string matching nothing yields null and the row shows no label at all -- see the block at
+// the top of this file for why that is a requirement rather than a fallback.
+const PLATFORM = [
+  [/\biPhone\b/, 'iPhone'],
+  [/\biPad\b/, 'iPad'],
+  [/\bAndroid\b/, 'Android'],
+  [/\bCrOS\b/, 'ChromeOS'],
+  [/\bMacintosh\b|\bMac OS X\b/, 'Mac'],
+  [/\bWindows NT\b/, 'Windows'],
+  [/\bLinux\b/, 'Linux'],
+];
+
+const BROWSER = [
+  [/\bEdgi?A?\w*\//, 'Edge'],
+  [/\bOPR\/|\bOpera\b/, 'Opera'],
+  [/\bFxiOS\/|\bFirefox\//, 'Firefox'],
+  [/\bCriOS\/|\bChrome\//, 'Chrome'],
+  [/\bSafari\//, 'Safari'],
+];
+
+const firstMatch = (table, ua) => (table.find(([pattern]) => pattern.test(ua)) ?? [])[1] ?? null;
+
+/**
+ * A short caption for a user-agent string, or null when this page cannot say.
+ * @param {*} raw the `userAgent` column, exactly as it was written
+ * @returns {string|null} e.g. "iPhone · Safari", "Mac", or null
+ */
+export function device(raw) {
+  if (typeof raw !== 'string' || !raw) return null;
+  const parts = [firstMatch(PLATFORM, raw), firstMatch(BROWSER, raw)].filter(Boolean);
+  // The separator is a MIDDLE DOT rather than a slash or a comma: it is direction-neutral, so it
+  // cannot be pulled to the wrong end of the caption by the Hebrew beside it.
+  return parts.length ? parts.join(' · ') : null;
+}
+
 function paint() {
   if (!mount) return;
   const { el } = mount;
@@ -136,15 +199,18 @@ function row(session) {
   const jti = String(session.jti ?? '');
   const item = make('li', current ? 'session session--current' : 'session');
 
-  const meta = make('div', 'session__meta');
+  // WHAT THIS ROW IS, at the top and in the largest thing on it. The old row opened with three
+  // run-together stamps and left the identity of the device to a raw string at the bottom, which
+  // is the complaint this rewrite answers: the first line now says which device, and the facts
+  // about it come second.
+  const ident = make('div', 'session__ident');
   // The current row is marked in words as well as in colour, and the mark is the first thing in
   // the row rather than a border somebody has to notice.
-  if (current) meta.append(make('span', 'chip chip--info', 'המכשיר הזה'));
-  meta.append(
-    make('span', 'session__when', 'נכנס: ' + dateTime(session.createdAt)),
-    make('span', 'session__when', 'נראה לאחרונה: ' + ago(session.lastSeen)),
-    make('span', 'session__where', session.location ? String(session.location) : 'מיקום לא ידוע')
-  );
+  if (current) ident.append(make('span', 'chip chip--info', 'המכשיר הזה'));
+  const label = device(session.userAgent);
+  // Absent, not empty: a row this page cannot caption gets no heading rather than a placeholder
+  // that reads like one. Its raw string below is unchanged and is still the whole answer.
+  if (label) ident.append(make('span', 'session__device', label));
 
   const actions = make('div', 'session__actions');
   const asking = board.confirming === jti;
@@ -169,10 +235,33 @@ function row(session) {
     actions.append(press);
   }
 
-  item.append(meta, actions);
+  item.append(ident, actions);
 
-  // Verbatim, wrapped by the stylesheet, never parsed and never cut.
-  item.append(make('p', 'session__ua', session.userAgent ? String(session.userAgent) : '—'));
+  // The three facts, as labelled pairs rather than as three sentences with their labels glued
+  // to their values. A <dl> because that is what this is; the sheet decides whether the pairs
+  // sit side by side or stack.
+  const facts = make('dl', 'session__facts');
+  for (const [key, val] of [
+    ['נכנס', dateTime(session.createdAt)],
+    ['נראה לאחרונה', ago(session.lastSeen)],
+    ['מיקום', session.location ? String(session.location) : 'לא ידוע'],
+  ]) {
+    facts.append(make('dt', 'session__key', key), make('dd', 'session__val', val));
+  }
+  item.append(facts);
+
+  // Verbatim, wrapped by the stylesheet, never cut. Two elements in a box of their own, and the
+  // shape is what makes the pair read as one thing: the caption cannot be a WRAPPER around the
+  // string, because `.session__ua` is in style.css's `unicode-bidi: plaintext` set so a Latin
+  // agent keeps its own reading order, and a Hebrew word inside that box would be the first
+  // strong character and flip the whole line. So they are siblings, and `.session__agent` is
+  // the ground a theme paints under both.
+  const agent = make('div', 'session__agent');
+  agent.append(
+    make('p', 'session__ua-label', 'הדפדפן דיווח על עצמו כך:'),
+    make('p', 'session__ua', session.userAgent ? String(session.userAgent) : '—')
+  );
+  item.append(agent);
 
   if (asking) item.append(confirm(session, jti));
   return item;

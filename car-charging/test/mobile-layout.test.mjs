@@ -110,24 +110,85 @@ test('history and account tables collapse to cards, not a sideways scroll, below
     );
   }
 
-  // Every column history.js writes needs its meaning to survive the row becoming a card. A bare
-  // number with no label is worse than the same number under a header, and a table that drops
-  // its headers on mobile is worse than one that scrolls.
-  const historyLabels = rules.filter(
-    (r) => r.selector.includes('#history') && /td:nth-child\(\d\)::before/.test(r.selector)
-  );
-  assert.equal(
-    historyLabels.length,
-    7,
-    `expected a generated label for all 7 columns views/history.js writes, found ` +
-      `${historyLabels.length}. A column with no label on a card is a column whose meaning is gone.`
-  );
-  for (const rule of historyLabels) {
-    assert.ok(
-      declared(rule.body, 'content'),
-      `${rule.selector} turns the row into a card but declares no \`content\` — that column's ` +
-        'value would render with nothing saying what it is.'
+  // Every column those two modules write needs its meaning to survive the row becoming a card. A
+  // bare number with no label is worse than the same number under a header. The label is READ OFF
+  // the cell -- `content: attr(data-label)` -- rather than written into this sheet a second time,
+  // so this half asserts the sheet prints it and the test below asserts the modules stamp it.
+  for (const id of ['history', 'account']) {
+    const rule = rules.find(
+      (r) => r.selector.includes('#' + id) && /td\[data-label\]::before/.test(r.selector)
     );
+    assert.ok(
+      rule,
+      `style.css has no \`#${id} … td[data-label]::before\` rule, so a column's meaning is ` +
+        'dropped rather than printed once the row becomes a card.'
+    );
+    assert.match(
+      declared(rule.body, 'content') ?? '',
+      /attr\(\s*data-label\s*\)/,
+      `${rule.selector} does not read its label from \`attr(data-label)\`. Sixteen hand-kept ` +
+        'copies of the header strings lived here once and went stale silently; do not bring ' +
+        'them back.'
+    );
+  }
+});
+
+// The other half of the rule above, and the half a stylesheet cannot check: the two modules have
+// to stamp every body cell they write. A column added to either table with no `data-label` is a
+// column that renders as a naked value on a phone -- which is the exact defect the card layout
+// exists to fix, reintroduced one column at a time.
+test('history and account stamp data-label on every body cell they write', async () => {
+  const { installDocument, all } = await import('./fake-dom.mjs');
+  installDocument();
+
+  const views = {
+    'views/history.js': {
+      module: await import('../views/history.js'),
+      state: {
+        history: {
+          sessions: [
+            {
+              startedLocal: '2026-09-18T14:32:35.907', durationInSeconds: 735, totalEnergy: 0.721,
+              totalPaymentCostIncVat: 0.49, stopReason: 'EvDisconnected',
+            },
+          ],
+        },
+      },
+    },
+    'views/account.js': {
+      module: await import('../views/account.js'),
+      state: {
+        state: { charger: { ocppConnected: true, connectors: [{ connectorId: 1, status: 'Available', canCharge: true, updated: '2026-09-18T11:32:35.907' }] } },
+        invoices: { invoices: [{ periodId: 1, status: 'Success', paymentDate: '2026-09-09T02:46:11.508', vatRate: 18 }] },
+      },
+    },
+  };
+
+  for (const [name, { module, state }] of Object.entries(views)) {
+    const el = document.createElement('div');
+    module.render(el, state, { reload: () => {} });
+
+    const headers = all(el).filter((n) => n.tagName === 'th');
+    const cells = all(el).filter((n) => n.tagName === 'td');
+    assert.ok(cells.length, `${name} rendered no table cells, so this test asserts nothing.`);
+
+    for (const td of cells) {
+      assert.ok(
+        td.dataset.label,
+        `${name} writes a <td> with no \`data-label\`. On a phone that cell becomes a value ` +
+          'with nothing saying what it is.'
+      );
+    }
+    // The label has to be the header's own string, not a second wording of it: that equality is
+    // the whole reason the duplication was collapsed.
+    const labels = [...new Set(cells.map((td) => td.dataset.label))];
+    for (const label of labels) {
+      assert.ok(
+        headers.some((th) => th.textContent === label),
+        `${name} stamps data-label="${label}" on a cell but no <th> in the same view carries ` +
+          'that text. The label and the header have drifted apart.'
+      );
+    }
   }
 });
 

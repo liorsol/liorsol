@@ -102,7 +102,7 @@ worn, and turns the others off with `link.disabled = true`. Consequences you nee
 | the menu mechanics: `.nav` position and width, the `<900px` drawer transform, `.nav.is-open`, `.nav.is-open ~ .navscrim` display, **`.btn.navtoggle` display**, the ≥900px `.shell` gutter and `.nav[hidden] ~ .shell` taking it back | all of it is wired to `app.js`; breaking it breaks navigation, not appearance. The handle is selected as `.btn.navtoggle`, **not** `.navtoggle`: a bare class is (0,1,0), exactly what your `.btn` is, and your sheet loads later — so `.btn { display: … }` used to resurrect the ☰ on desktop beside a rail already on screen. Do not restate this rule in your sheet; the base already outranks you |
 | `.shell__header { position: sticky }` | it is what keeps `☰` reachable from the bottom of the history table |
 | `.scroll-x` / `.table-wrap` overflow, `body { overflow-x: clip }` | nothing may scroll the page sideways |
-| the geometry that reads JS-set custom properties: `.tariff__slice` (`--start`/`--end`), `.tariff__now` (`--at`), `.settle__fill` (`--pct`), the `direction: ltr` pin on the tariff band | a contract between a view module and whatever sheet is on |
+| the geometry that reads JS-set custom properties: `.tariff__slice` (`--start`/`--end`), `.tariff__now` (`--at`), `.settle__fill` (`--pct`) — all of them placed with `inset-inline-start`, so they follow the page direction | a contract between a view module and whatever sheet is on |
 | `.stat { container-type: inline-size }`, `.stat__value { overflow-wrap: normal }`, `.stat__unit::before { content: "\200B" }` | the "a figure never breaks inside itself" fix, which cost a bug report from someone standing at a charger |
 | every `content:` that carries meaning — the suspension glyphs, the ⚠/✓ prefixes, the delta arrows, the translated "archived" tag | the view modules are **forbidden** from writing those strings, so the sheet is the only place they exist. Drop them and two states are told apart by colour alone |
 | `@media (prefers-reduced-motion) { * { transition-duration: .01ms !important } }` | transitions are killed once, for everyone, so no theme can forget |
@@ -334,9 +334,13 @@ fewer than two distinct prices, and a slice carrying no price at all, still wear
 neither claims a tier, and inventing a modifier for them would invent a window the charger never
 published.
 
-**The band is a time axis and does not mirror.** `style.css` pins `direction: ltr` on it:
-midnight is at the left edge and the day runs rightwards in both page directions, like a clock
-face. If you replace this view (§7) you inherit that ruling, not the markup.
+**The band mirrors with the page.** Midnight is at the **right** edge and the day runs
+leftwards, because the owner read the shipped page and asked for it that way. There is no
+`direction` pin any more: `--start`/`--end`/`--at` are applied with `inset-inline-start`, which
+resolves against the page's own `rtl`, and the scale is a `space-between` flex row that reverses
+for free. If you replace this view (§7) you inherit the reading direction, not the markup — and
+if you position a label on a coordinate, note that `transform: translateX()` is **physical** and
+does not flip with the box: the sign that centres a marker here is `+50%`, not `-50%`.
 
 ### 4.6 `#/status` → `#controls` — `views/controls.js`
 
@@ -438,21 +442,32 @@ p.btn-note                                     an error, when there is one
 div.empty                                      no sign-ins / "you signed yourself out"
 ul.session-list
   li.session  + .session--current
-    div.session__meta
+    div.session__ident
       span.chip.chip--info                     "this device", on the current row only
-      span.session__when  ×2
-      span.session__where
+      span.session__device                     "iPhone · Safari" — OPTIONAL, see below
     div.session__actions
       button.btn.session__revoke               another device
       button.btn.btn--danger.session__revoke   THIS device — a different action, worded as one
-    p.session__ua                              a user-agent string, displayed verbatim, never cut
+    dl.session__facts > dt.session__key + dd.session__val        ×3
+    div.session__agent                         the raw string and its caption, as one block
+      p.session__ua-label                      the caption
+      p.session__ua                            a user-agent string, displayed verbatim, never cut
     div.session__confirm                       the second step, inside the row it asks about
       p.session__question
       div.btn-row > button.btn.btn--danger + button.btn
 ```
 
+**`.session__device` is derived from the user-agent and is not always there.** The view reads a
+short caption out of the agent string — a platform and a browser, both from tokens a browser
+writes about itself — and an agent it cannot read yields **no element at all** rather than a
+placeholder. Style it as the row's heading, and never write a rule that assumes the row has one:
+a card whose first line is only the revoke button is a real state. The label is a caption and
+nothing else keys off it, so do not build a modifier, an icon or a colour from it.
+
 `.session__ua` is Latin, punctuation-heavy and unbounded. `style.css` gives it its own bidi
-paragraph; you have to let it wrap.
+paragraph; you have to let it wrap. It is deliberately **not** in the base sheet's
+`[dir="rtl"] … { text-align: right }` rule — a wrapped Latin run aligned right is ragged down the
+edge the eye reads it from — so group it with `.session__ua-label` yourself instead.
 
 ### 4.11 `#/contact` — `views/contact.js`
 
@@ -806,15 +821,17 @@ pending.
    five modules build its property names by string concatenation from JS. **Redefine all six
    values in your own `:root` and you have your own rhythm** (§2). No theme found the six-step
    model itself binding.
-4. **The "does not mirror" ruling was inherited where it applies, and set aside where it does
-   not.** `terminal` keeps it unchanged: a stepped 24-hour profile is still an axis with
-   labelled coordinates, so midnight stays at the inline start and `style.css`'s `direction:
-   ltr` pin is what makes `--start`/`--end`/`--at` keep meaning what they mean. `gauge` argued
-   it more strongly and reached the same place by a different route: a dial is an instrument
-   face, not an axis, and every clock and gauge runs clockwise from the top in every locale, so
-   it is built in absolute geometry and inherits no direction at all. `editorial` replaces the
-   axis with a timetable, where the ruling simply does not arise — rows read in the page
-   direction, like the prose they are.
+4. **The "does not mirror" ruling was argued in three directions and then overruled for the
+   band.** It said a time axis reads left to right in every locale. The owner disagreed about
+   the horizontal band and that half is gone: it now mirrors with the page (§4.5). What the
+   three themes did with it still stands, and only one of them has to change. `terminal` draws
+   the same axis in a different shape and follows the band wherever it points, which now means
+   midnight at the right — the only thing its sheet owns is the sign of the physical transform
+   that centres its "now" label. `gauge` reached its answer by a route the reversal does not
+   touch: a dial is an instrument face, not an axis, and every clock and gauge runs clockwise
+   from the top in every locale, so it is built in absolute geometry and inherits no direction
+   at all. `editorial` replaces the axis with a timetable, where the question never arose — rows
+   read in the page direction, like the prose they are.
 5. **`.btn--quiet`, `.form-error` and `.stat__delta*` are styled but unrendered** (§4.13).
    They remain **optional** and the lint does not ask for them. `classic.css` keeps them so
    that a view which starts using one later does not find an unstyled element.

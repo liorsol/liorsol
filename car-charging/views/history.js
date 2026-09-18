@@ -1,4 +1,4 @@
-// views/history.js — S4: session table, period totals, ₪ avoided by deferring.
+// views/history.js — S4: the session table and the period totals above it.
 //
 // Mount contract (PLAN §7.10): render(el, state, ctx), where `state` is
 //   { state, history, invoices, expired, fetchedAt, stale }
@@ -6,14 +6,19 @@
 // so there is no error argument and nothing here ever blanks a painted panel.
 // app.js owns the stale marker and the last-updated line; this module does not.
 //
-// effectiveKw() and shekelAvoided() are pure — no DOM, no clock, no module state —
-// so the metric can be asserted in node without a browser.
+// effectiveKw() is pure — no DOM, no clock, no module state — so it can be asserted in node
+// without a browser. themes/native.js imports it; it is the only export here that is not render().
+//
+// THE "SAVED BY DEFERRING" COLUMN AND TILE ARE GONE, and so is the arithmetic behind them
+// (shekelAvoided, the level breakdown, the VAT re-basing): the owner asked for the whole idea
+// off this screen. If it ever comes back it comes back from the tariff calendar, not from a
+// helper kept alive here with no caller.
 
 // The one definition of a live session, shared with views/tariff.js and views/controls.js —
 // this table used to carry its own, a third spelling of the same judgement. See the comment on
 // the predicate in api.js for why a row that has ended is a normal thing to find.
 import { isLiveSession } from '../api.js';
-import { dayTime, dayTimeUtc, duration, n, stopReasonKey, stopReasonLabel } from './he.js';
+import { duration, n, numeric, numericUtc, stopReasonKey, stopReasonLabel } from './he.js';
 
 // ── pure metrics ────────────────────────────────────────────────────────────
 
@@ -34,70 +39,6 @@ export function effectiveKw(row) {
   if (kwh === null || secs === null || secs <= 0) return 0;
   return kwh / (secs / 3600);
 }
-
-// The Worker hands back `levels: [{level, unitCost, energy, cost}]`; the raw session
-// row carries the same numbers as flat l1..l9 fields. Accept either.
-function levelsOf(row) {
-  if (!row) return [];
-  if (Array.isArray(row.levels)) return row.levels;
-  const out = [];
-  for (let n = 1; n <= 9; n++) {
-    const energy = row['l' + n + 'Energy'];
-    const cost = row['l' + n + 'Cost'];
-    if (energy === undefined && cost === undefined) continue;
-    out.push({ level: n, unitCost: row['l' + n + 'UnitCost'], energy, cost });
-  }
-  return out;
-}
-
-/** The dearest price in the calendar we were handed. 0 for an empty calendar. */
-function dearestPrice(slices) {
-  let top = 0;
-  for (const s of slices || []) {
-    const p = num(s && s.price);
-    if (p !== null && p > top) top = p;
-  }
-  return top;
-}
-
-/**
- * ₪ the session avoided by buying its energy in a cheaper slice than the dearest
- * one the calendar offers:  Σ energy × (dearest − unitCost), floored at 0.
- *
- * Returns the EX-VAT figure, because that is the basis the level breakdown is in
- * (unitCost and l{n}Cost are both ex-VAT) and because a row does not always carry
- * a VAT rate. The inc-VAT figure is this × (1 + rate/100) with the rate read from
- * the payload — see vatRateOf(). Never negative; 0 for a one-slice or empty calendar.
- *
- * @param {object} row
- * @param {Array<{price:number}>} slices the live tariff calendar
- * @returns {number} ₪ excluding VAT, >= 0
- */
-export function shekelAvoided(row, slices) {
-  const dearest = dearestPrice(slices);
-  let avoided = 0;
-  for (const lv of levelsOf(row)) {
-    const energy = num(lv && lv.energy);
-    const unit = num(lv && lv.unitCost);
-    if (energy === null || energy <= 0 || unit === null || unit <= 0) continue;
-    if (dearest > unit) avoided += energy * (dearest - unit);
-  }
-  return avoided > 0 ? avoided : 0;
-}
-
-// VAT is data, never a constant: the session row carries it as vatRate, the tariff
-// slice as vat. If neither is present we show the ex-VAT figure and say so.
-function vatRateOf(row, slices) {
-  const fromRow = num(row && row.vatRate);
-  if (fromRow !== null && fromRow >= 0) return fromRow;
-  for (const s of slices || []) {
-    const v = num(s && s.vat);
-    if (v !== null && v >= 0) return v;
-  }
-  return null;
-}
-
-const withVat = (amount, rate) => (rate === null ? null : amount * (1 + rate / 100));
 
 // ── stop reason → chip severity ─────────────────────────────────────────────
 // The stylesheet deliberately does not encode the upstream vocabulary (the repo is
@@ -167,12 +108,27 @@ function whenText(row) {
   const local = row.startedLocal || row.deviceLocalStartDate;
   if (local) {
     const ms = toMs(local);
-    if (Number.isFinite(ms)) return dayTimeUtc(ms);
+    if (Number.isFinite(ms)) return numericUtc(ms);
   }
-  return dayTime(toMs(row.startedAt || row.deviceStartDate));
+  return numeric(toMs(row.startedAt || row.deviceStartDate));
 }
 
-const cell = (tag, text, numeric) => h(tag, numeric ? 'num' : null, text);
+const cell = (tag, text, isNum) => h(tag, isNum ? 'num' : null, text);
+
+// The columns, once. The header row is built from this and so is every body row's `data-label`,
+// which is what the phone layout prints beside a value when the table becomes a stack of cards —
+// style.css used to hold a hand-kept second copy of these six strings and could only go stale.
+// Every mixed header opens in Hebrew and carries its Latin unit in brackets at the end: `.num`
+// gives these cells their own bidi paragraph taking direction from the first strong character,
+// so a header starting "kWh" would lay itself out left to right mid-table.
+const COLUMNS = [
+  ['התחלה', false],
+  ['משך', false],
+  ['אנרגיה (kWh)', true],
+  ['עלות ₪', true],
+  ['הספק ממוצע (kW)', true],
+  ['סיבת עצירה', false],
+];
 
 function emptyBlock(title, hint, isError) {
   const box = h('div', isError ? 'empty empty--error' : 'empty');
@@ -182,8 +138,8 @@ function emptyBlock(title, hint, isError) {
   return box;
 }
 
-function tile(value, unit, label, good) {
-  const t = h('div', good ? 'stat stat--good' : 'stat');
+function tile(value, unit, label) {
+  const t = h('div', 'stat');
   const v = h('div', 'stat__value', value);
   if (unit) v.appendChild(h('span', 'stat__unit', unit));
   t.appendChild(v);
@@ -196,7 +152,6 @@ function tile(value, unit, label, good) {
 export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   const app = state || {};
   const hist = app.history;
-  const slices = (app.state && app.state.pricingSlices) || [];
   el.replaceChildren();
 
   if (!hist) {
@@ -213,15 +168,12 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   }
 
   // Period totals, computed from exactly the rows shown below.
-  let kwh = 0, paidInc = 0, paidEx = 0, avoidedEx = 0, rate = null;
+  let kwh = 0, paidInc = 0, paidEx = 0;
   for (const row of rows) {
     kwh += num(row.totalEnergy) || 0;
     paidInc += num(row.totalPaymentCostIncVat) || 0;
     paidEx += num(row.totalPaymentCostExcVat) || 0;
-    avoidedEx += shekelAvoided(row, slices);
-    if (rate === null) rate = vatRateOf(row, slices);
   }
-  const avoidedInc = withVat(avoidedEx, rate);
 
   const grid = h('div', 'stat-grid');
   grid.appendChild(tile(n(rows.length, 0), null, 'טעינות'));
@@ -229,30 +181,13 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   grid.appendChild(tile(
     n(paidInc || paidEx), '₪',
     paidInc ? 'שולם — כולל מע״מ' : 'שולם — לפני מע״מ'));
-  // Both bases, always, and the basis of each in words: the inc-VAT figure is the one
-  // that shows up on a bill, the ex-VAT one is what the arithmetic is done in.
-  grid.appendChild(tile(
-    n(avoidedInc === null ? avoidedEx : avoidedInc), '₪',
-    avoidedInc === null
-      ? 'נחסך בזכות דחייה — לפני מע״מ (אין שיעור מע״מ בנתונים)'
-      : 'נחסך בזכות דחייה — כולל מע״מ (' + n(avoidedEx) + ' ₪ לפני מע״מ)',
-    true));
   el.appendChild(inset(el, grid, true));
 
   const wrap = spaced(h('div', 'table-wrap'));
   const table = h('table', 'table');
   const thead = h('thead');
   const hrow = h('tr');
-  // Every mixed header opens in Hebrew and carries its Latin unit in brackets at the end.
-  // .num gives these cells their own bidi paragraph taking direction from the first strong
-  // character, so a header starting "kWh" would lay itself out left to right mid-table.
-  hrow.appendChild(cell('th', 'התחלה'));
-  hrow.appendChild(cell('th', 'משך'));
-  hrow.appendChild(cell('th', 'אנרגיה (kWh)', true));
-  hrow.appendChild(cell('th', 'עלות (₪ כולל מע״מ)', true));
-  hrow.appendChild(cell('th', 'הספק ממוצע (kW)', true));
-  hrow.appendChild(cell('th', 'נחסך (₪ ' + (rate === null ? 'לפני מע״מ' : 'כולל מע״מ') + ')', true));
-  hrow.appendChild(cell('th', 'סיבת עצירה'));
+  for (const [label, isNum] of COLUMNS) hrow.appendChild(cell('th', label, isNum));
   thead.appendChild(hrow);
   table.appendChild(thead);
 
@@ -265,11 +200,6 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
     tr.appendChild(cell('td', n(num(row.totalEnergy) || 0), true));
     tr.appendChild(cell('td', n(num(row.totalPaymentCostIncVat)), true));
     tr.appendChild(cell('td', n(effectiveKw(row)), true));
-    // Same basis as the header and the tile — mixing the two inside one panel is how a
-    // saving quietly reads 18% low.
-    const avoidedEx = shekelAvoided(row, slices);
-    const avoided = rate === null ? avoidedEx : withVat(avoidedEx, rate);
-    tr.appendChild(cell('td', n(avoided), true));
 
     const td = h('td');
     const reason = row.stopReason;
@@ -280,6 +210,9 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
     if (reason) chip.title = String(reason);
     td.appendChild(chip);
     tr.appendChild(td);
+    // The card layout's labels, from the same list the header came from. One loop after the
+    // row is built beats threading a label through six append calls.
+    for (let i = 0; i < tr.children.length; i++) tr.children[i].dataset.label = COLUMNS[i][0];
     tbody.appendChild(tr);
   }
   table.appendChild(tbody);

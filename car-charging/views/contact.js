@@ -46,6 +46,19 @@ import { updateContact } from '../api.js';
 // belongs to nobody in this system, and the number that completes it comes from the payload.
 const WHATSAPP = 'https://wa.me/';
 
+// The map host the address opens in. Same reasoning as WHATSAPP above — a mechanism, not an
+// identity — and the same mechanics: a plain <a href>, because the CSP restricts what the page
+// may LOAD and does not touch a navigation. This is the universal cross-platform form, which
+// hands off to the installed map app on both phones and renders in a tab on a desktop, so the
+// card needs no per-platform branch. `geo:` would be the native URI and is not usable here:
+// iOS Safari does not handle it, and this page is read on a phone standing at the charger.
+//
+// The address travels in the query string and that is a deliberate, narrow exception to this
+// page's habits: it is the CHARGER OPERATOR's published address, it is already printed on the
+// card above the link, and it leaves the browser only when the viewer presses the link. Nothing
+// else on this card is ever put in a URL.
+const MAPS = 'https://www.google.com/maps/search/?api=1&query=';
+
 // The seven fields the edit form carries, in the order they are laid out. Same set the read
 // view already knows as FIELDS below, plus `name` and `blurb`, which that list holds apart
 // because they are painted differently (a heading, a paragraph) rather than a label/value row.
@@ -111,7 +124,7 @@ function paint() {
 }
 
 function buildView(card) {
-  const fields = FIELDS.map(([key, label]) => [label, value(card?.[key])]).filter(([, v]) => v);
+  const fields = FIELDS.map(([key, label]) => [key, label, value(card?.[key])]).filter(([, , v]) => v);
   const name = value(card?.name);
   const blurb = value(card?.blurb);
   const phone = value(card?.phone);
@@ -127,8 +140,20 @@ function buildView(card) {
 
     if (fields.length) {
       const list = make('dl', 'contact__list');
-      for (const [label, text] of fields) {
-        list.append(make('dt', 'contact__label', label), make('dd', 'contact__value', text));
+      for (const [key, label, text] of fields) {
+        const dd = make('dd', 'contact__value');
+        // The address is the one field that opens somewhere: the owner asked for it, and it is
+        // the field whose whole purpose is to be navigated to. The value on screen is the
+        // operator's own spelling, untouched — only the href is built from it, and it is built
+        // by encoding rather than by parsing, so nothing in the payload can steer the link.
+        if (key === 'address') {
+          const anchor = link('contact__map', text, MAPS + encodeURIComponent(text));
+          anchor.rel = 'noopener noreferrer';
+          dd.append(anchor);
+        } else {
+          dd.textContent = text;
+        }
+        list.append(make('dt', 'contact__label', label), dd);
       }
       frag.append(list);
     }

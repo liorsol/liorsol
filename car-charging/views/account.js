@@ -2,14 +2,14 @@
 //
 // There is no account object to render, by design (PLAN §7.12): the Worker's PII
 // whitelist strips every personal field before anything reaches the cache, so the
-// payload carries `charger`, `pricingSlices` and `sessions` and nothing else. The
-// invoice shape has never been captured and stays empty until the first monthly bill
-// closes. This module therefore renders exactly what exists and invents no field.
+// payload carries `charger`, `pricingSlices` and `sessions` and nothing else. This module
+// renders exactly what exists and invents no field -- see the block above invoiceBlock() for
+// what it cost the one time it rendered a shape nobody had seen.
 //
 // Mount contract (PLAN §7.10): render(el, state, ctx) with
 //   { state, history, invoices, expired, fetchedAt, stale }; any payload may be null.
 
-import { date, dayTime, n, statusClass, statusLabel } from './he.js';
+import { dayTime, n, statusClass, statusLabel } from './he.js';
 
 function num(v) {
   if (v === null || v === undefined || v === '') return null;
@@ -47,10 +47,12 @@ function inset(root, node, top) {
   return node;
 }
 
-function stamp(iso, withTime) {
+// Both stamps on this screen are moments rather than days -- when a connector last reported,
+// when a period was billed -- so both carry the clock. An unparseable value is shown verbatim
+// rather than as an em dash: it is still the truest thing upstream said.
+function stamp(iso) {
   const ms = toMs(iso);
-  if (!Number.isFinite(ms)) return iso ? String(iso) : '—';
-  return withTime ? dayTime(ms) : date(ms);
+  return Number.isFinite(ms) ? dayTime(ms) : (iso ? String(iso) : '—');
 }
 
 function emptyBlock(title, hint, isError) {
@@ -69,6 +71,9 @@ function cell(tag, text, numeric) {
   return h(tag, numeric ? 'num' : null, text);
 }
 
+// `headings` is [[label, numeric], …] and it is also what labels a body cell once the phone
+// layout turns each row into a card: `finish()` stamps `data-label` from the same list the
+// header came from, so a column cannot lose its meaning by being renamed in one place only.
 function table(headings) {
   const wrap = h('div', 'table-wrap');
   const t = h('table', 'table');
@@ -80,7 +85,11 @@ function table(headings) {
   const tbody = h('tbody');
   t.appendChild(tbody);
   wrap.appendChild(t);
-  return { wrap, tbody };
+  const finish = (tr) => {
+    for (let i = 0; i < tr.children.length; i++) tr.children[i].dataset.label = headings[i][0];
+    tbody.appendChild(tr);
+  };
+  return { wrap, finish };
 }
 
 // ── charger ─────────────────────────────────────────────────────────────────
@@ -108,7 +117,7 @@ function chargerBlock(charger, root) {
     return box;
   }
 
-  const { wrap, tbody } = table([['מחבר', true], ['מצב', false], ['מוכן', false], ['עודכן', false]]);
+  const { wrap, finish } = table([['מחבר', true], ['מצב', false], ['מוכן', false], ['עודכן', false]]);
   for (const c of connectors) {
     const tr = h('tr');
     tr.appendChild(cell('td', c.connectorId === undefined || c.connectorId === null ? '—' : String(c.connectorId), true));
@@ -129,16 +138,33 @@ function chargerBlock(charger, root) {
       ? h('span', 'chip chip--ok', 'כן')
       : c.canCharge === false ? h('span', 'chip chip--warn', 'לא') : h('span', 'chip', '—'));
     tr.appendChild(readyCell);
-    tr.appendChild(cell('td', stamp(c.updated, true)));
-    tbody.appendChild(tr);
+    tr.appendChild(cell('td', stamp(c.updated)));
+    finish(tr);
   }
   box.appendChild(spaced(wrap, 3));
   return box;
 }
 
 // ── invoices ────────────────────────────────────────────────────────────────
+//
+// THE COLUMNS ARE THE FIELDS A CLOSED PERIOD ACTUALLY CARRIES, and getting that wrong is what
+// made the owner report the last bill as missing when it was sitting right there. This table was
+// written before any period had closed, against a *guessed* row — `fromDate`, `toDate`,
+// `totalEnergy`, `totalCostExcVat`, `totalCostIncVat`. The first real closed period carries none
+// of those five. Every cell therefore rendered "—" and the one row on the screen read as an
+// empty one. The fields it does carry are `periodId`, `status`, `created`, `paymentDate` and
+// `vatRate`, and those are the four columns below.
+//
+// There is no amount and no energy to show, and inventing one is the thing not to do here: the
+// obvious reconstruction — sum the sessions in the window — would print a figure this dashboard
+// computed beside a status the operator issued, which is a number the owner would reasonably
+// take for the bill. If the real totals exist they are behind a call nobody has captured, and
+// that capture is the owner's to run. Same discipline as the two uncaptured calls in CLAUDE.md.
+//
+// Anything added back here comes from a real body, not from a plausible field name. That is the
+// whole lesson of the paragraph above, and it has now cost two rounds.
 
-function invoiceBlock(invoices) {
+function invoiceBlock(invoices, root) {
   if (!invoices) {
     return emptyBlock('לא ניתן לטעון את תקופות החיוב',
       'עדיין לא הגיעו נתוני חיוב. לחצו רענון כדי לנסות שוב.', true);
@@ -151,23 +177,31 @@ function invoiceBlock(invoices) {
       + 'עד שתיסגר הראשונה.');
   }
 
-  const { wrap, tbody } = table([
-    ['תקופה', false], ['מצב', false], ['אנרגיה (kWh)', true],
-    ['₪ לפני מע״מ', true], ['₪ כולל מע״מ', true],
+  const { wrap, finish } = table([
+    ['מספר תקופה', true], ['מצב', false], ['תאריך חיוב', false], ['מע״מ (%)', true],
   ]);
   for (const r of rows) {
     const tr = h('tr');
-    tr.appendChild(cell('td', stamp(r.fromDate) + ' – ' + stamp(r.toDate)));
+    tr.appendChild(cell('td', r.periodId === undefined || r.periodId === null ? '—' : String(r.periodId), true));
     const state = r.periodStatus || r.status;
     const stateCell = h('td');
     stateCell.appendChild(h('span', 'chip', state ? String(state) : '—'));
     tr.appendChild(stateCell);
-    for (const key of ['totalEnergy', 'totalCostExcVat', 'totalCostIncVat']) {
-      tr.appendChild(cell('td', n(num(r[key])), true));
-    }
-    tbody.appendChild(tr);
+    tr.appendChild(cell('td', stamp(r.paymentDate || r.created)));
+    tr.appendChild(cell('td', n(num(r.vatRate), 0), true));
+    finish(tr);
   }
-  return wrap;
+
+  const box = h('div');
+  box.appendChild(wrap);
+  // Said once, in the panel, rather than left as four "—" cells for the owner to interpret.
+  // See the block comment above invoiceBlock for why there is no money here to print. It is
+  // prose rather than a table, so it carries the panel's own inset the way everything else
+  // that is not a table in this flush body does.
+  box.appendChild(inset(root || box, spaced(h('p', 'btn-note',
+    'החיוב מופיע כאן ברגע שהתקופה נסגרת. הסכום והאנרגיה אינם חלק ממה שהעמדה מחזירה על תקופה '
+    + 'שנסגרה — הפירוט הכספי לכל טעינה נמצא במסך “טעינות”.'), 3)));
+  return box;
 }
 
 // ── render ──────────────────────────────────────────────────────────────────
@@ -185,5 +219,5 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   }
 
   el.appendChild(inset(el, spaced(h('h3', 'panel__title', 'תקופות חיוב'), 5)));
-  el.appendChild(spaced(invoiceBlock(app.invoices), 3));
+  el.appendChild(spaced(invoiceBlock(app.invoices, el), 3));
 }

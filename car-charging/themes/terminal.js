@@ -164,10 +164,10 @@ function stepProfile(slices, nowMs, top, session) {
   cap.appendChild(h('span', 'tariff__lbl', 'גובה העמודה = המחיר'));
   box.appendChild(cap);
 
-  // style.css pins `direction: ltr` on `.tariff .scroll-x`, on the band and on the scale. The
-  // ruling is inherited rather than re-argued: this is still a time axis with labelled
-  // coordinates, midnight at the left edge, the day running rightwards, like the clock face the
-  // owner reads. Only the shape of the marks changed.
+  // The axis follows the page, which the owner asked to read right to left: midnight at the
+  // RIGHT edge, the day running leftwards. Nothing here had to change for that -- every mark is
+  // placed with --start/--end/--at through `inset-inline-start` -- and nothing here should start
+  // pinning a direction of its own. Only the shape of the marks is this theme's.
   const scroller = h('div', 'scroll-x');
 
   // The now label lives above the band because the band clips; it is anchored by class so it

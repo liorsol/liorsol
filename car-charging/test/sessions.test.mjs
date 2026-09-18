@@ -33,7 +33,7 @@ import { installDocument, node, all, text, button, byClass } from './fake-dom.mj
 
 installDocument();
 
-const { render } = await import('../views/sessions.js');
+const { render, device } = await import('../views/sessions.js');
 
 // ── the stub transport ──
 
@@ -96,8 +96,9 @@ test('every row says when it signed in, when it was last seen, where, and what i
   assert.equal(rows(el).length, 2, 'the list did not render one row per session');
 
   const painted = text(el);
-  assert.match(painted, /נכנס:/, 'no sign-in time on the row');
-  assert.match(painted, /נראה לאחרונה:/, 'no last-seen time on the row');
+  assert.match(painted, /נכנס/, 'no sign-in time on the row');
+  assert.match(painted, /נראה לאחרונה/, 'no last-seen time on the row');
+  assert.match(painted, /מיקום/, 'the location was rendered with nothing saying what it is');
   assert.match(painted, /IL/, 'the location went missing');
   // Through he.js and nothing else: "לפני דקה" for one minute, "לפני 3 שעות" for three hours.
   // A second formatter in this view would reintroduce the CLDR bracketed gloss that module
@@ -112,19 +113,67 @@ test('the user-agent is shown exactly as it arrived, whole', () => {
   assert.deepEqual(shown, [UA_PHONE, UA_DESK], 'a user-agent string was cut, trimmed or rewritten');
 });
 
-// The companion to the assertion above: exact equality catches a slice, and this catches a
-// label DERIVED from the string while the string itself is still printed in full.
-test('nothing in this view parses a user-agent', () => {
+// ── the derived device label ──
+//
+// This view now DOES read the user-agent, at the owner's instruction, and the test that used to
+// forbid it is replaced by the three constraints that make the derivation safe rather than
+// deleted. Those constraints are what stop a guess from becoming the thing a viewer revokes on,
+// and each of them is asserted below: the raw string survives in full (the test above, by exact
+// equality), an agent this page cannot read gets NO label, and nothing branches on the label.
+
+test('an unrecognised user-agent gets no label rather than a wrong one', () => {
+  assert.equal(device('Secret-Browser/1.0'), null, 'an agent naming nothing known produced a label anyway');
+  assert.equal(device(''), null);
+  assert.equal(device(null), null);
+  assert.equal(device(undefined), null);
+  assert.equal(device(12345), null, 'a non-string was parsed as if it were an agent string');
+
+  // And the row renders without one: the raw string is still there, and nothing stands in for
+  // the caption. "לא ידוע" as a device name would be a label this page invented.
+  const state = FIXTURE();
+  state.signIns.sessions[0].userAgent = 'Secret-Browser/1.0';
+  const el = mount(state);
+  assert.equal(byClass(el, 'session__device').length, 1, 'the unreadable row was captioned anyway');
+  assert.match(text(el), /Secret-Browser\/1\.0/, 'the raw agent string went missing with its label');
+});
+
+// Every ordering trap in the two tables, each of which reads plausibly when wrong.
+test('the device label resolves the agent strings that lie about themselves', () => {
+  // iOS writes "like Mac OS X" into its own agent: a Mac test placed first calls every iPhone a Mac.
+  assert.equal(device(UA_PHONE), 'iPhone · Safari');
+  // Chromium writes "Safari/" too, so Safari has to be last for Safari to mean Safari.
+  assert.equal(device(UA_DESK), 'Mac · Chrome');
+  // Edge and Opera both also write "Chrome/", and Chrome on iOS writes "CriOS/" and not "Chrome/".
+  assert.equal(
+    device('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0'),
+    'Windows · Edge'
+  );
+  assert.equal(
+    device('Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36 OPR/76.0'),
+    'Android · Opera'
+  );
+  assert.equal(
+    device('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 CriOS/131.0 Mobile/15E148'),
+    'iPhone · Chrome'
+  );
+  // Android is Linux and says so; the Linux entry must not claim it.
+  assert.match(device('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/131.0 Mobile Safari/537.36'), /^Android/);
+  // Half an answer is still an answer: a platform with no browser token, and the reverse.
+  assert.equal(device('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'), 'Mac');
+  assert.equal(device('Firefox/131.0'), 'Firefox');
+});
+
+test('the label is a caption and nothing branches on it', () => {
   const source = readFileSync(new URL('../views/sessions.js', import.meta.url), 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/(^|\s)\/\/.*$/gm, '$1');
-  assert.doesNotMatch(
-    source,
-    /userAgent\s*\)?\s*\.\s*(match|test|includes|indexOf|search|split|slice|substring|toLowerCase|replace)/,
-    'the view started reading meaning out of the user-agent string'
-  );
-  // The vocabulary a parse would produce. None of it may be written into this file.
-  assert.doesNotMatch(source, /iPhone|Android|Chrome|Safari|Firefox|Windows|Macintosh/i, 'a device name was hardcoded');
+
+  // The label reaches exactly one place: the text of one element. It must never reach a class
+  // name, an icon, a sort, or the revoke path -- the `jti` is the identity, the caption is not.
+  const uses = [...source.matchAll(/device\s*\(/g)];
+  assert.equal(uses.length, 2, 'device() is called somewhere other than its definition and the one caption');
+  assert.doesNotMatch(source, /session__device--|classList[\s\S]{0,40}device\b/, 'the derived label became a styling hook');
+  assert.doesNotMatch(source, /label\s*===|label\s*==\s*'/, 'the view started branching on the derived label');
 });
 
 test('the current row is marked, and its control is a different action from the others', () => {

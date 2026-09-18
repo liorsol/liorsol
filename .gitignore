@@ -1,4 +1,10 @@
 node_modules/
+
+# Session worktrees the desktop app creates under .claude/. Ignored locally in
+# .git/info/exclude too, but that file never leaves this machine -- this line is
+# the one a fresh clone gets. Everything else under .claude/ (skills, agents,
+# launch.json) is deliberately tracked.
+.claude/worktrees/
 debug_maps.png
 debugReview.mjs
 fetchReviews.mjs

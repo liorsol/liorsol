@@ -168,7 +168,6 @@ const ESIMS = [
 ].map(e => ({
   country: 'Albania', plan: '12GB - 30 days validity', coverage: 'LTE + 5G',
   networks: 'One', smdp: 'smdp.io', apn: 'plus', providerCode: 4, // BLACK_AL_12GB_30D
-  purchasedWith: 'xlllsss@gmail.com',
   ...e,
 }));
 
@@ -210,7 +209,6 @@ document.getElementById('bars').innerHTML = ESIMS.map((e, i) => `
         <dt>APN</dt><dd class="mono">${e.apn}</dd>
         <dt>Purchased</dt><dd>${new Date(e.purchasedAt).toLocaleString(undefined,
           { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</dd>
-        <dt>Purchased with</dt><dd>${e.purchasedWith}</dd>
       </dl>
       <div class="simlinks">
         <a class="amber" target="_blank" rel="noopener"

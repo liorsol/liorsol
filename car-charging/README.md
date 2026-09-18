@@ -31,18 +31,24 @@ Alongside them: `_headers` (CSP, `frame-ancestors`, referrer, nosniff), `_redire
 denylist that keeps everything but the page off the hostname), `_routes.json` (pins the Function
 to `/api/*`), `.assetsignore` (intent only — see below), `schema.sql`, `test/`, and the two docs.
 
-### One screen, four views
+### One screen, six views
 
 The page is **not a long scroll**. It is one screen with a menu — a fixed rail from 900px up, an
-off-canvas drawer below it — and four routes, each a `.view` section in `<main>` with exactly one
+off-canvas drawer below it — and six routes, each a `.view` section in `<main>` with exactly one
 `.is-active`:
 
 ```
 #/status     the default: the tariff window, the connector, the live charge, start/stop
-#/history    the sessions table
+#/history    the charging sessions table
 #/invoices   the charger and the billing panel
 #/comments   the notes board
+#/sessions   this dashboard's own sign-ins, and revoking one
+#/contact    the operator's contact card, editable from the page itself
 ```
+
+The two names collide on purpose only in English: `#/history` lists **charging** sessions — a
+car drawing power — and `#/sessions` lists **sign-in** sessions — a browser holding a cookie.
+Nothing in either view imports from the other, and nothing should ever start to.
 
 The router is the browser's own hash navigation, about thirty lines at the bottom of `app.js`;
 the pattern is lifted from `trips/italy-2026/trip.js`. Two things a reader should not have to
@@ -249,9 +255,11 @@ warns you when someone adds it. Preview deployments are not made to work; they a
 
 ### Schema
 
-`schema.sql` holds all four tables — `cache` and `comments`, plus `sessions` (one row per
-sign-in; the row is the revoke handle) and `login_tokens` (live links as hashes, and the
-rate-limit ledger). Apply it with:
+`schema.sql` holds all five tables — `cache` and `comments`, `sessions` (one row per sign-in;
+the row is the revoke handle behind `#/sessions`) and `login_tokens` (live links as hashes, and
+the rate-limit ledger), plus `contact` — the one-row operator card behind `#/contact`, put here
+rather than in a config var specifically so it can be edited from the page without a redeploy.
+Apply it with:
 
 ```bash
 npx wrangler d1 execute car-charging --remote --file=car-charging/schema.sql
@@ -303,11 +311,20 @@ one of them fails *silently* in production if it breaks:
   makes **no** request, and every theme sheet in `themes/` styles every screen rather than only
   the status view — the failure that is invisible from the screen a theme was designed on;
 - a theme may supply its own stop affordance but cannot reach past the gate to the command:
-  `views/controls.js` exports the seam and nothing else, and that export list is pinned.
+  `views/controls.js` exports the seam and nothing else, and that export list is pinned;
+- revoking a sign-in deletes a row and nothing else can undo it, revoking the browser you are
+  reading this on is treated as its own action rather than folded into the others, and the page
+  stops repainting the sign-in list the moment that happens rather than drawing buttons over data
+  it can never read again;
+- the contact card renders nothing that was not in the payload it was handed — checked against
+  the rendered output **and** against the module's own source with comments left in, because a
+  hardcoded fallback for a missing field is neither URL-, number- nor mail-shaped and no pattern
+  scan alone would catch it.
 
 **One writer per table, and this is a hard rule:** the private upstream service owns `cache`,
-`sessions` and `login_tokens`; this Function owns `comments`. Neither ever writes the other's
-tables.
+`sessions`, `login_tokens` and `contact` — `GET`/`PUT /api/contact` are routes on that service,
+forwarded rather than answered here, same as `/api/sessions`; this Function owns `comments`.
+Neither ever writes the other's tables.
 
 ## The comment board
 

@@ -151,7 +151,7 @@ car-charging/views/                      account, auth, comments, contact, contr
                                          history, sessions, tariff
 car-charging/functions/api/[[path]].js   Pages Function: authorises, owns the comment board,
                                          forwards everything else to the private half
-car-charging/schema.sql                  D1 schema: cache, comments, sessions, login_tokens
+car-charging/schema.sql                  D1 schema: cache, comments, sessions, login_tokens, contact
 car-charging/_redirects                  the denylist that keeps docs/tests/schema off the host
 car-charging/_headers                    CSP, frame-ancestors, referrer, nosniff
 car-charging/_routes.json                pins the Function to /api/*
@@ -187,7 +187,7 @@ expose personal details and close a contactor on real hardware.
 **Bindings are production-only, always.** Preview deployment URLs are permanent, guessable from
 a public repo and printed in every deploy log. Nothing is ever bound to the preview environment.
 
-## The page — one screen, four views, a hash router
+## The page — one screen, six views, a hash router
 
 **It is not a long scrolling page any more, and the earlier description of one was the thing the
 owner rejected.** What they asked for: *"one page with menu … most of the time we should see just
@@ -195,11 +195,11 @@ current status. History, invoice and commenting should be in menu. The same way 
 in the travel webpages."* So the pattern is **lifted from `trips/italy-2026/trip.js`**, not
 invented here — read that file before changing this one.
 
-- Four routes: **`#/status` (the default), `#/history`, `#/invoices`, `#/comments`.** One `.view`
-  section per route inside `<main>`, exactly one wearing `.is-active`. The menu is a fixed rail
-  from 900px up and an **off-canvas drawer below it**, with a `☰` handle in the sticky header and
-  a scrim. `nav` / `navscrim` / `.shell` must stay siblings in that order — the desktop gutter and
-  the scrim are both selected off that adjacency.
+- Six routes: **`#/status` (the default), `#/history`, `#/invoices`, `#/comments`, `#/sessions`,
+  `#/contact`.** One `.view` section per route inside `<main>`, exactly one wearing `.is-active`.
+  The menu is a fixed rail from 900px up and an **off-canvas drawer below it**, with a `☰` handle
+  in the sticky header and a scrim. `nav` / `navscrim` / `.shell` must stay siblings in that
+  order — the desktop gutter and the scrim are both selected off that adjacency.
 - **The leading slash is load-bearing.** Two panel bodies carry the ids `history` and `comments`,
   so a bare `#history` is a fragment that genuinely resolves and the browser scrolls that panel
   into view *before* the router runs. `#/history` can never name an element. The parser accepts
@@ -213,7 +213,31 @@ invented here — read that file before changing this one.
   round, so navigating is a class toggle over DOM that already holds its data. That is the
   invocation budget, not an optimisation, and `test/nav.test.mjs` asserts it by counting `fetch`.
 - Signed out, the menu is hidden and the views are detached as a set: the sign-in card *is* the
-  page. A rail leading to four blank views is worse than no rail.
+  page. A rail leading to six blank views is worse than no rail.
+
+**`#/sessions` lists this dashboard's own sign-ins, and it is a plain read of the same D1
+`sessions` table the auth section above already named as the revoke handle** — the row was
+load-bearing months before this page existed to show it, and the list is not a new capability so
+much as a window onto one. The JWT in the cookie keeps its own signature and its own expiry
+either way; revoking is deleting the row that signature is checked against on every request, so a
+browser whose row is gone gets `401` from the very next call it makes even though the token
+itself is still, on paper, valid and unexpired. **Revoking the browser you are holding is the one
+row that cannot be handled like the others.** Signing yourself out and then repainting the list
+you were just reading would leave a set of buttons that can never work again in front of a viewer
+who cannot get back to fix it — so that press instead runs the same round every other bounced
+command on this page runs: it says what happened and sends the viewer to the sign-in screen,
+rather than trying to redraw a list it can no longer load.
+
+**`#/contact` is the charger operator's contact card, and the fact worth keeping is where its
+seven fields live: the D1 `contact` table, never this repo and never a config var.** This repo is
+public and search-indexed and the sign-in screen renders to anonymous visitors, so a card built
+from constants — even ones that feel like private configuration — would publish the operator's
+identity to a passer-by who never gets past the gate. It is editable from the page itself, behind
+the same session as everything else, through `PUT /api/contact`, and that is not incidental:
+D1 can be changed without a redeploy, which both Secrets Store and a Worker's `[vars]` require.
+This is the one piece of configuration on the whole page meant to be edited casually, from a
+phone, without anyone touching a terminal — do not "simplify" it back into constants or a
+wrangler var; that is the exact regression this paragraph exists to head off.
 
 **The connector answers "is a car connected"; the session list answers "is a charge running".**
 They are different questions and must never share a predicate. A car plugged in and idle is
@@ -228,7 +252,7 @@ safest, and upstream has already handed this project an undocumented enum value 
 ## Six looks, one app — the theme layer
 
 The owner wanted all five design explorations shipped and switchable, not one of them chosen.
-So the page wears a theme, `data-theme` on `<html>`, and the full contract is `THEMES.md`. Four
+So the page wears a theme, `data-theme` on `<html>`, and the full contract is `THEMES.md`. Six
 things about it that are not obvious:
 
 - **`style.css` is no longer the design.** It is the base every look stands on — reset, a11y

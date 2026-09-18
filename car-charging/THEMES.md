@@ -754,7 +754,7 @@ From the repository root:
 node --test car-charging/test/*.test.mjs
 ```
 
-The suite is currently **198 passing, 0 failing** and must stay that way. `test/theme.test.mjs`
+The suite is currently **208 passing, 0 failing** and must stay that way. `test/theme.test.mjs`
 lints every sheet in `themes/` and will tell you, by name, what you have not styled:
 
 - **every component in §4 is covered**, with one exception: a component whose renderer you

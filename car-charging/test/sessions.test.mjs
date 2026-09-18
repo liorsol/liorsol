@@ -113,6 +113,35 @@ test('the user-agent is shown exactly as it arrived, whole', () => {
   assert.deepEqual(shown, [UA_PHONE, UA_DESK], 'a user-agent string was cut, trimmed or rewritten');
 });
 
+// Folded away, never dropped. The derived caption above it can be wrong, so the string it is
+// derived FROM has to stay reachable in the same row -- one press, no navigation, no refetch.
+test('the raw agent string is collapsed behind a native disclosure, closed by default', () => {
+  const el = mount();
+  const boxes = all(el).filter((n) => n.className === 'session__agent');
+  assert.equal(boxes.length, 2, 'not every row wrapped its agent string in a disclosure');
+
+  for (const box of boxes) {
+    assert.equal(box.tagName, 'details', 'the disclosure is not the browser\'s own <details>');
+    // Never pre-opened: a list of five browsers has to read as five lines, not five paragraphs.
+    assert.ok(!box.attrs.open && box.open !== true, 'a row shipped its agent string already open');
+    assert.equal(box.children[0].tagName, 'summary', 'the caption is not the <summary>');
+    // The string itself is INSIDE the disclosure -- outside it, collapsing would be decoration.
+    assert.ok(
+      box.children.some((kid) => kid.className === 'session__ua'),
+      'the agent string is not inside the disclosure that is supposed to fold it away'
+    );
+  }
+
+  // No hand-rolled toggle: the browser owns this state, so nothing in the view listens for a
+  // click on it and there is no aria-expanded here to drift out of step with the real one.
+  // Comments stripped first, like the source scan above: this file explains in prose why it has
+  // no aria-expanded, and a scan that counted that sentence would fail on its own reasoning.
+  const source = readFileSync(new URL('../views/sessions.js', import.meta.url), 'utf8')
+    .replace(/\/\*(?:(?!\*\/)[\s\S])*\*\//g, '')
+    .replace(/(^|\s)\/\/.*$/gm, '$1');
+  assert.doesNotMatch(source, /aria-expanded/, 'the view hand-rolled a disclosure state');
+});
+
 // ── the derived device label ──
 //
 // This view now DOES read the user-agent, at the owner's instruction, and the test that used to

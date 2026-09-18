@@ -9,7 +9,7 @@
 // Mount contract (PLAN §7.10): render(el, state, ctx) with
 //   { state, history, invoices, expired, fetchedAt, stale }; any payload may be null.
 
-import { dayTime, n, statusClass, statusLabel } from './he.js';
+import { date, dayTime, n, statusClass, statusLabel } from './he.js';
 
 function num(v) {
   if (v === null || v === undefined || v === '') return null;
@@ -147,22 +147,134 @@ function chargerBlock(charger, root) {
 
 // ── invoices ────────────────────────────────────────────────────────────────
 //
-// THE COLUMNS ARE THE FIELDS A CLOSED PERIOD ACTUALLY CARRIES, and getting that wrong is what
-// made the owner report the last bill as missing when it was sitting right there. This table was
-// written before any period had closed, against a *guessed* row — `fromDate`, `toDate`,
-// `totalEnergy`, `totalCostExcVat`, `totalCostIncVat`. The first real closed period carries none
-// of those five. Every cell therefore rendered "—" and the one row on the screen read as an
-// empty one. The fields it does carry are `periodId`, `status`, `created`, `paymentDate` and
-// `vatRate`, and those are the four columns below.
+// A CARD PER BILLED PERIOD, NOT A TABLE. There is one closed period today and there will be one
+// more a month; a table with one row spends a header row and five columns saying what a card
+// says in its own words, and the thing the owner actually wants off this screen — the invoice
+// document — is a button, which is not a table cell.
 //
-// There is no amount and no energy to show, and inventing one is the thing not to do here: the
-// obvious reconstruction — sum the sessions in the window — would print a figure this dashboard
-// computed beside a status the operator issued, which is a number the owner would reasonably
-// take for the bill. If the real totals exist they are behind a call nobody has captured, and
-// that capture is the owner's to run. Same discipline as the two uncaptured calls in CLAUDE.md.
+// EVERY FIGURE HERE IS THE OPERATOR'S, AND NONE OF IT IS COMPUTED. That is the whole history of
+// this panel: it was first written before any period had closed, against a *guessed* row
+// (`fromDate`, `toDate`, `totalEnergy`, `totalCostExcVat`, `totalCostIncVat`) and the private
+// half's whitelist was guessing the same names, so when the first real bill arrived every field
+// was dropped on the way through and every cell rendered "—". The owner reported the bill as
+// missing. It had been there for nine days. The whitelist now maps captured names to the ones
+// below, and the names below are a contract with it rather than a hope.
 //
-// Anything added back here comes from a real body, not from a plausible field name. That is the
-// whole lesson of the paragraph above, and it has now cost two rounds.
+// The rule that came out of that: nothing on this card may be arithmetic of ours. The tempting
+// one is the total — sum the sessions in the window — and it is exactly wrong, because it would
+// print a number this dashboard computed beside a status the operator issued, in the one place
+// the owner goes to find out what they were actually charged. `energy + fees + VAT` is not
+// re-added here either; the operator's own `totalIncVat` is what a card shows.
+//
+// THE DOCUMENT IS THE OPERATOR'S TOO. `receiptUrl` is a link to a PDF they issued, and the page
+// links to it rather than rendering an invoice of its own — a generated one would be a document
+// that looks official and answers to nobody. It opens in a new tab: `download` is ignored on a
+// cross-origin URL, so forcing a save is not on offer, and losing the dashboard to a PDF
+// navigation on a phone is worse than a second tab. The URL arrives at runtime and is never
+// written down here — its path names the operator, which is the repo rule.
+
+// The billed window, as two dates and no clock -- a period boundary is a midnight and printing
+// "00:00" beside it twice says nothing. Both stamps are TRUE UTC INSTANTS of a local midnight
+// (`2026-07-31T21:00:00` is 1 August in Asia/Jerusalem), so they are formatted in the VIEWER's
+// zone, which is the opposite of the session table's rule for the payload's wall-clock "local"
+// stamps. The row carries both spellings of the same two boundaries; this prefers the instants
+// and falls back to the wall-clock pair, and either way `toMs` pins the zone before parsing.
+//
+// The end is the EXCLUSIVE boundary, printed as it arrived. Subtracting a day to show "31 באוג׳"
+// would read better and would be this page doing arithmetic on the operator's dates, which is
+// the one thing this panel is now written not to do.
+const periodDate = (iso) => {
+  const ms = toMs(iso);
+  return Number.isFinite(ms) ? date(ms) : null;
+};
+
+const period = (from, to) => {
+  const a = periodDate(from);
+  const b = periodDate(to);
+  if (!a && !b) return 'תקופת חיוב';
+  return a && b ? a + ' – ' + b : (a || b);
+};
+
+function tile(value, unit, label) {
+  const t = h('div', 'stat');
+  const v = h('div', 'stat__value', value);
+  if (unit) v.appendChild(h('span', 'stat__unit', unit));
+  t.appendChild(v);
+  t.appendChild(h('div', 'stat__label', label));
+  return t;
+}
+
+// A tile is rendered only when its figure arrived. A grid of em dashes is what this panel looked
+// like for nine days and is the one shape it must not be able to take again.
+function figures(r) {
+  const grid = h('div', 'stat-grid');
+  const total = num(r.totalIncVat);
+  const kwh = num(r.energyKwh);
+  const fees = num(r.feesExcVat);
+  const energy = num(r.energyExcVat);
+
+  if (total !== null) grid.appendChild(tile(n(total), '₪', 'סה״כ חויב — כולל מע״מ'));
+  if (kwh !== null) grid.appendChild(tile(n(kwh, 1), 'kWh', 'אנרגיה בתקופה'));
+  if (energy !== null) grid.appendChild(tile(n(energy), '₪', 'עלות אנרגיה — לפני מע״מ'));
+  // The standing charge is why the total is not the energy cost, and it is the figure most
+  // likely to be the surprise on the bill, so it is a tile rather than a footnote.
+  if (fees !== null) grid.appendChild(tile(n(fees), '₪', 'דמי מנוי — לפני מע״מ'));
+  return grid.children.length ? grid : null;
+}
+
+// The line under the tiles: VAT as charged, and the operator's own document number. Both are
+// what a support conversation is about, and neither deserves a tile.
+function footnote(r) {
+  const parts = [];
+  const vat = num(r.vat);
+  const rate = num(r.vatRate);
+  if (vat !== null) parts.push('מע״מ ' + n(vat) + ' ₪' + (rate === null ? '' : ' (' + n(rate, 0) + '%)'));
+  const excl = num(r.totalExcVat);
+  if (excl !== null) parts.push('לפני מע״מ ' + n(excl) + ' ₪');
+  if (r.receiptNumber) parts.push('חשבונית ' + String(r.receiptNumber));
+  return parts.length ? h('p', 'btn-note', parts.join(' · ')) : null;
+}
+
+function invoiceCard(r, root) {
+  const card = h('div');
+
+  const head = h('div', 'btn-row');
+  head.appendChild(h('h4', 'panel__title',
+    period(r.fromDate ?? r.accountFromDate, r.toDate ?? r.accountToDate)));
+  const state = r.status || r.periodStatus;
+  if (state) {
+    // The operator's own word, untranslated: this page has never seen the full set of values and
+    // a guess at the Hebrew for one it has not met is worse than the word.
+    const chip = h('span', String(state).toLowerCase() === 'success' ? 'chip chip--ok' : 'chip', String(state));
+    chip.title = String(state);
+    head.appendChild(chip);
+  }
+  card.appendChild(inset(root, head, true));
+
+  const grid = figures(r);
+  if (grid) card.appendChild(inset(root, spaced(grid, 3)));
+
+  const note = footnote(r);
+  if (note) card.appendChild(inset(root, spaced(note, 3)));
+
+  // The document. Absent when the operator issued none — no disabled button, no "not available
+  // yet": a control that cannot work is worse than no control on a screen read one-handed.
+  if (typeof r.receiptUrl === 'string' && /^https:\/\//.test(r.receiptUrl)) {
+    const row = h('div', 'btn-row');
+    const link = h('a', 'btn btn--primary', '⬇ הורדת החשבונית (PDF)');
+    link.href = r.receiptUrl;
+    link.target = '_blank';
+    // The response headers already send no referrer; this attribute is the half that still
+    // holds when somebody edits that file. Same reasoning as the contact card's two links.
+    link.rel = 'noopener noreferrer';
+    row.appendChild(link);
+    card.appendChild(inset(root, spaced(row, 3)));
+  } else {
+    card.appendChild(inset(root, spaced(h('p', 'btn-note',
+      'לתקופה הזו לא צורפה חשבונית להורדה.'), 3)));
+  }
+  return card;
+}
 
 function invoiceBlock(invoices, root) {
   if (!invoices) {
@@ -177,30 +289,8 @@ function invoiceBlock(invoices, root) {
       + 'עד שתיסגר הראשונה.');
   }
 
-  const { wrap, finish } = table([
-    ['מספר תקופה', true], ['מצב', false], ['תאריך חיוב', false], ['מע״מ (%)', true],
-  ]);
-  for (const r of rows) {
-    const tr = h('tr');
-    tr.appendChild(cell('td', r.periodId === undefined || r.periodId === null ? '—' : String(r.periodId), true));
-    const state = r.periodStatus || r.status;
-    const stateCell = h('td');
-    stateCell.appendChild(h('span', 'chip', state ? String(state) : '—'));
-    tr.appendChild(stateCell);
-    tr.appendChild(cell('td', stamp(r.paymentDate || r.created)));
-    tr.appendChild(cell('td', n(num(r.vatRate), 0), true));
-    finish(tr);
-  }
-
   const box = h('div');
-  box.appendChild(wrap);
-  // Said once, in the panel, rather than left as four "—" cells for the owner to interpret.
-  // See the block comment above invoiceBlock for why there is no money here to print. It is
-  // prose rather than a table, so it carries the panel's own inset the way everything else
-  // that is not a table in this flush body does.
-  box.appendChild(inset(root || box, spaced(h('p', 'btn-note',
-    'החיוב מופיע כאן ברגע שהתקופה נסגרת. הסכום והאנרגיה אינם חלק ממה שהעמדה מחזירה על תקופה '
-    + 'שנסגרה — הפירוט הכספי לכל טעינה נמצא במסך “טעינות”.'), 3)));
+  for (const r of rows) box.appendChild(spaced(invoiceCard(r, root || box), 5));
   return box;
 }
 

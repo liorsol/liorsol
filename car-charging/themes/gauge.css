@@ -1300,14 +1300,39 @@ body {
   padding: var(--sp-2) var(--sp-3);
 }
 
-/* The caption over the raw agent string. It is a SIBLING of `.session__ua` and
-   not a wrapper: that box is in style.css's plaintext set so a Latin string keeps
-   its own reading order, and a Hebrew word inside it would be the first strong
-   character and flip the whole line. Grouping them is this sheet's job instead. */
+/* THE RAW AGENT STRING, FOLDED AWAY. `<details>`/`<summary>`: the browser's own
+   disclosure, so there is no state in the view and no `aria-expanded` to keep in
+   step. Two things this sheet owes it. The marker: `::-webkit-details-marker` is
+   the one Safari and older Chromium still paint, and it is hidden alongside
+   `list-style` so the caption can carry its own affordance in the page direction
+   rather than a triangle the UA puts on the left. And a tap target: the summary
+   is the only control on this row besides revoke, and it is read one-handed next
+   to a charger, so it clears `--tap` through padding rather than a fixed height
+   that would clip a wrapped caption. */
 .session__ua-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-block-size: var(--tap);
+  cursor: pointer;
+  list-style: none;
   font-size: var(--fs-xs);
   color: var(--fg-muted);
 }
+
+.session__ua-label::-webkit-details-marker { display: none; }
+
+/* The affordance, in the page direction and rotating on open. It is a glyph the
+   sheet owns rather than one the view writes, which is the same rule the
+   suspension icons and the "archived" tag already follow. */
+.session__ua-label::after {
+  content: "\203A";
+  margin-inline-start: auto;
+  transition: transform .15s ease;
+  transform: rotate(90deg);
+}
+
+.session__agent[open] > .session__ua-label::after { transform: rotate(-90deg); }
 
 /* Latin, punctuation-heavy, unbounded, and never parsed — the one place a
    mono face is provably safe on this page. style.css gives it its own bidi

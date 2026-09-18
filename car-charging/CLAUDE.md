@@ -299,11 +299,30 @@ things about it that are not obvious:
 
 ## Commands force the fetch; nothing else does
 
-The server serves `/api/state` out of its cached D1 row while the row is under an hour old, and
-that rule is where the invocation budget lives — a page load must never bypass it. **`refresh()`
-(`POST /api/refresh`) is the only call that forces an upstream fetch regardless of age**, and it
-is reachable only from a press: the refresh button, or the reload a command runs after it has
-changed the charger.
+The server serves `/api/state` out of its cached D1 row while the row is **under a minute old**,
+and that rule is where the invocation budget lives — a page load must never bypass it.
+**`refresh()` (`POST /api/refresh`) is the only call that forces an upstream fetch regardless of
+age**, and it is reachable only from a press: the refresh button, or the reload a command runs
+after it has changed the charger.
+
+**The horizon was an hour until 2026-09-18 and the owner moved it to a minute**, in these words:
+open the page again after five minutes and it should be current without pressing refresh. Two
+things about that change are worth keeping straight, because the obvious reading of it is the
+dangerous one:
+
+- **it is not a poll, and the page must never grow one.** The horizon is an age test on a request
+  that has already arrived. Nothing schedules anything, on either half — no interval, no
+  revalidate-on-focus, no background worker — and a page left open all day still makes zero
+  upstream calls, exactly as it did at an hour. `test/settle.test.mjs` and
+  `test/start-confirm.test.mjs` assert that absence rather than trusting this paragraph.
+- **what changed is what a LOAD costs.** A page opened twice in ten minutes now fetches twice
+  instead of once, so the bound is how often the owner opens the page — a human rate. A
+  one-minute *interval* would be 1,440 fetches a day whether or not anyone is looking, which is
+  the thing the original hour was defending against and is still forbidden.
+
+The constant lives on the private half (`MAX_AGE_MS`), not here: it has to survive a hard reload
+with browser storage cleared, and a copy in this directory would be a second answer to the same
+question.
 
 - `ctx.reload(force)` → `load(force)`, and in `views/controls.js`
   **`release(ctx, reload, force)` takes `force` with no default, deliberately.** Getting it wrong
@@ -312,7 +331,7 @@ changed the charger.
   nothing. Do not give that parameter a default to tidy the call sites.
 - **That bug was never confined to start.** `release()` is the single exit of both handlers, so a
   stop repainted the charge it had just ended as still running, and the credential install took
-  the banner down over an hour-old row fetched while the credential was dead. One parameter on the
+  the banner down over a cached row fetched while the credential was dead. One parameter on the
   shared function fixed all three; patching only the reported path would have left two.
 - Pass `false` only when a poll above has just forced a round — the rows are seconds old — or when
   nothing was commanded at all.

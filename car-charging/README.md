@@ -40,7 +40,7 @@ off-canvas drawer below it — and six routes, each a `.view` section in `<main>
 ```
 #/status     the default: the tariff window, the connector, the live charge, start/stop
 #/history    the charging sessions table
-#/invoices   the charger and the billing panel
+#/invoices   the charger, and one card per billed period with a link to the operator's PDF
 #/comments   the notes board
 #/sessions   this dashboard's own sign-ins, and revoking one
 #/contact    the operator's contact card, editable from the page itself
@@ -60,7 +60,7 @@ rediscover:
   for old bookmarks, and must never be produced.
 - **A menu press fetches nothing.** Every view is mounted and filled by the same load round, so
   navigating is a class toggle over DOM that already has its data. An upstream call per menu press
-  is the invocation budget the one-hour cache rule exists to protect; `test/nav.test.mjs` counts
+  is the invocation budget the server-side cache rule exists to protect; `test/nav.test.mjs` counts
   `fetch` rather than trusting this sentence.
 
 Signed out, the menu is hidden and the views are detached as a set: the sign-in card is the page.
@@ -293,7 +293,7 @@ one of them fails *silently* in production if it breaks:
   no address reaches the database;
 - format characters are stripped from comment text on write **and** on read;
 - the settle poll stops on the first completed sample instead of spending its whole cap;
-- **an ordinary page load forces nothing upstream** — the server's one-hour rule is where the
+- **an ordinary page load forces nothing upstream** — the server's one-minute rule is where the
   invocation budget lives — while **a command's own reload does force it**. An unforced reload
   after a start or a stop re-reads the cached row and repaints the charger as it was *before* the
   command; that shipped once, and it was invisible until someone was standing at a charger. The

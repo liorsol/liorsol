@@ -360,14 +360,14 @@ export async function pollSettle(sessionId, onSample) {
 // ── The same shape, for the other end of a charge ──
 //
 // A start is accepted before the charger reports it, exactly as a stop is settled after it. The
-// page held a reload that read the CACHED row -- under an hour old, so the server rightly served
+// page held a reload that read the CACHED row -- inside the horizon, so the server rightly served
 // it back unchanged -- and faithfully repainted the charger as it had been before the press. The
 // owner saw the button go to its wait label, come back, and change nothing.
 //
 // So the sample is refresh(), the one call that forces the fetch regardless of age, and it is the
 // existing one rather than a second forcing mechanism: it is also what writes the row the reload
 // afterwards reads, so by the time this returns the page's next ordinary load is already true.
-// The server's hour rule is untouched -- a page load still forces nothing, which is the free-tier
+// The server's age rule is untouched -- a page load still forces nothing, which is the free-tier
 // invocation budget requirement, and `test/start-confirm.test.mjs` asserts that first.
 //
 // The cap is lower than the settle poll's and the interval longer, because a sample here is three

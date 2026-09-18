@@ -250,15 +250,23 @@ function row(session) {
   }
   item.append(facts);
 
-  // Verbatim, wrapped by the stylesheet, never cut. Two elements in a box of their own, and the
-  // shape is what makes the pair read as one thing: the caption cannot be a WRAPPER around the
-  // string, because `.session__ua` is in style.css's `unicode-bidi: plaintext` set so a Latin
-  // agent keeps its own reading order, and a Hebrew word inside that box would be the first
-  // strong character and flip the whole line. So they are siblings, and `.session__agent` is
-  // the ground a theme paints under both.
-  const agent = make('div', 'session__agent');
+  // COLLAPSED, AND STILL VERBATIM. The full agent string is the answer of record — the caption
+  // above is derived and can be wrong — so it is never removed, only folded away: the row reads
+  // as one device with one disclosure, and the string is one press from being read out to
+  // whoever can act on it.
+  //
+  // <details>/<summary> is the browser's own disclosure. It needs no JS, no state in this module
+  // and no aria-expanded to keep in step; it is keyboard- and screen-reader-correct as it ships,
+  // and it survives the page CSP, which refuses the inline handler a hand-rolled one would want.
+  // Every row starts closed: `open` is never set, so a list of five browsers is five lines.
+  //
+  // The caption is a SIBLING of `.session__ua` and not a wrapper, which is why the summary holds
+  // its own text rather than the string: `.session__ua` is in style.css's `unicode-bidi:
+  // plaintext` set so a Latin agent keeps its own reading order, and a Hebrew word inside that
+  // box would be the first strong character and flip the whole line.
+  const agent = make('details', 'session__agent');
   agent.append(
-    make('p', 'session__ua-label', 'הדפדפן דיווח על עצמו כך:'),
+    make('summary', 'session__ua-label', 'הדפדפן דיווח על עצמו כך'),
     make('p', 'session__ua', session.userAgent ? String(session.userAgent) : '—')
   );
   item.append(agent);

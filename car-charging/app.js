@@ -11,7 +11,7 @@
 // something that cannot work.
 //
 // NO AUTOMATIC REFRESH. Upstream is touched in three situations and EVERY ONE OF THEM IS A PRESS
-// or a load: a page load whose cached data the server judges older than an hour, the refresh
+// or a load: a page load whose cached data the server judges older than a MINUTE, the refresh
 // button, and the reload a start or stop runs once its command has been accepted. There is no
 // polling, no interval timer, no retry after a failure, no revalidation when the tab is shown
 // again or the network returns, and no background worker. A page left open all day makes zero
@@ -19,9 +19,16 @@
 // `test/settle.test.mjs` and `test/start-confirm.test.mjs` assert the absence rather than
 // trusting this comment.
 //
-// The page also never decides *whether* to fetch from the age of the data it holds. The one-hour
-// rule lives server-side so it survives a hard reload with browser storage cleared; a copy here
-// would re-break the invocation budget. Age is rendered, never acted on.
+// The page also never decides *whether* to fetch from the age of the data it holds. The horizon
+// lives server-side so it survives a hard reload with browser storage cleared; a copy here would
+// re-break the invocation budget. Age is rendered, never acted on.
+//
+// THAT HORIZON IS A MINUTE, NOT AN HOUR, AND IT IS STILL NOT A POLL. The owner asked for it in
+// these words: open the page again after five minutes and it should be current without anyone
+// pressing refresh. What changed is what a LOAD costs, not what an idle page costs -- there is
+// still no timer here, and a page left open all day still makes zero calls. The bound is how
+// often the page is opened, which is a human rate. A one-minute INTERVAL would be 1,440 fetches
+// a day whether or not anyone is looking, and that is the thing this file must never grow.
 //
 // The third case is the one exception to "the server owns the decision", and it is narrow: a
 // command that has just changed the charger knows something the cache does not, so it asks for
@@ -51,7 +58,18 @@ import { mountSwitcher, themeView } from './theme.js';
 // a sign-in screen that failed to load would cost the page anyway -- it is the only way in.
 import { render as renderAuth } from './views/auth.js';
 
-const HOUR_MS = 3600000;
+// WHEN THE AGE PILL IN THE HEADER TURNS AMBER. Display only: it triggers nothing, and this file
+// still never decides whether to fetch from the age of what it holds.
+//
+// It used to be 3600000 and it used to be the SAME number as the server's cache horizon, which
+// read as one idea and was two. They have now come apart -- the horizon is a minute (see the
+// note at the top of this file) -- and following it down here would be wrong in the obvious way:
+// nothing refreshes while the page sits open, so a one-minute pill is amber within a minute of
+// every load and amber for the rest of the visit, which is a warning that has stopped meaning
+// anything. Five minutes is the compromise, and it is a judgement about reading rather than
+// about invocations: long enough not to nag somebody studying the tariff strip, short enough
+// that "this is old" is true when it says so.
+const STALE_MS = 300000;
 
 // ── The shared state object ──
 //
@@ -62,7 +80,7 @@ const shared = {
   state: null,
   history: null,
   invoices: null,
-  // The viewer's own sign-in sessions, and the contact card. Neither comes out of the hour-old
+  // The viewer's own sign-in sessions, and the contact card. Neither comes out of the cached
   // charger row -- they are read live on the far side -- so neither can be stale and neither
   // has a fetchedAt. They are fetched in this round and nowhere else, for one reason: a menu
   // press must fetch nothing, and these two views are behind menu items.
@@ -89,7 +107,7 @@ const shared = {
 //
 // `reload(true)` forces the upstream fetch first, and a view that has just changed something at
 // the charger MUST pass it. Without it the round re-reads the cached row -- the server serves it
-// back untouched while it is under an hour old, which is correct and is the whole reason the row
+// back untouched while it is inside the horizon, which is correct and is the whole reason the row
 // exists -- and the page repaints the state as it was BEFORE the command. That is what made a
 // start look like it did nothing until the refresh button was pressed.
 const ctx = { reload: (force) => load(force) };
@@ -113,7 +131,7 @@ const views = [
   { id: 'account', src: './views/account.js', needs: 'state', skel: '140px', fail: 'לא ניתן לטעון את מצב העמדה' },
   // The comment board fetches its own data and owns its own empty states, so nothing gates it.
   { id: 'comments', src: './views/comments.js', needs: null, skel: '120px', fail: 'לא ניתן לטעון את ההערות' },
-  // `live` is the other half of `needs`: the route fills the panel, but it is NOT the hour-old
+  // `live` is the other half of `needs`: the route fills the panel, but it is NOT the cached
   // cached row, so the panel must never wear the stale marker. Hanging the charger data's age
   // over a session list that was read live in this same round is a lie, and it is the same
   // reason the comment board above is exempt -- it just gets there through `needs: null`.
@@ -210,8 +228,9 @@ function paintUpdated() {
 
   abs.textContent = dateTime(shared.fetchedAt);
   rel.textContent = currentAge();
-  // Display only: past the cache horizon the age pill turns amber. It does not trigger a fetch.
-  updated.dataset.age = Date.now() - shared.fetchedAt > HOUR_MS ? 'old' : 'fresh';
+  // Display only: past the reading horizon above the age pill turns amber. It does not trigger a
+  // fetch, and it is deliberately NOT the server's cache horizon -- see STALE_MS.
+  updated.dataset.age = Date.now() - shared.fetchedAt > STALE_MS ? 'old' : 'fresh';
 }
 
 // ── Refresh — the only user-initiated fetch ──
@@ -403,7 +422,7 @@ function paintAuthRequired() {
 
 // `force` is the ONLY way anything on this page bypasses the server's age rule, and it is passed
 // by a press: the refresh button, or a view whose command has just changed the charger. A load
-// passes nothing, so the hour rule stands where the invocation budget depends on it.
+// passes nothing, so the age rule stands where the invocation budget depends on it.
 //
 // refresh() forces the fetch and writes the rows; the three reads below then get what it wrote.
 // Three extra D1 reads per press, and no guess about the refresh body's shape.
@@ -501,7 +520,7 @@ async function load(force) {
 // NOTHING IN HERE FETCHES, and that is structural rather than careful. All six views are
 // mounted and repainted by the same `load()` round, so a menu press moves a class over DOM that
 // is already holding its data. A view that fetched on entry would put an upstream call behind
-// every menu press, which is the invocation budget the whole one-hour cache rule protects.
+// every menu press, which is the invocation budget the whole cache-age rule protects.
 // `test/nav.test.mjs` asserts the absence of the call rather than trusting this paragraph.
 // Every destination the MARKUP has. The class toggle below walks this list rather than the
 // reachable one, so a view that has just been taken away has its `.is-active` cleared on the

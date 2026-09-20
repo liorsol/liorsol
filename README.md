@@ -456,6 +456,52 @@ python3 -m http.server 8000
 Then open http://localhost:8000/. Opening files with `file://` works too, except for the
 file browser, which needs `fetch` over http.
 
+### Proofreading a page in the browser: [`edit-server.mjs`](edit-server.mjs)
+
+```bash
+node edit-server.mjs trips/italy-2026 8814
+```
+
+Serves the directory and makes the page's text editable in place; each edit is written
+straight back into the `.html` on disk, so the result is an ordinary `git diff` of that one
+line. Node only, no dependencies, and there is a `launch.json` entry (`italy-edit`).
+
+**A field is the element that owns a run of prose** — the whole callout, not the `<b>` inside
+it. Anything holding loose text of its own is taken whole however big it is; everything else
+is opened up until the pieces are paragraph-sized. That rule is the whole design: split any
+finer and a bolded phrase becomes its own box while the sentence around it becomes editable
+by nobody. The Italy page comes out as ~730 fields.
+
+**Editing.** Type anywhere. Select text for a B / I / U / clear toolbar, or use ⌘B ⌘I ⌘U —
+bound explicitly, because some hosts swallow those before the page sees them. **Enter inserts
+a line break**, except in a list, where it opens the next `<li>`. It is deliberately not the
+browser's own Enter: in a card whose text is not wrapped in `<p>`, that opens a paragraph
+mid-sentence and pulls the rest of the card inside it. Paste is plain text. Adding a section,
+a card or a table row is a structure change — do it in the file.
+
+**What it refuses to touch.** The editor's own `data-ed` markers and script exist only in the
+bytes sent to the browser, never in the file. Subtrees `trip.js` generates — the weather, FX,
+flight status, restaurant list, comment boards — are not editable, or their generated contents
+would be written into the file; nor is the side rail, so it keeps navigating while you edit
+(content links place a caret instead, and Alt+click follows one). Only fields you actually
+typed in are ever saved.
+
+**Guards**, because this writes to a file you are about to commit. Each field carries a hash
+of its source bytes; one whose markup would not round-trip is dropped from the editor rather
+than left to churn the file. A save names the content it expects to replace, so it can only
+land where the file still says exactly that — if the page has drifted out of sync, the write
+is refused with a 409 and the tab reloads rather than guessing. `&`/`&amp;` and the `<tbody>`
+every parser invents are treated as the same markup on both sides.
+
+`node edit-server.test.mjs` holds this down against the real pages: every field's byte range
+is exactly its own content, no prose falls outside a field, no inline tag is a field apart
+from its sentence, and splicing every field back unchanged reproduces the file byte for byte.
+
+Two things it does not do: it will not bump the service worker's `V` — do that by hand after
+committing page edits, or the family's phones keep serving the old copy — and it unregisters
+the page's service worker for the dev origin, so `trip.js`'s own `register('sw.js')` logs a
+failed fetch in the console. Both are expected.
+
 ## Conventions
 
 - Everything is self-contained: one HTML file per page, inline CSS and JS, CDN only where a

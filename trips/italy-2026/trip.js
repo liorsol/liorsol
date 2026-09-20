@@ -1189,6 +1189,90 @@
 })();
 
 /* ============================================================
+   The packing list, tickable (user's request, Sep 2026, left on the checklist board).
+
+   State is per device, in localStorage, and deliberately NOT on the shared board: "I
+   already packed the passports" is a fact about one suitcase, not about the trip, and
+   two families syncing each other's packing would be noise. It follows that a ticked
+   box does not survive clearing site data — which is the right trade for a list whose
+   whole life is the week before the flight.
+
+   The boxes are injected here rather than written into index.html so the list still
+   reads as a list with no JS, and so the keys live in one place: `data-k` on each item,
+   fixed strings that do not change when the wording does. Rewording an item keeps its
+   tick; only editing its data-k loses it.
+   ============================================================ */
+(function(){
+  var lists = [].slice.call(document.querySelectorAll('ul.packlist'));
+  if(!lists.length) return;
+
+  var KEY = 'italy2026:pack', state = {};
+  try{ state = JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ state = {}; }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }  // private mode: skip
+
+  var boxes = [];
+  lists.forEach(function(ul){
+    [].forEach.call(ul.querySelectorAll('li[data-k]'), function(li){
+      var k = li.dataset.k;
+      /* The text moves into its own span so the strike-through lands on the words and
+         not on the checkbox next to them. */
+      var tick = document.createElement('span');
+      tick.className = 'tick';
+      while(li.firstChild) tick.appendChild(li.firstChild);
+
+      var box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = !!state[k];
+      box.setAttribute('aria-label', 'ארוז: ' + tick.textContent.replace(/\s+/g, ' ').trim());
+      li.appendChild(box);                       // first child = the start edge, i.e. the right
+      li.appendChild(tick);
+      li.classList.toggle('on', box.checked);
+      boxes.push(box);
+
+      box.addEventListener('change', function(){
+        if(box.checked) state[k] = 1; else delete state[k];
+        li.classList.toggle('on', box.checked);
+        save();
+        tally();
+      });
+      /* Tapping the row is the gesture on a phone, but a link inside it must still open. */
+      tick.addEventListener('click', function(e){
+        if(e.target.closest('a')) return;
+        box.checked = !box.checked;
+        box.dispatchEvent(new Event('change'));
+      });
+    });
+  });
+
+  var card = lists[0].closest('.card') || lists[0].parentNode;
+  var bar = document.createElement('div');
+  bar.className = 'packbar';
+  bar.innerHTML = '<span class="count"></span><span class="meter"><i></i></span>' +
+                  '<button type="button">לנקות הכל</button>';
+  var head = card.querySelector('h3');
+  head ? head.insertAdjacentElement('afterend', bar) : card.insertBefore(bar, card.firstChild);
+
+  var count = bar.querySelector('.count'), meter = bar.querySelector('.meter i'),
+      clear = bar.querySelector('button');
+
+  function tally(){
+    var done = boxes.filter(function(b){ return b.checked; }).length;
+    count.textContent = done === boxes.length ? '✅ הכל ארוז' : done + ' מתוך ' + boxes.length + ' ארוז';
+    meter.style.width = (boxes.length ? done / boxes.length * 100 : 0) + '%';
+    clear.hidden = !done;
+  }
+  clear.addEventListener('click', function(){
+    if(!confirm('לנקות את כל הסימונים ברשימת האריזה?')) return;
+    boxes.forEach(function(b){
+      if(!b.checked) return;
+      b.checked = false;
+      b.dispatchEvent(new Event('change'));
+    });
+  });
+  tally();
+})();
+
+/* ============================================================
    Installable + offline (user's request, Aug 2026): the family adds the page to
    the phone's home screen before the flight and it works in Shëngjergj, on the
    southern roads and at the villa, where reception is unverified at best.

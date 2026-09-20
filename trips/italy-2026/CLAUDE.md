@@ -196,6 +196,23 @@ without H.264 (`canPlayType('video/mp4; codecs="avc1.640028"')` → `""`), so *b
 fail with `MEDIA_ERR_SRC_NOT_SUPPORTED` under it. The page wiring was checked by serving a WebM
 re-encode of the same frames under the mp4's URL; the mp4 itself was checked with ffmpeg.
 
+## The packing list ticks (`ul.packlist`, Sep 2026)
+
+`🧳 מה להביא` is checkable. The boxes are injected by `trip.js`, not written into
+`index.html`, so the list still reads as a list with no JS — and the state lives in
+**`localStorage` under `italy2026:pack`, deliberately NOT on the shared board.** "I already
+packed the passports" is a fact about one suitcase, not about the trip; syncing it between
+two families would be noise. The cost, accepted: a tick does not survive clearing site data,
+and does not follow you to another device.
+
+Each `<li>` carries a fixed `data-k` — `doc-passports`, `wear-layers`, … — because the keys
+must outlive the wording. **Rewording an item keeps its tick; changing its `data-k` loses
+it.** Never key these off the text.
+
+`packlist` is also in `edit-server.mjs`'s skip list: the injected checkboxes are generated
+DOM, and a browser edit of that list would otherwise write them into the file. The trade is
+that these items are edited in the file rather than in the browser editor.
+
 ## Day-card galleries (`figure.prev`)
 
 Each of the 8 day cards in `#days` that has a matching section in `research-chatgpt.md` carries

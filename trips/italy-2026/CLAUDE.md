@@ -67,9 +67,10 @@ on port 8812.
 
 `research-chatgpt.md` hotlinks ~50 `images.openai.com` URLs that will rot. Left verbatim on
 purpose — it is a source document, not content, and the same convention as Albania's
-`research-gemini.md`. **Eight of those URLs are now also on the page** as the day-card previews
-(Sep 2026, user's request) — see "Day-card previews" below, including why they are hotlinked
-rather than bundled and how the page survives them rotting.
+`research-gemini.md`. **The page no longer depends on any of them:** the 51 day-card shots were
+pulled down in Sep 2026 and now come from the assets repo — see "Day-card galleries" below. The
+source document still points at the live CDN, and that is fine; it is a record of what was
+researched, not something the family loads.
 
 ## `check-links.py` — run it after touching index.html, map.html or restaurants.json
 
@@ -125,12 +126,49 @@ lines. **Duplicate the block again for the next trip.**
 
 ## The eSIM tracker (`#esim`, Sep 2026) — and the third DB path
 
-The user's request: an eSIM page in the trip menu, adding a tracker by **holder name + link**,
-stored in the DB and scoped to this trip, where **removing archives rather than deletes** and an
-archived one can be brought back.
+The user's request, in two passes. First: an eSIM page in the trip menu, adding a tracker by
+holder name + link, stored in the DB and scoped to this trip, where **removing archives rather
+than deletes**. Then, on seeing it: *"I want the eSIMs page to have the same capabilities as the
+esim page created in the repo"* — i.e. the live data bars from [`/esim-usage/`](../../esim-usage/),
+not a list of links. **That is what it is now**, in this page's own styling.
 
 **Trip scope is the path.** `italy2026/esims/<id>` — no flag, nothing to set, nothing to get
-wrong, and the next trip's key gets its own. The shape is `{n: holder, u: tracker_url, d, a?}`.
+wrong, and the next trip's key gets its own. The shape is `{n: holder, i: iccid, u?: order, d, a?}`.
+
+**The link is the only input, and that was the second correction.** The first build asked for
+the ICCID; the user asked *"why is the iccid needed, and not the link? can't you get it when
+providing a link?"* — and yes. esim.dog has `get-esim?session_id=` and
+`get-esim-by-payment-intent?payment_intent_id=`, both of which resolve an order link to the eSIM
+**and** the plan: country, plan, validity, coverage, networks, SM-DP+, APN, purchase date. Those
+are the six fields `/esim-usage/` hard-codes per eSIM; here they are looked up once at add time
+and stored, so the details panel matches that page without anyone typing them.
+
+Neither endpoint sends CORS, so both go through `esim-usage/proxy.js` at `GET /lookup?url=…`.
+**That route is an include-list on purpose**: upstream also returns `qr_code`, `activation_code`,
+`customer_email` and `customer_name`, and the caller is a public page writing into a
+world-readable node. Copy out the nine safe fields; never proxy the object through.
+
+**Nothing numeric is stored, on purpose.** Used / total / remaining / status / expiry all come
+back from esim.dog keyed by ICCID, in **one batched POST for the whole board** (the API takes an
+`iccidList`, so one request covers every live row). Storing any of it would be a copy that rots.
+`PROVIDER = 4` is a constant because every eSIM the family has bought is on that provider and a
+batched call carries exactly one — **a future eSIM on another provider must make that a stored
+field**, or it will silently be asked for under the wrong route.
+
+**The mini-game is ported, not linked.** `esim-usage/game.test.mjs` now runs its physics
+assertions over **both** copies — the original in `esim-usage/index.html` and the one at the end
+of `trip.js` — because two copies of 160 lines of canvas code will otherwise drift. The port
+changes exactly two things: the on-canvas text is Hebrew, and the loop idles while the view is
+closed (`c.offsetParent === null`), which the test checks and a mutation confirmed it catches.
+An explicit `last = 0` on resume was written and then removed: `dt` is already clamped to 50 ms,
+so it was a no-op, and the assertion written for it passed with the line deleted.
+
+**The proxy allowlist is the part that breaks first.** `esim-usage/proxy.js` used to hold four
+hard-coded ICCIDs and answer `403 unknown iccid` to anything else — which would have made "add
+any new eSIM" useless. It now also reads the `esims` node. The board renders that 403 as its own
+message ("ה-proxy לא מכיר...") rather than as a network error, because the two need different
+fixes. **The Worker must be redeployed whenever that logic changes**; the deploy command is in
+its header.
 
 **Neither existing path could hold it, and that is worth not re-deriving:**
 
@@ -280,15 +318,43 @@ arrow buttons** — they were replaced on request.
   errors is spliced out of the strip and the counter follows; the last one failing takes the
   figure with it. A dead CDN therefore leaves **no empty frame and no broken-image icon** — the
   card renders exactly as it did before galleries existed.
-- `referrerpolicy="no-referrer"` is the best guess against a hotlink referer check. Unverified.
+### They are in the assets repo now (Sep 2026)
 
-**They are hotlinked from `images.openai.com`, and that is a compromise, not the plan.** That host
-is unreachable from the environment this was built in, so the images could not be inspected,
-downscaled or bundled — and the URLs are signed and expiring, exactly as the note on
-`research-chatgpt.md` above already warned. **If they turn out to be dead (or wrong — nobody here
-has seen them):** the durable fix is to save the images into `assets/`, add them to `CORE`, and
-credit them, which is also what `assets/CREDITS.md` says. Do not spend time hunting for
-replacement URLs on the same CDN.
+They were hotlinked from `images.openai.com` until the user asked for them local; they were then
+bundled into `assets/prev/`, and finally moved out of this repo entirely to
+**`liorsol.github.io/assets/italy-2026/prev/`** ([liorsol/assets](https://github.com/liorsol/assets))
+to keep 28 MB of binaries out of the site repo. **That host is not an arbitrary choice** — it is
+the only free one that is *same-origin* with this page, so `cache.add()` never sees an opaque
+response. Measured, not assumed: GitHub Releases serves `application/octet-stream` and ORB blocks
+it in an `<img>` (and sends no ACAO, so a zip cannot be fetched and unpacked either); Git LFS is
+not resolved by Pages at all — it serves the 133-byte pointer *with the correct MIME type*, so it
+fails silently; Cloudflare Pages answers range requests with `200`, which breaks `<video>` on iOS.
+The assets repo's README carries the full table.
+
+Two things the earlier note got wrong, recorded so nobody re-derives them:
+
+- **The URLs had not expired.** `curl` pulled all 51 at 200; it was the *browser* that showed
+  `ERR_FAILED`, so the failure was a hotlink/CORS block on that host, not a dead CDN.
+  `referrerpolicy="no-referrer"` did not beat it. The attribute is **gone** — same-origin now.
+- **`CORE` was the wrong destination.** They are in **`EXTRA`**: `CORE` is strict, one entry
+  failing fails the whole install, and staking the offline page on 51 decorative pictures is a
+  bad trade. `EXTRA` still fetches them at install, so "cached on load" holds. The reasoning is
+  in the [`sw.js`](sw.js) comment.
+
+Encoding: `-auto-orient`, `-resize '1100x825>'` (shrink only — nine were already smaller),
+`-strip`, WebP q76. **21 MB → 5.1 MB.** The strip renders at max 940 CSS px into a 16:7
+`object-fit:cover` box, and 1100/q76 was checked against the original at that size before being
+chosen. **Baking the 16:7 crop was tried and rejected** — at a width wide enough to stay sharp
+it came out *larger* (6.6 MB) than keeping the aspect, and it would have thrown away pixels for
+nothing. Names are `<card>-<n>.webp`, derived from the card each strip sits in, and the rewrite
+was driven by parsing `index.html` so a name cannot drift from its `src`.
+
+**⚠️ Provenance is the open risk, and bundling raised it.** No licence is known for any of
+these — they came out of a research report. `trasimeno-2` and `trasimeno-3` carry burnt-in
+photographer credits ("Photo Minoletti Cesare", "©Allarremviaggio") and are the first to drop
+if challenged; the marks were deliberately left visible rather than cropped. Several are clearly
+generated rather than photographed (`marmore-3` has butterflies over the falls), so the strip is
+**illustrative, not documentary**. See [`assets/CREDITS.md`](assets/CREDITS.md).
 
 ## What differs from the Albania page (and why)
 

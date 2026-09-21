@@ -19,15 +19,48 @@ page footer carries — **keep it there if you touch the footer.**
 so it turns around instead of cutting. 1280×720, 238 frames, 19.8 s, 2.1 MB. The exact
 command is in [`CLAUDE.md`](../CLAUDE.md#the-hero-clip).
 
+## The 51 day-card shots — in the assets repo (Sep 2026)
+
+They live at **`liorsol.github.io/assets/italy-2026/prev/`**
+([liorsol/assets](https://github.com/liorsol/assets)), not in this folder. That repo is
+published by GitHub Pages on the same host as this site, so they are **same-origin** in
+production and the service worker precaches them like any local file — the README there
+records what each of Releases, LFS, Cloudflare Pages and R2 broke, all measured.
+
+The 8 day-card strips in `#days` were hotlinked from `images.openai.com` until Sep 2026,
+when they were pulled down and re-encoded. Named `<card>-<n>.webp` after the card
+they belong to (`orvieto-1` … `rest-9`), re-encoded from the originals: `-auto-orient`,
+longest side fitted to **1100×825 (shrink only — nine were already smaller and were left
+alone)**, EXIF stripped, WebP quality 76. 21 MB → **5.1 MB**. At the size the strip actually
+renders them (max 940 CSS px, `object-fit:cover` on a 16:7 box) this is indistinguishable
+from the originals; it was checked side by side before the quality was chosen.
+
+They are listed in **`EXTRA`, not `CORE`** — see the comment in [`sw.js`](../sw.js).
+
+`hero-umbria.mp4` moved there too. The two FCO photos and `hero-umbria.jpg` did **not**: they
+are in the strict `CORE` precache, and the airport board is the picture you look at standing in
+Fiumicino at 02:00 with no data. They stay in this folder, on this origin.
+
+> **⚠️ Provenance is not established, and this is the weak point.** They came out of a
+> ChatGPT research report, not from a named source, so there is no licence for any of
+> them. Hosting a copy in a public repo is a bigger claim than hotlinking was. Two carry
+> a photographer's mark burnt into the frame — **`trasimeno-2` ("Photo Minoletti Cesare")**
+> and **`trasimeno-3` ("©Allarremviaggio")** — which makes them identifiable work by named
+> photographers, and they are the two to drop first if this is ever challenged. Others
+> appear to be generated rather than photographed (`marmore-3` has butterflies composited
+> over the falls), so the strip is **illustrative, not documentary** — do not treat a shot
+> as evidence of what a place looks like. The marks were left visible on purpose: cropping
+> a credit out would be worse than showing it.
+
 ## Hotlinked, not bundled — and why
 
-Two things on the page load from someone else's server, which means they do **not**
+One thing on the page still loads from someone else's server, which means it does **not**
 work offline and can break without warning:
 
 | Where | What | Why not bundled |
 |---|---|---|
-| The 8 day cards in `#days` | that place's whole set of shots (5–9 each, 51 total) from the CDN behind `research-chatgpt.md`, as a swipeable strip | Signed, expiring URLs on a CDN we don't control. All of them are fetched on load, so the service worker keeps opaque copies and the strip works offline. `trip.js` splices a failed shot out of the strip and deletes the `<figure>` once none is left, so a card degrades to its previous layout rather than showing a broken image. |
 | The arrival card in `#arrival` | the published Terminal 3 map | `ontheworldmap.com` publishes it under its own copyright — bundling it would redistribute it from this repo. The caption tells the family to screenshot it before the flight, since it will not be there at 02:00 with no signal. |
 
-If either becomes a problem, the fix is the same: put the file in this folder, add it to
-`CORE` in `sw.js`, credit it in the table above, and bump `V`.
+If it becomes a problem, the fix is the same one the day-card shots already took: put the
+file in this folder, add it to `sw.js` (`CORE` if the offline page depends on it, `EXTRA`
+if it is decorative), credit it in the table above, and bump `V`.

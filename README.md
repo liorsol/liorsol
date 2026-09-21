@@ -3,6 +3,15 @@
 A personal static site served by GitHub Pages from the root of `main`. No build step, no
 dependencies — every page is plain HTML/CSS/JS and can be opened straight from disk.
 
+**Images, video and audio live in a second repo, [`liorsol/assets`](https://github.com/liorsol/assets)**,
+published at `https://liorsol.github.io/assets/`. That keeps ~28 MB of binaries out of this repo
+while staying **same-origin** with the site, so the trip pages' service workers precache them
+exactly as they would a local file. The one deliberate exception is the handful of files in the
+strict `CORE` precache — the two FCO airport photos, the hero still and the PWA icons — which stay
+here: `CORE` fails the whole install if one entry fails, and the airport board is what the family
+looks at in Fiumicino at 02:00 with no data. The assets repo's README records what every other
+free host broke (Releases, Git LFS, Cloudflare Pages, R2), all measured rather than assumed.
+
 **Live:** https://liorsol.github.io/liorsol/
 
 ## Pages
@@ -16,7 +25,7 @@ dependencies — every page is plain HTML/CSS/JS and can be opened straight from
 | [`esim-usage/`](esim-usage/) | Data-usage bars for the family's esim.dog eSIMs, one refresh button, per-eSIM details. Needs the Cloudflare Worker in [`esim-usage/proxy.js`](esim-usage/proxy.js). |
 | [`trips/albania-2026/`](trips/albania-2026/) | Family trip page (SPA, deep links, shared comment/link boards), Leaflet map, reveal.js slide deck, and the raw research the plan was built from. |
 | [`trips/jerusalem-2026/`](trips/jerusalem-2026/) | Family weekend trip page (SPA with map, trivia, media). |
-| [`trips/italy-2026/`](trips/italy-2026/) | Two-family trip to Umbria and Rome — same shape as the Albania page (SPA, deep links, offline PWA, shared boards, looping hero clip), an eSIM tracker board, plus a Leaflet map and the two raw research reports it was merged from. |
+| [`trips/italy-2026/`](trips/italy-2026/) | Two-family trip to Umbria and Rome — same shape as the Albania page (SPA, deep links, offline PWA, shared boards, looping hero clip), an eSIM tracker board, 51 day-card shots, plus a Leaflet map and the two raw research reports it was merged from. |
 
 `albania-2026.html`, `jerusalem-2026.html` and `italy-2026.html` at the root are redirect
 stubs to the trip pages — keep them, old links point there.
@@ -83,10 +92,15 @@ curl -s 'https://esim.dog/.netlify/functions/get-esim?session_id=cs_live_…'   
 curl -s 'https://esim.dog/.netlify/functions/get-esim-by-payment-intent?payment_intent_id=pi_…'
 ```
 
-Adding an eSIM: take `esim.iccid` from that response, add a `{ name, iccid }` line to `ESIMS`
-in the page, add the same ICCID to the worker's `ICCIDS` allowlist, and redeploy the worker.
-The worker URL is unauthenticated, so that allowlist is what stops it being a usage lookup for
-anyone else's eSIM.
+Adding an eSIM **to this page**: take `esim.iccid` from that response, add a `{ name, iccid }`
+line to `ESIMS` here, add the same ICCID to the worker's static `ICCIDS` list, and redeploy.
+
+**The Italy trip page does not need any of that** (Sep 2026). Its `#esim` board calls the
+worker's `GET /lookup?url=…`, which wraps the same two functions above, so pasting the order
+link is the whole job — and the worker's allowlist now also reads the ICCIDs registered on that
+board, so a newly added eSIM answers immediately instead of `403`. The trade that buys is spelled
+out in the worker: that board is world-writable, so the allowlist no longer restricts *whose*
+eSIM may be looked up, only that a caller must first leave a visible public write.
 
 **`providerCode` is per route, and the batched call sends one for all of them.** esim.dog picks
 it from the plan-id prefix — `GREEN_`=1, `YELLOW_`=2, `PINK_`=3, `BLACK_`=4 — and all four
@@ -124,7 +138,9 @@ game keeps working and falls back to plain purple rectangles.
 Checks: `esim-usage/?selftest=1` asserts the byte/percent formatting, that ICCIDs are unique and
 well-formed, and that every eSIM shares one `providerCode`; `node esim-usage/game.test.mjs`
 drives the mini-game's frames (a hidden browser tab delivers no `requestAnimationFrame`, so the
-game can only be verified headlessly).
+game can only be verified headlessly). That test now runs the same assertions over **both**
+copies of the game — this page's and the port on the Italy trip page's `#esim` view — because
+160 lines of canvas code in two files will otherwise drift.
 
 ## The file browser (`index.html`)
 
@@ -250,9 +266,17 @@ one top-level path per page (a "key"), each with its own rules.
         "esims": {
           "$id": {
             ".write": "newData.exists() || data.child('a').exists()",
-            ".validate": "$id.matches(/^[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.hasChildren(['n','u','d'])",
+            ".validate": "$id.matches(/^[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.hasChildren(['n','u','i','d'])",
             "n": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24" },
             "u": { ".validate": "newData.isString() && newData.val().length <= 500 && (newData.val().beginsWith('https://') || newData.val().beginsWith('http://'))" },
+            "i": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{18,22}$/)" },
+            "c": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "p": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "v": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "w": { ".validate": "newData.isString() && newData.val().length <= 60" },
+            "s": { ".validate": "newData.isString() && newData.val().length <= 60" },
+            "g": { ".validate": "newData.isString() && newData.val().length <= 40" },
+            "t": { ".validate": "newData.isNumber()" },
             "d": { ".validate": "newData.isNumber()" },
             "a": { ".validate": "newData.isNumber()" },
             "$other": { ".validate": false }
@@ -377,14 +401,40 @@ has that Albania's does not: `esims`**, the trip's eSIM tracker board:
 italy2026/
   comments/<view>/<id>   {n: name, t: text,  d: epoch_ms, a?: archived_at_ms}
   links/<id>             {n: name, u: url, t: title, d: epoch_ms}
-  esims/<id>             {n: holder, u: tracker_url, d: epoch_ms, a?: archived_at_ms}
+  esims/<id>             {n: holder, u: order_url, i: iccid, c/p/v/w/s/g: plan details,
+                          t: purchased_ms, d: epoch_ms, a?: archived_at_ms}
 ```
 
 #### `esims` — the eSIM tracker board (Sep 2026)
 
-Backs the `#esim` view on the trip page: who holds which eSIM, and the esim.dog page that
-shows how much data is left on it. **Trip scope is the path** — it lives under `italy2026`,
-so there is no "which trip" flag to set or to get wrong, and the next trip gets its own.
+Backs the `#esim` view on the trip page: the same live data bars as
+[`esim-usage/`](esim-usage/), except the list is editable from the page instead of hard-coded.
+**Trip scope is the path** — it lives under `italy2026`, so there is no "which trip" flag to
+set or to get wrong, and the next trip gets its own.
+
+**You type a name and a link; everything else is looked up.** esim.dog resolves an order link
+to the eSIM behind it, so `GET /lookup?url=…` on the Worker turns that link into the ICCID plus
+country, plan, coverage, networks, SM-DP+, APN and purchase date — the same six details
+[`esim-usage/`](esim-usage/) hard-codes per eSIM. Nobody has to dig a 19-digit ICCID out of their
+phone settings, and a mistyped digit cannot point a row at a stranger's eSIM.
+
+**That lookup route exists to throw things away.** The upstream answer also carries the QR code,
+the activation code, and the buyer's email and full name. The page calling it is public and
+writes what it gets into a world-readable node, so the Worker copies out a **strict include-list**
+of nine harmless fields — a new upstream field is dropped by default rather than leaked by
+default. Verified: `qr_code`, `activation_code`, `customer_email`, `customer_name` and
+`country_code` are all absent from what it returns.
+
+**No usage number is stored.** Used, total, remaining, status, expiry and last-update come back
+per ICCID from the usage API in one batched POST for the whole board, so nothing cached here can
+go stale.
+
+**The Worker's allowlist had to change for this to work at all.** It used to hold four
+hard-coded ICCIDs, so anything added from the page answered `403 unknown iccid`. It now also
+reads this `esims` node and allows whatever is registered there, cached ~60 s per isolate.
+That is a real reduction in what the allowlist buys — the node is world-writable, so it no
+longer restricts *whose* eSIM can be queried, only that a caller must first leave a visible
+public write. The reasoning is written out in the Worker.
 
 It is a link in shape and a comment in behaviour, and that combination is why it could not
 reuse either existing path:

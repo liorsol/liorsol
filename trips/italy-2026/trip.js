@@ -658,7 +658,7 @@
 
      italy2026/comments/<view>/<id> = {n, t, d, a?}
      italy2026/links/<id>           = {n, u, t, d}
-     italy2026/esims/<id>           = {n, u, d, a?}
+     italy2026/esims/<id>           = {n, i, u?, d, a?}
 
    <id> is `<ts36>_<rnd4>`. The DB rules validate each field's type and
    length server-side and reject unknown fields, so the shapes below and
@@ -670,8 +670,10 @@
    *all* of them, in one chronological thread. A note left on `north` used to
    be invisible to anyone who never scrolled that far.
 
-   eSIM TRACKERS (user's request, Sep 2026): `esims` is the trip's own list of
-   who holds which eSIM and the esim.dog page that shows the data left on it.
+   eSIM TRACKERS (user's request, Sep 2026): `esims` is the trip's own copy of the
+   /esim-usage/ dashboard — a live data bar per eSIM — except the list is editable
+   from the page instead of hard-coded. `i` (the ICCID) is what the usage API is
+   keyed on; the numbers themselves are never stored.
    Trip-scoped by the path it lives under, nothing else — there is no flag to
    get wrong. It is shaped like a link but it archives like a comment, so the
    two behaviours below are shared by both rather than written twice.
@@ -697,6 +699,7 @@
 (function(){
   var DB   = 'https://liorsol-github-default-rtdb.europe-west1.firebasedatabase.app/italy2026';
   var IDRE = /^[a-z0-9]{1,10}_[a-z0-9]{4}$/;    // must match the DB rules
+  var ICCIDRE = /^[0-9]{18,22}$/;              // must match the DB rules; rows() uses it
   var LIM  = {name:24, text:800, title:100, url:500};
   var CACHE = 'italy2026_cache';              // last good read, for offline
   var QUEUE = 'italy2026_queue';              // writes waiting for a network
@@ -888,8 +891,18 @@
       var r = node[id];
       if(!r || typeof r !== 'object') return;                 // ignore junk
       if(typeof r.d !== 'number') return;
-      out.push({id:id, n:clip(r.n, LIM.name), t:clip(r.t, extra === 'link' ? LIM.title : LIM.text),
-                u:r.u, d:r.d, a:(typeof r.a === 'number' && r.a > 0) ? r.a : 0, p:!!r._p});
+      var rec = {id:id, n:clip(r.n, LIM.name), t:clip(r.t, extra === 'link' ? LIM.title : LIM.text),
+                 u:r.u, i:(typeof r.i === 'string' && ICCIDRE.test(r.i)) ? r.i : '',
+                 d:r.d, a:(typeof r.a === 'number' && r.a > 0) ? r.a : 0, p:!!r._p};
+      /* The eSIM board's derived plan fields. All of them came back from esim.dog
+         through the proxy, but they have sat in a world-writable node since, so they
+         are clipped and rendered as text like every other stored value. */
+      if(extra === 'esim'){
+        rec.c = clip(r.c, 40); rec.pl = clip(r.p, 40); rec.v = clip(r.v, 40);
+        rec.w = clip(r.w, 60); rec.s = clip(r.s, 60); rec.g = clip(r.g, 40);
+        rec.t = (typeof r.t === 'number' && r.t > 0) ? r.t : 0;
+      }
+      out.push(rec);
     });
     return out;
   }
@@ -908,14 +921,19 @@
   /* --- shared chrome -------------------------------------------- */
   function build(el, opts){
     el.innerHTML = '';
-    var h = document.createElement('h3'); h.textContent = opts.heading; el.appendChild(h);
-    var sub = document.createElement('p'); sub.className = 'board-sub';
-    sub.textContent = opts.sub; el.appendChild(sub);
+    /* `bare` boards sit directly under a card that already carries the heading, the
+       explanation and the public-board warning — printing them again just pushes the
+       form off the screen. The warning is not being dropped, only not said twice. */
+    if(!opts.bare){
+      var h = document.createElement('h3'); h.textContent = opts.heading; el.appendChild(h);
+      var sub = document.createElement('p'); sub.className = 'board-sub';
+      sub.textContent = opts.sub; el.appendChild(sub);
 
-    var warn = document.createElement('div'); warn.className = 'board-warn';
-    warn.textContent = '⚠️ הלוח הזה ציבורי ופתוח — כל מי שיש לו את הקישור לעמוד יכול לקרוא, ' +
-      'לכתוב ולמחוק. אל תכתבו כאן פרטים אישיים: מספרי הזמנה, טלפונים, כתובות, דרכונים או פרטי תשלום.';
-    el.appendChild(warn);
+      var warn = document.createElement('div'); warn.className = 'board-warn';
+      warn.textContent = '⚠️ הלוח הזה ציבורי ופתוח — כל מי שיש לו את הקישור לעמוד יכול לקרוא, ' +
+        'לכתוב ולמחוק. אל תכתבו כאן פרטים אישיים: מספרי הזמנה, טלפונים, כתובות, דרכונים או פרטי תשלום.';
+      el.appendChild(warn);
+    }
 
     var form = document.createElement('form'); form.className = 'board-form'; form.noValidate = true;
     var row = document.createElement('div'); row.className = 'row';
@@ -1199,21 +1217,53 @@
   }
 
   /* --- eSIM trackers ---------------------------------------------- */
-  /* Who holds which eSIM, and the esim.dog page that shows the data left on it.
-     Shaped like a link, but ✕ archives like a comment rather than deleting: an
-     eSIM taken off the list is one mis-tap away from being wanted back, and the
-     rules refuse a DELETE on a node that does not already carry `a`. Trip scope
-     is the path (`italy2026/esims`) — there is no flag to set or to get wrong.
+  /* The trip's own copy of the family eSIM dashboard at /esim-usage/, with the
+     same capability set: a live data bar per eSIM, the details behind a toggle,
+     and esim.dog's own troubleshooting links. The difference is that this list is
+     not hard-coded — anyone can add an eSIM from the page and it is stored in the
+     DB under this trip, and removing one archives rather than deletes.
 
-     The stored URL is untrusted like every other value here, so it goes through
-     safeUrl() again at render time and anything not http(s) is dropped. */
+     WHAT IS STORED vs WHAT IS FETCHED. Only three things are worth keeping:
+     `n` the holder, `i` the ICCID, `u` the esim.dog order link (optional). Every
+     number on screen — used, total, remaining, status, expiry, last update — comes
+     back from the usage API keyed by ICCID, so storing any of it would just be a
+     copy that goes stale. The ICCID is the only field that must be right: it is
+     what the API is queried with, and an eSIM without one still lists but cannot
+     show usage.
+
+     ONE REQUEST FOR THE WHOLE BOARD. The API takes an `iccidList`, so all the live
+     rows go in a single POST rather than one per row, exactly as /esim-usage/ does.
+     That also means one `providerCode` covers the batch — see PROVIDER below.
+
+     THE PROXY IS NOT OPTIONAL. esim.dog's usage function is POST-only and sends no
+     CORS headers, so the browser cannot call it directly; everything goes through
+     the Cloudflare Worker in /esim-usage/proxy.js. That worker also decides which
+     ICCIDs may be looked up at all — an unknown one answers 403, which this renders
+     as "not recognised by the proxy" rather than as a network error, because the
+     two need different fixes. */
+  var USAGE  = 'https://esim-usage-proxy.xlllsss.workers.dev';
+  var LOOKUP = USAGE + '/lookup?url=';   // order link → ICCID + plan, secrets stripped worker-side
+  /* Every eSIM the family has bought so far is on esim.dog's provider 4. A mixed
+     set cannot be asked for in one batched call, so if a future eSIM is on another
+     provider this constant has to become a stored field rather than quietly
+     returning another provider's numbers. */
+  var PROVIDER = 4;
+  var GB = 1024 * 1024 * 1024;
+  function gb(b){ return (b / GB).toFixed(2) + ' GB'; }
+  function pctOf(used, total){ return total > 0 ? Math.min(100, used / total * 100) : 0; }
+
   function initEsims(el){
     var holder, url;
+    var usage = {};            // iccid -> record from the API
+    var usageMsg = '';         // one status line for the whole board
+    var busy = false;
+
     var ui = build(el, {
       noWho: true,
-      heading: '📶 ה-eSIM של הטיול',
-      sub: 'שם המחזיק וקישור המעקב של esim.dog. הרשימה משותפת לכל מי שנכנס לעמוד, ' +
-           'והסרה מעבירה לארכיון — תמיד אפשר להחזיר.',
+      /* No heading, sub or warning: the card directly above this board already says
+         all three, and repeating them put four paragraphs between the page title and
+         the one input anyone came here to use. */
+      bare: true,
       submit: 'הוספת eSIM',
       extra: function(row){
         holder = document.createElement('input');
@@ -1222,70 +1272,225 @@
         holder.setAttribute('aria-label', 'שם המחזיק');
         url = document.createElement('input');
         url.className = 'grow'; url.maxLength = LIM.url; url.type = 'text';
-        url.placeholder = 'קישור המעקב (https://esim.dog/success?…)';
-        url.setAttribute('aria-label', 'קישור המעקב');
+        url.placeholder = 'קישור ההזמנה מ-esim.dog';
+        url.setAttribute('aria-label', 'קישור ההזמנה');
         row.appendChild(holder); row.appendChild(url);
       }
     });
-    var arch = archToggle(ui, '🗄️ הצגת eSIM שהוסרו', '🗄️ הסתרת eSIM שהוסרו', refresh);
+
+    /* The toggle only needs a repaint of data already in hand — passing `refresh`
+       here would re-read the DB for a purely local show/hide. */
+    var arch = archToggle(ui, '🗄️ הצגת eSIM שהוסרו', '🗄️ הסתרת eSIM שהוסרו', paint);
     var act = archiver(ui, function(rec){ return 'esims/' + rec.id; },
                        'להסיר את ה-eSIM מהרשימה? הוא יישמר בארכיון ותמיד אפשר להחזיר אותו.');
 
-    function render(all){
-      var list = rows(all.esims || {}, 'link').sort(function(a, b){ return b.d - a.d; });
+    var refreshBtn = document.createElement('button');
+    refreshBtn.type = 'button'; refreshBtn.className = 'btn ghost refresh';
+    refreshBtn.textContent = '↻ רענון הנתונים';
+    refreshBtn.addEventListener('click', function(){ loadUsage(true); });
+    ui.foot.appendChild(refreshBtn);
+
+    /* One POST for every live ICCID on the board. A 403 here is the proxy's
+       allowlist, not a dead network, and it is the likeliest thing to go wrong
+       after someone adds an eSIM — so it gets its own message. */
+    function loadUsage(force){
+      var ids = Object.keys(pendingIccids);
+      if(!ids.length){ usageMsg = ''; return Promise.resolve(); }
+      if(busy && !force) return Promise.resolve();
+      busy = true; usageMsg = 'טוען…'; paint();
+      return fetch(USAGE, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({iccidList: ids, providerCode: PROVIDER})
+      }).then(function(r){
+        return r.json().catch(function(){ throw new Error('HTTP ' + r.status); })
+          .then(function(j){
+            if(r.status === 403) throw new Error('allowlist');
+            if(!r.ok || !j.success) throw new Error(j.error || 'HTTP ' + r.status);
+            return j.usage || [];
+          });
+      }).then(function(list){
+        list.forEach(function(u){ if(u && u.iccid) usage[u.iccid] = u; });
+        usageMsg = 'עודכן ' + new Date().toLocaleTimeString('he-IL', {hour:'2-digit', minute:'2-digit'}) +
+                   ' · esim.dog מעדכן כל 2–3 שעות';
+      }).catch(function(err){
+        usageMsg = err && err.message === 'allowlist'
+          ? 'ה-proxy לא מכיר את אחד ה-ICCID האלה — צריך לעדכן אותו'
+          : 'לא הצלחנו לטעון נתוני שימוש (בעיית רשת?)';
+      }).then(function(){ busy = false; paint(); });
+    }
+
+    var pendingIccids = {};    // the live rows' ICCIDs, rebuilt on every render
+    var lastData = null;       // so paint() can redraw without re-reading the DB
+
+    function row(rec){
+      var li = entry(rec, rec.a ? {icon:'↺', title:'החזרה לרשימה', run:act.restore(rec)}
+                                : {icon:'✕', title:'הסרה לארכיון', run:act.archive(rec)});
+      var u = rec.i && usage[rec.i];
+      if(busy && rec.i) li.className += ' busy';
+
+      var use = document.createElement('div'); use.className = 'use';
+      var big = document.createElement('span'); big.className = 'big';
+      var of  = document.createElement('span'); of.className = 'of';
+      var st  = document.createElement('span'); st.className = 'st';
+      if(u){
+        big.textContent = gb(u.dataUsage);
+        of.textContent  = 'מתוך ' + gb(u.totalData);
+        st.textContent  = u.status || '';
+      }else{
+        big.textContent = '—';
+        of.textContent  = rec.i ? 'אין עדיין נתונים' : 'ללא ICCID — אי אפשר למדוד שימוש';
+      }
+      use.appendChild(big); use.appendChild(of); use.appendChild(st);
+      li.appendChild(use);
+
+      var track = document.createElement('div'); track.className = 'track';
+      var fill  = document.createElement('div');
+      var p = u ? pctOf(u.dataUsage, u.totalData) : 0;
+      fill.className = 'fill' + (!u ? ' idle' : p >= 90 ? ' hot' : p >= 75 ? ' warn' : '');
+      fill.style.width = (u ? p : 100) + '%';
+      track.appendChild(fill); li.appendChild(track);
+
+      var under = document.createElement('div'); under.className = 'under';
+      var l = document.createElement('span'), r = document.createElement('span');
+      if(u){
+        l.textContent = p.toFixed(1) + '% נוצלו';
+        r.textContent = gb(u.remainingData) + ' נותרו' +
+          (u.expiryDate ? ' · תקף עד ' + new Date(u.expiryDate).toLocaleDateString('he-IL') : '');
+      }
+      under.appendChild(l); under.appendChild(r); li.appendChild(under);
+
+      var det = document.createElement('details'); det.className = 'sim';
+      var sum = document.createElement('summary'); sum.textContent = 'פרטי ה-eSIM ועזרה';
+      det.appendChild(sum);
+      var dl = document.createElement('dl'); dl.className = 'fields';
+      function field(k, v, mono){
+        if(!v) return;
+        var dt=document.createElement('dt'); dt.textContent=k;
+        var dd=document.createElement('dd'); dd.textContent=v;       // untrusted → textContent
+        if(mono) dd.className='mono';
+        dl.appendChild(dt); dl.appendChild(dd);
+      }
+      field('ICCID', rec.i || '—', true);
+      field('מדינה', rec.c);
+      field('חבילה', rec.pl);
+      field('כיסוי', rec.v);
+      field('רשתות', rec.w);
+      field('SM-DP+', rec.s, true);
+      field('APN', rec.g, true);
+      if(rec.t) field('נרכש', new Date(rec.t).toLocaleDateString('he-IL', {year:'numeric', month:'short', day:'numeric'}));
+      if(u){
+        field('סטטוס', u.status);
+        field('נותרו', gb(u.remainingData));
+        if(u.expiryDate)     field('תקף עד', new Date(u.expiryDate).toLocaleString('he-IL'));
+        if(u.lastUpdateTime) field('עודכן אחרון', new Date(u.lastUpdateTime).toLocaleString('he-IL'));
+      }
+      det.appendChild(dl);
+
+      var links = document.createElement('div'); links.className = 'simlinks';
+      function lnk(href, text){
+        var a=document.createElement('a'); a.href=href; a.target='_blank';
+        a.rel='noopener noreferrer'; a.textContent=text; links.appendChild(a);
+      }
+      var href = rec.u && safeUrl(rec.u);        // re-validate: stored value is untrusted
+      if(href) lnk(href, '↗ דף ההזמנה ב-esim.dog');
+      lnk('https://esim.dog/installation-instructions', '📱 התקנה');
+      /* esim.dog prefills its troubleshooting forms from these, and we now know them
+         per eSIM rather than having to hard-code one plan's values. */
+      lnk('https://esim.dog/cannot-activate-esim?country=' + encodeURIComponent(rec.c || '') +
+          '&smdp=' + encodeURIComponent(rec.s || ''), '⚠️ לא מצליח להפעיל');
+      lnk('https://esim.dog/internet-not-working?apn=' + encodeURIComponent(rec.g || '') +
+          '&smdp=' + encodeURIComponent(rec.s || '') +
+          '&country=' + encodeURIComponent(rec.c || ''), '🌐 אין אינטרנט');
+      det.appendChild(links);
+      li.appendChild(det);
+      return li;
+    }
+
+    function paint(){
+      if(!lastData) return;
+      var list = rows(lastData.esims || {}, 'esim').sort(function(a, b){ return b.d - a.d; });
       var live = list.filter(function(rec){ return !rec.a; });
       var archived = list.length - live.length;
       var shown = arch.showing() ? list : live;
 
-      ui.list.innerHTML = '';
-      counted(ui, live.length, 'eSIM אחד', 'eSIM', archived ? archived + ' בארכיון' : '');
-      arch.sync(archived);
+      pendingIccids = {};
+      live.forEach(function(rec){ if(rec.i) pendingIccids[rec.i] = 1; });
 
-      var drawn = 0;
-      shown.forEach(function(rec){
-        var href = safeUrl(rec.u);     // re-validate: stored value is untrusted
-        if(!href) return;              // silently drop anything not http(s)
-        drawn++;
-        var li = entry(rec, rec.a ? {icon:'↺', title:'החזרה לרשימה', run:act.restore(rec)}
-                                  : {icon:'✕', title:'הסרה לארכיון', run:act.archive(rec)});
-        var a = document.createElement('a');
-        a.className = 'lnk'; a.href = href;
-        a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
-        a.textContent = '↗ כמה נתונים נשארו?';
-        li.appendChild(a);
-        var sub = document.createElement('div');
-        sub.className = 'when'; sub.textContent = href;      // untrusted → textContent
-        li.appendChild(sub);
-        ui.list.appendChild(li);
-      });
-      if(!drawn){
+      ui.list.innerHTML = '';
+      counted(ui, live.length, 'eSIM אחד', 'eSIM',
+              [archived ? archived + ' בארכיון' : '', usageMsg].filter(Boolean).join(' · '));
+      arch.sync(archived);
+      refreshBtn.hidden = !Object.keys(pendingIccids).length;
+      refreshBtn.disabled = busy;
+
+      if(!shown.length){
         empty(ui, archived && !arch.showing()
                 ? 'כל ה-eSIM הועברו לארכיון. הכפתור שמעל מציג אותם.'
                 : 'אין עדיין eSIM ברשימה. הוסיפו את הראשון.');
+        return;
       }
+      shown.forEach(function(rec){ ui.list.appendChild(row(rec)); });
     }
+
+    function render(all){
+      lastData = all;
+      paint();
+      loadUsage();               // no-op when nothing on the board has an ICCID
+    }
+    /* Same contract as the other two boards: refreshAll() forces a fresh read and
+       then calls every refresher with no argument, so this must go back through
+       loadAll() rather than repainting what it already had — otherwise a newly
+       added eSIM is written correctly and simply never appears. */
     function refresh(force){
       return loadAll(force).then(function(all){ render(overlay(all)); }).catch(function(){
         empty(ui, 'לא הצלחנו לטעון את רשימת ה-eSIM (בעיית רשת?). נסו לרענן.');
       });
     }
+    /* The link is the only thing worth typing. esim.dog can resolve it to the ICCID
+       and the whole plan, so the form asks for a name and a URL and the proxy fills in
+       the rest — nobody has to dig a 19-digit number out of their phone settings, and
+       a mistyped digit cannot silently point a row at someone else's eSIM.
+       The lookup deliberately runs BEFORE the write: a row with no ICCID would list
+       but never show usage, which looks like a bug rather than a bad link. */
     ui.form.addEventListener('submit', function(e){
       e.preventDefault();
       var nm = clip(holder.value, LIM.name);
       if(!nm){ say(ui, 'צריך לכתוב שם מחזיק', 'err'); return; }
       var href = safeUrl(url.value);
-      if(!href){ say(ui, 'כתובת לא תקינה — צריך קישור http/https', 'err'); return; }
+      if(!href){ say(ui, 'כתובת לא תקינה — העתיקו את קישור ההזמנה מ-esim.dog', 'err'); return; }
       var id = newId();
       if(!id){ say(ui, 'שגיאה פנימית', 'err'); return; }
-      ui.send.disabled = true; say(ui, 'שומר…');
-      submit({p:'esims/' + id, m:'PUT', b:{n:nm, u:href, d:Date.now()}})
-        .then(function(how){
-          holder.value = ''; url.value = '';
-          say(ui, okMsg(how, 'נוסף ✓', 'נשמר במכשיר — יישלח כשתהיה רשת ⏳'), 'ok');
-          return refreshAll();
-        }).catch(function(err){
-          say(ui, failMsg(err), 'err');
-        }).then(function(){ ui.send.disabled = false; });
+      ui.send.disabled = true; say(ui, 'מאתר את ה-eSIM…');
+      fetch(LOOKUP + encodeURIComponent(href)).then(function(r){
+        return r.json().catch(function(){ throw new Error('bad'); }).then(function(j){
+          if(!r.ok || !j.success) throw new Error(r.status === 400 ? 'link' : 'bad');
+          return j;
+        });
+      }).then(function(j){
+        if(!ICCIDRE.test(j.iccid || '')) throw new Error('bad');
+        var body = {n:nm, u:href, i:j.iccid, d:Date.now()};
+        /* Only what came back, and only if it came back — an empty string would fail
+           `$other`-style length rules for no benefit and clutter the details panel. */
+        if(j.country)  body.c = clip(j.country, 40);
+        if(j.plan)     body.p = clip(j.plan + (j.validity ? ' · ' + j.validity + ' ימים' : ''), 40);
+        if(j.coverage) body.v = clip(j.coverage, 40);
+        if(j.networks) body.w = clip(j.networks, 60);
+        if(j.smdp)     body.s = clip(j.smdp, 60);
+        if(j.apn)      body.g = clip(j.apn, 40);
+        var t = j.purchased && new Date(j.purchased).getTime();
+        if(t && !isNaN(t)) body.t = t;
+        return submit({p:'esims/' + id, m:'PUT', b:body});
+      }).then(function(how){
+        holder.value = ''; url.value = '';
+        say(ui, okMsg(how, 'נוסף ✓', 'נשמר במכשיר — יישלח כשתהיה רשת ⏳'), 'ok');
+        return refreshAll();
+      }).catch(function(err){
+        say(ui, err && err.message === 'link'
+              ? 'הקישור אינו קישור הזמנה של esim.dog'
+              : err && err.message === 'bad'
+              ? 'לא הצלחנו לשלוף את פרטי ה-eSIM מהקישור'
+              : failMsg(err), 'err');
+      }).then(function(){ ui.send.disabled = false; });
     });
     refreshers.push(refresh);
     refresh();
@@ -1402,3 +1607,178 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   });
 }
 
+/* ============================================================
+   esim.dog's runner mini-game, ported from /esim-usage/ for the #esim view.
+   Their sprites, their rules: 10 pts/sec, 1000 to win, and the same death and
+   victory sequences. Two changes only — the on-canvas text is Hebrew like the rest
+   of this page, and the loop idles while the view is closed.
+   ============================================================ */
+// Runner clone of the esim.dog mini-game: their sprites, 10 pts/sec, 1000 to win.
+// The death/win sequences are copied from their bundle: on a hit, the dog keeps
+// falling under gravity while just the obstacle it hit plays its own break-frame
+// animation (everything else on screen freezes); once it lands, GAME OVER shows.
+// Winning freezes the run and bounces the dog over a gold tint until reset.
+(() => {
+  const c = document.getElementById('game');
+  if (!c) return;                       // the game lives on one view; other pages have no canvas
+  const x = c.getContext('2d');
+  const GROUND = 20, DOG = 72, FLOOR = c.height - GROUND - DOG, WIN = 1000;
+  const hint = document.getElementById('gameHint');
+  const sheet = (file, frames) => { const i = new Image(); i.src = 'https://esim.dog/mini-game/' + file; i.frames = frames; return i; };
+  const run = sheet('running_dog_mascot.png', 6), die = sheet('dying_dog_mascot.png', 4);
+  // Same obstacle art, scales and frame counts as the original.
+  const OBS = {
+    box1:    { w: 28 * 1.8, h: 28 * 1.8, dir: 'Box1', n: 5 },
+    box2:    { w: 32 * 1.6, h: 32 * 1.6, dir: 'Box2', n: 3 },
+    capsule: { w: 50 * 1.2, h: 48 * 1.2, dir: 'Capsule', n: 4 },
+  };
+  const TYPES = Object.keys(OBS);
+  for (const t of TYPES) {
+    OBS[t].img = Array.from({ length: OBS[t].n }, (_, k) => {
+      const im = new Image(); im.src = `https://esim.dog/mini-game/obstacles/${OBS[t].dir}/${k + 1}.png`; return im;
+    });
+  }
+  let s, last;
+
+  const reset = () => { s = {
+    y: FLOOR, v: 0, obs: [], speed: 300, t: 0, spawn: 0, ground: 0,
+    dead: 0, over: false, won: false, deathFrame: 0, deathTimer: 0, hit: null, wonT: 0,
+  }; };
+  reset();
+  window.__game = () => s; // ponytail: the only way to check the loop without pixel-reading a tainted canvas
+
+  function jump() {
+    if (s.won) return;
+    if (s.over) { reset(); return; }
+    if (s.dead) return; // mid-death animation: input is ignored, same as the original
+    if (s.y >= FLOOR) s.v = -650;
+  }
+  c.addEventListener('mousedown', e => { e.preventDefault(); jump(); });
+  c.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
+  addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
+  });
+
+  function dieStep(dt) {
+    if (s.y < FLOOR) {
+      s.v += 1800 * dt; s.y += s.v * dt;
+      if (s.y > FLOOR) { s.y = FLOOR; s.v = 0; }
+    }
+    s.deathTimer += dt;
+    if (s.deathTimer >= 0.15) { s.deathFrame = Math.min(s.deathFrame + 1, die.frames - 1); s.deathTimer = 0; }
+    if (s.hit) {
+      s.hit.hitTimer += dt;
+      const maxFrame = OBS[s.hit.type].n - 1;
+      if (s.hit.hitTimer >= 0.05 && s.hit.hitFrame < maxFrame) { s.hit.hitFrame++; s.hit.hitTimer = 0; }
+    }
+    if (s.y >= FLOOR && s.deathFrame >= die.frames - 1) s.over = true;
+  }
+
+  function step(dt) {
+    if (s.won) { s.wonT += dt; s.ground = (s.ground + s.speed * 0.3 * dt) % 20; return; }
+    if (s.dead) { dieStep(dt); return; }
+    s.t += dt;
+    s.ground = (s.ground + s.speed * dt) % 20;
+    s.v += 1800 * dt; s.y += s.v * dt;
+    if (s.y > FLOOR) { s.y = FLOOR; s.v = 0; }
+    s.obs.forEach(o => o.x -= s.speed * dt);
+    s.obs = s.obs.filter(o => o.x > -80);
+    if (s.t - s.spawn > Math.max(0.55, 1 - (s.speed - 300) / 1500) + Math.random() * 0.6) {
+      const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+      s.obs.push({ x: c.width, w: OBS[type].w, h: OBS[type].h, type });
+      s.spawn = s.t;
+    }
+    if (s.speed < 600) s.speed += 5 * dt;
+    const dog = { x: 62, y: s.y + 15, w: DOG - 30, h: DOG - 20 };
+    for (const o of s.obs) {
+      if (dog.x < o.x + o.w * 0.8 && dog.x + dog.w > o.x + o.w * 0.2 &&
+          dog.y + dog.h > c.height - GROUND - o.h) {
+        s.dead = 1; s.deathFrame = 0; s.deathTimer = 0;
+        o.hitFrame = 0; o.hitTimer = 0; s.hit = o;
+        return;
+      }
+    }
+    if (Math.floor(s.t * 10) >= WIN) {
+      s.won = true; s.wonT = 0;
+      hint.textContent = '🏆 ניצחתם! קוד ההנחה מחכה בדף ההזמנה ב-esim.dog';
+    }
+  }
+
+  const ready = img => img && img.complete && img.naturalWidth > 0;
+
+  function draw() {
+    const score = Math.floor(s.t * 10);
+    x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+
+    x.fillStyle = '#535353';
+    x.fillRect(0, c.height - GROUND, c.width, 2);
+    for (let i = -s.ground; i < c.width; i += 20) x.fillRect(i, c.height - GROUND + 5, 6, 2);
+
+    for (const o of s.obs) {
+      const spec = o.type && OBS[o.type];
+      const frame = o === s.hit ? o.hitFrame : 0;
+      const img = spec && spec.img[frame];
+      if (ready(img)) x.drawImage(img, o.x, c.height - GROUND - o.h, o.w, o.h);
+      else { x.fillStyle = '#a855f7'; x.fillRect(o.x, c.height - GROUND - o.h, o.w, o.h); }
+    }
+
+    let dogImg, frame, drawY = s.y;
+    if (s.won) {
+      dogImg = run; frame = Math.floor(s.wonT * 12) % run.frames;
+      drawY = s.y - 5 * Math.sin(4 * s.wonT); // the original's victory bounce
+    } else if (s.dead) {
+      dogImg = die; frame = s.deathFrame;
+    } else {
+      dogImg = run; frame = Math.floor(s.t * 12) % run.frames;
+    }
+    if (ready(dogImg)) x.drawImage(dogImg, 48 * frame, 0, 48, 48, 50, drawY, DOG, DOG);
+    else { x.fillStyle = '#8b5cf6'; x.fillRect(50, drawY + 10, 62, 52); }
+
+    x.fillStyle = '#535353'; x.font = 'bold 14px monospace'; x.textAlign = 'right';
+    x.fillText(String(score).padStart(5, '0'), c.width - 10, 24);
+    x.textAlign = 'center';
+    if (s.won) {
+      x.fillStyle = 'rgba(255, 215, 0, 0.2)'; x.fillRect(0, 0, c.width, c.height);
+      x.fillStyle = '#e3a300'; x.font = "bold 22px Heebo, sans-serif";
+      x.fillText('ניצחתם!', c.width / 2, c.height / 2 - 20);
+      x.fillStyle = '#535353'; x.font = "bold 14px Heebo, sans-serif";
+      x.fillText('ניקוד: ' + score, c.width / 2, c.height / 2 + 8);
+      x.fillStyle = '#0891b2'; x.font = "12px Heebo, sans-serif";
+      x.fillText('10% הנחה — בדף ההזמנה ב-esim.dog', c.width / 2, c.height / 2 + 30);
+    } else if (s.over) {
+      x.fillStyle = 'rgba(0, 0, 0, 0.3)'; x.fillRect(0, 0, c.width, c.height);
+      x.fillStyle = '#535353';
+      x.font = "bold 20px Heebo, sans-serif"; x.fillText('נגמר המשחק', c.width / 2, c.height / 2 - 20);
+      x.font = "14px Heebo, sans-serif";
+      x.fillText('ניקוד: ' + score, c.width / 2, c.height / 2 + 10);
+      x.fillText('לחצו כדי לנסות שוב', c.width / 2, c.height / 2 + 35);
+    } else if (s.t === 0) {
+      x.font = "bold 14px Heebo, sans-serif";
+      x.fillText('לחצו או הקישו רווח כדי להתחיל', c.width / 2, c.height / 2 - 20);
+      x.fillText('להגיע ל-' + WIN + ' נקודות כדי לנצח', c.width / 2, c.height / 2 + 5);
+    }
+  }
+
+  /* A canvas redrawn 60 times a second on a phone in the Umbrian hills, for a view
+     nobody has open, is battery spent on nothing. `.view` is display:none unless it
+     is the active one, so offsetParent is the cheapest honest "is anyone looking".
+
+     `&& !document.hidden` was here and is deliberately GONE. It looked like free
+     extra thrift and was worse than useless: browsers already stop firing rAF for a
+     hidden document, so it bought nothing — and in an embedded webview that keeps
+     firing rAF while reporting `document.hidden === true`, it suppressed every frame
+     and left a permanently blank canvas. Observed, not theorised.
+
+     Nothing needs resetting on the way back either: dt is clamped to 50 ms below, so
+     the gap cannot be replayed however long the view stayed shut. (An explicit
+     `last = 0` was tried for that and removed — the clamp made it a no-op, which the
+     mutation check proved by passing with the line gone.) */
+  const visible = () => c.offsetParent !== null;
+  requestAnimationFrame(function loop(now) {
+    if (!visible()) { requestAnimationFrame(loop); return; }
+    const dt = last ? Math.min((now - last) / 1000, 0.05) : 0; last = now;
+    if (s.v || s.y < FLOOR || s.obs.length || s.t || s.dead || s.won) step(dt);
+    draw();
+    requestAnimationFrame(loop);
+  });
+})();

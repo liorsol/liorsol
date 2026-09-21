@@ -1,22 +1,42 @@
-// Check for the mini-game loop in index.html: run it with `node esim-usage/game.test.mjs`.
+// Physics checks for the mini-game: run it with `node esim-usage/game.test.mjs`.
 // The page's own ?selftest=1 covers the usage formatting; this covers the physics,
 // which needs frames a hidden browser tab never delivers (no requestAnimationFrame).
+//
+// THERE ARE TWO COPIES OF THIS GAME and this file checks both: the original in
+// esim-usage/index.html, and the port on the Italy trip page's #esim view, which
+// differs only in its on-canvas Hebrew and in idling while the view is closed.
+// Running the same assertions over both is the only thing stopping them drifting.
 import assert from 'node:assert';
 import { readFileSync } from 'node:fs';
 
-const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
-const src = html.split('<script>').find(s => s.includes('Runner clone')).split('</script>')[0];
+const SOURCES = [
+  ['esim-usage/index.html', () => {
+    const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+    return html.split('<script>').find(s => s.includes('Runner clone')).split('</script>')[0];
+  }],
+  ['trips/italy-2026/trip.js (ported)', () => {
+    const js = readFileSync(new URL('../trips/italy-2026/trip.js', import.meta.url), 'utf8');
+    const at = js.indexOf('// Runner clone of the esim.dog mini-game');
+    assert.ok(at > 0, 'the ported game is missing from trip.js');
+    return js.slice(at);
+  }],
+];
 
+for (const [label, load] of SOURCES) check(label, load());
+
+function check(label, src) {
 const noop = new Proxy({}, { get: () => () => {}, set: () => true });
-const canvas = { width: 400, height: 200, getContext: () => noop, addEventListener() {} };
+/* offsetParent is what the port uses to decide "is this view on screen"; a plain
+   object would read undefined, which happens to be truthy-enough, so state it. */
+const canvas = { width: 400, height: 200, offsetParent: {}, getContext: () => noop, addEventListener() {} };
 const keys = [];
-let frame = null;
+let frame = null, rafCalls = 0;
 
 globalThis.window = globalThis;
-globalThis.document = { getElementById: () => canvas };
+globalThis.document = { getElementById: () => canvas, hidden: false };
 globalThis.Image = class { set src(_) { this.complete = false; } };
 globalThis.addEventListener = (type, fn) => { if (type === 'keydown') keys.push(fn); };
-globalThis.requestAnimationFrame = fn => { frame = fn; };
+globalThis.requestAnimationFrame = fn => { rafCalls++; frame = fn; };
 
 new Function(src)();
 
@@ -28,7 +48,12 @@ const press = () => keys.forEach(fn => fn({ code: 'Space', preventDefault() {} }
 const game = () => window.__game();
 const FLOOR = canvas.height - 20 - 72;
 
+/* The loop must keep rescheduling itself. Nothing else here would notice it dying:
+   every assertion below calls `frame` by hand, so a loop that stopped asking for the
+   next frame still "passes" — which is exactly how a blank canvas shipped once. */
+const rafBefore = rafCalls;
 run(0.5);
+assert.ok(rafCalls > rafBefore, 'the loop reschedules itself each frame');
 assert.equal(game().t, 0, 'stays idle until the first tap');
 
 press();
@@ -76,4 +101,30 @@ run(0.5);
 assert.equal(game().obs.length, obsAtWin, 'obstacles freeze once won');
 assert.ok(game().wonT > 0, 'the victory bounce timer runs');
 
-console.log('esim-usage game checks passed');
+/* Only the port has this, and it is the one behaviour the port added: a closed view
+   must burn no frames, and reopening must not integrate the whole gap at once.
+   The run above ended in the won state, which freezes `t` on purpose — so put the
+   game back to a plainly-running one first. `spawn: t` buys >=0.55s before the next
+   obstacle, which keeps both short runs below free of a collision that would freeze
+   `t` for a reason that has nothing to do with visibility.
+   There is deliberately NO assertion about replaying the gap on resume: dt is clamped
+   to 50 ms in the loop, so that cannot happen, and an assertion for it passed with the
+   guard removed — i.e. it tested nothing. */
+if (label.includes('ported')) {
+  Object.assign(game(), { won: false, wonT: 0, over: false, dead: 0, hit: null,
+                          obs: [], t: 1, spawn: 1, y: FLOOR, v: 0 });
+  run(0.3);
+  const moving = game().t;
+  assert.ok(moving > 1, 'the game is running again before the visibility check');
+
+  canvas.offsetParent = null;              // the view is closed
+  run(2);
+  assert.equal(game().t, moving, 'a closed view advances nothing');
+
+  canvas.offsetParent = {};                // reopened
+  run(0.2);
+  assert.ok(game().t > moving, 'reopening resumes');
+}
+
+console.log('game checks passed \u2014 ' + label);
+}

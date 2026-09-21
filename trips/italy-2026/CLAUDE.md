@@ -301,12 +301,39 @@ counter in step, removes dead shots, and lends a **mouse** the same gesture (poi
 snapping switched off for the duration or every `pointermove` fights it back). There are **no
 arrow buttons** — they were replaced on request.
 
-**A tap or click also advances one shot, and wraps from the last back to the first** (user's
-request, Sep 2026). Two things keep it from misfiring: a touch *swipe* never produces a click —
-the browser suppresses it once the gesture scrolled — and a **mouse drag** is filtered by a
-`dragged` flag set when a `pointermove` passes 6px, since a drag does end in a click. The wrap is
-a `behavior:'auto'` jump, not a glide: gliding from 9/9 back to 1/9 would rewind through every
-shot in between. Everything else stays a plain smooth scroll.
+**A tap or click also advances one shot** (user's request, Sep 2026). Two things keep it from
+misfiring: a touch *swipe* never produces a click — the browser suppresses it once the gesture
+scrolled — and a **mouse drag** is filtered by a `dragged` flag set when a `pointermove` passes
+6px, since a drag does end in a click.
+
+### The strip is circular, and the seam is not a special case
+
+Both directions, both gestures, and — the point of it — the last→first step animates exactly like
+every other step. A scroll container cannot scroll past its own ends, so the strip carries a
+**clone of the last shot before the first and a clone of the first after the last**:
+
+```
+[N] 1 2 … N [1]
+ ▲           ▲   clones (alt="", aria-hidden) — reached by an ordinary one-slide swipe
+```
+
+Crossing the seam is therefore the browser's own glide, with its own momentum and snapping;
+nothing in the gesture code knows a seam exists. Once the strip **comes to rest** on a clone,
+`scrollLeft` moves to the real slide holding the same picture. The swap cannot be seen, because
+both frames are that picture. Three consequences worth keeping straight:
+
+- **Rest is "no scroll event for 120ms."** `scrollend` would say it exactly, but it only reached
+  Baseline in December 2025 and an iPhone two iOS versions back does not have it. 120ms is past
+  the end of iOS momentum and lands before a second swipe.
+- **Slot 1, not slot 0, is the first shot**, so the strip has to be parked there — and that needs
+  a width it does not have while the figure is `hidden` and its whole view is `display:none`. A
+  **`ResizeObserver`** on the track hears the moment it gets one. `scrollLeft === 0` means the
+  strip is fresh or was reset when its view went away (it is never a resting place, since resting
+  on the head clone teleports off it), so a 0 is precisely the signal to park. Chrome, measured,
+  *preserves* the position across a `display:none` round trip, so leaving the view and coming back
+  keeps your place. Browsers with **no `ResizeObserver` get no clones** and the old strip that
+  stops at both ends — better than one that opens on the wrong shot.
+- **`drop()` rebuilds the clones**, since the shot that died may be the one they copied.
 
 - **`direction:ltr` on the track, in an RTL page, on purpose.** It is a sequence of pictures, not
   text, and LTR keeps `scrollLeft` positive and increasing on every engine — RTL horizontal

@@ -201,23 +201,55 @@
     count.className = 'prev-count';
     fig.appendChild(count);
 
+    /* Circular, in both directions and by both gestures (user's request, Sep 2026) — and
+       the seam has to animate exactly like every other step, so it must not be a jump.
+       A scroll container cannot scroll past its own ends, so the strip carries a copy of
+       the last shot before the first one and a copy of the first after the last:
+
+           [N] 1 2 … N [1]
+            ▲           ▲     clones — reached by an utterly ordinary one-slide swipe
+
+       Crossing the seam is therefore the browser's own glide, identical to any other.
+       Once the strip comes to rest on a clone, scrollLeft is moved to the real slide
+       carrying that same picture: the swap cannot be seen, because the two frames show
+       the same thing. Nothing about the gesture, the momentum or the snapping changes. */
+    var head = null, tail = null;
+    function loop(){
+      if(head) head.remove();
+      if(tail) tail.remove();
+      head = tail = null;
+      /* Without a ResizeObserver there is no way to hear when the strip finally has a
+         width, and the loop would open parked on the wrong shot (see `park` below). Those
+         browsers keep the plain strip instead: it stops at both ends, and that is all. */
+      if(shots.length < 2 || !window.ResizeObserver) return;
+      head = shots[shots.length - 1].cloneNode();
+      tail = shots[0].cloneNode();
+      [head, tail].forEach(function(c){ c.alt = ''; c.setAttribute('aria-hidden', 'true'); });
+      track.insertBefore(head, shots[0]);
+      track.appendChild(tail);
+    }
+
     /* The strip is the source of truth for "which shot" — read it, never track it in a
-       variable, or a native swipe and the counter drift apart. */
+       variable, or a native swipe and the counter drift apart. With the clones in place
+       slot 0 *is* shot N and slot N+1 *is* shot 1, so the reading is taken modulo N. */
     function tally(){
-      var w = Math.max(1, track.clientWidth);
-      var at = Math.min(shots.length - 1, Math.max(0, Math.round(track.scrollLeft / w)));
-      count.textContent = (at + 1) + ' / ' + shots.length;
-      count.hidden = shots.length < 2;
+      var w = Math.max(1, track.clientWidth), n = shots.length;
+      var slot = Math.max(0, Math.round(track.scrollLeft / w));
+      var at = n < 2 ? 0 : ((slot - 1) % n + n) % n;
+      count.textContent = (at + 1) + ' / ' + n;
+      count.hidden = n < 2;
     }
     function reveal(){ fig.hidden = false; tally(); }
     function drop(img){
       var i = shots.indexOf(img);
-      if(i < 0) return;
+      if(i < 0) return;                   // a clone — its original is dropping itself
       shots.splice(i, 1);
       img.remove();                       // and with it the slide, so the strip closes up
       if(!shots.length){ fig.remove(); return; }
+      loop();                             // a clone may have been of the shot that just died
       tally();
     }
+    loop();
     shots.slice().forEach(function(img){
       img.addEventListener('load', reveal);
       img.addEventListener('error', function(){ drop(img); });
@@ -225,7 +257,38 @@
          existed. A complete image with no intrinsic width is a load that failed. */
       if(img.complete){ if(img.naturalWidth) reveal(); else drop(img); }
     });
-    track.addEventListener('scroll', tally, {passive:true});
+
+    /* Resting on a clone means the seam was just crossed: swap to the real slide showing
+       the same picture. Rest is "no scroll event for 120ms" — `scrollend` would say it
+       exactly, but it only reached Baseline in December 2025 and an iPhone two iOS
+       versions back does not have it. 120ms is past the end of iOS momentum and short
+       enough to land before a second swipe. */
+    var rest = null;
+    function settled(){
+      var w = track.clientWidth;
+      if(!head || !w) return;
+      var slot = Math.round(track.scrollLeft / w);
+      if(slot === 0) track.scrollLeft = shots.length * w;          // clone of the last → the last
+      else if(slot === shots.length + 1) track.scrollLeft = w;     // clone of the first → the first
+    }
+    track.addEventListener('scroll', function(){
+      tally();
+      clearTimeout(rest);
+      rest = setTimeout(settled, 120);
+    }, {passive:true});
+
+    /* Slot 1 is the real first shot, and parking there needs a width the strip does not
+       have yet: the figure starts `hidden`, and its whole view is `display:none` until
+       the router opens it. A ResizeObserver hears both, and the rotation after them. A
+       strip sitting at 0 is either brand new or was reset when its view went away — it is
+       never a resting place, since resting on the head clone teleports off it — so a 0 is
+       exactly the signal to park it on the first shot. */
+    if(window.ResizeObserver) new ResizeObserver(function(){
+      var w = track.clientWidth;
+      if(!w) return;
+      if(head && !track.scrollLeft) track.scrollLeft = w;
+      tally();
+    }).observe(track);
     tally();
 
     /* Touch and trackpad already swipe this natively. A mouse cannot, so it gets the
@@ -257,16 +320,15 @@
     track.addEventListener('pointerup', settle);
     track.addEventListener('pointercancel', settle);
 
-    /* Tap or click advances one shot, and wraps from the last back to the first (user's
-       request, Sep 2026). A touch swipe never reaches here — the browser suppresses the
-       click once the gesture scrolled — and a mouse drag is filtered by `dragged`. The
-       wrap is a jump, not a glide: gliding back would rewind through all nine shots. */
+    /* Tap or click advances one slide — the seam included, with no special case, because
+       to this handler the seam is just another slide. A touch swipe never reaches here:
+       the browser suppresses the click once the gesture scrolled. A mouse drag does end
+       in one, and is filtered by `dragged`. */
     track.addEventListener('click', function(){
       if(dragged){ dragged = false; return; }
       if(shots.length < 2) return;
       var w = Math.max(1, track.clientWidth);
-      var next = (Math.round(track.scrollLeft / w) + 1) % shots.length;
-      track.scrollTo({left: next * w, behavior: next ? 'smooth' : 'auto'});
+      track.scrollTo({left: (Math.round(track.scrollLeft / w) + 1) * w, behavior:'smooth'});
     });
   });
 

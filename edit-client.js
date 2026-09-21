@@ -91,7 +91,7 @@
 
   function save(el) {
     clearTimeout(timers.get(el));
-    if (!el.__typed || el.innerHTML === el.dataset.edOrig) { dirty.delete(el); return; }
+    if (!el.__typed || el.dataset.edGenerated || el.innerHTML === el.dataset.edOrig) { dirty.delete(el); return; }
     var sent = el.innerHTML;
     dirty.add(el);
     fetch('/__save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: payload(el) })
@@ -107,6 +107,18 @@
 
   els.forEach(function (el) {
     el.spellcheck = false;
+    /* The generic form of the skip list, and the one that makes this safe to point at a
+       page whose generated areas nobody has enumerated yet: if a field no longer matches
+       what the server sent, and the user has not typed in it, then the page's own JS
+       filled it — its content is not in the file, and saving would put it there. Checked
+       at focus, before any keystroke can muddy the comparison. */
+    el.addEventListener('focus', function () {
+      if (el.__typed || el.innerHTML === el.dataset.edOrig) return;
+      el.contentEditable = 'false';
+      el.dataset.edGenerated = '1';
+      flash('לא ניתן לעריכה — התוכן נוצר בדפדפן, לא בקובץ', true);
+      console.warn('[edit] field filled by the page after load, not editable:', el);
+    });
     /* Only what the user actually typed in is ever written back. trip.js keeps mutating the
        page after load — opening <details>, filling the weather, revealing a figure — and
        without this a blur alone could commit one of those mutations to the file. */

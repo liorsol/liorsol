@@ -493,9 +493,38 @@ land where the file still says exactly that — if the page has drifted out of s
 is refused with a 409 and the tab reloads rather than guessing. `&`/`&amp;` and the `<tbody>`
 every parser invents are treated as the same markup on both sides.
 
-`node edit-server.test.mjs` holds this down against the real pages: every field's byte range
-is exactly its own content, no prose falls outside a field, no inline tag is a field apart
-from its sentence, and splicing every field back unchanged reproduces the file byte for byte.
+`node edit-server.test.mjs` holds this down against every hand-written page in the repo —
+both trip pages, Jerusalem and the car checklist: every field's byte range is exactly its own
+content, no prose falls outside a field, no inline tag is a field apart from its sentence, and
+splicing every field back unchanged reproduces the file byte for byte.
+
+### Pointing it at another page
+
+```bash
+node edit-server.mjs trips/albania-2026 8815
+```
+
+Any directory works; the second argument is the port. It is only worth it for a page whose
+text is *in the file* — Albania comes out as 475 fields and Jerusalem as 203, while
+`car-charging/` yields one, because that page is built by JavaScript at runtime and there is
+nothing in the HTML to edit.
+
+**The one thing to know before trusting it on a new page.** `edit-server.mjs` has a list of
+names it treats as generated — `talk`, `rest-list`, `fx`, `wx-*`, `packlist` and friends — and
+that list was written from *this* repo's `trip.js`. On a page with different class names it
+does not apply, and a field wrapping a container that some script fills would, if you typed in
+it, write that script's output into the file.
+
+So the list is a convenience, not the guarantee. The guarantee is in the client and needs no
+list: **a field that no longer matches what the server sent, in which you have not typed, was
+filled by the page's own JavaScript — it goes read-only the moment you click into it** (`לא
+ניתן לעריכה — התוכן נוצר בדפדפן`), and no save is sent. Verified both ways on the Italy page:
+zero false positives across all 700 fields with every view visited and every `<details>` open,
+and a field mutated by script after load is refused with nothing written to disk.
+
+Adding names to the skip list is still worth doing for a page you will edit often — it keeps
+generated areas from looking editable in the first place — but forgetting to is not how the
+file gets corrupted.
 
 Two things it does not do: it will not bump the service worker's `V` — do that by hand after
 committing page edits, or the family's phones keep serving the old copy — and it unregisters

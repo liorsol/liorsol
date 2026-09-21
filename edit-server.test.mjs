@@ -70,8 +70,13 @@ const inner = (src, r) => src.slice(r.inner[0], r.inner[1]);
   say('the side rail is skipped so it keeps navigating');
 }
 
-/* --- the real pages --------------------------------------------------------- */
-for (const page of ['trips/italy-2026/index.html', 'trips/italy-2026/map.html']) {
+/* --- the real pages ---------------------------------------------------------
+   Not just the page this was written for. The rules are meant to hold on any hand-written
+   page in this repo, so every one it might be pointed at is checked — that is what makes
+   `node edit-server.mjs <other-dir>` a safe thing to reach for later. */
+const PAGES = ['trips/italy-2026/index.html', 'trips/italy-2026/map.html',
+  'trips/albania-2026/index.html', 'trips/jerusalem-2026/index.html', 'car-checklist.html'];
+for (const page of PAGES) {
   const src = await readFile(page, 'utf8');
   const root = parse(src);
   const found = regions(root, src);

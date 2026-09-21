@@ -455,7 +455,7 @@
      makes the swipe direction match the "2 / 6" counter. */
   figure.prev .prev-track{display:flex; height:100%; direction:ltr; overflow-x:auto; overflow-y:hidden;
     scroll-snap-type:x mandatory; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch;
-    scrollbar-width:none}
+    scrollbar-width:none; cursor:pointer}   /* a tap also advances one shot — trip.js */
   figure.prev .prev-track::-webkit-scrollbar{display:none}
   figure.prev .prev-track:focus-visible{outline:2px solid var(--azure); outline-offset:-2px}
   /* While a mouse drag is in progress snapping is off, or every pointermove fights it. */
@@ -1043,7 +1043,7 @@
   <div class="card" id="orvieto"><h3>🥇 אורבייטו — העיר שעל הצוק, ומה שמתחתיה <a class="anchor" href="#days/orvieto" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
-           aria-label="תמונות מהמקום — החליקו הצידה">
+           aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-1.webp" alt="אורבייטו — תמונה 1 מתוך 6">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-2.webp" alt="אורבייטו — תמונה 2 מתוך 6">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-3.webp" alt="אורבייטו — תמונה 3 מתוך 6">
@@ -1103,7 +1103,7 @@
   <div class="card" id="marmore"><h3>⭐ מפלי מרמורה — <b>שישי 25.9, בדרך מהשדה</b> <a class="anchor" href="#days/marmore" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
-           aria-label="תמונות מהמקום — החליקו הצידה">
+           aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/marmore-1.webp" alt="מפלי מרמורה — תמונה 1 מתוך 6">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/marmore-2.webp" alt="מפלי מרמורה — תמונה 2 מתוך 6">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/marmore-3.webp" alt="מפלי מרמורה — תמונה 3 מתוך 6">
@@ -1341,7 +1341,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <div class="card" id="assisi"><h3>🥉 אסיזי + ספלו <a class="anchor" href="#days/assisi" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
-           aria-label="תמונות מהמקום — החליקו הצידה">
+           aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/assisi-1.webp" alt="אסיזי — תמונה 1 מתוך 6">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/assisi-2.webp" alt="אסיזי — תמונה 2 מתוך 6">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/assisi-3.webp" alt="אסיזי — תמונה 3 מתוך 6">
@@ -1392,7 +1392,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <div class="card" id="adventure"><h3>🧗 פארק החבלים בשקג׳ינו + רפטינג בנרה <a class="anchor" href="#days/adventure" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
-           aria-label="תמונות מהמקום — החליקו הצידה">
+           aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/adventure-1.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 1 מתוך 6">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/adventure-2.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 2 מתוך 6">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/adventure-3.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 3 מתוך 6">
@@ -1451,7 +1451,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <div class="card" id="trasimeno"><h3>🚣 אגם טרסימנו וקסטיליונה דל לאגו <a class="anchor" href="#days/trasimeno" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
-           aria-label="תמונות מהמקום — החליקו הצידה">
+           aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-1.webp" alt="אגם טרסימנו — תמונה 1 מתוך 7">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-2.webp" alt="אגם טרסימנו — תמונה 2 מתוך 7">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-3.webp" alt="אגם טרסימנו — תמונה 3 מתוך 7">
@@ -1491,7 +1491,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <div class="card" id="perugia"><h3>🍫 פרוג׳ה + בית השוקולד <a class="anchor" href="#days/perugia" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
-           aria-label="תמונות מהמקום — החליקו הצידה">
+           aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/perugia-1.webp" alt="פרוג׳ה — תמונה 1 מתוך 5">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/perugia-2.webp" alt="פרוג׳ה — תמונה 2 מתוך 5">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/perugia-3.webp" alt="פרוג׳ה — תמונה 3 מתוך 5">
@@ -1571,7 +1571,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <div class="card" id="tuscany"><h3>🍷 טוסקנה — מונטפולצ׳אנו ופיינצה <a class="anchor" href="#days/tuscany" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
-           aria-label="תמונות מהמקום — החליקו הצידה">
+           aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-1.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 1 מתוך 6">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-2.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 2 מתוך 6">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-3.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 3 מתוך 6">
@@ -1607,7 +1607,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <div class="card" id="rest"><h3>🏺 היום הרגוע — דרוטה, קרמיקה ובריכה <a class="anchor" href="#days/rest" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
-           aria-label="תמונות מהמקום — החליקו הצידה">
+           aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-1.webp" alt="דרוטה — תמונה 1 מתוך 9">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-2.webp" alt="דרוטה — תמונה 2 מתוך 9">
         <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-3.webp" alt="דרוטה — תמונה 3 מתוך 9">

@@ -231,16 +231,18 @@
     /* Touch and trackpad already swipe this natively. A mouse cannot, so it gets the
        same gesture by dragging. Snapping is switched off for the duration, or every
        pointermove would fight it back to the current slide. */
-    var from = null;
+    var from = null, dragged = false;
     track.addEventListener('pointerdown', function(e){
       if(e.pointerType !== 'mouse' || shots.length < 2) return;
       from = {x:e.clientX, left:track.scrollLeft};
+      dragged = false;
       track.classList.add('drag');
       track.setPointerCapture(e.pointerId);
     });
     track.addEventListener('pointermove', function(e){
       if(!from) return;
       e.preventDefault();
+      if(Math.abs(e.clientX - from.x) > 6) dragged = true;
       track.scrollLeft = from.left - (e.clientX - from.x);
     });
     function settle(){
@@ -254,6 +256,18 @@
     }
     track.addEventListener('pointerup', settle);
     track.addEventListener('pointercancel', settle);
+
+    /* Tap or click advances one shot, and wraps from the last back to the first (user's
+       request, Sep 2026). A touch swipe never reaches here — the browser suppresses the
+       click once the gesture scrolled — and a mouse drag is filtered by `dragged`. The
+       wrap is a jump, not a glide: gliding back would rewind through all nine shots. */
+    track.addEventListener('click', function(){
+      if(dragged){ dragged = false; return; }
+      if(shots.length < 2) return;
+      var w = Math.max(1, track.clientWidth);
+      var next = (Math.round(track.scrollLeft / w) + 1) % shots.length;
+      track.scrollTo({left: next * w, behavior: next ? 'smooth' : 'auto'});
+    });
   });
 
   /* The arrival card's Terminal 3 map is hotlinked as well — it is published by

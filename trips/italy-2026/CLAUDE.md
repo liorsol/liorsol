@@ -301,6 +301,13 @@ counter in step, removes dead shots, and lends a **mouse** the same gesture (poi
 snapping switched off for the duration or every `pointermove` fights it back). There are **no
 arrow buttons** — they were replaced on request.
 
+**A tap or click also advances one shot, and wraps from the last back to the first** (user's
+request, Sep 2026). Two things keep it from misfiring: a touch *swipe* never produces a click —
+the browser suppresses it once the gesture scrolled — and a **mouse drag** is filtered by a
+`dragged` flag set when a `pointermove` passes 6px, since a drag does end in a click. The wrap is
+a `behavior:'auto'` jump, not a glide: gliding from 9/9 back to 1/9 would rewind through every
+shot in between. Everything else stays a plain smooth scroll.
+
 - **`direction:ltr` on the track, in an RTL page, on purpose.** It is a sequence of pictures, not
   text, and LTR keeps `scrollLeft` positive and increasing on every engine — RTL horizontal
   scrolling does not agree across browsers, and the counter would read backwards. Same reason the

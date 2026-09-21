@@ -16,7 +16,7 @@ dependencies — every page is plain HTML/CSS/JS and can be opened straight from
 | [`esim-usage/`](esim-usage/) | Data-usage bars for the family's esim.dog eSIMs, one refresh button, per-eSIM details. Needs the Cloudflare Worker in [`esim-usage/proxy.js`](esim-usage/proxy.js). |
 | [`trips/albania-2026/`](trips/albania-2026/) | Family trip page (SPA, deep links, shared comment/link boards), Leaflet map, reveal.js slide deck, and the raw research the plan was built from. |
 | [`trips/jerusalem-2026/`](trips/jerusalem-2026/) | Family weekend trip page (SPA with map, trivia, media). |
-| [`trips/italy-2026/`](trips/italy-2026/) | Two-family trip to Umbria and Rome — same shape as the Albania page (SPA, deep links, offline PWA, shared boards, looping hero clip), plus a Leaflet map and the two raw research reports it was merged from. |
+| [`trips/italy-2026/`](trips/italy-2026/) | Two-family trip to Umbria and Rome — same shape as the Albania page (SPA, deep links, offline PWA, shared boards, looping hero clip), an eSIM tracker board, plus a Leaflet map and the two raw research reports it was merged from. |
 
 `albania-2026.html`, `jerusalem-2026.html` and `italy-2026.html` at the root are redirect
 stubs to the trip pages — keep them, old links point there.
@@ -246,6 +246,17 @@ one top-level path per page (a "key"), each with its own rules.
             "d": { ".validate": "newData.isNumber()" },
             "$other": { ".validate": false }
           }
+        },
+        "esims": {
+          "$id": {
+            ".write": "newData.exists() || data.child('a').exists()",
+            ".validate": "$id.matches(/^[a-z0-9]{1,10}_[a-z0-9]{4}$/) && newData.hasChildren(['n','u','d'])",
+            "n": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 24" },
+            "u": { ".validate": "newData.isString() && newData.val().length <= 500 && (newData.val().beginsWith('https://') || newData.val().beginsWith('http://'))" },
+            "d": { ".validate": "newData.isNumber()" },
+            "a": { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
         }
       }
     }
@@ -358,14 +369,47 @@ this key must do the same.
 
 ### `italy2026` — [`trips/italy-2026/`](trips/italy-2026/)
 
-Same two features as `albania2026`, same shapes, same rules — the shared comment thread on
-each of the 9 non-map views plus a links board in the practical-info section:
+`albania2026`'s two features, same shapes and same rules — the shared comment thread on each
+of the 10 non-map views plus a links board in the practical-info section — **and one this key
+has that Albania's does not: `esims`**, the trip's eSIM tracker board:
 
 ```
 italy2026/
   comments/<view>/<id>   {n: name, t: text,  d: epoch_ms, a?: archived_at_ms}
   links/<id>             {n: name, u: url, t: title, d: epoch_ms}
+  esims/<id>             {n: holder, u: tracker_url, d: epoch_ms, a?: archived_at_ms}
 ```
+
+#### `esims` — the eSIM tracker board (Sep 2026)
+
+Backs the `#esim` view on the trip page: who holds which eSIM, and the esim.dog page that
+shows how much data is left on it. **Trip scope is the path** — it lives under `italy2026`,
+so there is no "which trip" flag to set or to get wrong, and the next trip gets its own.
+
+It is a link in shape and a comment in behaviour, and that combination is why it could not
+reuse either existing path:
+
+- **`links` cannot archive.** Its `$other: { ".validate": false }` rejects an `a` field
+  outright (verified: `PATCH {"a":…}` on a link → **401**), and its `.write: true` sits on
+  `links` itself, so a link can always be hard-deleted. The user asked for the opposite:
+  remove must archive, and a removed eSIM must be restorable.
+- **`comments` cannot hold a URL** — same `$other` rule — and the one view name that would
+  fit, `comments/esim/`, is exactly where the eSIM view's own comment board writes. The two
+  would collide in the same node with no field left to tell them apart.
+
+So `esims` copies the comments path's **delete guard** verbatim: `.write` sits on `esims/$id`
+and reads `newData.exists() || data.child('a').exists()`. `.write` must **not** be lifted onto
+`esims` — [rules cascade and a deeper one can only grant, never revoke](https://firebase.google.com/docs/database/security/core-syntax),
+so a `.write: true` on the parent would silently defeat the guard, which is the same trap the
+comments path documents above. `n` is required and non-empty here (a tracker with no holder
+names nobody), and `u` must literally begin `http://` or `https://`, as on the links board.
+
+**⚠️ The stored URL is a credential, not just a link.** An esim.dog order URL carries a Stripe
+`payment_intent`/`session_id`, and it opens the order page — including the activation QR — for
+anyone who has it. This path is world-readable, so an eSIM added here is readable by anyone who
+finds the DB URL. That is the same exposure the four order links hard-coded in
+[`esim-usage/index.html`](esim-usage/index.html) already carry, and it was accepted there for
+the same reason; the card on the page says so in Hebrew. Do not add anyone else's eSIM.
 
 `<view>` is the SPA view name (`arrival`, `base`, `days`, `last`, …) and must match
 `/^[a-z]{2,12}$/`, which the rules enforce — so a new view named with a digit or a dash

@@ -81,7 +81,7 @@ the DB rules' `/^[a-z]{2,12}$/`, card→pin and pin→card both ways, every inte
 and the restaurant ids/coordinates. Mutation-checked — a broken pin link and a removed board were
 both confirmed to fail it.
 
-Current state: **47 cards, 10 views, 9 boards, 64 map pins (48 hard-coded + 16 restaurants), all cross-links resolve.**
+Current state: **48 cards, 11 views, 10 boards, 64 map pins (48 hard-coded + 16 restaurants), all cross-links resolve.**
 
 The other check is `node ../sw-core.test.js`, which covers both trips' workers — see the
 [root README](../../README.md#the-trip-pages-tripsalbania-2026-tripsitaly-2026).
@@ -122,6 +122,40 @@ The rules block is byte-identical to `albania2026`'s rather than being folded in
 wildcard. That was deliberate: publishing replaces the entire document, so a restructure is a live
 change to the Albania page's boards, which a family is actively using, in exchange for saving 28
 lines. **Duplicate the block again for the next trip.**
+
+## The eSIM tracker (`#esim`, Sep 2026) — and the third DB path
+
+The user's request: an eSIM page in the trip menu, adding a tracker by **holder name + link**,
+stored in the DB and scoped to this trip, where **removing archives rather than deletes** and an
+archived one can be brought back.
+
+**Trip scope is the path.** `italy2026/esims/<id>` — no flag, nothing to set, nothing to get
+wrong, and the next trip's key gets its own. The shape is `{n: holder, u: tracker_url, d, a?}`.
+
+**Neither existing path could hold it, and that is worth not re-deriving:**
+
+| | why not |
+|---|---|
+| `links` | `$other:{".validate":false}` rejects an `a` field — confirmed live, `PATCH {"a":…}` → **401** — so it cannot archive; and its `.write:true` sits on `links`, so entries are always hard-deletable. The user asked for the exact opposite. |
+| `comments/esim/` | Same `$other` rule, so no `u` field. And it is **the node this view's own comment board writes to** — they would collide with nothing left to tell them apart. |
+
+So `esims` copies the comments path's delete guard verbatim: `.write` on `esims/$id`, reading
+`newData.exists() || data.child('a').exists()`. **Do not lift `.write` onto `esims`** — rules
+cascade and a deeper rule can only grant, never revoke, so that silently defeats the guard. It
+is the same trap the comments path already documents.
+
+**In `trip.js` the archive behaviour is shared, not copied a third time.** `archiver(ui, pathOf,
+ask)` and `archToggle(ui, show, hide, rerender)` were lifted out of `initTalk` when this board
+was added; `initTalk` and `initEsims` are both callers, and the only thing either supplies is
+the node's path. `build()` gained `noWho: true` for the same reason the eSIM board needs it:
+its first field names the **holder**, and `rememberName()` pushes the remembered author name
+into every `.who` input on the page — so that board must not own one.
+
+**⚠️ The stored URL is a credential.** An esim.dog order URL carries a Stripe
+`payment_intent`/`session_id` and opens the order page *including the activation QR*. The path
+is world-readable. This is the same exposure `esim-usage/index.html` already accepts for the
+four hard-coded order links, and the card on the page says so in Hebrew. The privacy table
+above still holds: this is the family's own eSIM, added by the family, and nobody else's.
 
 ## The hero clip
 

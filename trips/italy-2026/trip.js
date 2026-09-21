@@ -658,6 +658,7 @@
 
      italy2026/comments/<view>/<id> = {n, t, d, a?}
      italy2026/links/<id>           = {n, u, t, d}
+     italy2026/esims/<id>           = {n, u, d, a?}
 
    <id> is `<ts36>_<rnd4>`. The DB rules validate each field's type and
    length server-side and reject unknown fields, so the shapes below and
@@ -668,6 +669,12 @@
    is for, and the chip on each row says which — but every board renders
    *all* of them, in one chronological thread. A note left on `north` used to
    be invisible to anyone who never scrolled that far.
+
+   eSIM TRACKERS (user's request, Sep 2026): `esims` is the trip's own list of
+   who holds which eSIM and the esim.dog page that shows the data left on it.
+   Trip-scoped by the path it lives under, nothing else — there is no flag to
+   get wrong. It is shaped like a link but it archives like a comment, so the
+   two behaviours below are shared by both rather than written twice.
 
    DELETING IS ARCHIVING (same request): ✕ writes `a` = epoch ms instead of
    removing the node, and the row moves behind the 🗄️ toggle. Nothing the
@@ -696,7 +703,8 @@
 
   var boards = [].slice.call(document.querySelectorAll('.talk'));
   var linksEl = document.getElementById('links');
-  if(!boards.length && !linksEl) return;
+  var esimsEl = document.getElementById('esims');
+  if(!boards.length && !linksEl && !esimsEl) return;
 
   function newId(){
     var id = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
@@ -911,10 +919,16 @@
 
     var form = document.createElement('form'); form.className = 'board-form'; form.noValidate = true;
     var row = document.createElement('div'); row.className = 'row';
-    var who = document.createElement('input');
-    who.className = 'who'; who.maxLength = LIM.name; who.placeholder = 'השם שלך (לא חובה)';
-    who.value = savedName(); who.setAttribute('aria-label', 'שם');
-    row.appendChild(who);
+    /* The eSIM board's first field names the *holder*, not the author — and
+       rememberName() pushes the remembered name into every `.who` on the page, so
+       that board must not own one. It supplies its own field from extra(). */
+    var who = null;
+    if(!opts.noWho){
+      who = document.createElement('input');
+      who.className = 'who'; who.maxLength = LIM.name; who.placeholder = 'השם שלך (לא חובה)';
+      who.value = savedName(); who.setAttribute('aria-label', 'שם');
+      row.appendChild(who);
+    }
     form.appendChild(row);
     var extraEl = opts.extra(row, form);
 
@@ -991,10 +1005,50 @@
     return Promise.all(refreshers.map(function(r){ return r(); }));
   }
 
+  /* ✕ archives and ↺ restores. Identical on the comments board and the eSIM
+     board — one PATCH writing the stamp, one writing `a:null` to clear it — so a
+     caller supplies only the node's path. The record itself is never touched, and
+     the DB rules refuse a DELETE on a node that does not already carry `a`. */
+  function archiver(ui, pathOf, ask){
+    function patch(stamping, ok){
+      return function(rec){
+        return function(){
+          if(stamping && !confirm(ask)) return;    // restoring needs no confirmation
+          submit({p:pathOf(rec), m:'PATCH', b:{a:stamping ? Date.now() : null}})
+            .then(function(how){
+              say(ui, okMsg(how, ok, 'נשמר במכשיר — יישלח כשתהיה רשת ⏳'), 'ok');
+              return refreshAll();
+            })
+            .catch(function(err){ say(ui, failMsg(err), 'err'); });
+        };
+      };
+    }
+    return {archive: patch(true,  'הועבר לארכיון ✓'),
+            restore: patch(false, 'הוחזר ללוח ✓')};
+  }
+
+  /* The 🗄️ toggle that reveals archived rows in place, struck through, each with
+     ↺. Hidden while nothing is archived; flipping it re-renders data already in
+     hand rather than re-reading. */
+  function archToggle(ui, showTxt, hideTxt, rerender){
+    var on = false;
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'btn ghost arch-toggle'; btn.hidden = true;
+    btn.addEventListener('click', function(){ on = !on; rerender(); });
+    ui.foot.appendChild(btn);
+    return {
+      showing: function(){ return on; },
+      sync: function(n){
+        btn.hidden = !n;
+        btn.textContent = (on ? hideTxt : showTxt) + ' (' + n + ')';
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+    };
+  }
+
   /* --- comments -------------------------------------------------- */
   function initTalk(el){
     var view = el.dataset.topic;
-    var showArch = false;
     /* The HTML's aria-label ("הערות על הצפון") described a board that only held its own
        section's notes. Every board now holds the whole thread, so name the region for what
        still makes it distinct: the section a comment written here is filed under. */
@@ -1015,51 +1069,21 @@
     });
     var ta = ui.extraEl;
 
-    /* Archived comments are hidden, not gone. This shows them in place, struck
-       through, each with ↺ to bring it back. */
-    var archBtn = document.createElement('button');
-    archBtn.type = 'button'; archBtn.className = 'btn ghost arch-toggle'; archBtn.hidden = true;
-    archBtn.addEventListener('click', function(){
-      showArch = !showArch;
-      refresh();                       // already-loaded data, no fetch
-    });
-    ui.foot.appendChild(archBtn);
-
-    function archive(rec){
-      return function(){
-        if(!confirm('להסיר את ההערה מהלוח? היא תישמר בארכיון ותמיד אפשר להחזיר אותה.')) return;
-        submit({p:'comments/' + rec.v + '/' + rec.id, m:'PATCH', b:{a:Date.now()}})
-          .then(function(how){
-            say(ui, okMsg(how, 'הועבר לארכיון ✓', 'נשמר במכשיר — יישלח כשתהיה רשת ⏳'), 'ok');
-            return refreshAll();
-          })
-          .catch(function(err){ say(ui, failMsg(err), 'err'); });
-      };
-    }
-    /* `a:null` removes just that field — the comment itself was never touched. */
-    function restore(rec){
-      return function(){
-        submit({p:'comments/' + rec.v + '/' + rec.id, m:'PATCH', b:{a:null}})
-          .then(function(how){
-            say(ui, okMsg(how, 'הוחזר ללוח ✓', 'נשמר במכשיר — יישלח כשתהיה רשת ⏳'), 'ok');
-            return refreshAll();
-          })
-          .catch(function(err){ say(ui, failMsg(err), 'err'); });
-      };
-    }
+    /* Archived comments are hidden, not gone — shown in place, struck through,
+       each with ↺ to bring it back. `a:null` clears just that field. */
+    var arch = archToggle(ui, '🗄️ הצגת הערות שהוסרו', '🗄️ הסתרת הערות שהוסרו', refresh);
+    var act = archiver(ui, function(rec){ return 'comments/' + rec.v + '/' + rec.id; },
+                       'להסיר את ההערה מהלוח? היא תישמר בארכיון ותמיד אפשר להחזיר אותה.');
 
     function render(all){
       var list = allComments(all);
       var live = list.filter(function(rec){ return !rec.a; });
       var archived = list.length - live.length;
-      var shown = showArch ? list : live;
+      var shown = arch.showing() ? list : live;
 
       ui.list.innerHTML = '';
       counted(ui, live.length, 'הערה אחת', 'הערות', archived ? archived + ' בארכיון' : '');
-      archBtn.hidden = !archived;
-      archBtn.textContent = (showArch ? '🗄️ הסתרת הערות שהוסרו' : '🗄️ הצגת הערות שהוסרו') +
-                            ' (' + archived + ')';
-      archBtn.setAttribute('aria-pressed', showArch ? 'true' : 'false');
+      arch.sync(archived);
 
       if(!shown.length){
         empty(ui, archived ? 'כל ההערות הועברו לארכיון. הכפתור שמעל מציג אותן.'
@@ -1067,8 +1091,8 @@
         return;
       }
       shown.forEach(function(rec){
-        var li = entry(rec, rec.a ? {icon:'↺', title:'החזרה ללוח', run:restore(rec)}
-                                  : {icon:'✕', title:'הסרה לארכיון', run:archive(rec)},
+        var li = entry(rec, rec.a ? {icon:'↺', title:'החזרה ללוח', run:act.restore(rec)}
+                                  : {icon:'✕', title:'הסרה לארכיון', run:act.archive(rec)},
                        {text:label(rec.v), own:rec.v === view});
         var b = document.createElement('div'); b.className = 'body';
         b.appendChild(linkify(rec.t));            // untrusted → textContent + safeUrl
@@ -1174,8 +1198,102 @@
     refresh();
   }
 
+  /* --- eSIM trackers ---------------------------------------------- */
+  /* Who holds which eSIM, and the esim.dog page that shows the data left on it.
+     Shaped like a link, but ✕ archives like a comment rather than deleting: an
+     eSIM taken off the list is one mis-tap away from being wanted back, and the
+     rules refuse a DELETE on a node that does not already carry `a`. Trip scope
+     is the path (`italy2026/esims`) — there is no flag to set or to get wrong.
+
+     The stored URL is untrusted like every other value here, so it goes through
+     safeUrl() again at render time and anything not http(s) is dropped. */
+  function initEsims(el){
+    var holder, url;
+    var ui = build(el, {
+      noWho: true,
+      heading: '📶 ה-eSIM של הטיול',
+      sub: 'שם המחזיק וקישור המעקב של esim.dog. הרשימה משותפת לכל מי שנכנס לעמוד, ' +
+           'והסרה מעבירה לארכיון — תמיד אפשר להחזיר.',
+      submit: 'הוספת eSIM',
+      extra: function(row){
+        holder = document.createElement('input');
+        holder.className = 'holder'; holder.maxLength = LIM.name;
+        holder.placeholder = 'שם המחזיק';
+        holder.setAttribute('aria-label', 'שם המחזיק');
+        url = document.createElement('input');
+        url.className = 'grow'; url.maxLength = LIM.url; url.type = 'text';
+        url.placeholder = 'קישור המעקב (https://esim.dog/success?…)';
+        url.setAttribute('aria-label', 'קישור המעקב');
+        row.appendChild(holder); row.appendChild(url);
+      }
+    });
+    var arch = archToggle(ui, '🗄️ הצגת eSIM שהוסרו', '🗄️ הסתרת eSIM שהוסרו', refresh);
+    var act = archiver(ui, function(rec){ return 'esims/' + rec.id; },
+                       'להסיר את ה-eSIM מהרשימה? הוא יישמר בארכיון ותמיד אפשר להחזיר אותו.');
+
+    function render(all){
+      var list = rows(all.esims || {}, 'link').sort(function(a, b){ return b.d - a.d; });
+      var live = list.filter(function(rec){ return !rec.a; });
+      var archived = list.length - live.length;
+      var shown = arch.showing() ? list : live;
+
+      ui.list.innerHTML = '';
+      counted(ui, live.length, 'eSIM אחד', 'eSIM', archived ? archived + ' בארכיון' : '');
+      arch.sync(archived);
+
+      var drawn = 0;
+      shown.forEach(function(rec){
+        var href = safeUrl(rec.u);     // re-validate: stored value is untrusted
+        if(!href) return;              // silently drop anything not http(s)
+        drawn++;
+        var li = entry(rec, rec.a ? {icon:'↺', title:'החזרה לרשימה', run:act.restore(rec)}
+                                  : {icon:'✕', title:'הסרה לארכיון', run:act.archive(rec)});
+        var a = document.createElement('a');
+        a.className = 'lnk'; a.href = href;
+        a.target = '_blank'; a.rel = 'noopener noreferrer nofollow';
+        a.textContent = '↗ כמה נתונים נשארו?';
+        li.appendChild(a);
+        var sub = document.createElement('div');
+        sub.className = 'when'; sub.textContent = href;      // untrusted → textContent
+        li.appendChild(sub);
+        ui.list.appendChild(li);
+      });
+      if(!drawn){
+        empty(ui, archived && !arch.showing()
+                ? 'כל ה-eSIM הועברו לארכיון. הכפתור שמעל מציג אותם.'
+                : 'אין עדיין eSIM ברשימה. הוסיפו את הראשון.');
+      }
+    }
+    function refresh(force){
+      return loadAll(force).then(function(all){ render(overlay(all)); }).catch(function(){
+        empty(ui, 'לא הצלחנו לטעון את רשימת ה-eSIM (בעיית רשת?). נסו לרענן.');
+      });
+    }
+    ui.form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var nm = clip(holder.value, LIM.name);
+      if(!nm){ say(ui, 'צריך לכתוב שם מחזיק', 'err'); return; }
+      var href = safeUrl(url.value);
+      if(!href){ say(ui, 'כתובת לא תקינה — צריך קישור http/https', 'err'); return; }
+      var id = newId();
+      if(!id){ say(ui, 'שגיאה פנימית', 'err'); return; }
+      ui.send.disabled = true; say(ui, 'שומר…');
+      submit({p:'esims/' + id, m:'PUT', b:{n:nm, u:href, d:Date.now()}})
+        .then(function(how){
+          holder.value = ''; url.value = '';
+          say(ui, okMsg(how, 'נוסף ✓', 'נשמר במכשיר — יישלח כשתהיה רשת ⏳'), 'ok');
+          return refreshAll();
+        }).catch(function(err){
+          say(ui, failMsg(err), 'err');
+        }).then(function(){ ui.send.disabled = false; });
+    });
+    refreshers.push(refresh);
+    refresh();
+  }
+
   boards.forEach(initTalk);
   if(linksEl) initLinks(linksEl);
+  if(esimsEl) initEsims(esimsEl);
 
   /* Sync: on load and whenever the connection comes back. Re-render only if the
      queue actually moved, so a quiet flush costs nothing. */

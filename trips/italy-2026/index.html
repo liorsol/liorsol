@@ -186,8 +186,8 @@
   @media (max-width:640px){ .mapbanner{flex-wrap:wrap} .mapbanner .go{width:100%; text-align:center} }
 
   /* SHARED BOARDS (Firebase) — one comment thread shown on every view + a links board */
-  .talk,.links-board{margin:26px 0 0; padding-top:16px; border-top:2px dashed var(--line)}
-  .talk h3,.links-board h3{font-size:19px; margin:0 0 2px}
+  .talk,.links-board,.esim-board{margin:26px 0 0; padding-top:16px; border-top:2px dashed var(--line)}
+  .talk h3,.links-board h3,.esim-board h3{font-size:19px; margin:0 0 2px}
   .board-sub{color:var(--ink-soft); font-size:14px; margin:0 0 10px}
   .board-warn{background:#fceee7; border:1px solid #eec4b2; border-radius:11px; padding:8px 13px;
     font-size:13.5px; margin:0 0 12px; color:#7d3320}
@@ -200,7 +200,7 @@
   .board-form input,.board-form textarea{font-family:'Assistant',sans-serif; font-size:16px;
     border:1.5px solid var(--line); border-radius:10px; padding:8px 11px; background:#fff; color:var(--ink); width:100%}
   .board-form input:focus,.board-form textarea:focus{outline:2px solid var(--azure); outline-offset:1px; border-color:var(--azure)}
-  .board-form .who{flex:0 0 170px; min-width:130px}
+  .board-form .who,.board-form .holder{flex:0 0 170px; min-width:130px}
   .board-form .grow{flex:1 1 220px}
   .board-form textarea{min-height:74px; resize:vertical}
   .board-form .foot{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
@@ -229,7 +229,7 @@
      while every boxed paragraph starts 34–43px in — on a phone that reads as letters
      touching the screen edge (user's report, Sep 2026). This pulls the loose text into
      the same column as the boxed text; the boxes keep their own edges. */
-  .talk h3,.links-board h3,.board-sub,.board-empty,.wrap > p{padding-inline:15px}
+  .talk h3,.links-board h3,.esim-board h3,.board-sub,.board-empty,.wrap > p{padding-inline:15px}
   /* written with no reception and still waiting in the device's queue */
   .board-list li.pend{border-style:dashed; border-color:var(--gold); background:#fdf8ec}
   /* every board shows every comment — the chip says which section it was written on */
@@ -457,6 +457,7 @@
   <hr>
   <a data-view="food">🍽️ אוכל · גלוטן · בוטנים</a>
   <a data-view="info">ℹ️ מידע פרקטי</a>
+  <a data-view="esim">📶 מעקב eSIM</a>
   <a data-view="checklist">🧳 צ׳ק-ליסט</a>
 </div></nav>
 <div class="navscrim"></div>
@@ -572,6 +573,7 @@
       <a class="tile" data-view="last"><div class="ic">🛫</div><h3>היום האחרון - הטיסה</h3><p>15 שעות בין הצ׳ק-אאוט להמראה. שלוש חלופות ואיך לא לשרוף את הילדים.</p></a>
       <a class="tile" data-view="food"><div class="ic">🍽️</div><h3>אוכל · גלוטן · בוטנים</h3><p>צליאק ואלרגיה לבוטנים באיטליה: מה להגיד, מה בטוח, ואיפה קונים.</p></a>
       <a class="tile" data-view="info"><div class="ic">ℹ️</div><h3>מידע פרקטי</h3><p>ZTL וקנסות, כיסאות בטיחות, כבישי אגרה, כסף, תקשורת.</p></a>
+      <a class="tile" data-view="esim"><div class="ic">📶</div><h3>מעקב eSIM</h3><p>כל ה-eSIM של שתי המשפחות, ולאן ללחוץ כדי לראות כמה נתונים נשארו.</p></a>
       <a class="tile" data-view="checklist"><div class="ic">🧳</div><h3>צ׳ק-ליסט לפני נסיעה</h3><p>מה חייב להיות סגור, מה להביא, ומה לא לשכוח למזומן.</p></a>
       <a class="tile" href="#map"><div class="ic">🗺️</div><h3>מפת המסלול</h3><p>כל הנקודות על מפה אחת, לפי קבוצות.</p></a>
     </div>
@@ -2249,7 +2251,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <div class="card" id="comms"><h3>📶 תקשורת <a class="anchor" href="#info/comms" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist">איטליה היא האיחוד האירופי, כך שכיסוי טוב וזול, ו-eSIM אירופי הוא הפתרון הפשוט. הקליטה טובה כמעט בכל התכנית — פחות בטוחה בעמק הנרה ובכפרים הקטנים.</p>
     <details><summary>מה להסדיר לפני הטיסה</summary>
-      <p style="margin:0"><b>eSIM או חבילת נדודים:</b> להסדיר <b>לפני</b> הטיסה. שני מבוגרים לפחות צריכים נתונים עובדים ברגע הנחיתה, כי הדבר הראשון שקורה ב-01:30 הוא טלפון. <a href="#arrival/meetpoint">נקודת המפגש ←</a></p>
+      <p style="margin:0"><b>eSIM או חבילת נדודים:</b> להסדיר <b>לפני</b> הטיסה. שני מבוגרים לפחות צריכים נתונים עובדים ברגע הנחיתה, כי הדבר הראשון שקורה ב-01:30 הוא טלפון. <a href="#arrival/meetpoint">נקודת המפגש ←</a><br>את ה-eSIM שכבר נקנו רושמים ב<a data-view="esim">לוח מעקב ה-eSIM ←</a>, כדי שלכולם יהיה את קישור השימוש.</p>
       <p style="margin:0"><b>WhatsApp:</b> קבוצה אחת לשתי המשפחות, ובה מיד את הטלפון של המקום ואת הכתובת. שיתוף מיקום חי הוא הכלי הטוב ביותר כששני רכבים מתפצלים.</p>
       <p style="margin:0"><b>מפות אופליין:</b> להוריד את אזור אומבריה ולאציו ב-Google Maps <b>לפני היציאה</b>. הדף הזה עובד בלי רשת, אבל <a href="#info/offline">המפה שבו מציגה רק מה שכבר נטען</a> — לניווט אמיתי צריך מפות אופליין של Maps.</p>
     </details>
@@ -2267,6 +2269,27 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <!-- The links board. Same DB path, its own shape — see trip.js. -->
   <section class="links-board" id="links" aria-label="לוח קישורים משותף"></section>
   <section class="talk" data-topic="info" aria-label="הערות על מידע פרקטי"></section>
+</div></div>
+
+<!-- ======================= eSIM ======================= -->
+<div class="view" id="view-esim"><div class="wrap pad">
+  <a class="back" data-view="home">→ חזרה לבית</a>
+  <div class="region base"><div class="when">לפני הטיסה · ובמהלך הטיול</div><h2>מעקב eSIM</h2>
+    <p>כל כרטיסי ה-eSIM של שתי המשפחות במקום אחד: מי המחזיק, ולאן ללחוץ כדי לראות כמה נתונים נשארו. הרשימה משותפת — מי שמוסיף eSIM, כולם רואים אותו.</p></div>
+
+  <div class="card" id="esimhow"><h3>📶 מה נשמר כאן, ואיך מוסיפים <a class="anchor" href="#esim/esimhow" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <p class="gist">לכל eSIM נשמרים שני דברים בלבד: <b>שם המחזיק</b> ו<b>קישור המעקב</b> — הדף של esim.dog שמראה כמה נתונים נשארו.</p>
+    <details><summary>מאיפה לוקחים את הקישור, ומה קורה כשמסירים</summary>
+      <p style="margin:0"><b>הקישור:</b> אחרי רכישה ב-esim.dog מגיע מייל עם דף ההזמנה. פותחים אותו, ומעתיקים מהדפדפן את הכתובת המלאה — היא נראית כמו <i dir="ltr">https://esim.dog/success?session_id=…</i>. זה הדף שמראה את השימוש בנתונים.</p>
+      <p style="margin:0"><b>הסרה היא ארכיון, לא מחיקה:</b> ✕ מוריד את ה-eSIM מהרשימה אבל שומר אותו. הכפתור 🗄️ מציג את מה שהוסר, ו-↺ מחזיר אותו לרשימה. <b>שום לחיצה בדף לא מוחקת eSIM לתמיד.</b></p>
+      <p style="margin:0">⚠️ <b>הקישור הזה הוא מפתח:</b> כל מי שיש לו אותו רואה את דף ההזמנה, כולל קוד ההפעלה. הלוח הזה ציבורי כמו שאר הדף — להוסיף רק eSIM של המשפחה, ולא קישור של מישהו אחר.</p>
+      <p style="margin:0"><b>ה-eSIM מאלבניה</b> (הרכישה מאוגוסט) נמצאים ב<a href="../../esim-usage/" target="_blank" rel="noopener">דף השימוש המשפחתי ↖</a>, עם פסי ניצולת חיים מול esim.dog.</p>
+    </details>
+  </div>
+
+  <!-- The eSIM tracker board. Same DB path, its own shape — see trip.js. -->
+  <section class="esim-board" id="esims" aria-label="לוח מעקב eSIM משותף"></section>
+  <section class="talk" data-topic="esim" aria-label="הערות על מעקב ה-eSIM"></section>
 </div></div>
 
 <!-- ======================= CHECKLIST ======================= -->

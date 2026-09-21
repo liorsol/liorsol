@@ -85,13 +85,13 @@ both confirmed to fail it.
 Current state: **48 cards, 11 views, 10 boards, 64 map pins (48 hard-coded + 16 restaurants), all cross-links resolve.**
 
 The other check is `node ../sw-core.test.js`, which covers both trips' workers — see the
-[root README](../../README.md#the-trip-pages-tripsalbania-2026-tripsitaly-2026).
+[root README](../../docs/README.md#the-trip-pages-tripsalbania-2026-tripsitaly-2026).
 
 ## Dynamic data (Firebase) — `italy2026`, live since Sep 2026
 
 The page uses the reserved key **`italy2026`**. The complete rules document — `albania2026`'s
 block duplicated under the new name — is in the
-[README](../../README.md#firebase-realtime-database-dynamic-data-sync), and **the user published
+[README](../../docs/README.md#firebase-realtime-database-dynamic-data-sync), and **the user published
 it on 5 Sep 2026.**
 
 > **The rules moved again the same month, and were republished on 5 Sep 2026.** Comments gained
@@ -100,7 +100,7 @@ it on 5 Sep 2026.**
 > in the Albania `CLAUDE.md`, which is canonical for the boards and applies here verbatim: every
 > board renders every comment with a chip naming the view it was written on, and ✕ archives
 > instead of deleting. The live-DB check sequence is in the
-> [README](../../README.md#firebase-realtime-database-dynamic-data-sync); a 401 on ✕
+> [README](../../docs/README.md#firebase-realtime-database-dynamic-data-sync); a 401 on ✕
 > (`הכתיבה נחסמה — כללי ה-DB צריכים עדכון`) is the one symptom of the published rules having
 > drifted from the document there.
 
@@ -1084,7 +1084,7 @@ curl -XDELETE "$DB/.../$ID.json"                              # 200 — now it g
 `".write": "newData.exists() || data.child('a').exists()"` is exactly that rule. **A 200 on the
 first call would mean the published rules had drifted** — a permissive `.write` cascading over
 the per-id guard. Ten archive-then-delete pairs all returned 200/200 on 13.9.2026, so **the
-enforcement check the [README](../../README.md#firebase-realtime-database-dynamic-data-sync) says
+enforcement check the [README](../../docs/README.md#firebase-realtime-database-dynamic-data-sync) says
 has not been re-run since 5 Sep has now effectively been re-run against `italy2026`, and the
 published rules are the real ones.**
 

@@ -164,7 +164,7 @@ each confirmed to fail it.
 ## Dynamic data (Firebase)
 
 The page uses its reserved DB key, `albania2026` — DB URL, rules and access-model reasoning
-are in the [README](../../README.md#firebase-realtime-database-dynamic-data-sync).
+are in the [README](../../docs/README.md#firebase-realtime-database-dynamic-data-sync).
 **Privacy still applies** (see the section above): that path is public, unauthenticated and
 **world-writable**, so never put personal/private data in it. The page shows a warning saying
 exactly that above every input box — keep it.
@@ -197,7 +197,7 @@ length, required children, and `$other: false` rejecting unknown keys — so add
 an entry without publishing new rules gets a **401 Permission denied**, not a silent drop.
 The page turns that 401 into a specific message ("הכתיבה נחסמה — כללי ה-DB צריכים עדכון")
 rather than a generic failure, because it is the one error that a page reload will never fix.
-The full rules document lives in the [README](../../README.md#firebase-realtime-database-dynamic-data-sync).
+The full rules document lives in the [README](../../docs/README.md#firebase-realtime-database-dynamic-data-sync).
 
 Reads are one shared `GET albania2026.json` for the whole page (all 12 boards slice it
 client-side — don't reintroduce a fetch per board). A new entry is a `PUT` to its node;
@@ -252,7 +252,7 @@ comment itself is never rewritten) and lives on the ↺ button, only on archived
   [`.validate` is skipped when the new value is null](https://firebase.google.com/docs/rules/data-validation),
   so it could not have been a `.validate`. **Published 5 Sep 2026.** Not re-verified against the
   live DB from here — that host is unreachable from the build environment — so the check
-  sequence lives in the [README](../../README.md#firebase-realtime-database-dynamic-data-sync)
+  sequence lives in the [README](../../docs/README.md#firebase-realtime-database-dynamic-data-sync)
   for whoever can run it. If ✕ ever answers 401 (`הכתיבה נחסמה — כללי ה-DB צריכים עדכון`), the
   published document has drifted from the one in the README; nothing else on the boards breaks
   when it does.
@@ -632,7 +632,7 @@ that fires its own network request on load and should wait for real interest.
 `?theme=albania` recolors that page to this one's palette (sand/azure/sea, Heebo) instead of its
 own purple branding — see the `[data-theme="albania"]` block at the top of `esim-usage/index.html`.
 The widget shows each family member's first name, ICCID, and — per that project's own tradeoff,
-documented in the root [README](../../README.md#the-esim-usage-page-esim-usage) — a link to the
+documented in the root [README](../../docs/README.md#the-esim-usage-page-esim-usage) — a link to the
 live esim.dog order page. That's more exposure than this file's privacy rule would allow for
 something added directly to this project, but it isn't trip-page content: it's a link to another
 page the family already asked for by name, on the record in the root README, not here.

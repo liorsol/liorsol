@@ -129,7 +129,7 @@ and is not a bug to fix:
 
 The cost, stated plainly: an anonymous `/api/*` request now **costs a Worker invocation**, which
 the original design treated as a hard requirement to avoid (see
-[Cloudflare Workers: the account is the quota](../README.md#cloudflare-workers-the-account-is-the-quota)).
+[Cloudflare Workers: the account is the quota](../docs/README.md#cloudflare-workers-the-account-is-the-quota)).
 That property is gone by construction and is mitigated, not restored: the login route is rate
 limited, and a request carrying no `__Host-session=` jar entry is refused in the Function for
 **one** invocation with no upstream call. Do not "fix" the public page by reaching for an edge

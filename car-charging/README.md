@@ -148,7 +148,7 @@ on `/api/*` only. The page holds no data and no secret — anonymous, it gets `4
 sign-in screen — and moving the gate in front of the page means an edge gate, which is the
 retired model. The cost is real and was accepted knowingly: an anonymous `/api/*` request now
 costs a Worker invocation, which the original design treated as a hard requirement to avoid (see
-[Cloudflare Workers: the account is the quota](../README.md#cloudflare-workers-the-account-is-the-quota)).
+[Cloudflare Workers: the account is the quota](../docs/README.md#cloudflare-workers-the-account-is-the-quota)).
 It is mitigated, not restored — the login route is rate limited, and a request carrying no
 `__Host-session=` jar entry is refused here for **one** invocation with no upstream call.
 

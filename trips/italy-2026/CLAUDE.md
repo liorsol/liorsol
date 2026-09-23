@@ -1414,11 +1414,10 @@ whole night near the airport instead of a 17:00–23:30 window in EUR — and th
 `#last/lastbed` sits at the top of `#view-last` saying so. Family A (flying 29.9) still needs
 its own room for 28.9; the Holiday Inn EUR recommendation below it now reads as theirs.
 
-⚠️ **The user described it as "the family that leaves on the 29th".** The dates make that the
-family that *leaves Deruta* on the 29th and *flies* on the 30th — a room for the night of 29→30
-is useless to a family whose flight is at 05:30 on the 29th. The page was built on that reading.
-**If it ever turns out to be the other family, the booking itself is on the wrong night**, and
-free cancellation ends **27.9 23:59** (property time).
+✅ **Confirmed by the user: it is the family flying on the 30th.** It was first described as "the
+family that leaves on the 29th" — i.e. leaves *Deruta* on the 29th — and the dates only fit that
+reading (a room for 29→30 is useless to the family whose flight is 05:30 on the 29th). Don't
+re-open it.
 
 What went on the page, and why:
 - **Address, phone, a navigation link from the apartment to the car-return complex**, and a 🗺️

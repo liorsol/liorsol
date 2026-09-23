@@ -29,6 +29,7 @@ and applies unchanged. What was actually decided for *this* page, so it is not r
 | `+39 393 910 9572` and the other Parking Blu numbers | A **company switchboard published on `parkingblu.it`**. The privacy rule's "phone numbers" means the family's, not a business's. It is also the one number that has to work at 02:00 in an airport. |
 | Wizz Air flight numbers and the FCO times | Schedule data, true for everyone on the flight. |
 | `8.6 from 90 reviews` | A public Booking rating. |
+| **An accommodation's address and phone** (e.g. the family-B apartment in Fiumicino, 29.9) | **The user's ruling, Sep 2026:** *"when saying personal details I meant mine — of course you need to put the location and contact of the accommodation, we need to get there."* The place the family sleeps and the number that answers at its door are trip logistics, not personal data. An earlier pass had withheld both as a "home address"; that was wrong for this page. |
 
 **Deliberately NOT on the page:** the property's own direct phone number. It is not published
 anywhere — Booking says it arrives in the booking confirmation — so the page tells the family to
@@ -904,8 +905,9 @@ is left:
    but say it exists "in certain stations" and never say whether FCO is one, nor where the box
    is. This cannot be resolved from a desk — it needs the call to +39 050 807 5174. It now
    matters **twice**, on two different nights.
-4. **Two day-use rooms, not one** — 28.9 for the family flying on the 29th, 29.9 for the other.
-   Neither is booked. Still the load-bearing piece of the last day.
+4. **Two last-day rooms, not one** — ✅ **29.9 is booked** (family B, flying 30.9: an apartment in
+   Fiumicino, see "Family B's last night" below). ❌ **28.9 for the family flying on the 29th is
+   still open.** Still the load-bearing piece of that family's last day.
 5. **Does the minivan seat nine?** Unchanged, and still about the *property's shuttle* — the hire
    cars are answered (2 × 5 seats). The card now says so explicitly, because the two were being
    confused.
@@ -1393,7 +1395,7 @@ Same flight number `W4 6041`, same 05:30, **one day apart** (user, Sep 2026). Th
 not a detail, and it is threaded through `#flights`, `#view-last`, the agenda timeline and the
 checklist:
 
-- **Two day-use rooms** — 28.9 and 29.9.
+- **Two last-day rooms** — 28.9 (family A, still open) and 29.9 (family B, ✅ booked — below).
 - **Two car returns**, nights of 28→29 and 29→30, both ~02:30, both out of hours.
 - **The last common night is 27→28.9**; the family flying on the 29th leaves Deruta on the
   evening of 28.9.
@@ -1403,6 +1405,34 @@ checklist:
 
 Weekdays, since they are easy to get wrong: 24.9 Thu · 25.9 Fri · 26.9 Sat · 27.9 Sun ·
 28.9 Mon · 29.9 Tue · 30.9 Wed.
+
+### Family B's last night — an apartment in Fiumicino (user, Sep 2026)
+
+Booked by the family flying **30.9**: a one-bedroom apartment in Fiumicino town for the night
+of **29→30.9**, check-in **15:00–24:00**, for four. It **replaces family B's day-use room** — a
+whole night near the airport instead of a 17:00–23:30 window in EUR — and the new card
+`#last/lastbed` sits at the top of `#view-last` saying so. Family A (flying 29.9) still needs
+its own room for 28.9; the Holiday Inn EUR recommendation below it now reads as theirs.
+
+⚠️ **The user described it as "the family that leaves on the 29th".** The dates make that the
+family that *leaves Deruta* on the 29th and *flies* on the 30th — a room for the night of 29→30
+is useless to a family whose flight is at 05:30 on the 29th. The page was built on that reading.
+**If it ever turns out to be the other family, the booking itself is on the wrong night**, and
+free cancellation ends **27.9 23:59** (property time).
+
+What went on the page, and why:
+- **Address, phone, a navigation link from the apartment to the car-return complex**, and a 🗺️
+  link to the verified car-return pin. See the privacy table at the top — the user's ruling.
+- **They leave at ~02:00, not at the 08:00–11:00 check-out**, so the card says to tell the host
+  in advance and ask where the key goes. The drive time to Parking B was **not measured**
+  (Nominatim/Overpass are blocked from this environment); the card says so and the navigation
+  link does the measuring.
+- Free cancellation to 27.9 23:59; €8 city tax paid at the property; payment not yet taken.
+
+**Left out:** the price, the children's ages, and the user's own name/email — none of it helps
+anyone get there. **No map pin**: the method at the top of this file requires Overpass +
+Nominatim, both blocked here, and an unverified pin is worse than none. Add one — `lodging`
+category — the next time geocoding is reachable.
 
 ## Cars: Goldcar, and the Key'n Go kiosk is not in the terminal
 

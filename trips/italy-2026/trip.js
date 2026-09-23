@@ -1413,9 +1413,133 @@
     var pendingIccids = {};    // the live rows' ICCIDs, rebuilt on every render
     var lastData = null;       // so paint() can redraw without re-reading the DB
 
-    function row(rec){
+    /* Drag to reorder (family comment, Sep 2026: "let us move the eSIMs around by
+       dragging"). The order is per device, in localStorage — deliberately NOT in the
+       DB, by the packing list's rule: "my family's eSIMs first" is a preference of
+       whoever holds the phone, and on a shared order the two families would keep
+       undoing each other's. It also needs no rules change: `esims` is `$other:false`,
+       so a stored position would have meant republishing the whole rules document.
+       An eSIM this device has not placed yet — a new one — goes on top, newest first,
+       which is where it appeared before there was an order at all. */
+    var ORDER = 'italy2026_esimorder';
+    function ordered(live){
+      var saved = readJson(ORDER, []), rank = Object.create(null);
+      if(Array.isArray(saved)) saved.forEach(function(id, i){ if(typeof id === 'string') rank[id] = i; });
+      return live.sort(function(a, b){
+        var ra = a.id in rank ? rank[a.id] : -1, rb = b.id in rank ? rank[b.id] : -1;
+        return ra !== rb ? ra - rb : b.d - a.d;
+      });
+    }
+    /* Ids that are not on screen (archived, or not loaded) keep their place at the
+       end, so an eSIM restored from the archive comes back where it was. */
+    function saveOrder(){
+      var ids = [].map.call(ui.list.querySelectorAll('li[data-id]'), function(li){ return li.dataset.id; });
+      var old = readJson(ORDER, []);
+      if(Array.isArray(old)) old.forEach(function(id){ if(ids.indexOf(id) < 0) ids.push(id); });
+      writeJson(ORDER, ids);
+    }
+    /* The next movable row in a direction. Only live rows carry data-id, so the
+       archived ones shown under them are never crossed. */
+    function sib(li, dir){
+      var s = li;
+      do s = s[dir]; while(s && !(s.dataset && s.dataset.id));
+      return s;
+    }
+    /* The neighbour that gave way slides into its new place instead of jumping. */
+    function slide(n, was){
+      var d = was - n.offsetTop;
+      if(!d || reduced) return;
+      n.style.transition = 'none'; n.style.transform = 'translateY(' + d + 'px)';
+      n.getBoundingClientRect();
+      n.style.transition = 'transform .15s ease'; n.style.transform = '';
+    }
+    var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* The gesture. Pointer events, so one path serves a finger and a mouse. The grip is
+       `touch-action:none` — a drag that starts on it moves the row, a swipe anywhere
+       else on the row still scrolls the page. The row follows the finger with a
+       transform, and the DOM is reordered as its middle crosses a neighbour's, so what
+       is on screen during the drag is exactly the order that gets saved.
+       It is always the NEIGHBOUR that moves in the DOM, never the dragged row: taking
+       the row out of the document, even for an instant, would drop its pointer capture
+       and keyboard focus mid-gesture. Near the top or bottom of the screen the page
+       scrolls under the finger, for a list longer than one screen.
+       A repaint that lands mid-drag (the usage fetch finishing) waits for the drop —
+       rebuilding the list would pull the row out from under the finger. */
+    var drag = null, repaintAfter = false;
+    function follow(){
+      var li = drag.li, top = drag.top + (drag.y + scrollY - drag.y0);
+      var mid = top + li.offsetHeight / 2, n, was;
+      while((n = sib(li, 'nextElementSibling')) && mid > n.offsetTop + n.offsetHeight / 2){
+        was = n.offsetTop; ui.list.insertBefore(n, li); slide(n, was);
+      }
+      while((n = sib(li, 'previousElementSibling')) && mid < n.offsetTop + n.offsetHeight / 2){
+        was = n.offsetTop; ui.list.insertBefore(n, li.nextSibling); slide(n, was);
+      }
+      li.style.transform = 'translateY(' + (top - li.offsetTop) + 'px)';
+    }
+    function edge(){
+      if(!drag) return;
+      var zone = 72, v = 0;
+      if(drag.y < zone) v = -Math.ceil((zone - drag.y) / 4);
+      else if(drag.y > innerHeight - zone) v = Math.ceil((drag.y - innerHeight + zone) / 4);
+      if(v){
+        try{ scrollBy({top:v, behavior:'instant'}); }catch(err){ scrollBy(0, v); }   // an older Safari rejects 'instant'
+        follow();
+      }
+      drag.raf = requestAnimationFrame(edge);
+    }
+    function grip(li){
+      var g = document.createElement('button');
+      g.type = 'button'; g.className = 'grip'; g.textContent = '⠿';
+      g.title = 'גרירה לשינוי הסדר';
+      g.setAttribute('aria-label', 'שינוי הסדר — גרירה, או חץ למעלה ולמטה');
+      g.addEventListener('pointerdown', function(e){
+        if(drag || e.button > 0) return;
+        e.preventDefault();
+        try{ g.setPointerCapture(e.pointerId); }catch(err){}
+        drag = {li:li, id:e.pointerId, y:e.clientY, y0:e.clientY + scrollY, top:li.offsetTop, raf:0};
+        li.style.transition = 'none';
+        li.classList.add('dragging'); document.body.classList.add('esim-dragging');
+        drag.raf = requestAnimationFrame(edge);
+      });
+      g.addEventListener('pointermove', function(e){
+        if(!drag || e.pointerId !== drag.id) return;
+        drag.y = e.clientY; follow();
+      });
+      function drop(e){
+        if(!drag || e.pointerId !== drag.id) return;
+        cancelAnimationFrame(drag.raf);
+        drag = null;
+        li.classList.remove('dragging'); document.body.classList.remove('esim-dragging');
+        li.style.transition = reduced ? 'none' : 'transform .15s ease'; li.style.transform = '';
+        saveOrder();
+        if(repaintAfter){ repaintAfter = false; paint(); }
+      }
+      g.addEventListener('pointerup', drop);
+      g.addEventListener('pointercancel', drop);
+      g.addEventListener('lostpointercapture', drop);   // never leave `drag` set — it holds every repaint
+      /* The keyboard way to do the same thing — and the one a screen reader can use. */
+      g.addEventListener('keydown', function(e){
+        var up = e.key === 'ArrowUp';
+        if(!up && e.key !== 'ArrowDown') return;
+        e.preventDefault();
+        var n = sib(li, up ? 'previousElementSibling' : 'nextElementSibling');
+        if(!n) return;
+        var was = n.offsetTop;
+        ui.list.insertBefore(n, up ? li.nextSibling : li); slide(n, was);
+        saveOrder();
+      });
+      return g;
+    }
+
+    function row(rec, movable){
       var li = entry(rec, rec.a ? {icon:'↺', title:'החזרה לרשימה', run:act.restore(rec)}
                                 : {icon:'✕', title:'הסרה לארכיון', run:act.archive(rec)});
+      if(!rec.a){
+        li.dataset.id = rec.id;
+        if(movable) li.firstChild.insertBefore(grip(li), li.firstChild.firstChild);
+      }
       var u = rec.i && usage[rec.i];
       if(busy && rec.i) li.className += ' busy';
 
@@ -1499,10 +1623,12 @@
 
     function paint(){
       if(!lastData) return;
+      if(drag){ repaintAfter = true; return; }
       var list = rows(lastData.esims || {}, 'esim').sort(function(a, b){ return b.d - a.d; });
-      var live = list.filter(function(rec){ return !rec.a; });
-      var archived = list.length - live.length;
-      var shown = arch.showing() ? list : live;
+      var live = ordered(list.filter(function(rec){ return !rec.a; }));
+      var gone = list.filter(function(rec){ return rec.a; });
+      var archived = gone.length;
+      var shown = arch.showing() ? live.concat(gone) : live;   // archived under, never between
 
       pendingIccids = {};
       live.forEach(function(rec){ if(rec.i) pendingIccids[rec.i] = 1; });
@@ -1520,7 +1646,7 @@
                 : 'אין עדיין eSIM ברשימה. הוסיפו את הראשון.');
         return;
       }
-      shown.forEach(function(rec){ ui.list.appendChild(row(rec)); });
+      shown.forEach(function(rec){ ui.list.appendChild(row(rec, live.length > 1)); });
     }
 
     function render(all){
@@ -1746,7 +1872,14 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   }
   c.addEventListener('mousedown', e => { e.preventDefault(); jump(); });
   c.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
+  /* The listener is on the window, so it has to know when a key is not the game's.
+     It used to preventDefault every Space on the page, which swallowed the space bar
+     in every text box on every view (family comment, Sep 2026). Now: only while the
+     game is on screen, and never out of a field or a control, where Space and ↑ are
+     typing, pressing, or the eSIM grip's own move-up key. */
+  const own = t => t && t.closest && t.closest('input, textarea, select, button, summary, a[href], [contenteditable]');
   addEventListener('keydown', e => {
+    if (c.offsetParent === null || own(e.target)) return;
     if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); }
   });
 

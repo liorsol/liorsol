@@ -1197,6 +1197,75 @@ The note under the table says in Hebrew that the portal is a third party whose h
 ordinance, that **the table's own hours are the verified ones**, and that the sign on the ground
 beats both. Keep that framing — the link is for the map, not for the hours.
 
+## The third comments pass (Sep 2026) — two comments, and they are still on the board
+
+**Not read off the DB this time:** the cloud environment's egress policy refuses
+`firebasedatabase.app`, so the user pasted the two comments into the session. That also means
+**they were not archived or deleted** — the first two passes' archive-then-delete could not run.
+Whoever next has DB access (or the family, with ✕) should archive them.
+
+| Board | Comment | What happened |
+|---|---|---|
+| `info` | *"typing a space doesn't work in any text box"* | The eSIM mini-game's `keydown` listener. See below. |
+| `esim` | *"make it possible to reorder the SIMs by dragging"* | A drag grip per row, order kept per device. See below. |
+
+### The space bar — a window-wide listener from the game port
+
+The runner game ported from `/esim-usage/` listens for `keydown` on **the window**, and called
+`preventDefault()` on every Space. On its original page that is harmless — there is no text box
+there. Here every view has a board form, so **no text box on the whole page could type a space**
+— on every view, not only `#esim`, because the listener is registered at load whether or not the
+game is on screen. Reproduced before fixing: typing `a b c` into the `info` board produced `abc`.
+
+The listener now returns early while the game's view is closed (`c.offsetParent === null`, the
+same test the loop already uses to idle) **and** whenever the key comes from a field or a control
+(`input, textarea, select, button, summary, a[href], [contenteditable]`) — the last covers the
+eSIM grip's own ↑ key and the local browser editor's `contenteditable` prose. `game.test.mjs`
+has three new assertions on the ported copy — a space from a text box is not swallowed, a closed
+view ignores Space, the open view still jumps — and mutation-checked: deleting the guard fails
+the first. `/esim-usage/`'s own copy is untouched: it has no text box to break.
+
+⚠️ **The lesson generalises: a ported widget brings its global listeners with it.** Anything
+registered on `window`/`document` must be checked against what else lives on *this* page.
+
+### Reordering the eSIMs
+
+A **⠿ grip** at the start of each live row (hidden when there is only one). Pointer events, so
+one path serves a finger and a mouse; ↑/↓ on the focused grip is the keyboard and screen-reader
+way to do the same.
+
+- **Per device, in localStorage (`italy2026_esimorder`), not in the DB.** Two reasons, and the
+  first would be enough: *"my family's eSIMs first"* is a preference of whoever holds the phone —
+  on a shared order the two families would keep undoing each other's — and `esims` is
+  `$other:false`, so a stored position means **republishing the whole rules document**, which is
+  a live change to Albania's boards too. If a shared order is ever wanted, that is the cost: a
+  numeric `o` field in the `esims` block, published by the user.
+- **An eSIM this device has not placed yet goes on top, newest first** — where it appeared
+  before there was an order. Ids no longer on screen (archived) keep their place in storage, so
+  ↺ brings an eSIM back where it was. Archived rows, when shown, sit **under** the live ones, and
+  only live rows carry `data-id`, so a drag never crosses them.
+- **`touch-action:none` on the grip only.** A drag that starts on it moves the row; a swipe
+  anywhere else on the row still scrolls the page. That is also why the page-wide
+  `touch-action:pan-x pan-y` does not get in the way: the browser intersects the two, and `none`
+  wins on the grip.
+- **The neighbour moves in the DOM, never the dragged row.** Detaching the row, even for the
+  instant of an `insertBefore`, would drop its pointer capture and its keyboard focus
+  mid-gesture. The row follows the finger with a transform computed from `offsetTop`, which
+  ignores transforms, so the swap decisions are made on layout, not on what is animating.
+- **A repaint mid-drag waits for the drop.** The usage fetch finishing calls `paint()`, which
+  rebuilds the list — that would pull the row out from under the finger. `paint()` sets
+  `repaintAfter` instead, and the drop runs it.
+- **The page scrolls under the finger within 72px of the screen's top or bottom**, for a list
+  longer than one phone screen. `scrollBy({behavior:'instant'})`, because `html` has
+  `scroll-behavior:smooth` and a per-frame smooth scroll fights itself.
+
+Verified in mobile-emulated Chromium against a mocked DB and proxy: touch drag, mouse drag,
+↑/↓, persistence across a reload, a new eSIM landing on top, archived rows staying below, a
+usage repaint landing mid-drag (row stays attached, repaints on drop with the new order), and
+the edge scroll. ⚠️ One test artefact worth knowing: read a grip's coordinates **after** the
+smooth scroll settles — `html{scroll-behavior:smooth}` moves the page under a synthetic touch
+that was aimed a frame too early, and the drag "fails" for a reason that is not in the code.
+
 ## Live flight status (`#flighttbl`) — and why it is the IAA's open data
 
 The flights table gained a status column, filled from **data.gov.il's CKAN `datastore_search`**

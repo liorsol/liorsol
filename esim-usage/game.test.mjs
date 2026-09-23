@@ -124,6 +124,23 @@ if (label.includes('ported')) {
   canvas.offsetParent = {};                // reopened
   run(0.2);
   assert.ok(game().t > moving, 'reopening resumes');
+
+  /* The keydown listener is window-wide, and it once preventDefault-ed every Space on
+     the page — no text box on any view could type one (family comment, Sep 2026). */
+  const key = (target, on) => {
+    let swallowed = false;
+    canvas.offsetParent = on ? {} : null;
+    Object.assign(game(), { won: false, over: false, dead: 0, y: FLOOR, v: 0 });
+    keys.forEach(fn => fn({ code: 'Space', target, preventDefault() { swallowed = true; } }));
+    const jumped = game().v !== 0;
+    canvas.offsetParent = {};
+    return { swallowed, jumped };
+  };
+  const field = { closest: sel => (sel.includes('textarea') ? field : null) };
+  const page  = { closest: () => null };
+  assert.deepEqual(key(field, true), { swallowed: false, jumped: false }, 'a space typed into a text box is the text box\'s');
+  assert.deepEqual(key(page, false), { swallowed: false, jumped: false }, 'with the view closed, Space is not the game\'s');
+  assert.deepEqual(key(page, true),  { swallowed: true,  jumped: true  }, 'on the open view, Space still jumps');
 }
 
 console.log('game checks passed \u2014 ' + label);

@@ -288,6 +288,15 @@
     color:var(--ink); text-decoration:none}
   .esim-board .simlinks a:hover{border-color:var(--azure); color:var(--sea)}
   .esim-board .refresh{margin-inline-start:auto}
+  /* The drag grip. `touch-action:none` on the grip alone: a drag that starts on it
+     moves the row, a swipe anywhere else on the row still scrolls the page. The
+     negative margins give it a finger-sized target without making the row taller. */
+  .esim-board .grip{background:none; border:none; cursor:grab; touch-action:none;
+    color:var(--ink-soft); font-size:20px; line-height:1; padding:10px 12px; margin:-10px -12px -10px -4px;
+    align-self:center; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none}
+  .esim-board .grip:hover{color:var(--sea)}
+  .esim-board li.dragging{position:relative; z-index:2; box-shadow:var(--shadow); cursor:grabbing}
+  body.esim-dragging{-webkit-user-select:none; user-select:none; cursor:grabbing}
   /* A row whose numbers are being re-fetched dims rather than disappearing — the old
      figure stays readable until the new one lands. */
   .esim-board li.busy .use,.esim-board li.busy .track,.esim-board li.busy .under{opacity:.45}
@@ -304,7 +313,7 @@
     border-radius:14px; touch-action:manipulation; cursor:pointer}
   .gamehint{font-family:'Heebo',sans-serif; font-weight:700; font-size:13px;
     color:var(--azure); text-align:center; margin:9px 0 0}
-  @media print{ .board-form,.board-warn,.board-list .del{display:none} }
+  @media print{ .board-form,.board-warn,.board-list .del,.esim-board .grip{display:none} }
 
   /* DISCLOSURE — high-level by default, detail on demand */
   details{margin-top:11px; border-top:1px dashed var(--line-soft); padding-top:9px}
@@ -2357,6 +2366,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       <p style="margin:0"><b>הקישור:</b> אחרי רכישה ב-<a href="https://esim.dog" target="_blank" rel="noopener noreferrer">esim.dog</a> מגיע מייל עם דף ההזמנה. פותחים אותו, ומעתיקים מהדפדפן את הכתובת המלאה — היא נראית כמו <i dir="ltr">https://esim.dog/success?session_id=…</i> או <i dir="ltr">…?payment_intent=…</i>. שתי הצורות עובדות.</p>
       <p style="margin:0"><b>המספרים מתעדכנים לאט:</b> esim.dog מרענן נתוני שימוש כל 2–3 שעות, אז פס שלא זז אחרי גלישה הוא לא תקלה. כפתור הרענון מושך מחדש, לא מחשב מחדש.</p>
       <p style="margin:0"><b>הסרה היא ארכיון, לא מחיקה:</b> ✕ מוריד את ה-eSIM מהרשימה אבל שומר אותו. הכפתור 🗄️ מציג את מה שהוסר, ו-↺ מחזיר אותו לרשימה. <b>שום לחיצה בדף לא מוחקת eSIM לתמיד.</b></p>
+      <p style="margin:0"><b>שינוי הסדר:</b> גוררים את ה-eSIM בידית <b>⠿</b> שליד השם, למעלה או למטה. <b>הסדר נשמר בטלפון הזה בלבד</b> — כל אחד מסדר את הרשימה שלו, ומה שמשפחה אחת מזיזה לא מזיז לשנייה. eSIM חדש מופיע למעלה.</p>
       <p style="margin:0">⚠️ <b>הלוח הזה ציבורי</b> כמו שאר הדף: כל מי שיש לו את הקישור לעמוד רואה את ה-ICCID ואת הניצולת, וקישור ההזמנה חושף גם את קוד ההפעלה. להוסיף רק eSIM של המשפחה, ולא של מישהו אחר.</p>
       <p style="margin:0"><b>ה-eSIM מאלבניה</b> (הרכישה מאוגוסט) נמצאים ב<a href="../../esim-usage/" target="_blank" rel="noopener">דף השימוש המשפחתי ↖</a>, עם פסי ניצולת חיים מול esim.dog.</p>
     </details>

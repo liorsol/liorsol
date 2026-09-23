@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
 <title>טיול משפחתי · אומבריה ורומא · ספטמבר 2026</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇮🇹</text></svg>">
 <!-- Installable: add to home screen, then works with no reception. iOS ignores the
@@ -30,17 +30,24 @@
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  /* The page must not pan sideways. Two separate causes, two separate fixes —
-     `user-scalable=no` is NOT one of them: iOS Safari has ignored it since iOS 10,
-     and it would break pinch-zoom for anyone who needs it.
-     1. Something wider than the viewport (a long table, a long URL) makes the whole
-        document pannable, and then a pinch leaves the page visually off-centre.
-        `overflow-x:clip` on both html and body stops that at the root. `clip` rather
-        than `hidden` on purpose: `hidden` on html turns the element into a scroll
+  /* The page does not zoom and does not pan sideways — the view is always exactly
+     the phone's width (user's call, Sep 2026: no pinch-zoom at all; the map keeps
+     its own). No single switch does that on every phone, so there are four:
+     1. The viewport meta above (maximum-scale=1, user-scalable=no). Chrome/Android
+        obeys it. iOS Safari has ignored it for pinch since iOS 10 — it still stops
+        the focus zoom on an input.
+     2. `touch-action:pan-x pan-y` here: scroll yes, pinch and double-tap zoom no.
+        Chrome, and Safari from iOS 13. Not inherited, but the browser intersects it
+        down the ancestor chain, so on html it covers the whole document.
+     3. trip.js cancels Safari's own `gesture*` events — the one lever iOS still
+        honours. See "No page zoom" there.
+     4. Something wider than the viewport (a long table, a long URL) would make the
+        document pannable sideways. `overflow-x:clip` stops that at the root. `clip`
+        rather than `hidden` on purpose: `hidden` on html turns it into a scroll
         container and kills `position:sticky` / smooth scrolling inside it.
-     2. The focus zoom on tapping an input is fixed where it is caused — see
-        `.board-form input` below, which is now 16px. */
-  html,body{overflow-x:clip; max-width:100%}
+     And `.board-form input` stays 16px: that is what stops the focus zoom on a
+     browser that ignores the meta. */
+  html,body{overflow-x:clip; max-width:100%; touch-action:pan-x pan-y}
   body{margin:0; background:var(--sand); color:var(--ink);
     font-family:'Assistant',sans-serif; font-size:17px; line-height:1.7; -webkit-font-smoothing:antialiased;
     text-size-adjust:100%; -webkit-text-size-adjust:100%}
@@ -651,10 +658,10 @@
           לוודא תקן R44/04 או R129, מה כתוב על תווית המגביה, ואיך
           Wizz Air סופרת אותם. (<a href="#info/seats">הרשימה ←</a>)</li>
         <li><b>חדר Day-use ליום אחרון</b>&nbsp; (<a data-view="last">למה ←</a>)</li>
-        <li><b>הזמנות מראש</b> — סדנת קרמיקה, רפטינג (שבת 26.9 מלאה), Perugina,
+        <li><b>הזמנות מראש</b> — סדנת קרמיקה, רפטינג (שבת 26.9 מלאה), <b>Perugina לשני 28.9 בבוקר</b>,
           Orvieto Underground. (<a href="#checklist/book">הרשימה ←</a>)</li>
-        <li><b>שלושת ימי הטיול</b> — בוחרים כל בוקר
-          מ<a data-view="days">בנק הימים</a>.</li>
+        <li><b>שני ימי הטיול — שבת וראשון</b> — בוחרים כל בוקר
+          מ<a data-view="days">בנק הימים</a>. שני 28.9 כבר נקבע: <a href="#days/perugia">פרוג׳ה ובית השוקולד</a>.</li>
       </ol>
       <details style="margin-top:10px"><summary>מה כבר נסגר מהרשימה הזאת</summary>
         <p style="margin:0"><b>✅ מקום לתשיעית ברכב.</b> ההזמנה היא על שני רכבים בני <b>5 מקומות</b>
@@ -703,13 +710,17 @@
       <div class="ttl">איסוף שני רכבים ב-FCO ← <b>מפלי מרמורה</b> ← סופר ← צ׳ק-אין בדרוטה</div>
       <p><b>⭐ מרמורה</b>, בדרך מהשדה צפונה.&nbsp;<a href="#days/marmore">התכנית המלאה לשעה ←</a> · <a href="#food/shopping">איפה קונים ←</a></p></div>
 
-    <div class="day"><span class="dot"></span><div class="date">שבת 26.9 · ראשון 27.9 · שני 28.9</div>
-      <div class="ttl">שלושה ימי טיול — נבחרים מבנק הימים</div>
+    <div class="day"><span class="dot"></span><div class="date">שבת 26.9 · ראשון 27.9</div>
+      <div class="ttl">שני ימי טיול — נבחרים מבנק הימים</div>
       <p><b>בכל ערב בוחרים את המחר.</b> <a data-view="days">תשע האפשרויות ←</a></p></div>
+
+    <div class="day"><span class="dot"></span><div class="date">שני 28.9 · בוקר — שתי המשפחות</div>
+      <div class="ttl">🍫 <b>פרוג׳ה + בית השוקולד Perugina</b></div>
+      <p><b>⭐ הוחלט.</b> סיור בבוקר, כי משפחה א׳ ממשיכה משם לשדה. <b>ההזמנה חובה</b>, והמייל על הבוטנים לפניה. <a href="#days/perugia">התכנית ←</a></p></div>
 
     <div class="day"><span class="dot"></span><div class="date">שני 28.9 · ערב — <b>משפחה א׳</b></div>
       <div class="ttl">עזיבת דרוטה ← FCO ← החזרת רכב ~02:30 ← <b>טיסה 29.9 ב-05:30</b></div>
-      <p>חצי יום טיול רגיל בין החלופות, ונסיעה בערב לשדה. או&nbsp;<a data-view="last">שלוש החלופות ←</a></p></div>
+      <p>אחרי בית השוקולד — נסיעה לכיוון רומא והשדה. <a data-view="last">שלוש החלופות ←</a></p></div>
 
     <div class="day"><span class="dot"></span><div class="date">שלישי 29.9 · מ-11:00 — <b>משפחה ב׳</b></div>
       <div class="ttl">צ׳ק-אאוט ← יום ביניים ← <b>חדר Day-use 17:00–23:30</b> ← FCO</div>
@@ -731,7 +742,8 @@
       <tr><td>שני רכבים ב-FCO — <b>Goldcar</b></td><td>איסוף 25.9 ב-09:00<br>החזרה ~02:30, <b>בשני לילות: 28.9 ו-29.9</b></td><td>✅ הוזמן · Key’n Go, Parking B קומה 4<br>✅ <b>יש תיבת מפתחות ב-FCO</b> · 🟡 <b>המיקום — לברר</b><br>כיסאות: מביאים מהבית (מגביהים + אחד מלא)</td></tr>
       <tr><td><b>חדר Day-use — שניים, לא אחד</b></td><td>משפחה א׳: <b>28.9</b><br>משפחה ב׳: <b>29.9</b><br>שניהם ~17:00–23:30</td><td>❌ <b>לא הוזמנו</b></td></tr>
       <tr><td>מפלי מרמורה</td><td>שישי 25.9, בדרך מהשדה</td><td>⭐ <b>הוחלט</b> · <a href="#days/marmore">התכנית לשעה ←</a></td></tr>
-      <tr><td>שלושת ימי הטיול</td><td>26–28.9</td><td>פתוחים בכוונה — <a data-view="days">מבנק הימים</a></td></tr>
+      <tr><td>פרוג׳ה + בית השוקולד Perugina</td><td>שני 28.9, בבוקר</td><td>⭐ <b>הוחלט</b> · 🟡 <b>להזמין סיור — חובה</b> · <a href="#days/perugia">התכנית ←</a></td></tr>
+      <tr><td>שני ימי הטיול</td><td>26–27.9</td><td>פתוחים בכוונה — <a data-view="days">מבנק הימים</a></td></tr>
     </table>
   </div>
 
@@ -1008,12 +1020,12 @@
 <!-- ======================= DAYS — the catalogue ======================= -->
 <div class="view" id="view-days"><div class="wrap pad">
   <a class="back" data-view="home">→ חזרה לבית</a>
-  <div class="region days"><div class="when">26, 27, 28 בספטמבר · ואם רוצים, גם 25 אחר הצהריים</div><h2>בנק ימי הטיול</h2>
-    <p>תשע אפשרויות, כל אחת מוכנה לגמרי — לוח זמנים, ארוחת צהריים, טווח גילים ומרחק נסיעה. <b>יש שלושה ימים, אז שלוש מהן ייבחרו.</b> בוחרים כל ערב את המחר, לפי מזג האוויר ולפי מה שנשאר בילדים.</p>
+  <div class="region days"><div class="when">שבת 26.9 · ראשון 27.9 · ושני 28.9 כבר נקבע</div><h2>בנק ימי הטיול</h2>
+    <p>תשע אפשרויות, כל אחת מוכנה לגמרי — לוח זמנים, ארוחת צהריים, טווח גילים ומרחק נסיעה. <b>יש שלושה ימים: שני 28.9 נקבע ל<a href="#days/perugia">פרוג׳ה ובית השוקולד</a>, אז לשבת ולראשון נבחרות עוד שתיים.</b> בוחרים כל ערב את המחר, לפי מזג האוויר ולפי מה שנשאר בילדים.</p>
     <a class="viewmap" href="#map/days">🗺️ כל האפשרויות על המפה</a></div>
 
-  <div class="card" id="ranking"><h3>🏆 הדירוג — לבחירת שלושת הימים הפתוחים <a class="anchor" href="#days/ranking" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
-    <p class="gist">הטבלה לאחר דירוג.<br>*<b>מרמורה נקבע ליום הראשון.</b></p>
+  <div class="card" id="ranking"><h3>🏆 הדירוג — לבחירת שני הימים הפתוחים <a class="anchor" href="#days/ranking" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+    <p class="gist">הטבלה לאחר דירוג.<br>*<b>מרמורה נקבע ליום הראשון, ופרוג׳ה + השוקולד לשני 28.9.</b></p>
     <table class="h">
       <tr><th>#</th><th>היום</th><th>נסיעה מדרוטה</th><th>אופי</th><th>למי</th></tr>
       <tr><td>🥇</td><td><b><a href="#days/orvieto">אורבייטו</a></b></td><td>~66 ד׳</td><td>עיר על צוק + באר + מערות</td><td>כולם</td></tr>
@@ -1021,19 +1033,19 @@
       <tr><td>🥉</td><td><b><a href="#days/assisi">אסיזי + ספלו</a></b></td><td>~31 ד׳</td><td>עיירות ומצודה</td><td>תרבות · נגיש</td></tr>
       <tr><td>4</td><td><b><a href="#days/adventure">פארק חבלים + רפטינג</a></b></td><td>~64 ד׳</td><td>אקשן</td><td>גדולים</td></tr>
       <tr><td>5</td><td><a href="#days/trasimeno">אגם טרסימנו</a></td><td>~52 ד׳</td><td>אגם, סירה, מבצר</td><td>מים · נגיש</td></tr>
-      <tr><td>6</td><td><a href="#days/perugia">פרוג׳ה + שוקולד</a></td><td>~18 ד׳</td><td>עיר + אטרקציה</td><td>כולם · יום קצר</td></tr>
+      <tr style="background:#fdf3e3"><td>⭐</td><td><b><a href="#days/perugia">פרוג׳ה + שוקולד</a></b> — <b>נקבע לשני 28.9</b>, בבוקר</td><td>~18 ד׳</td><td>עיר + אטרקציה</td><td>כולם · יום קצר</td></tr>
       <tr><td>7</td><td><a href="#days/gubbio">גובּיו + הרכבל הפתוח</a></td><td>~65 ד׳</td><td>עיר עתיקה + רכבל</td><td>הרפתקה · תרבות</td></tr>
       <tr><td>8</td><td><a href="#days/tuscany">טוסקנה — מונטפולצ׳אנו</a></td><td>~1:20–1:45</td><td>נוף וכרמים</td><td>מבוגרים · הנסיעה הארוכה</td></tr>
       <tr><td>9</td><td><a href="#days/rest">דרוטה — יום רגוע</a></td><td>5 ד׳</td><td>קרמיקה + בריכה</td><td>כולם</td></tr>
     </table>
     <details class="note"><summary class="nh">שילוב מומלץ</summary>
-      <b>אורבייטו + אסיזי/ספלו + יום קרוב אחד.</b> <a href="#days/marmore">מרמורה</a> כבר לא בבחירה —
-      הוא נקבע ליום הראשון — כך שטבע ומים מכוסים, ושלושת הימים הפתוחים צריכים להיות שונים
-      זה מזה: עיר על צוק, עיירות, ויום שלישי קצר וקרוב. ל<b>יום הקרוב</b>:
-      <a href="#days/perugia">פרוג׳ה</a> (18 דקות), <a href="#days/trasimeno">אגם טרסימנו</a> אם רוצים
-      עוד מים, או <a href="#days/rest">היום הרגוע</a>. אם באחד מהילדים בוער אקשן, מחליפים את אסיזי
-      ב<a href="#days/adventure">פארק החבלים</a>. ואם מזג האוויר מתקלקל — <a href="#days/rest">היום הרגוע</a>
-      ו<a href="#days/perugia">פרוג׳ה</a> הם השניים שגשם פוגע בהם פחות מכל.</details>
+      <b>אורבייטו + אסיזי/ספלו, בשבת ובראשון.</b> <a href="#days/marmore">מרמורה</a> (שישי) ו<a href="#days/perugia">פרוג׳ה
+      + השוקולד</a> (שני) כבר נקבעו — כך שטבע ומים מכוסים, וגם היום הקצר והקרוב. שני הימים הפתוחים
+      צריכים להיות שונים מהם ושונים זה מזה: עיר על צוק, ועיירות. <b>לאורבייטו בסוף השבוע</b> — להגיע
+      מכיוון ה-A1 ולא דרך ה-SR 79 bis, בגלל מרוץ העלייה (<a href="#days/orvieto">פרטים ←</a>).
+      אם באחד מהילדים בוער אקשן, מחליפים את אסיזי ב<a href="#days/adventure">פארק החבלים</a> — הוא פתוח
+      לקהל רק בשבת ובראשון, כך שזה מסתדר. ואם מזג האוויר מתקלקל — <a href="#days/rest">היום הרגוע</a>.
+      פרוג׳ה עובדת בגשם, אבל בית השוקולד סגור בסוף השבוע, ולכן היא נשארת בשני.</details>
     <details><summary>שני כללי סידור ששווה לכבד</summary>
       <p style="margin:0"><b>לא שני ימים ארוכים ברצף.</b> <a href="#days/tuscany">טוסקנה</a> היא ~3 שעות נסיעה ביום, ו<a href="#days/adventure">פארק החבלים</a> הוא יום פיזי. אחרי אחד מהם — יום קרוב.</p>
       <p style="margin:0"><b>היום הראשון (25.9) הוא לא יום טיול.</b> אחרי לילה של ארבע שעות שינה, נסיעה של שעתיים וצ׳ק-אין, מה שנשאר זה בריכה וארוחת ערב. לא לתכנן לו אטרקציה.</p>
@@ -1069,7 +1081,8 @@
       (יום המרוץ — ראשון 27.9). לפי הצו של 2025 הכביש <b>SR 79 bis Orvietana נסגר 07:00–19:00
       בימי המרוץ</b>. <b>להגיע לאורבייטו מכיוון ה-A1 ואורבייטו סקאלו, לא דרך ה-SR 79 bis</b>,
       ולבדוק את דף הצווים של העירייה באותו שבוע. <br>פסטיבל הקולנוע של אורבייטו
-      (23–27.9) —&nbsp;<b>העיר תהיה עמוסה.</b> שווה לשקול לעשות את אורבייטו ב<b>שני 28.9</b> במקום.</details>
+      (23–27.9) —&nbsp;<b>העיר תהיה עמוסה.</b> שני 28.9 כבר תפוס (<a href="#days/perugia">פרוג׳ה + השוקולד</a>),
+      כך שאורבייטו תהיה בשבת או בראשון — עם הכביש הזה ועם העומס.</details>
     <div class="links">
       <a class="map" href="https://www.google.com/maps/search/?api=1&query=Parcheggio+Campo+della+Fiera+Orvieto" target="_blank" rel="noopener">החניון עם המעלית ↖</a>
       <a class="map onmap" href="#map/p:Parcheggio+Campo+della+Fiera+Orvieto" title="Campo della Fiera — במפה שלנו">🗺️</a>
@@ -1488,7 +1501,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     </details>
   </div>
 
-  <div class="card" id="perugia"><h3>🍫 פרוג׳ה + בית השוקולד <a class="anchor" href="#days/perugia" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
+  <div class="card" id="perugia"><h3>🍫 פרוג׳ה + בית השוקולד — <b>שני 28.9</b> <a class="anchor" href="#days/perugia" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
            aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
@@ -1500,15 +1513,18 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       </div>
     </figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span></div>
-    <div class="meta"><span>🚗 ~<b>18 דקות</b> · 16 ק״מ</span><span>🚇 מיני-מטרו לעיר העליונה</span><span>☔ עובד גם בגשם</span></div>
-    <p class="gist">היום עם הכי מעט נהיגה, ולכן הבחירה הנכונה אחרי יום עמוס או ביום שנראה גשום. פרוג׳ה היא עיר גדולה על גבעה, והדרך לעלות אליה היא <b>מיני-מטרו</b> — קרוניות קטנות אוטומטיות או דרך <b>רוקה פאולינה</b>, מבצר שהפך לעיר תת-קרקעית עם דרגנועים בתוכה, בכניסה חופשית.</p>
+    <div class="meta"><span class="done">⭐ <b>הוחלט — שני 28.9, בבוקר</b></span><span>🚗 ~<b>18 דקות</b> · 16 ק״מ</span><span>🚇 מיני-מטרו לעיר העליונה</span><span>☔ עובד גם בגשם</span></div>
+    <p class="gist">היום עם הכי מעט נהיגה — ולכן מתאים בדיוק ליום שבו משפחה א׳ ממשיכה אחר הצהריים לשדה. פרוג׳ה היא עיר גדולה על גבעה, והדרך לעלות אליה היא <b>מיני-מטרו</b> — קרוניות קטנות אוטומטיות או דרך <b>רוקה פאולינה</b>, מבצר שהפך לעיר תת-קרקעית עם דרגנועים בתוכה, בכניסה חופשית.</p>
 
-    <details class="note warn"><summary class="nh">⚠️ מפעל השוקולד סגור בשבת וראשון</summary>
-      <b>Perugina / בית השוקולד סגור בשבתות ובראשונים</b> — האתר הרשמי אומר
-      ״פתוח שני עד שישי 9:00–13:00 ו-14:00–17:30, <b>סגור בחגים ובימי ראשון</b>״,
-      ופתיחה בשבת מוזכרת רק לאוגוסט. כלומר <b>ראשון 27.9 בחוץ, ושבת 26.9 מפוקפקת</b> —
-      נשארים <b>שישי 25.9, שני 28.9 או שלישי 29.9</b>. <b>וההזמנה חובה.</b><br>
-      <b>Città della Domenica סגור ביום שלישי 29.9.</b></details>
+    <details class="note"><summary class="nh">📅 שני 28.9 — סיור בבוקר, ובהזמנה</summary>
+      האתר הרשמי של Perugina אומר ״פתוח שני עד שישי 9:00–13:00 ו-14:00–17:30, <b>סגור בחגים
+      ובימי ראשון</b>״, ופתיחה בשבת מוזכרת רק לאוגוסט — כך ש<b>מבין שלושת ימי הטיול הפתוחים,
+      שני 28.9 הוא היחיד שבו זה עובד.</b><br>
+      <b>לבקש סיור בבוקר.</b> הסיור ~שעה וחצי, ו<b>משפחה א׳ ממשיכה אחר הצהריים לכיוון רומא</b>
+      לקראת הטיסה של 29.9 (<a data-view="last">היום האחרון ←</a>). אם הצ׳ק-אאוט שלה בדרוטה
+      ב-10:00, המזוודות כבר ברכב — <b>לא להשאיר רכב עמוס בחניה ברחוב בעיר.</b><br>
+      <b>ההזמנה חובה</b>, ושעות הסיורים המדויקות לא מפורסמות — רואים אותן בהזמנה או בטלפון.
+      ⚠️ שעות — לאמת קרוב לתאריך.</details>
 
     <details class="note warn"><summary class="nh">🥜 בית השוקולד ואלרגיה לבוטנים - לא ידוע</summary>
       המדיניות היחידה שמפורסמת היא ״<i>בהזמנה ובכניסה יש להודיע על אלרגיות ואי-סבילויות</i>״.
@@ -1539,7 +1555,10 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       </table>
       <p style="margin:0"><b>ההבדל שווה את ההפרש:</b> ביום <b>ירוק</b> נכללים רק הפארק הטבעי והטרריום. ביום <b>כתום</b> נוספים <b>המופעים, הקארטינג, סירות המנוע הקטנות והאורוות</b> — ומקבלים גם <b>כרטיס עונתי חינם עד 8.11.2026</b> (חסר תועלת לנו, אבל מסביר את המחיר). מגיל 15:30 יש תעריף אחר-צהריים €20.50 / €16. חינם עד גיל 3. <b>עם חמישה ילדים, יום ירוק הוא כמעט חצי מחיר — אבל בלי הקארטינג והמופעים.</b> ⚠️ שימו לב שהאורוות, הקארטינג והסירות אינם כלולים במחיר הכרטיס גם ביום כתום.</p>
       <p style="margin:0"><b>חניה:</b> לא לנסות להיכנס לעיר העליונה ברכב. חונים למטה (ליד תחנת המיני-מטרו או Piazza Partigiani) ועולים — זול יותר ומונע ZTL. <a href="#info/ztl">ZTL ←</a></p>
-      <p style="margin:0"><b>אוכל:</b> פרוג׳ה היא המקום הטוב באזור לצהריים זולים ומקומיים — <i>torta al testo</i> או פאנינו עם פורקטה, אצל בעלי מאפיות ולא במסעדה. ⚠️ שניהם קמח חיטה. וכאן גם <b>Sglù, ~25 דקות מהעיר</b> — הכל ללא גלוטן. <a href="#food/sglu">Sglù ←</a></p>
+      <p style="margin:0"><b>אוכל:</b> פרוג׳ה היא המקום הטוב באזור לצהריים זולים ומקומיים — <i>torta al testo</i> או פאנינו עם פורקטה, אצל בעלי מאפיות ולא במסעדה. ⚠️ שניהם קמח חיטה. ⚠️ <b>ביום שני Sglù סגור, וגם Il Moderno.</b> מה שפתוח בשני: <b dir="ltr">Torre degli Sciri</b>
+        ב-Via dei Priori — פינסה, המבורגר וטיגון, הכל קיים גם ללא גלוטן לפי העמוד שלהם; <b>לשאול על שמן
+        טיגון נפרד</b>, והשעות לאמת. (<a href="#map/p:sciri">במפה ←</a>)
+        ומלאי ללא גלוטן לשני — לקנות ב-Sglù <b>עד ראשון 27.9 בצהריים</b> (08:00–12:30). <a href="#food/sglu">Sglù ←</a></p>
     </details>
   </div>
 
@@ -1670,7 +1689,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     אותו יום בדיוק מתרחש יום קודם</b>: צ׳ק-אאוט ויציאה מדרוטה ב-<b>28.9</b>, החזרת רכב
     בליל <b>28→29.9</b> ב-02:30, טיסה ב-<b>29.9 ב-05:30</b>.<br>
     <b>מה שזה משנה בפועל:</b> שני חדרי Day-use ולא אחד · שתי החזרות רכב בשני לילות ·
-    ו<b>שני 28.9 הוא היום האחרון המשותף</b>, לא 29.9.
+    ו<b>שני 28.9 הוא היום האחרון המשותף</b>, לא 29.9 — והבוקר שלו נקבע ל<a href="#days/perugia">פרוג׳ה ובית השוקולד</a>.
     <a href="#home/flights">הטבלה המלאה ←</a></div>
 
   <div class="card" id="theproblem"><h3>🎯 לתכנן<a class="anchor" href="#last/theproblem" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
@@ -1967,7 +1986,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       <a class="map" href="https://www.google.com/maps/search/?api=1&query=Sglu+Via+Sandro+Pertini+1+Ellera+di+Corciano" target="_blank" rel="noopener">מפה ↖</a>
       <a class="map onmap" href="#map/p:sglu" title="Sglù — במפה שלנו">🗺️</a>
     </div>
-    <p class="src">⚠️ <b>סגור בשני</b> בשני הסניפים — ואם יום שני 28.9 הוא היום שנרצה לקנות בו, זה לא יעבוד. Sglù מופיע ברשימה הרשמית של AIC אומבריה תחת ״חנויות מתמחות״; הוא <b>לא</b> טוען להסמכת מסעדה. שעות לפי האתר שלו — לאמת בטלפון.</p>
+    <p class="src">⚠️ <b>סגור בשני</b> בשני הסניפים — ושני 28.9 הוא יום פרוג׳ה, ממש ליד. <b>מה שצריך לשני קונים עד ראשון בצהריים.</b> Sglù מופיע ברשימה הרשמית של AIC אומבריה תחת ״חנויות מתמחות״; הוא <b>לא</b> טוען להסמכת מסעדה. שעות לפי האתר שלו — לאמת בטלפון.</p>
   </div>
 
   <div class="card" id="peanut"><h3>🥜 אלרגיה לבוטנים באיטליה <a class="anchor" href="#food/peanut" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
@@ -2398,7 +2417,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
 
   <div class="card" id="book"><h3>📞 טלפונים שכדאי לעשות מהבית <a class="anchor" href="#checklist/book" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <ul class="pill-list">
-      <li><b>Perugina — לפני שמזמינים סיור</b>, ובכתב: מה מוגש בטעימה, אם בוטנים מטופלים במפעל, ואם אפשר לעשות את הסיור בלי הטעימה. ‎800 800 907 / casadelcioccolato@perugina.it. <a href="#food/peanut">למה ←</a></li>
+      <li><b>Perugina — להזמין סיור לשני 28.9 בבוקר</b>, ולפני כן, בכתב: מה מוגש בטעימה, אם בוטנים מטופלים במפעל, ואם אפשר לעשות את הסיור בלי הטעימה. ‎800 800 907 / casadelcioccolato@perugina.it. <a href="#food/peanut">למה ←</a></li>
       <li><b>סדנת הקרמיקה בדרוטה</b> — ‎+39 075 971 1000. הזמנה חובה, ולשאול אם המחיר €10 או €20. <a href="#base/deruta">פרטים ←</a></li>
       <li><b>Pangea — רפטינג</b>, ‎+39 348 77 11 170. ⚠️ <b>שבת 26.9 כבר מלאה.</b> מינימום 4 נרשמים. <a href="#days/adventure">פרטים ←</a></li>
       <li><b>UmbriaActivity Park</b> — ‎+39 393 417 4717. ⚠️ פתוח לקהל <b>רק בשבת ובראשון</b>; בשאר הימים ״קבוצות בהזמנה״. ולשאול על גיל המסלול המלא (16 או 18 — הם סותרים את עצמם). <a href="#days/adventure">פרטים ←</a></li>

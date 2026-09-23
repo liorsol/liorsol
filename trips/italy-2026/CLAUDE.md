@@ -539,9 +539,10 @@ or take `thumburl` straight from the API. Send a descriptive User-Agent with a c
 - **Cars:** two, from FCO, collected 25.9 morning, returned 30.9 **02:30**. **Which company is
   unknown**, and that is open question #2 — the out-of-hours key-box procedure, whether a 02:30
   return is even permitted, and which of Multipiano A/B/C to drive to all depend on it.
-- **The four middle days are deliberately unplanned.** Nine fully-worked day options in the `days`
-  view; the family picks each evening. This was ChatGPT's framing and it is the better one — see
-  below.
+- **The middle days are chosen each evening — except the two the family has fixed.** Nine
+  fully-worked day options in the `days` view. Friday 25.9 is Marmore and Monday 28.9 is Perugia +
+  Perugina (both the user's decisions, Sep 2026), which leaves **Saturday and Sunday** to the bank.
+  This was ChatGPT's framing and it is the better one — see below.
 
 ## Day-by-day skeleton
 
@@ -550,7 +551,7 @@ or take `thumburl` straight from the API. Send a descriptive User-Agent with a c
 | 25.9 | Fri | Land **00:45** → minivan **02:00** → 2 apartments → shuttle **08:00** for 2 → cars → drive to Deruta (~2 h, big shop on the way) → pool. **Not a touring day.** |
 | 26.9 | Sat | Pick from the `days` bank |
 | 27.9 | Sun | Pick from the `days` bank |
-| 28.9 | Mon | Pick from the `days` bank · ⚠️ **Sglù is closed on Mondays** |
+| 28.9 | Mon | **Perugia + Perugina chocolate house, morning tour** (user's decision) — family A drives on to Rome that afternoon · ⚠️ **Sglù and Il Moderno are closed on Mondays** |
 | 29.9 | Tue | Check out **11:00** → a middle day → **day-use room** → Parco Leonardo → FCO |
 | 30.9 | Wed | Cars back **02:30** → T3 → fly **05:30** |
 
@@ -836,7 +837,9 @@ is the single best child-suited event available in the window and is now on the 
 option. Against it: **2026 is the 800th anniversary of St Francis's death and Assisi is the focus
 of national celebrations culminating 4 October**, so the final week of September there will be
 abnormally crowded; and the **Cronoscalata della Castellana hillclimb closes the SR 79 bis into
-Orvieto 07:00–19:00 on 25–27 September**, which is a reason to shift Orvieto to Monday the 28th.
+Orvieto 07:00–19:00 on 25–27 September**. That used to be a reason to move Orvieto to Monday the
+28th; **Monday is now Perugina's**, so Orvieto is a weekend day and the page's answer is the
+approach — the A1 and Orvieto Scalo, not the SR 79 bis.
 
 ## Open questions
 
@@ -859,8 +862,9 @@ is left:
    confused.
 6. **Advance bookings not yet made:** the Deruta ceramics workshop · the rope park and Nera
    rafting (**and the minimum age/height for the 3-year-old, asked with the real ages, not "is it
-   suitable for children"**) · Perugina's allergen answer · Orvieto Underground's English tour
-   times.
+   suitable for children"**) · **the Perugina tour for Monday 28.9, a morning slot**, and its
+   allergen answer before it · Orvieto Underground's English tour times. Whether the Perugina tour
+   is already booked is not known here; the page says "to book" until the user says otherwise.
 
 ## The 02:30 car return — and a method error that cost three passes
 
@@ -1101,17 +1105,38 @@ published rules are the real ones.**
 | `home` | the "what's still open" box is one long line; it should be bullets, one per line | `.note .qlist`, and the same treatment given to the other run-on box (the four non-existent restaurants). |
 | `home` | add a Rome forecast to the weather | A second `.wx-days` strip for Rome city centre over the same dates. |
 
-### The zoom fix — and what it is NOT
+### The zoom fix
 
-`user-scalable=no` was **not** used and must not be: iOS Safari has ignored it since iOS 10, and
-it breaks pinch-zoom for anyone who needs it. The two real causes:
+The first pass fixed the two *causes* and deliberately left pinch-zoom working. **The user then
+asked for it gone** (Sep 2026: *"prevent the page from zooming completely on mobile — the view size
+should be constant — the map should behave regularly"*). That is their call to make on their
+family's page, and it is what the page does now. The accessibility cost is real — nobody can
+pinch to read small print — and it was accepted, not missed. **Don't quietly re-enable pinch;
+don't extend the lock to the Leaflet map either.**
 
-1. **Focus zoom** is caused by an input under 16px, full stop. `.board-form input/textarea` was
-   `15px`; it is `16px`. **Do not lower it.**
-2. **Horizontal pan** comes from something wider than the viewport making the whole document
-   pannable. `html,body{overflow-x:clip; max-width:100%}` stops it at the root. `clip` rather
-   than `hidden`: `hidden` on `html` turns it into a scroll container and kills `position:sticky`
-   and smooth scrolling inside it. Verified in-browser: `scrollWidth - clientWidth === 0`.
+No single switch does it on every phone, so there are four layers, and each one is load-bearing
+somewhere:
+
+| Layer | Where | What it covers |
+|---|---|---|
+| `maximum-scale=1, minimum-scale=1, user-scalable=no` | viewport meta, both pages | Chrome/Android pinch. iOS has ignored it for pinch since iOS 10, but it still stops the focus zoom there. |
+| `touch-action:pan-x pan-y` | `html,body` in `index.html`, `html,body` in `map.html` | Pinch and double-tap zoom on Chrome and Safari 13+. Not inherited, but the browser **intersects it down the ancestor chain**, so on `html` it covers the document. Leaflet's container is `touch-action:none`, and `none ∩ pan-x pan-y` is still `none` — so the map is unaffected. |
+| `gesturestart/change/end` → `preventDefault`, plus a two-finger `touchmove` guard | `trip.js` ("No page zoom"), inline `<script>` in `map.html` | iOS Safari — the one lever it still honours. The map's copy **returns early for anything inside `.leaflet-container`**: that pinch is the map's. |
+| `.board-form input/textarea` at **16px** | CSS | Focus zoom on any browser that ignores the meta. **Do not lower it.** |
+
+And the horizontal-pan fix from the first pass stays: `html,body{overflow-x:clip; max-width:100%}`.
+`clip` rather than `hidden`: `hidden` on `html` turns it into a scroll container and kills
+`position:sticky` and smooth scrolling inside it.
+
+**Verified in mobile-emulated Chromium, with a mutation check** — the same test run against the
+previous commit is what proves it discriminates. A raw two-finger `Input.dispatchTouchEvent` pinch
+took the old trip page to `visualViewport.scale` **5**, and a `synthesizePinchGesture` on
+`map.html`'s header bar took it to **3**; both stay at **1** now, double-tap included. Leaflet
+still pinches: zoom 8→10 on `map.html` directly and 8→11 inside the `#map` iframe, with the top
+page at scale 1. ⚠️ `Input.synthesizePinchGesture` with `gestureSourceType:'touch'` leaves the old
+page at 1 too — it does not reach headless page zoom, so a test built on it alone passes for the
+wrong reason. **iOS itself could not be tested here** (no WebKit, and Chromium has no
+`GestureEvent`); the Safari layer is the standard recipe and wants one check on a real iPhone.
 
 ### Collapsible note boxes
 
@@ -1437,6 +1462,41 @@ says it has no place in the Friday plan.
 station hours, the Conad's hours (aggregator), and every trail length — secondary sources
 disagree by up to ±30%, which is why the recommended route is described as "the flat paved path"
 rather than by a number.
+
+## Perugina on Monday (user's decision, Sep 2026)
+
+**Settled: Monday 28.9 is Perugia + the Perugina chocolate house.** Of the three open days (Sat/Sun/Mon)
+it is also the only one where Perugina can work at all — the official site says *Mon–Fri
+9:00–13:00 and 14:00–17:30, closed on holidays and Sundays*, with Saturday opening mentioned only
+for August. Friday is Marmore, and Tuesday is family B's last day, so among the days actually
+free it was Monday or nothing.
+
+What it changed, and why each change is there:
+
+- **A morning tour, said everywhere the day appears.** Monday is the last common day and the
+  day **family A** leaves for its 29.9 flight — the day-use room near EUR opens at 17:00, and
+  Deruta → FCO is 1:49 in normal traffic, and the room is on the way in. The tour is ~1.5 h and exact slot times are not published, so the
+  page says *ask for a morning slot* rather than naming one.
+- **Lunch on a Monday in Perugia is the trap.** **Sglù (both branches) and Il Moderno are closed
+  on Mondays** — the two strongest coeliac options in the area. What is open: **Torre degli
+  Sciri**, Via dei Priori, Mon–Sat 11:00–15:30 (aggregator hours, `≈`), GF pinsa/burger/fries per
+  its own page, with the fryer question still open. And the house restaurant is closed on
+  Mondays too. So the page says to stock up at Sglù **by Sunday 12:30**, the last opening before
+  Monday.
+- **A packed car.** If family A's Deruta check-out is 10:00, the luggage is in the car during the
+  tour; the card says not to leave a loaded car on a city street. Nothing is claimed about
+  Perugina's own parking, because nothing about it was verified.
+- **Orvieto lost Monday.** The Orvieto card used to suggest Monday to dodge the 25–27.9 hillclimb
+  road closure and the film festival. It now says Monday is taken, so Orvieto is a weekend day,
+  reached via the A1 / Orvieto Scalo. The recommended combination is **Orvieto + Assisi/Spello on
+  Saturday and Sunday**, with the rope park as the action swap — it is public-access only Sat/Sun,
+  so that swap still fits.
+- **The ranking row, the agenda and the "locked" table mark it like Marmore**: ⭐, highlighted,
+  "נקבע לשני 28.9". The booking itself is shown as **🟡 to book**, since the user said it was
+  decided, not that it was booked.
+- The **peanut question is unchanged and still comes first**: written answer from
+  casadelcioccolato@perugina.it before booking, then tour without the tasting. See "Perugina
+  cannot be cleared, only decided" above.
 
 ## Content principles
 

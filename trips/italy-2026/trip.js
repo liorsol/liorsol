@@ -113,6 +113,21 @@
   document.addEventListener('visibilitychange', function(){ if(!document.hidden) playClips(current); });
   window.addEventListener('pageshow', function(){ playClips(current); });
 
+  /* No page zoom (user's call, Sep 2026: "prevent the page from zooming completely —
+     the view size should be constant"). The viewport meta and `touch-action` in
+     index.html cover Chrome and double-tap; this covers iOS Safari, which has ignored
+     user-scalable=no since iOS 10 and whose pinch only stops when its own `gesture*`
+     events are cancelled. The two-finger touchmove is the fallback for a WebKit that
+     does not send those. The map is not in this document — it is map.html in an
+     iframe, which carries its own copy of this that leaves Leaflet's pinch alone. */
+  (function(){
+    function stop(e){ if(e.cancelable) e.preventDefault(); }
+    ['gesturestart','gesturechange','gestureend'].forEach(function(t){
+      document.addEventListener(t, stop, {passive:false});
+    });
+    document.addEventListener('touchmove', function(e){ if(e.touches.length > 1) stop(e); }, {passive:false});
+  })();
+
   /* Side menu: a fixed rail on desktop, a drawer under 900px. */
   var nav = document.getElementById('nav'), tog = document.querySelector('.navtoggle');
   function drawer(open){ nav.classList.toggle('open', open); tog.setAttribute('aria-expanded', open); }

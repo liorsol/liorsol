@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
 <title>מפת המסלול · טיול איטליה 2026</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇮🇹</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +23,11 @@
   *{box-sizing:border-box}
   /* Column layout so #map just takes whatever is left — the filter row's height
      changes when the chips shrink to fit, and a magic-number offset would drift. */
-  html,body{height:100%}
+  /* No page zoom, same as the trip page (see its html,body rule): pinch and
+     double-tap are off everywhere except on the map itself. Leaflet sets
+     `touch-action:none` on its container and runs its own pinch, and the browser
+     intersects the two, so the map is untouched by this. */
+  html,body{height:100%; touch-action:pan-x pan-y}
   body{margin:0; display:flex; flex-direction:column; overflow:hidden;
     background:var(--sand); color:var(--ink); font-family:'Assistant',sans-serif; font-size:16px}
   h1,h2{font-family:'Suez One',serif; font-weight:400; color:var(--sea); margin:0}
@@ -87,6 +91,22 @@
 </head>
 <body>
 <script>if(window.top !== window.self) document.documentElement.className = 'embed';</script>
+<script>
+/* No page zoom on iOS — the viewport meta alone does not do it there (the trip page's
+   html,body rule has the full reasoning, and trip.js has the twin of this). Anything
+   that starts on the Leaflet map is left alone: that pinch is the map's, and it is
+   the one zoom this page is supposed to have. */
+(function(){
+  function stop(e){
+    if(e.target && e.target.closest && e.target.closest('.leaflet-container')) return;
+    if(e.cancelable) e.preventDefault();
+  }
+  ['gesturestart','gesturechange','gestureend'].forEach(function(t){
+    document.addEventListener(t, stop, {passive:false});
+  });
+  document.addEventListener('touchmove', function(e){ if(e.touches.length > 1) stop(e); }, {passive:false});
+})();
+</script>
 
 <div class="bar">
   <h1>🗺️ מפת המסלול</h1>
@@ -182,7 +202,7 @@ var PLACES = [
   {n:'פרוג׳ה — Piazza IV Novembre', cat:'days', lat:43.112045, lng:12.388769, q:'Piazza+IV+Novembre+Perugia', note:'~20–25 ד׳ · מזרקת Fontana Maggiore בכיכר', v:'days/perugia'},
   {n:'Rocca Paolina, פרוג׳ה', cat:'days', plan:'perugia', lat:43.108297, lng:12.388130, q:'Rocca+Paolina+Perugia', note:'עיר תת-קרקעית עם דרגנועים · <b>כניסה חופשית</b> · התכנית הטובה ליום גשום', v:'days/perugia'},
   {n:'🚇 מיני-מטרו — תחנת Pincetto', cat:'days', lat:43.110239, lng:12.390562, q:'Minimetro+Pincetto+Perugia', note:'הדרך לעלות לעיר העליונה בלי להיכנס ל-ZTL', v:'days/perugia'},
-  {n:'Perugina — בית השוקולד', cat:'days', plan:'perugia', lat:43.080659, lng:12.333708, q:'Casa+del+Cioccolato+Perugina+San+Sisto', note:'⚠️ <b>אלרגיה לבוטנים — לברר אלרגנים מול המפעיל לפני הזמנה</b>', v:'food/peanut'},
+  {n:'Perugina — בית השוקולד', cat:'days', plan:'perugia', lat:43.080659, lng:12.333708, q:'Casa+del+Cioccolato+Perugina+San+Sisto', note:'<b>שני 28.9 · בבוקר</b> · הזמנה חובה<br>⚠️ <b>אלרגיה לבוטנים — לברר אלרגנים מול המפעיל לפני הזמנה</b>', v:'food/peanut'},
   {n:'Città della Domenica', cat:'days', lat:43.113152, lng:12.343254, q:'Citta+della+Domenica+Perugia', note:'פארק המשפחות הראשון באיטליה · ⚠️ בסוף ספטמבר כנראה סופי שבוע בלבד — <b>לאמת לתאריך</b>', v:'days/perugia'},
   {n:'UmbriaActivity Park, שקג׳ינו', cat:'days', lat:42.710576, lng:12.840946, q:'UmbriaActivity+Park+Scheggino', note:'~45–50 ד׳ · פארק חבלים ואומגות · ⚠️ מגבלות גיל וגובה, ותיאום מראש<br>הפין ±300 מ׳ — הפארק פרוש על שטח מיוער', v:'days/adventure'},
   {n:'שקג׳ינו — הכפר', cat:'days', lat:42.712556, lng:12.831366, q:'Scheggino+Perugia', note:'כפר על הנהר, מוכר בפורלים · רפטינג משפחתי בנהר הנרה', v:'days/adventure'},

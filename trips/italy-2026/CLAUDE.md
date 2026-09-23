@@ -342,8 +342,9 @@ both frames are that picture. Three consequences worth keeping straight:
 - **The strip is the source of truth for "which shot".** `tally()` derives the index from
   `scrollLeft / clientWidth` on every scroll event; nothing tracks it in a variable, or a native
   swipe and the counter drift apart.
-- **All 51 shots carry a real `src` and are fetched on load** — that is what "cached on load"
-  means here, and it is verified: `sw-core.js` stores cross-origin images as **opaque** responses
+- ~~All 51 shots carry a real `src` and are fetched on load~~ — **superseded, see "Loading
+  order" below**: they ship as `data-src` and are fetched after the page, in the background.
+  What stays true is the caching, verified: `sw-core.js` stores cross-origin images as **opaque** responses
   (checked in-browser against a second local origin: `opaque status=0` sitting in the version
   cache), so the strip keeps swiping with no reception. Caveats worth knowing: the *first* visit
   fetches them before the worker controls the page, so it is the second visit that fills that
@@ -389,6 +390,54 @@ photographer credits ("Photo Minoletti Cesare", "©Allarremviaggio") and are the
 if challenged; the marks were deliberately left visible rather than cropped. Several are clearly
 generated rather than photographed (`marmore-3` has butterflies over the falls), so the strip is
 **illustrative, not documentary**. See [`assets/CREDITS.md`](assets/CREDITS.md).
+
+## Loading order (user's request, Sep 2026)
+
+*"On first time it takes the page some time to load, because of the images — especially the
+webp ones. These should load in the background and not interfere. Same for hero-umbria: the
+image before the video, which loads at the end."*
+
+**What the first visit actually did, measured** (mocked asset host, 390px, Chromium): the clip
+was requested at **242 ms**, the 51 gallery shots from **257 ms**, and the hero **still at 766
+ms** — last of the three, because it is a CSS background on a view that is `display:none`
+until `trip.js` runs. `load` landed at **1.8 s**, and `load` is what registers the worker, whose
+install then fetched the same 51 shots **again** with `cache:'reload'` — ~12 MB in total, all at
+once, on a first visit.
+
+**Now:**
+
+1. **The still first.** `<link rel="preload" as="image" … fetchpriority="high">` in the head.
+   Requested at ~70 ms.
+2. **Nothing heavy before `load`.** The shots are `data-src`, the clip is `data-src` +
+   `preload=none`. `load` now lands at ~0.86 s.
+3. **Then the worker**, whose install precaches the shots (EXTRA). The page waits for
+   `navigator.serviceWorker.ready` — **at most 30 s** — so its own requests are answered from
+   that cache rather than downloading the shots a second time. On a repeat visit `ready`
+   resolves at once.
+4. **Then the background gallery pass**: `window.tripGalleries()`, one card at a time,
+   `fetchPriority=low`, eager.
+5. **The clip last** — after the pass, or 40 s after `load`, whichever is first.
+
+**A view on screen does not wait.** Whatever view is active at load (a deep link to
+`#days/perugia`), and every view opened later (`hashchange`), starts its own strips at once:
+normal priority, the first shot eager and the rest `loading=lazy`. **The first shot must be
+eager**: the figure is `hidden` until a shot arrives, and a lazy image inside a display:none
+box is never fetched — all-lazy would leave the strip hidden for good. The clones of the
+circular strip are built in `start()`, not at init, because `cloneNode` copies the element as it
+is and a clone taken before its `src` never loads.
+
+Verified: galleries request only after `load`, the still before everything, the clip after
+the gallery pass; the 30 s cap path (worker never ready) loads all 8 strips and then the clip;
+strips opened after a background load park on 1/N with working clones and tap-advance.
+⚠️ The worker path itself could not be exercised here: the asset host is blocked from this
+environment, so the worker's own fetches fail and every strip drops itself — a sandbox artefact,
+not a page bug. **Check once on a real phone**: first visit on Wi-Fi, home view → the still
+paints at once, the clip starts some seconds later.
+
+**Known cost, not fixed here (shared `sw-core.js`):** the shots live in the `V` cache, so every
+`V` bump re-downloads all 51 during the new worker's install. It is background, after `load`,
+and no longer on the first paint's path — but it is 5 MB per content update. The fix is a
+second version-surviving cache like `TILES`, and it touches Albania's worker too.
 
 ## What differs from the Albania page (and why)
 

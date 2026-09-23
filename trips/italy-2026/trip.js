@@ -202,12 +202,18 @@
      lends a mouse the same gesture. Two rules that hold it together:
        - the figure starts `hidden` and is revealed once an image has really arrived,
          so a dead CDN leaves no empty frame — the card looks as it did before;
-       - every shot carries a real `src` and is fetched on load. That is also what gets
-         them cached: sw-core.js stores cross-origin images as opaque responses (verified
-         in-browser: `opaque status=0` in the version cache), so swiping keeps working
-         with no reception. Note the very first visit fetches them before the worker is
-         controlling the page, so it is the second visit that fills that cache; the
-         browser's own HTTP cache covers the gap. */
+       - the shots ship as `data-src`, NOT `src` (user's request, Sep 2026: the first
+         load was slow, and "these should load in the background and not interfere").
+         With a real `src`, all 51 (~5 MB) were fetched while the page was still being
+         parsed — hidden views included — and held back the `load` event, which is what
+         registers the service worker. Now: a view the family is actually looking at
+         loads its shots at once (lazy, so the top of the list first); everything else
+         waits for the loading order at the end of this file, and then goes one card at
+         a time at low priority. Offline still holds: the worker's EXTRA precaches all 51
+         at install, and the background pass is timed to run after that, so on a first
+         visit the page's requests are answered from the worker's cache instead of
+         downloading everything twice. */
+  var gallery = [];                     // every strip, in page order, with its start()
   document.querySelectorAll('figure.prev').forEach(function(fig){
     var track = fig.querySelector('.prev-track');
     var shots = [].slice.call(track.querySelectorAll('img'));
@@ -265,14 +271,35 @@
       loop();                             // a clone may have been of the shot that just died
       tally();
     }
-    loop();
     shots.slice().forEach(function(img){
       img.addEventListener('load', reveal);
       img.addEventListener('error', function(){ drop(img); });
-      /* Deferred file: an image may have finished — or failed — before these listeners
-         existed. A complete image with no intrinsic width is a load that failed. */
-      if(img.complete){ if(img.naturalWidth) reveal(); else drop(img); }
     });
+
+    /* Give the shots their `src`. `now` = the family is looking at this view: normal
+       priority, and `loading=lazy` for all but the FIRST shot, so a long view fetches
+       from the top down. The first must be eager: the figure is `hidden` until a shot
+       arrives, and a lazy image inside a display:none box is never fetched — lazy on
+       every shot would leave the strip hidden for good. Otherwise
+       it is the background pass: low priority, eager, so the whole strip is ready by
+       the time anyone opens it. The clones are built here, not above: cloneNode copies
+       the element as it is, and a clone taken before the `src` would never load. */
+    var started = false;
+    gallery.push({fig:fig, start:function(now){
+      if(started) return Promise.resolve();
+      started = true;
+      var done = shots.map(function(img, i){
+        return new Promise(function(res){
+          img.addEventListener('load', res); img.addEventListener('error', res);
+          img.decoding = 'async';
+          if(!now) img.fetchPriority = 'low'; else if(i) img.loading = 'lazy';
+          img.src = img.dataset.src;
+          if(now) res();                   // lazy may never fire; nothing waits on it
+        });
+      });
+      loop();
+      return Promise.all(done);
+    }});
 
     /* Resting on a clone means the seam was just crossed: swap to the real slide showing
        the same picture. Rest is "no scroll event for 120ms" — `scrollend` would say it
@@ -347,6 +374,23 @@
       track.scrollTo({left: (Math.round(track.scrollLeft / w) + 1) * w, behavior:'smooth'});
     });
   });
+
+  /* The view on screen now, and every view opened later, loads its own strips at once.
+     The router's hashchange listener is registered first, so `.active` is already
+     the new view when this one runs. */
+  function onScreen(){
+    var v = document.querySelector('.view.active');
+    if(v) gallery.forEach(function(g){ if(v.contains(g.fig)) g.start(true); });
+  }
+  onScreen();
+  addEventListener('hashchange', onScreen);
+  /* The background pass, called by the loading order below: one card at a time, so it
+     never holds more than a strip's worth of requests open at once. */
+  window.tripGalleries = function(){
+    return gallery.reduce(function(p, g){
+      return p.then(function(){ return g.start(false); });
+    }, Promise.resolve());
+  };
 
   /* The arrival card's Terminal 3 map is hotlinked as well — it is published by
      someone else and bundling it would redistribute it (assets/CREDITS.md). It is
@@ -1836,11 +1880,40 @@
    southern roads and at the villa, where reception is unverified at best.
    Registered last and failure is silent — no worker means a normal web page.
    ============================================================ */
-if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+/* Loading order (user's request, Sep 2026): the page first, and the hero STILL with it
+   (preloaded in the <head>); then, in the background, the 51 gallery shots; the hero
+   CLIP last. Nothing here starts before `load`, so none of it competes with the page.
+     1. `load` → register the worker. Its install precaches the shots (EXTRA).
+     2. Wait for it to be ready — at most 30 s — so the page's own requests for the
+        shots are answered from that cache instead of downloading them a second time.
+        (On a repeat visit `ready` resolves at once.)
+     3. The background gallery pass, one card at a time.
+     4. The clip. It also starts at most 40 s after `load` whatever 2–3 are doing, so
+        a slow network costs the family some seconds of still, not the clip.
+   The video ships with `data-src` and `preload=none` for the same reason the shots
+   do: with a real `src` it started 2 MB of download while the page was parsing. */
+(function(){
+  function wait(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+  function clips(){
+    document.querySelectorAll('video[data-src]').forEach(function(v){
+      if(v.getAttribute('src')) return;
+      v.preload = 'auto';
+      v.src = v.dataset.src;
+      if(v.offsetParent !== null){ var p = v.play(); if(p && p.catch) p.catch(function(){}); }
+    });
+  }
   window.addEventListener('load', function(){
-    navigator.serviceWorker.register('sw.js').catch(function(){});
+    var ready = Promise.resolve();
+    if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+      ready = Promise.race([
+        navigator.serviceWorker.register('sw.js').then(function(){ return navigator.serviceWorker.ready; }),
+        wait(30000)
+      ]).catch(function(){});
+    }
+    var galleries = ready.then(function(){ return window.tripGalleries && window.tripGalleries(); });
+    Promise.race([galleries, wait(40000)]).then(clips, clips);
   });
-}
+})();
 
 /* ============================================================
    esim.dog's runner mini-game, ported from /esim-usage/ for the #esim view.

@@ -8,6 +8,10 @@
 <!-- Installable: add to home screen, then works with no reception. iOS ignores the
      manifest's icons, so apple-touch-icon is what it puts on the home screen. -->
 <link rel="manifest" href="manifest.webmanifest">
+<!-- The hero still is a CSS background on a view that stays display:none until trip.js
+     runs, so without this the browser would not ask for it until then. It is the first
+     thing on screen; everything heavy waits for it — see "Loading order" in trip.js. -->
+<link rel="preload" as="image" href="assets/hero-umbria.jpg" fetchpriority="high">
 <meta name="theme-color" content="#2f5d3a">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -553,7 +557,7 @@
 <!-- ======================= HOME ======================= -->
 <div class="view" id="view-home">
   <header class="hero">
-    <video src="https://liorsol.github.io/assets/italy-2026/hero-umbria.mp4" autoplay muted loop playsinline aria-hidden="true"></video>
+    <video data-src="https://liorsol.github.io/assets/italy-2026/hero-umbria.mp4" preload="none" autoplay muted loop playsinline aria-hidden="true"></video>
     <h1>אומבריה ורומא</h1>
     <div class="dates">25–30 בספטמבר 2026 · שתי משפחות</div>
   </header>
@@ -1081,12 +1085,12 @@
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
            aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-1.webp" alt="אורבייטו — תמונה 1 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-2.webp" alt="אורבייטו — תמונה 2 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-3.webp" alt="אורבייטו — תמונה 3 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-4.webp" alt="אורבייטו — תמונה 4 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-5.webp" alt="אורבייטו — תמונה 5 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-6.webp" alt="אורבייטו — תמונה 6 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-1.webp" alt="אורבייטו — תמונה 1 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-2.webp" alt="אורבייטו — תמונה 2 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-3.webp" alt="אורבייטו — תמונה 3 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-4.webp" alt="אורבייטו — תמונה 4 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-5.webp" alt="אורבייטו — תמונה 5 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/orvieto-6.webp" alt="אורבייטו — תמונה 6 מתוך 6">
       </div>
     </figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-adv">הרפתקה וגדולים</span></div>
@@ -1142,12 +1146,12 @@
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
            aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/marmore-1.webp" alt="מפלי מרמורה — תמונה 1 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/marmore-2.webp" alt="מפלי מרמורה — תמונה 2 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/marmore-3.webp" alt="מפלי מרמורה — תמונה 3 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/marmore-4.webp" alt="מפלי מרמורה — תמונה 4 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/marmore-5.webp" alt="מפלי מרמורה — תמונה 5 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/marmore-6.webp" alt="מפלי מרמורה — תמונה 6 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/marmore-1.webp" alt="מפלי מרמורה — תמונה 1 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/marmore-2.webp" alt="מפלי מרמורה — תמונה 2 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/marmore-3.webp" alt="מפלי מרמורה — תמונה 3 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/marmore-4.webp" alt="מפלי מרמורה — תמונה 4 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/marmore-5.webp" alt="מפלי מרמורה — תמונה 5 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/marmore-6.webp" alt="מפלי מרמורה — תמונה 6 מתוך 6">
       </div>
     </figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-grand">נגיש ונינוח</span></div>
@@ -1380,12 +1384,12 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
            aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/assisi-1.webp" alt="אסיזי — תמונה 1 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/assisi-2.webp" alt="אסיזי — תמונה 2 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/assisi-3.webp" alt="אסיזי — תמונה 3 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/assisi-4.webp" alt="אסיזי — תמונה 4 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/assisi-5.webp" alt="אסיזי — תמונה 5 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/assisi-6.webp" alt="אסיזי — תמונה 6 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/assisi-1.webp" alt="אסיזי — תמונה 1 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/assisi-2.webp" alt="אסיזי — תמונה 2 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/assisi-3.webp" alt="אסיזי — תמונה 3 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/assisi-4.webp" alt="אסיזי — תמונה 4 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/assisi-5.webp" alt="אסיזי — תמונה 5 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/assisi-6.webp" alt="אסיזי — תמונה 6 מתוך 6">
       </div>
     </figure>
     <div class="tags"><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span><span class="tag t-adv">הרפתקה וגדולים</span></div>
@@ -1431,12 +1435,12 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
            aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/adventure-1.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 1 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/adventure-2.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 2 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/adventure-3.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 3 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/adventure-4.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 4 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/adventure-5.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 5 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/adventure-6.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 6 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/adventure-1.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 1 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/adventure-2.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 2 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/adventure-3.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 3 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/adventure-4.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 4 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/adventure-5.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 5 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/adventure-6.webp" alt="פארק החבלים ורפטינג בעמק הנרה — תמונה 6 מתוך 6">
       </div>
     </figure>
     <div class="tags"><span class="tag t-adv">הרפתקה וגדולים</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-all">כולם</span></div>
@@ -1490,13 +1494,13 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
            aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-1.webp" alt="אגם טרסימנו — תמונה 1 מתוך 7">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-2.webp" alt="אגם טרסימנו — תמונה 2 מתוך 7">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-3.webp" alt="אגם טרסימנו — תמונה 3 מתוך 7">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-4.webp" alt="אגם טרסימנו — תמונה 4 מתוך 7">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-5.webp" alt="אגם טרסימנו — תמונה 5 מתוך 7">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-6.webp" alt="אגם טרסימנו — תמונה 6 מתוך 7">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-7.webp" alt="אגם טרסימנו — תמונה 7 מתוך 7">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-1.webp" alt="אגם טרסימנו — תמונה 1 מתוך 7">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-2.webp" alt="אגם טרסימנו — תמונה 2 מתוך 7">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-3.webp" alt="אגם טרסימנו — תמונה 3 מתוך 7">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-4.webp" alt="אגם טרסימנו — תמונה 4 מתוך 7">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-5.webp" alt="אגם טרסימנו — תמונה 5 מתוך 7">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-6.webp" alt="אגם טרסימנו — תמונה 6 מתוך 7">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/trasimeno-7.webp" alt="אגם טרסימנו — תמונה 7 מתוך 7">
       </div>
     </figure>
     <div class="tags"><span class="tag t-beach">מים ורוגע</span><span class="tag t-grand">נגיש ונינוח</span><span class="tag t-all">כולם</span></div>
@@ -1530,11 +1534,11 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
            aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/perugia-1.webp" alt="פרוג׳ה — תמונה 1 מתוך 5">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/perugia-2.webp" alt="פרוג׳ה — תמונה 2 מתוך 5">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/perugia-3.webp" alt="פרוג׳ה — תמונה 3 מתוך 5">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/perugia-4.webp" alt="פרוג׳ה — תמונה 4 מתוך 5">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/perugia-5.webp" alt="פרוג׳ה — תמונה 5 מתוך 5">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/perugia-1.webp" alt="פרוג׳ה — תמונה 1 מתוך 5">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/perugia-2.webp" alt="פרוג׳ה — תמונה 2 מתוך 5">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/perugia-3.webp" alt="פרוג׳ה — תמונה 3 מתוך 5">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/perugia-4.webp" alt="פרוג׳ה — תמונה 4 מתוך 5">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/perugia-5.webp" alt="פרוג׳ה — תמונה 5 מתוך 5">
       </div>
     </figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span></div>
@@ -1616,12 +1620,12 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
            aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-1.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 1 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-2.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 2 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-3.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 3 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-4.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 4 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-5.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 5 מתוך 6">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-6.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 6 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-1.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 1 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-2.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 2 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-3.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 3 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-4.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 4 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-5.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 5 מתוך 6">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/tuscany-6.webp" alt="מונטפולצ׳אנו ופיינצה — תמונה 6 מתוך 6">
       </div>
     </figure>
     <div class="tags"><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span></div>
@@ -1652,15 +1656,15 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <figure class="prev" hidden>
       <div class="prev-track" tabindex="0" role="group"
            aria-label="תמונות מהמקום — החליקו הצידה או הקישו לתמונה הבאה">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-1.webp" alt="דרוטה — תמונה 1 מתוך 9">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-2.webp" alt="דרוטה — תמונה 2 מתוך 9">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-3.webp" alt="דרוטה — תמונה 3 מתוך 9">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-4.webp" alt="דרוטה — תמונה 4 מתוך 9">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-5.webp" alt="דרוטה — תמונה 5 מתוך 9">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-6.webp" alt="דרוטה — תמונה 6 מתוך 9">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-7.webp" alt="דרוטה — תמונה 7 מתוך 9">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-8.webp" alt="דרוטה — תמונה 8 מתוך 9">
-        <img src="https://liorsol.github.io/assets/italy-2026/prev/rest-9.webp" alt="דרוטה — תמונה 9 מתוך 9">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/rest-1.webp" alt="דרוטה — תמונה 1 מתוך 9">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/rest-2.webp" alt="דרוטה — תמונה 2 מתוך 9">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/rest-3.webp" alt="דרוטה — תמונה 3 מתוך 9">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/rest-4.webp" alt="דרוטה — תמונה 4 מתוך 9">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/rest-5.webp" alt="דרוטה — תמונה 5 מתוך 9">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/rest-6.webp" alt="דרוטה — תמונה 6 מתוך 9">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/rest-7.webp" alt="דרוטה — תמונה 7 מתוך 9">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/rest-8.webp" alt="דרוטה — תמונה 8 מתוך 9">
+        <img data-src="https://liorsol.github.io/assets/italy-2026/prev/rest-9.webp" alt="דרוטה — תמונה 9 מתוך 9">
       </div>
     </figure>
     <div class="tags"><span class="tag t-all">כולם</span><span class="tag t-beach">מים ורוגע</span><span class="tag t-grand">נגיש ונינוח</span></div>

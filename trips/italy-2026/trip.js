@@ -209,7 +209,7 @@
          registers the service worker. Now: a view the family is actually looking at
          loads its shots at once (lazy, so the top of the list first); everything else
          waits for the loading order at the end of this file, and then goes one card at
-         a time at low priority. Offline still holds: the worker's EXTRA precaches all 51
+         a time at low priority. Offline still holds: the worker's IMAGE_URLS precaches all 51
          at install, and the background pass is timed to run after that, so on a first
          visit the page's requests are answered from the worker's cache instead of
          downloading everything twice. */
@@ -1883,7 +1883,7 @@
 /* Loading order (user's request, Sep 2026): the page first, and the hero STILL with it
    (preloaded in the <head>); then, in the background, the 51 gallery shots; the hero
    CLIP last. Nothing here starts before `load`, so none of it competes with the page.
-     1. `load` → register the worker. Its install precaches the shots (EXTRA).
+     1. `load` → register the worker. Its install precaches the shots (IMAGE_URLS).
      2. Wait for it to be ready — at most 30 s — so the page's own requests for the
         shots are answered from that cache instead of downloading them a second time.
         (On a repeat visit `ready` resolves at once.)

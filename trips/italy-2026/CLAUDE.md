@@ -372,10 +372,11 @@ Two things the earlier note got wrong, recorded so nobody re-derives them:
 - **The URLs had not expired.** `curl` pulled all 51 at 200; it was the *browser* that showed
   `ERR_FAILED`, so the failure was a hotlink/CORS block on that host, not a dead CDN.
   `referrerpolicy="no-referrer"` did not beat it. The attribute is **gone** — same-origin now.
-- **`CORE` was the wrong destination.** They are in **`EXTRA`**: `CORE` is strict, one entry
-  failing fails the whole install, and staking the offline page on 51 decorative pictures is a
-  bad trade. `EXTRA` still fetches them at install, so "cached on load" holds. The reasoning is
-  in the [`sw.js`](sw.js) comment.
+- **`CORE` was the wrong destination.** They are in **`IMAGE_URLS`** (best-effort, like
+  `EXTRA`): `CORE` is strict, one entry failing fails the whole install, and staking the offline
+  page on 51 decorative pictures is a bad trade. The install still fetches them, so "cached on
+  load" holds. They were in `EXTRA` until Sep 2026 — see "Loading order" for why they moved. The
+  reasoning is in the [`sw.js`](sw.js) comment.
 
 Encoding: `-auto-orient`, `-resize '1100x825>'` (shrink only — nine were already smaller),
 `-strip`, WebP q76. **21 MB → 5.1 MB.** The strip renders at max 940 CSS px into a 16:7
@@ -411,7 +412,7 @@ once, on a first visit.
    Requested at ~70 ms.
 2. **Nothing heavy before `load`.** The shots are `data-src`, the clip is `data-src` +
    `preload=none`. `load` now lands at ~0.86 s.
-3. **Then the worker**, whose install precaches the shots (EXTRA). The page waits for
+3. **Then the worker**, whose install precaches the shots (`IMAGE_URLS`). The page waits for
    `navigator.serviceWorker.ready` — **at most 30 s** — so its own requests are answered from
    that cache rather than downloading the shots a second time. On a repeat visit `ready`
    resolves at once.
@@ -435,10 +436,20 @@ environment, so the worker's own fetches fail and every strip drops itself — a
 not a page bug. **Check once on a real phone**: first visit on Wi-Fi, home view → the still
 paints at once, the clip starts some seconds later.
 
-**Known cost, not fixed here (shared `sw-core.js`):** the shots live in the `V` cache, so every
-`V` bump re-downloads all 51 during the new worker's install. It is background, after `load`,
-and no longer on the first paint's path — but it is 5 MB per content update. The fix is a
-second version-surviving cache like `TILES`, and it touches Albania's worker too.
+**A `V` bump costs no image bytes (Sep 2026).** The shots used to sit in `EXTRA`, i.e. in the
+`V` cache: every bump deleted all 51 and the next install re-fetched them with `cache:'reload'` —
+5 MB of mobile data per content edit, several times a day while the page was being worked on.
+They now live in `IMAGE_URLS`, precached into their own cache `IMAGES = 'italy-2026-images'`,
+which `activate` keeps across bumps exactly like `TILES`. The install fetches **only the entries
+missing from it**, without `cache:'reload'`; the first install after this change copied them out
+of the old `V` cache instead of downloading them again. The fetch handler serves them cache-first
+with **no background refresh** (the generic branch would re-fetch every shot on every view and
+park a second copy in `V`). Shots dropped from the list are pruned at `activate`.
+⚠️ **The price is one rule: these files are immutable. A changed picture gets a new file name**
+(`orvieto-7.webp`, `orvieto-1b.webp`). A file overwritten in place never reaches a phone that
+already has it, and bumping `V` does not help. `node trips/sw-core.test.js` covers it: only the
+missing entries are fetched, never with `reload`, the cache survives a bump, and a cached shot is
+not re-fetched.
 
 ## What differs from the Albania page (and why)
 

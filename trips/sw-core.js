@@ -23,7 +23,10 @@
      TILES    cache name for map tiles, e.g. 'italy-2026-tiles'
      CORE     array of same-directory URLs to precache strictly
    and may define:
-     EXTRA    array of best-effort (usually cross-origin) URLs */
+     EXTRA       array of best-effort (usually cross-origin) URLs
+     IMAGES      cache name for immutable images, e.g. 'italy-2026-images' — like TILES,
+                 it survives a V bump (see "Immutable images" below)
+     IMAGE_URLS  the images that go in it. Both or neither. */
 
 if(typeof V !== 'string' || typeof TILES !== 'string' || !Array.isArray(CORE)){
   /* Thrown during script evaluation, so registration fails outright. A worker with
@@ -32,6 +35,29 @@ if(typeof V !== 'string' || typeof TILES !== 'string' || !Array.isArray(CORE)){
   throw new Error('sw-core.js: the trip stub must define V, TILES and CORE before importScripts');
 }
 if(typeof EXTRA === 'undefined') var EXTRA = [];
+if(typeof IMAGES === 'undefined') var IMAGES = null;
+if(typeof IMAGE_URLS === 'undefined') var IMAGE_URLS = [];
+if((IMAGES === null) !== (IMAGE_URLS.length === 0) ||
+   (IMAGES !== null && (typeof IMAGES !== 'string' || !Array.isArray(IMAGE_URLS)))){
+  /* Half a config is a mistake, not a choice: IMAGE_URLS with no IMAGES would quietly
+     precache nothing, and IMAGES with no list would keep an empty cache forever. */
+  throw new Error('sw-core.js: IMAGES and IMAGE_URLS go together — define both or neither');
+}
+
+/* Immutable images. Anything in EXTRA lands in the V cache, is fetched with
+   cache:'reload' and is deleted with that cache on the next bump — right for the Google
+   Fonts CSS, wrong for 51 gallery shots (~5 MB) that never change: every content edit
+   made every phone download all of them again. These get their own cache instead,
+   kept across V bumps exactly like TILES, filled at install with only what is MISSING
+   from it, and never revalidated. The contract that makes this safe is the stub's:
+   **an IMAGE_URLS entry never changes bytes — a new picture gets a new URL.**
+   Images only: media() still bypasses video and audio before any of this is reached. */
+var IMAGE_SET = {};
+IMAGE_URLS.forEach(function(u){ IMAGE_SET[abs(u)] = true; });
+function abs(u){
+  try{ return new URL(u, self.location && self.location.href).href; }catch(e){ return String(u); }
+}
+function isImage(url){ return IMAGE_SET.hasOwnProperty(abs(url)); }
 
 var TILE_MAX = 900;
 
@@ -78,23 +104,59 @@ self.addEventListener('install', function(e){
       return c.addAll(CORE.map(fresh)).then(function(){
         return Promise.all(EXTRA.map(function(u){ return c.add(fresh(u)).catch(function(){}); }));
       });
-    }).then(function(){ return self.skipWaiting(); })
+    }).then(precacheImages).then(function(){ return self.skipWaiting(); })
   );
 });
+
+/* Best-effort, like EXTRA — a decorative picture must not cost the offline page — and
+   awaited like EXTRA, so `navigator.serviceWorker.ready` still means "the images are in".
+   Per entry, cheapest first:
+     1. already in IMAGES → nothing to do. This is every V bump after the first.
+     2. in any other cache → copy it across. The old V cache is still there during
+        install (activate has not run yet), so the first install after IMAGES appears
+        migrates the shots out of it instead of downloading them again.
+     3. otherwise fetch it — WITHOUT cache:'reload': the bytes are immutable, so an
+        HTTP-cache copy is exactly as good as the network's. */
+function precacheImages(){
+  if(!IMAGES) return;
+  return caches.open(IMAGES).then(function(c){
+    return Promise.all(IMAGE_URLS.map(function(u){
+      return c.match(u).then(function(hit){
+        if(hit) return;
+        return caches.match(u).then(function(old){
+          return old ? c.put(u, old) : c.add(u);
+        });
+      }).catch(function(){});
+    }));
+  });
+}
 
 self.addEventListener('activate', function(e){
   e.waitUntil(
     caches.keys().then(function(keys){
-      /* Keep the current shell AND the tile cache; drop every older version. The
-         tile cache deliberately survives a V bump — it is not shell, it is the areas
-         the family has already primed, and wiping it on a content edit would
-         silently un-prime their offline map with nothing on screen to explain why. */
+      /* Keep the current shell, the tile cache and the image cache; drop every older
+         version. The tile cache deliberately survives a V bump — it is not shell, it is
+         the areas the family has already primed, and wiping it on a content edit would
+         silently un-prime their offline map with nothing on screen to explain why. The
+         image cache survives for the reason above: its contents never go stale. */
       return Promise.all(keys.map(function(k){
-        return (k === V || k === TILES) ? null : caches.delete(k);
+        return (k === V || k === TILES || k === IMAGES) ? null : caches.delete(k);
       }));
-    }).then(function(){ return self.clients.claim(); })
+    }).then(pruneImages).then(function(){ return self.clients.claim(); })
   );
 });
+
+/* The image cache is never wiped, so a shot dropped from IMAGE_URLS would otherwise sit
+   in it for good. Done at activate, not install, so the old worker keeps every picture
+   it might still be showing until the new one takes over. */
+function pruneImages(){
+  if(!IMAGES) return;
+  return caches.open(IMAGES).then(function(c){
+    return c.keys().then(function(keys){
+      return Promise.all(keys.map(function(k){ return isImage(k.url) ? null : c.delete(k); }));
+    });
+  }).catch(function(){});
+}
 
 /* Keep the tile cache bounded. Cache.keys() is insertion-ordered and put() re-inserts,
    so dropping from the front evicts the least recently fetched. Only every 60th tile,
@@ -156,6 +218,27 @@ self.addEventListener('fetch', function(e){
           return fetch(req).then(function(res){
             if(res && (res.status === 200 || res.type === 'opaque')){
               c.put(req, res.clone()).then(trimTiles).catch(function(){});
+            }
+            return res;
+          });
+        });
+      })
+    );
+    return;
+  }
+
+  /* Immutable images: cache-first out of their own cache, and NO background refresh.
+     The generic branch below would re-fetch each shot on every view and put a second
+     copy into V — 5 MB of duplicates that die at the next bump. A miss (the install
+     could not reach the host) is fetched once and kept. */
+  if(isImage(req.url)){
+    e.respondWith(
+      caches.open(IMAGES).then(function(c){
+        return c.match(req).then(function(hit){
+          if(hit) return hit;
+          return fetch(req).then(function(res){
+            if(res && (res.status === 200 || res.type === 'opaque')){
+              c.put(req, res.clone()).catch(function(){});
             }
             return res;
           });

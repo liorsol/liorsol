@@ -13,7 +13,7 @@
    whose bytes differ, and cache-first means a corrected restaurant or a fixed
    opening time is invisible until V moves. This is the one way to ship a change
    that silently does not reach the family. */
-var V = 'italy-2026-v27';
+var V = 'italy-2026-v28';
 
 /* Tiles get their own cache, and it deliberately SURVIVES a V bump — it is not
    shell, it is the areas the family has already primed. See sw-core.js. */
@@ -48,18 +48,29 @@ var CORE = [
   'assets/hero-umbria.jpg'
 ];
 
-/* Best-effort shell — one failure must not cost the offline page.
+/* Best-effort shell — one failure must not cost the offline page. A missing font
+   degrades to a fallback face, which a missing map script never would. */
+var EXTRA = [
+  'https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@400;500;700;900&display=swap'
+];
 
-   The fonts: a missing face degrades to a fallback, which a missing map script never would.
+/* The 51 day-card shots (5.0 MB), served from the assets repo at
+   liorsol.github.io/assets/italy-2026/prev/. They are NOT in EXTRA and NOT in CORE:
 
-   The 51 day-card shots (5.0 MB), now served from the assets repo at
-   liorsol.github.io/assets/italy-2026/prev/. Two things about that:
+   Not CORE, because CORE is strict — one entry failing fails the whole install and
+   leaves no offline page — and betting the shell on 51 decorative pictures is a bad
+   trade. `trip.js` already splices a shot that does not load out of the strip and drops
+   the `<figure>` once none is left, so the downgrade is a card that looks like it did
+   before the galleries existed.
 
-   They are NOT in CORE on purpose. CORE is strict — one entry failing fails the whole
-   install and leaves no offline page — and betting the shell on 51 decorative pictures
-   is a bad trade. `trip.js` already splices a shot that does not load out of the strip
-   and drops the `<figure>` once none is left, so the downgrade is a card that looks like
-   it did before the galleries existed.
+   Not EXTRA, because EXTRA lives in the V cache: every V bump deleted all 51 and the
+   next install re-downloaded them with cache:'reload' — 5 MB per content edit, several
+   times a day while the page is being worked on. IMAGES is its own cache, kept across V
+   bumps like TILES, and the install only fetches what is missing from it (sw-core.js).
+   ⚠️ The price is a rule: **these files are immutable. A changed picture gets a NEW
+   file name** (orvieto-7.webp, or orvieto-1b.webp) — overwriting one in place would
+   never reach a phone that already has it, and no V bump would help. Removing a URL
+   from this list is enough to drop it from phones at the next activate.
 
    They are absolute URLs on another host, and precaching them still works, which is the
    whole reason that host was chosen. GitHub Pages puts the assets repo on
@@ -69,8 +80,8 @@ var CORE = [
    `cache.add()` REJECTS an opaque response, so a host without that header (GitHub
    Releases, say) would fail every one of these at install and silently give up
    "cached on load". Verified live: `image/webp`, `ACAO: *`, and 206 on the clip. */
-var EXTRA = [
-  'https://fonts.googleapis.com/css2?family=Suez+One&family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@400;500;700;900&display=swap',
+var IMAGES = 'italy-2026-images';
+var IMAGE_URLS = [
   'https://liorsol.github.io/assets/italy-2026/prev/orvieto-1.webp',
   'https://liorsol.github.io/assets/italy-2026/prev/orvieto-2.webp',
   'https://liorsol.github.io/assets/italy-2026/prev/orvieto-3.webp',

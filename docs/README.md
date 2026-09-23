@@ -42,6 +42,20 @@ rather than destroy), and an installable offline PWA. Each has its own
 All the offline logic lives in one file. Each trip keeps only a stub at `trips/<trip>/sw.js`
 holding `V`, `TILES`, `CORE` and `EXTRA`, which then `importScripts('../sw-core.js')`.
 
+| Stub var | Cache | Survives a `V` bump | Filled at install |
+|---|---|---|---|
+| `V` + `CORE` | shell | no | strictly, `cache:'reload'` |
+| `V` + `EXTRA` | shell | no | best-effort, `cache:'reload'` |
+| `TILES` | map tiles | **yes** | never — only tiles the family views (OSM policy), capped |
+| `IMAGES` + `IMAGE_URLS` *(optional, both or neither)* | immutable images | **yes** | best-effort, **only missing entries**, no `reload` |
+
+`IMAGES` exists because `EXTRA` lives in the `V` cache: the Italy page's 51 gallery shots (~5 MB)
+used to be re-downloaded by every phone on every content edit. `activate` keeps it, prunes entries
+no longer listed, and the fetch handler serves it cache-first with no background refresh. **An
+`IMAGE_URLS` file must never change in place — a new picture gets a new URL**, or phones keep
+the old one indefinitely. Images only: `media()` still bypasses video before this is reached.
+A stub without `IMAGES` (Albania) behaves exactly as before.
+
 Two things are deliberately **never** intercepted: the live paths (`live(url)` — the Firebase
 boards, open-meteo, er-api), because a cached write would lose a comment; and **media**
 (`media(req)`), because a `<video>` fetches byte ranges, `Cache.put()` refuses a 206, and

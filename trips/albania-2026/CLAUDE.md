@@ -72,7 +72,8 @@ in Shëngjergj is unverified, so offline is the point, not a nicety.
   render at 160 and upscale, any other size raises `OSError: invalid pixel size`). The flag sits inside
   the middle 50% so `purpose:"any maskable"` survives Android's circle crop.
 - **The logic lives in [`trips/sw-core.js`](../sw-core.js), shared with the Italy page (Sep 2026).**
-  This directory keeps only a stub holding `V`, `TILES`, `CORE` and `EXTRA`, which then
+  This directory keeps only a stub holding `V`, `TILES`, `CORE` and `EXTRA` (no `IMAGES` — see
+  `docs/README.md`), which then
   `importScripts('../sw-core.js')`. The stub has to stay here rather than the whole worker moving
   to the site root, because a service worker's scope is its own directory and GitHub Pages cannot
   send `Service-Worker-Allowed` — a single `/sw.js` would take scope `/` and put the file browser,

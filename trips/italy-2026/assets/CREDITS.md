@@ -35,7 +35,9 @@ alone)**, EXIF stripped, WebP quality 76. 21 MB → **5.1 MB**. At the size the 
 renders them (max 940 CSS px, `object-fit:cover` on a 16:7 box) this is indistinguishable
 from the originals; it was checked side by side before the quality was chosen.
 
-They are listed in **`EXTRA`, not `CORE`** — see the comment in [`sw.js`](../sw.js).
+They are listed in **`IMAGE_URLS`, not `CORE`** — see the comment in [`sw.js`](../sw.js).
+**They are immutable: a changed picture gets a new file name**, because phones keep that cache
+across `V` bumps and never re-fetch an entry they already have.
 
 `hero-umbria.mp4` moved there too. The two FCO photos and `hero-umbria.jpg` did **not**: they
 are in the strict `CORE` precache, and the airport board is the picture you look at standing in
@@ -62,5 +64,5 @@ work offline and can break without warning:
 | The arrival card in `#arrival` | the published Terminal 3 map | `ontheworldmap.com` publishes it under its own copyright — bundling it would redistribute it from this repo. The caption tells the family to screenshot it before the flight, since it will not be there at 02:00 with no signal. |
 
 If it becomes a problem, the fix is the same one the day-card shots already took: put the
-file in this folder, add it to `sw.js` (`CORE` if the offline page depends on it, `EXTRA`
-if it is decorative), credit it in the table above, and bump `V`.
+file in this folder, add it to `sw.js` (`CORE` if the offline page depends on it, `IMAGE_URLS`
+if it is a decorative picture), credit it in the table above, and bump `V`.

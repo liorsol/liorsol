@@ -1142,9 +1142,9 @@ wrong reason. **iOS itself could not be tested here** (no WebKit, and Chromium h
 
 `<div class="note"><div class="nh">…` became `<details class="note"><summary class="nh">…` — the
 native element, no JS, so keyboard focus, in-page find and print all keep working. Scope is
-**the days view only** (15 boxes). The blocking notes elsewhere stay open by the same rule the
-Albania page uses for the Bovilla gravel road: `#first-thing` carries a comment saying so, and
-the split-return warning in `#flights` is the same kind of thing. **Don't collapse those.**
+**the days view only** (15 boxes). The blocking notes elsewhere stayed open at first, by the rule the Albania page uses for the
+Bovilla gravel road. **The user has since overruled that for this page** — every note collapses
+now, `#first-thing` included; see "Fourth pass" below.
 
 Print needed a real fix: CSS cannot reveal a closed `<details>`, so `trip.js` opens them all on
 `beforeprint` and **restores the previous state on `afterprint`** — the old handler only opened
@@ -1281,9 +1281,11 @@ that was aimed a frame too early, and the drag "fails" for a reason that is not 
   tag walk that matches each `</div>` and ignores comments — not a regex replace; see the `>`
   lesson above, and a first attempt that counted `<details` inside comments reverted all 67). This **reverses** the
   earlier rule that kept the split-return warning and the other blocking notes open: the user
-  asked for exactly that one. Two stay as they are: **`#first-thing`** (the 02:00 instruction,
-  the one thing on the page that must be read without a tap) and the heading-only "flight leaves
-  Thursday" box, which has no body to collapse. And **a note nested inside another `<details>` stays a
+  asked for exactly that one. **`#first-thing`** (the 02:00 pickup) followed a moment later, on the
+  user's request: it is a collapsed `<details>` now and lives **inside `#flights`, under the table
+  and its status caption**, instead of open above everything — the caption stays glued to the
+  table it explains. Only the heading-only "flight leaves Thursday" box stays a `<div>`: it has
+  no body to collapse. And **a note nested inside another `<details>` stays a
   `<div>`** — the Marmore booking phone script: a `<details>` inside a `<details>` makes the
   outer one a hazard for `edit-server.mjs` (`NEVER_INSIDE`), which then splits every `<b>` into
   its own field; `edit-server.test.mjs` caught it. The router now also opens a target that *is* a

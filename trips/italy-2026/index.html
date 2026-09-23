@@ -288,6 +288,9 @@
     color:var(--ink); text-decoration:none}
   .esim-board .simlinks a:hover{border-color:var(--azure); color:var(--sea)}
   .esim-board .refresh{margin-inline-start:auto}
+  .esim-tools{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:6px}
+  .esim-board > .card{margin:18px 0 0}
+  .esim-board > .board-form{margin-top:14px}
   /* The drag grip. `touch-action:none` on the grip alone: a drag that starts on it
      moves the row, a swipe anywhere else on the row still scrolls the page. The
      negative margins give it a finger-sized target without making the row taller. */
@@ -405,6 +408,20 @@
   .fchip{display:inline-block; font-family:'Heebo',sans-serif; font-weight:700; font-size:12.5px;
     line-height:1.5; padding:2px 9px; border-radius:999px; white-space:nowrap; border:1.5px solid}
   .fchip.sched{background:#f2efe8; border-color:#ddd5c5; color:var(--ink-soft); font-weight:500}
+  /* The resting chip reads "לפי לוח הזמנים" — too long for a phone, where the chip does not
+     wrap and pushed the flights table past the card's edge. Under 600px it says "עתידי". */
+  .fchip .short{display:none}
+  @media (max-width:600px){ .fchip .long{display:none} .fchip .short{display:inline} }
+  /* Five columns on a phone. The short chip alone was not enough — measured at 390px the
+     table still ran ~85px past the card — so under 600px this one table and its card
+     also tighten: smaller type, narrower cells, and long tokens may break. */
+  @media (max-width:600px){
+    #flights{padding-inline:12px}
+    #flighttbl{font-size:13px}
+    #flighttbl th,#flighttbl td{padding:6px 4px}
+    #flighttbl td{overflow-wrap:anywhere}
+    #flighttbl .fchip{white-space:nowrap; overflow-wrap:normal; padding:2px 6px}
+  }
   .fchip.ok   {background:#eaf4ec; border-color:#b6d9bf; color:#20502f}
   .fchip.done {background:#eef2f8; border-color:#c3d3e6; color:#2f4a6e}
   .fchip.warn {background:#fdf3e3; border-color:#e8cf9c; color:#7a5410}
@@ -557,19 +574,19 @@
       <table class="h" id="flighttbl">
         <tr><th>טיסה</th><th>המראה</th><th>נחיתה</th><th>סטטוס</th><th>הערות</th></tr>
         <tr data-fl="W4 6044" data-date="2026-09-24" data-from="TLV" data-to="FCO">
-          <td><b>הלוך · חמישי 24.9</b> · שתי המשפחות<br>Wizz Air <b>W4 6044</b> <br><b>טרמינל 1</b> בנתב״ג -&gt;&nbsp;<b>טרמינל 3</b> ב-FCO<br><a href="https://www.flightaware.com/live/flight/WZZ6044" target="_blank" rel="noopener">מעקב חי ב-FlightAware ↖</a></td>
+          <td><b>הלוך · חמישי 24.9</b> · שתי המשפחות<br>Wizz Air <b>W4 6044</b> <br><b>טרמינל 1</b> בנתב״ג -&gt;&nbsp;<b>טרמינל 3</b> ב-FCO<br><a href="https://www.flightaware.com/live/flight/WMT6044" target="_blank" rel="noopener">מעקב חי ב-FlightAware ↖</a></td>
           <td>תל אביב (TLV)<br>&nbsp;<b>~21:55</b></td>
           <td>רומא (FCO) <br><b>00:45</b> בשישי 25.9</td>
           <td class="fstat"></td>
           <td>יציאה מהטרמינל ~01:30 ← הסעה ב-02:00</td></tr>
         <tr data-fl="W4 6041" data-date="2026-09-29" data-from="FCO" data-to="TLV">
-          <td><b>חזור · שלישי 29.9</b><br>Wizz Air <b>W4 6041</b> · <b>טרמינל 3</b> בשני הצדדים<br><a href="https://www.flightaware.com/live/flight/WZZ6041" target="_blank" rel="noopener">מעקב חי ב-FlightAware ↖</a></td>
+          <td><b>חזור · שלישי 29.9</b><br>Wizz Air <b>W4 6041</b> · <b>טרמינל 3</b> בשני הצדדים<br><a href="https://www.flightaware.com/live/flight/WMT6041" target="_blank" rel="noopener">מעקב חי ב-FlightAware ↖</a></td>
           <td>רומא (FCO) <b>05:30</b></td>
           <td>תל אביב (TLV) <b>~10:00</b></td>
           <td class="fstat"></td>
           <td>מסירת מזוודות <b>02:30–04:30</b></td></tr>
         <tr data-fl="W4 6041" data-date="2026-09-30" data-from="FCO" data-to="TLV">
-          <td><b>חזור · רביעי 30.9</b><br>Wizz Air <b>W4 6041</b> · <b>טרמינל 3</b> בשני הצדדים<br><a href="https://www.flightaware.com/live/flight/WZZ6041" target="_blank" rel="noopener">מעקב חי ב-FlightAware ↖</a></td>
+          <td><b>חזור · רביעי 30.9</b><br>Wizz Air <b>W4 6041</b> · <b>טרמינל 3</b> בשני הצדדים<br><a href="https://www.flightaware.com/live/flight/WMT6041" target="_blank" rel="noopener">מעקב חי ב-FlightAware ↖</a></td>
           <td>רומא (FCO) <b>05:30</b></td>
           <td>תל אביב (TLV) <b>~10:00</b></td>
           <td class="fstat"></td>
@@ -581,7 +598,7 @@
         הסטטוס, השעה בפועל והטרמינל בנתב״ג. <b>לצד רומא אין מקור חינמי מקביל</b>, ולכן על
         השער וסרט המזוודות ב-FCO עונה הקישור ל-FlightAware שבכל שורה.</p>
 
-      <div class="note warn"><div class="nh">⚠️ החזרה מפוצלת: משפחה אחת טסה ב-29.9, השנייה ב-30.9</div><ul class="qlist">
+      <details class="note warn"><summary class="nh">⚠️ החזרה מפוצלת: משפחה אחת טסה ב-29.9, השנייה ב-30.9</summary><ul class="qlist">
           <li><b>שני לילות פרידה, לא אחד.</b> משפחת 29.9 עוזבת את דרוטה כבר
             <b>בערב 28.9</b> ונוסעת לשדה בלילה — כלומר <b>הלילה האחרון המשותף הוא 27→28.9</b>.</li>
           <li><b>שתי החזרות רכב נפרדות</b>, בשני לילות שונים, שתיהן בסביבות 02:30 ובשעה
@@ -589,12 +606,12 @@
           <li><b>הצעה לחדר Day-use ל-29.9</b> רלוונטי רק למשפחה שנשארת. מי שטס ב-29.9 צריך
             את המקבילה שלו <b>ל-28.9</b>. <a data-view="last">היום האחרון ←</a></li>
           <li><b>הצ׳ק-אאוט בדרוטה</b> — לוודא מול המקום ששתי הדירות לא חייבות להתפנות
-            באותו יום, ומה קורה למשפחה שנשארת לילה נוסף.</li></ul></div>
+            באותו יום, ומה קורה למשפחה שנשארת לילה נוסף.</li></ul></details>
 
-      <div class="note"><div class="nh">🎯 המספר שמסדר את כל הלילה האחרון: 02:30</div>
+      <details class="note"><summary class="nh">🎯 המספר שמסדר את כל הלילה האחרון: 02:30</summary>
         Wizz Air מפרסמת במפורש ש-<b>ב-FCO דלפקי מסירת המזוודות נפתחים 180 דקות לפני ההמראה
         ונסגרים 60 דקות לפני</b>.<br>לטיסה של 05:30 זה <b>02:30 עד 04:30</b>.
-        כלומר החזרת הרכבים ב-02:30.<br><a data-view="last">התכנית ליום האחרון ←</a></div>
+        כלומר החזרת הרכבים ב-02:30.<br><a data-view="last">התכנית ליום האחרון ←</a></details>
 
       <details><summary>מזוודות, צ׳ק-אין, וסיכון התאריכים שכדאי להכיר</summary>
         <p style="margin:0"><b>⚠️ סוכות 2026 נופל על 26–30 בספטמבר, וערב סוכות הוא 25.9.<br></b>שבוע חגים — תקופה שבה Wizz Air משנה שעות ומוסיפה טיסות.&nbsp;<b>לוודא זמני טיסה שבוע לפני</b>.</p>
@@ -659,7 +676,7 @@
       <div class="l"><div class="h" style="color:#375072">🧘 נגיש ונינוח</div><p>מעט הליכה, צל ומקום לשבת. עובד גם עם עגלה ועם מי שלא רוצה לטפס.</p></div>
     </div>
 
-    <div class="note q" id="open" style="margin-top:22px"><div class="nh">❓ מה עוד לא סגור — לפי סדר דחיפות</div>
+    <details class="note q" id="open" style="margin-top:22px"><summary class="nh">❓ מה עוד לא סגור — לפי סדר דחיפות</summary>
       <ol class="qlist">
         <li><b>ההחזרה ב-02:30 — יש תיבת מפתחות, ונשאר לברר איפה ובכמה.</b> דף המשרד של
           Goldcar ל-FCO אומר במפורש שיש שם <i dir="ltr">key depot</i> מחוץ לשעות הפתיחה.&nbsp;(<a href="#last/carback">מה לשאול ←</a>)</li>
@@ -683,7 +700,7 @@
           בתוך ההסעה והנהג לוקח אותנו ישירות. (<a href="#arrival/lodging1">פרטים ←</a>)</p>
         <p style="margin:0"><b>✅ הבריכה בדרוטה.</b> המקום ענה במפורש שהיא <b>פעילה</b>.
           (<a href="#base/house">הבית ←</a>)</p>
-      </details></div>
+      </details></details>
 
   <section class="talk" data-topic="home" aria-label="הערות כלליות"></section>
   </div>
@@ -771,12 +788,12 @@
     <div class="meta"><span>🕐 ~<b>02:00</b> (אחרי נחיתה 00:45)</span><span>👥 <b>9</b> נוסעים · ההזמנה ל-8</span><span class="pr">€40 במזומן</span></div>
     <p class="gist">ההוראה ממקום הלינה על איזור המפגש.<br><b>להתקשר למקום ברגע שיוצאים מהטרמינל.</b></p>
 
-    <div class="note warn"><div class="nh">⚠️ ההסעה הוזמנה ל-8 — לוודא שיש מושבים גם ל9</div>
+    <details class="note warn"><summary class="nh">⚠️ ההסעה הוזמנה ל-8 — לוודא שיש מושבים גם ל9</summary>
       <b>זו שאלה על המיניוואן של המקום.</b><br>תשעה צריכים תשעה מושבים, ובאיטליה ילד מתחת ל-150 ס״מ
-      חייב אמצעי ריסון מותאם — כלומר גם הקטנה צריכה מושב, לא ברכיים.<br><b>מיניוואן שהוזמן ל-8 עשוי להיות רכב של 8 מקומות.</b>&nbsp;לוודא שהרכב מכיל תשעה מקומות.&nbsp;<a href="#info/seats">כיסאות בטיחות ←</a></div>
+      חייב אמצעי ריסון מותאם — כלומר גם הקטנה צריכה מושב, לא ברכיים.<br><b>מיניוואן שהוזמן ל-8 עשוי להיות רכב של 8 מקומות.</b>&nbsp;לוודא שהרכב מכיל תשעה מקומות.&nbsp;<a href="#info/seats">כיסאות בטיחות ←</a></details>
 
-    <div class="note warn"><div class="nh">⚠️ מעבר לאיזור המתנה של ההסעה</div>מבנה טרמינל 3: <b>קומת קרקע = נכנסים</b> (Arrivi), <b>קומה ראשונה = יציאות</b> (Partenze).<br>צריך לעלות קומה, מחוץ ליציאה 4 של אולם הנכנסים יש <b>דרגנוע שעולה ישירות
-      לרמת היציאות</b>, ובקומה למעלה הוא מגיע למדרכה במרווח שבין כניסה 4 לכניסה 5.</div>
+    <details class="note warn"><summary class="nh">⚠️ מעבר לאיזור המתנה של ההסעה</summary>מבנה טרמינל 3: <b>קומת קרקע = נכנסים</b> (Arrivi), <b>קומה ראשונה = יציאות</b> (Partenze).<br>צריך לעלות קומה, מחוץ ליציאה 4 של אולם הנכנסים יש <b>דרגנוע שעולה ישירות
+      לרמת היציאות</b>, ובקומה למעלה הוא מגיע למדרכה במרווח שבין כניסה 4 לכניסה 5.</details>
 
     <ol class="steps">
       <li>נוחתים <b>00:45</b> ב<b>טרמינל 3</b>. ביקורת גבולות ומזוודות.</li>
@@ -815,9 +832,9 @@
 
   <div class="card" id="phones"><h3>☎️ למי מתקשרים <a class="anchor" href="#arrival/phones" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist">לפי&nbsp;<b>אישור ההזמנה</b>, לא מופיע באתר. שלושת המספרים שלמטה הם של החברה שמפעילה את המקום ואת ההסעות, והם פורסמו באתר שלה — הם הגיבוי, ולא התחליף.</p>
-    <div class="note warn" style="margin-top:6px"><div class="nh">📱 להוציא את הטלפון מאישור ההזמנה ולשמור אותו בטלפון עוד לפני הטיסה</div>
+    <details class="note warn" style="margin-top:6px"><summary class="nh">📱 להוציא את הטלפון מאישור ההזמנה ולשמור אותו בטלפון עוד לפני הטיסה</summary>
       זה המספר של הדירה, והוא לא נמצא בשום מקום פומבי. <b>לשמור אותו כאיש קשר</b>,
-      ולא לחפש מייל בשעה 01:30 עם מזוודות ביד.</div>
+      ולא לחפש מייל בשעה 01:30 עם מזוודות ביד.</details>
     <p style="margin:14px 0 4px"><b>הגיבוי — המספרים המפורסמים של המפעילה (Parking Blu):</b></p>
     <div class="links">
       <a class="callout" href="tel:+393939109572">📱 ‎+39 393 910 9572</a>
@@ -837,11 +854,11 @@
     <p class="gist">דירות באזור פיומיצ׳ינו, <b>שתי דירות באותה קומה</b>. <b>המקום גם מפעיל את שתי ההסעות</b> (הוא שייך לחניון Parking Blu שליד השדה).<br>פותר גם את ההגעה בלילה וגם את איסוף הרכבים בבוקר.</p>
     <div class="meta"><span>🛏️ יחידות ל-<b>עד 4 אורחים</b> · חדר שינה + ספה</span><span>🍳 מטבחון</span><span>❄️ מיזוג</span><span>🅿️ חניה חינם</span><span>🛗 מעלית</span><span>📶 Wi-Fi</span></div>
 
-    <div class="note"><div class="nh">✅ סוכם מול הבעלים: <b>הצ׳ק-אין נעשה בתוך ההסעה</b></div>
+    <details class="note"><summary class="nh">✅ סוכם מול הבעלים: <b>הצ׳ק-אין נעשה בתוך ההסעה</b></summary>
       אין קבלה, אין דלפק ואין טפסים באמצע הלילה: <b>מסדירים את הצ׳ק-אין בנסיעה
       עצמה, ומגיעים ישר לדירות.</b> זה מייתר גם את שעת הצ׳ק-אין הרשמית שנגמרת ב-23:00.
       <b>הנהג לוקח אותנו לאן שצריך.</b><br>להחזיק בהישג יד: <b>דרכונים וכרטיס אשראי</b> — מה שנדרש בצ׳ק-אין
-      רגיל.</div>
+      רגיל.</details>
 
     <div class="links">
       <a class="map" href="https://www.booking.com/hotel/it/il-nido-dei-merli.html" target="_blank" rel="noopener">דף ההזמנה ↖</a>
@@ -860,7 +877,7 @@
     <div class="meta"><span class="done">✅ הוזמן — <b>Goldcar</b>, שתי המשפחות</span><span class="done">✅ Key’n Go + מסמכים אושרו</span><span>🕗 הסעה <b>08:00</b></span><span>🕘 איסוף <b>09:00</b></span><span>👥 <b>2</b> נפשות</span><span class="pr">€20 במזומן להסעה</span></div>
     <p class="gist">שני נהגים חוזרים לשדה ב-08:00, אוספים את <b>שני הרכבים</b> ונוסעים איתם בחזרה למקום. ככה שאר החבורה ישנה עוד שעה, מתארגנת בשקט ולא גוררת מזוודות דרך מתחם השכרת רכב. <b>שתי המשפחות הזמינו ב-Goldcar</b>, איסוף ב-FCO.</p>
 
-    <div class="note warn"><div class="nh">📍 הרכב לא בטרמינל — הוא ב<b>Parking B, קומה 4</b></div>
+    <details class="note warn"><summary class="nh">📍 הרכב לא בטרמינל — הוא ב<b>Parking B, קומה 4</b></summary>
       זה החלק שקל לפספס: אין דלפק Goldcar באולם הנכנסים. יוצאים מהטרמינל, עולים
       במעלית ל<b>קומה 2</b>, ומשם שילוט ל-<b>Parking B</b> ולקומה <b>4</b>, שם עומד
       עמדת ה-<b>Key’n Go</b>.
@@ -874,10 +891,10 @@
       הדלפק ב-FCO <a href="tel:+390665048104" dir="ltr">‎+39 06 6504 8104</a>.
       <br><b>הרכב שמור עד שש שעות מהשעה שבהזמנה</b> — כלומר עד ~15:00.<br>
       ⚠️ <b><span dir="ltr">+39 050 807 5174</span> שמופיע באישור ההזמנה הוא מוקד השירות
-      הארצי, לא התחנה.</b></div>
+      הארצי, לא התחנה.</b></details>
 
 
-    <div class="note"><div class="nh">✅ פרטי הזמנת הרכב</div>
+    <details class="note"><summary class="nh">✅ פרטי הזמנת הרכב</summary>
       <ul class="qlist">
         <li><b>קבוצה E, אוטומט</b>, <i lang="it" dir="ltr">Seat Arona</i> או דומה —
           <b>5 מקומות</b>, 5 דלתות, מיזוג.</li>
@@ -887,11 +904,11 @@
         <li><b>Super Relax Cover כלול</b>, פיקדון&nbsp;<b>€100</b>.
           בנוסף נתפס <b>פיקדון דלק נפרד</b> — הסכום שלו לא מפורסם.</li>
         <li><b>הרכב מבוטח לנהיגה באיטליה בלבד.</b></li>
-      </ul></div>
+      </ul></details>
 
-    <div class="note warn"><div class="nh">💳 כרטיס אשראי פיזי, על שם הנהג הראשי</div>
+    <details class="note warn"><summary class="nh">💳 כרטיס אשראי פיזי, על שם הנהג הראשי</summary>
       Goldcar כותבת במפורש: <b>VISA או MasterCard בלבד</b>, <b>לא</b> כרטיס דביט,
-      <b>לא</b> American Express, <b>לא</b> Diners, <b>לא</b> מזומן.<br><b>והכרטיס חייב להיות על שם הנהג הראשי שבחוזה.</b> בלי זה הם רשאים לא למסור את הרכב, <b>ובלי החזר על מה ששולם מראש</b>.</div>
+      <b>לא</b> American Express, <b>לא</b> Diners, <b>לא</b> מזומן.<br><b>והכרטיס חייב להיות על שם הנהג הראשי שבחוזה.</b> בלי זה הם רשאים לא למסור את הרכב, <b>ובלי החזר על מה ששולם מראש</b>.</details>
 
     <details><summary>מה לקחת לאיסוף, ומה בודקים לפני שיוצאים מהחניון</summary>
       <p style="margin:0"><b>לקחת:<br></b>* רישיון נהיגה (בתוקף לפחות שנה).<br>* כרטיס האשראי שעליו נעשתה ההזמנה, הדרכונים, ואת מספרי ההזמנה.<br>*&nbsp;רישיון בינלאומי (IDP).</p>
@@ -940,7 +957,7 @@
       <a class="map onmap" href="#map/p:Country+House+Le+Case+Coloniche+Deruta" title="הבית — במפה שלנו">🗺️</a>
     </div>
 
-    <div class="note"><div class="nh">✅ נסגר מול המקום</div>
+    <details class="note"><summary class="nh">✅ נסגר מול המקום</summary>
       דיברנו עם Le Case Coloniche, והם ענו בכתב:
       <ul class="qlist">
         <li><b>הבריכה פעילה</b>&nbsp;(בסוף ספטמבר המים בבריכה הם ~20–22°C).</li>
@@ -950,14 +967,14 @@
           ובלשונם: ״השף ישמח לספק אפשרויות מתאימות״. <a data-view="food">אוכל וגלוטן ←</a></li>
       </ul>
       להגיד להם מראש, ובכתב, על <b>הצליאק ועל האלרגיה לבוטנים</b> —
-      ״יש לנו חלופות״ ו״המטבח יודע על אלרגיה לבוטנים״ הם שני דברים שונים.</div>
+      ״יש לנו חלופות״ ו״המטבח יודע על אלרגיה לבוטנים״ הם שני דברים שונים.</details>
 
-    <div class="note warn"><div class="nh">⚠️ צ׳ק-אאוט 10:00</div><b>לאמת — ואם אפשר, לבקש שעה או שעתיים נוספות בתשלום.</b>
-      <a data-view="last">היום האחרון ←</a></div>
+    <details class="note warn"><summary class="nh">⚠️ צ׳ק-אאוט 10:00</summary><b>לאמת — ואם אפשר, לבקש שעה או שעתיים נוספות בתשלום.</b>
+      <a data-view="last">היום האחרון ←</a></details>
 
-    <div class="note"><div class="nh">🍽️ יש מסעדה במקום — לא ב28.9</div>
+    <details class="note"><summary class="nh">🍽️ יש מסעדה במקום — לא ב28.9</summary>
       <b>״Il Chicco di Grano״</b>, בהזמנה, ארוחת ערב 19:30–22:30 — ו<b>סגורה בשני ובשלישי</b>,
-      כלומר <b>סגורה ב-28.9 וב-29.9</b>.<br>ארוחת בוקר בופה 08:00–10:00 כלולה.</div>
+      כלומר <b>סגורה ב-28.9 וב-29.9</b>.<br>ארוחת בוקר בופה 08:00–10:00 כלולה.</details>
 
     <details><summary>מה עוד יש שם, המרחקים שנמדדו, ומה עוד לשאול</summary>
       <p style="margin:0"><b>מה יש במקום ולא ידענו:</b> <b>כדורגל 5, כורכר, בוצ׳ה — חינם, בהזמנה</b> · חדר אופניים, שטיפת אופניים, השכרת אופניים חשמליים ומסלולי GPS · מרפסת לארוחות ליד הבריכה · Wi-Fi חינם בכל השטח · <b>מותר עם חיות מחמד</b> (ברצועה, גם במסעדה).</p>
@@ -973,13 +990,13 @@
     <div class="meta"><span>🚗 3.5 ק״מ · 5 דקות</span><span class="pr">סדנה €10 לאדם · ~שעה וחצי</span><span>📞 הזמנה חובה</span></div>
     <p class="gist">דרוטה עושה קרמיקה מצוירת ביד מהמאה ה-14, וזה עדיין העיסוק המרכזי שלה. בשביל ילדים היתרון הוא שזה לא ״עוד עיירה יפה״ — <b>יש כאן משהו לעשות בידיים, וזה נמצא.</b></p>
 
-    <div class="note"><div class="nh">⭐ הסדנה: המוזיאון האזורי לקרמיקה — ״CERAMISTI SI DIVENTA!״</div>
+    <details class="note"><summary class="nh">⭐ הסדנה: המוזיאון האזורי לקרמיקה — ״CERAMISTI SI DIVENTA!״</summary>
       <b>זו הסדנה היחידה בדרוטה שמפרסמת מחיר ומשך שמתאימים לילדים.<br></b>שתי גרסאות —
       <b>MASTRI MAIOLICARI</b> (רישום מכין בטכניקת ה-<i>spolvero</i> העתיקה, ואז <b>צביעת אריח</b>)
       ו-<b>(S)GRAFFITI</b> (טכניקת חריטה). <b>€10 לאדם, ~שעה וחצי</b>, וכולל היכרות מודרכת קצרה
       עם המוזיאון, את הסדנה, <b>את השריפה בתנור, ומשלוח היצירות בתוך איטליה</b>. <br>כרטיס למוזיאון בנפרד.<br>
       <b>״PRENOTAZIONE OBBLIGATORIA״ — הזמנה חובה.</b>
-<br>⚠️&nbsp;<b>הגרסה האנגלית של אותו דף כותבת €20 ולא €10 (?).</b></div>
+<br>⚠️&nbsp;<b>הגרסה האנגלית של אותו דף כותבת €20 ולא €10 (?).</b></details>
 
     <div class="links">
       <a href="https://www.museoceramicadideruta.it/it/ceramica-laboratori-deruta_5.html" target="_blank" rel="noopener">הסדנה באתר המוזיאון ↖</a>
@@ -991,13 +1008,13 @@
       <a class="map onmap" href="#map/p:Deruta+Perugia+centro+storico" title="דרוטה — במפה שלנו">🗺️</a>
     </div>
 
-    <div class="note warn"><div class="nh">⚠️ המוזיאון סגור בשלישי (29.9)</div>
+    <details class="note warn"><summary class="nh">⚠️ המוזיאון סגור בשלישי (29.9)</summary>
       שעות יולי–ספטמבר: <b>10:00–13:00 ו-15:00–18:00</b>, כניסה אחרונה חצי שעה לפני הסגירה,
       ו<b>סגור בשלישי שאינו חג</b>.<br>כרטיסים: €9 ·&nbsp;<b>€3 לילדים 6–14</b> ·
       <b>חינם עד גיל 6</b>.<br>
       <b>⭐ בראשון 27.9 בונוס:</b> סיורים מודרכים חינמיים של 20 דקות, <b>כל ראשון ב-11:30</b>,
       בתערוכה ״Deruta 1926״ (עד 4 באוקטובר). <br>הפינקוטקה העירונית פתוחה
-      <b>בימי ראשון וחג בלבד</b>, והכרטיס מצטבר עם המוזיאון.</div>
+      <b>בימי ראשון וחג בלבד</b>, והכרטיס מצטבר עם המוזיאון.</details>
 
     <details><summary>שתי החלופות לסדנה, ומה עוד יש בכפר</summary>
       <p style="margin:0"><b>Bottega d'Arte Ceramica Geribi</b> — שיעור ציור אמיתי ומוכר, שבו מעטרים צלחת של 10–11 אינץ׳. <br>⚠️<b>&nbsp;€125 לאדם ו-4–5 שעות</b>, במשמרת של 09:00–13:00 או 14:00–18:00, מינימום 2 ומקסימום 10. <b>אין מחיר ילדים, אין גיל מינימלי ואין גרסה מקוצרת</b> — כלומר <b>לא לחמישה ילדים.</b> אפריל–אוקטובר, שריפה בתוך 3 ימים, והנחה של 10–30% בחנות באותו יום. ‎+39 348 1888 836.</p>
@@ -1693,27 +1710,27 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <p>צ׳ק-אאוט, יום שלם, החזרת רכבים ב-02:30, טיסה ב-05:30. זה <b>פער של כ-15 שעות וחצי</b>, וזה היום היחיד בטיול שבו תכנון גרוע נגמר בחמישה ילדים גמורים בטרמינל בשלוש לפנות בוקר. <b>וזה קורה פעמיים</b> — המשפחות חוזרות בהפרש של יממה.</p>
     <a class="viewmap" href="#map/last">🗺️ נקודות היום האחרון</a></div>
 
-  <div class="note warn" style="margin-top:0"><div class="nh">⚠️ הכל בעמוד הזה תקף פעמיים, בהפרש של יום</div>
+  <details class="note warn" style="margin-top:0"><summary class="nh">⚠️ הכל בעמוד הזה תקף פעמיים, בהפרש של יום</summary>
     כל הכרטיסים כאן כתובים סביב הציר <b>29.9 → טיסה ב-30.9</b>. <b>למשפחה שטסה ב-29.9
     אותו יום בדיוק מתרחש יום קודם</b>: צ׳ק-אאוט ויציאה מדרוטה ב-<b>28.9</b>, החזרת רכב
     בליל <b>28→29.9</b> ב-02:30, טיסה ב-<b>29.9 ב-05:30</b>.<br>
     <b>מה שזה משנה בפועל:</b> שני חדרי Day-use ולא אחד · שתי החזרות רכב בשני לילות ·
     ו<b>שני 28.9 הוא היום האחרון המשותף</b>, לא 29.9 — והבוקר שלו נקבע ל<a href="#days/perugia">פרוג׳ה ובית השוקולד</a>.
-    <a href="#home/flights">הטבלה המלאה ←</a></div>
+    <a href="#home/flights">הטבלה המלאה ←</a></details>
 
   <div class="card" id="theproblem"><h3>🎯 לתכנן<a class="anchor" href="#last/theproblem" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist"><b>איפה הילדים מתקלחים וישנים</b>, <b>איפה המזוודות</b>, ו<b>מה עושים ביום עצמו</b> בלי לצבור עייפות לקראת לילה בלי שינה.</p>
 
-    <div class="note"><div class="nh">⭐ זמן סיום -&nbsp;<b>02:30</b></div>
+    <details class="note"><summary class="nh">⭐ זמן סיום -&nbsp;<b>02:30</b></summary>
       Wizz Air מפרסמת ש-<b>FCO הוא חריג</b> אצלה: דלפקי מסירת המזוודות שם נפתחים
       <b>180 דקות לפני ההמראה ונסגרים 60 דקות לפני</b> — כלומר <b>02:30 עד 04:30</b>.<br><b>לא להגיע לפני 02:30 - אין דלפקים</b>.<br>שדרוטה←FCO היא <b>1:49 בתנועה רגילה</b> ופחות מזה בלילה — <b>יציאה מדרוטה
       בסביבות 00:20 מגיעה ל-02:10.</b> כלומר מה שצריך למלא הוא לא ״עד 02:30״ אלא
-      <b>עד חצות בערך</b>. וגם: <b>הצ׳ק-אין המקוון נסגר ב-03:00</b> — לעשות אותו מהבית.</div>
+      <b>עד חצות בערך</b>. וגם: <b>הצ׳ק-אין המקוון נסגר ב-03:00</b> — לעשות אותו מהבית.</details>
 
-    <div class="note warn"><div class="nh">⚠️ חדר Day-use ליד השדה קיים — אבל לא עד חצות</div>היה הרעיון הטוב ביותר בתכנון המקורי, והוא <b>עובד חלקית בלבד</b>: בדקנו את כל
+    <details class="note warn"><summary class="nh">⚠️ חדר Day-use ליד השדה קיים — אבל לא עד חצות</summary>היה הרעיון הטוב ביותר בתכנון המקורי, והוא <b>עובד חלקית בלבד</b>: בדקנו את כל
       ההיצע באזור פיומיצ׳ינו, ו<b>אף אחד לא מוכר חלון שנמשך אחרי 22:00</b>.
       החדרים ל-Air Rooms בתוך השדה עצמו <b>נסגרים ב-22:00</b>.<br>
-      <b>טבלת אפשרויות:</b></div>
+      <b>טבלת אפשרויות:</b></details>
     <table class="h">
       <tr><th>מקום</th><th>חלון</th><th>מ-</th><th>הערה</th></tr>
       <tr><td>Hotel Academy</td><td>09:00–14:00 · <b>11:00–19:00</b></td><td>€69</td><td>הזול ביותר, והחלון המאוחר יותר</td></tr>
@@ -1726,12 +1743,12 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       <tr><td><b>Holiday Inn Rome EUR Parco dei Medici</b></td><td><b>17:00–23:30</b></td><td><b>€93</b></td><td>⭐ <b>ההמלצה</b> — ~30 דקות מ-FCO, ועל הדרך מהצפון</td></tr>
       <tr><td>Black Hotel, רומא</td><td>17:00–23:00</td><td>€83</td><td>חלופה</td></tr>
     </table>
-    <div class="note"><div class="nh">⭐ המלצה: החלון 17:00–23:30, לא ליד השדה</div>
+    <details class="note"><summary class="nh">⭐ המלצה: החלון 17:00–23:30, לא ליד השדה</summary>
       <b>Holiday Inn Rome EUR Parco dei Medici, 17:00–23:30, מ-€93</b> — הוא היחיד שמכסה בדיוק
       את השעות שכואבות. מקלחות ושינה מ-17:00, ארוחה, ואז יוצאים ב-23:30 ל<b>נסיעה של ~30 דקות</b>
       ומגיעים לשדה בערך כשהדלפקים נפתחים. <b>זה מצמצם את ״הפער בלי מקום״ מארבע שעות לאפס.</b>
       חדר day-use ליד השדה שנגמר ב-18:00 או 19:00 משאיר ארבע שעות פתוחות — וזה בדיוק מה
-      שהתכנון המקורי לא ידע. <b>לחפש ולהזמין מראש</b>, כי מספר החדרים לשעות מוגבל.</div>
+      שהתכנון המקורי לא ידע. <b>לחפש ולהזמין מראש</b>, כי מספר החדרים לשעות מוגבל.</details>
 
     <details><summary>לוח זמניםמוצע</summary>
       <table class="h">
@@ -1753,14 +1770,14 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <div class="meta"><span>🚗 דרוטה ← בומרצו <b>1:01</b> · בומרצו ← FCO <b>1:13</b></span><span class="pr">€15 · ילדים 4–13 €9</span><span>🕘 09:00–19:00</span></div>
     <p class="gist">Parco dei Mostri בבומרצו הוא יער מהמאה ה-16 שמאוכלס פסלי אבן ענקיים — פה של ענק שנכנסים לתוכו, בית נטוי שמסחרר, דרקונים ופילים. לילדים זה מרגיש כמו גן קסום. והוא על הדרך: מאומבריה לרומא, בלי להיכנס לעיר.</p>
 
-    <div class="note warn"><div class="nh">⚠️ שני דברים שמשנים איך עושים אותו</div>
+    <details class="note warn"><summary class="nh">⚠️ שני דברים שמשנים איך עושים אותו</summary>
       <b>1. הפארק אינו נגיש לעגלה.</b> המפעיל עצמו כותב שלמי שמתקשה בהליכה
       <b>רק 10% מהשטח המונומנטלי נגיש</b>, ומפת המסלול הרשמית שלו מורה ״לרדת במדרגות״
       ו״לעלות במדרגות״.&nbsp;<br>
       <b>2. אסור לאכול בתוך הפארק</b> (״Vietato mangiare nell'area monumentale״).
       מתחם הפיקניק — עם שולחנות, ספסלים וברביקיו בצל — נמצא <b>מחוץ לשטח, ליד הקופה</b>.
       יש גם ״La Locanda del Mostro״ עם בר, כריכים, חנות ספרים ו<b>פינת משחקים לילדים.</b><br>&nbsp;⚠️ השירות במסעדה מתואר כארוחות ערב בשישי-שבת ופיצה לקחת, ו<b>צהריים ביום שלישי
-      לא ברור</b>. לטלפן: 0761 924029.</div>
+      לא ברור</b>. לטלפן: 0761 924029.</details>
     <div class="links">
       <a href="https://www.sacrobosco.eu/orari/" target="_blank" rel="noopener">האתר הרשמי ↖</a>
       <a class="map onmap" href="#map/p:Parco+dei+Mostri+Bomarzo" title="בומרצו — במפה שלנו">🗺️</a>
@@ -1786,10 +1803,10 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <div class="tags"><span class="tag t-cult">תרבות ועיירות</span><span class="tag t-grand">נגיש ונינוח</span></div>
     <div class="meta"><span>🚗 דרוטה ← אוסטיה <b>1:56</b> · אוסטיה ← <span dir="ltr">FCO</span> <b>9 דקות</b></span><span class="pr">€18 · <b>מתחת ל-18 חינם</b></span><span>🕗 08:30–19:00</span></div>
     <p class="gist">עיר הנמל של רומא העתיקה, שמורה במידה יוצאת דופן — רחובות, בתים, חנויות, תיאטרון ופסיפסים, בשטח פתוח וגדול עם עצי אורן. <b>אתר עתיקות שמתאים לילדים בהרבה יותר מ״עוד מוזיאון ברומא״</b>: קצב עצמאי, בלי תורים ובלי דחיסות. <b>ומתחת ל-18 נכנסים חינם</b> — כלומר לחמישה ילדים זה €0.</p>
-    <div class="note"><div class="nh">⭐ היתרון האמיתי: 9 דקות מהשדה</div>
+    <details class="note"><summary class="nh">⭐ היתרון האמיתי: 9 דקות מהשדה</summary>
       אוסטיה אנטיקה נמצאת <b>6.9 ק״מ / 9 דקות מ-FCO</b>. אפשר לשלב שקיעה וארוחת דגים בטיילת של פיומיצ׳ינו — שהיא דקות משם.
       <b>הכרטיס תקף 8 ימים ומכסה את החפירות, את מוזיאון אוסטיה, את מצודת יוליוס השני,
-      את מוזיאון הספינות ואת הנמלים הקיסריים</b> — אין כרטיס משולב נפרד לקנות.</div>
+      את מוזיאון הספינות ואת הנמלים הקיסריים</b> — אין כרטיס משולב נפרד לקנות.</details>
     <div class="links">
       <a href="https://www.coopculture.it/it/prodotti/biglietto-area-archeologica-di-ostia-antica/" target="_blank" rel="noopener">כרטיסים ושעות ↖</a>
       <a class="map onmap" href="#map/p:Parco+Archeologico+di+Ostia+Antica" title="אוסטיה אנטיקה — במפה שלנו">🗺️</a>
@@ -1820,7 +1837,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <div class="meta"><span class="done">✅ החברה ידועה — <b>Goldcar</b></span><span>🅿️ <b>Parking B, קומה 4</b></span><span>🕝 מחוץ לשעות</span><span>📸 תיעוד בצילום — לא אופציונלי</span></div>
     <p class="gist">בשעה הזאת אין נציג באף חברה — בדקנו את כל עשר החברות ב-FCO, ו<b>אף אחת מהן לא נסגרת אחרי חצות, והמוקדמת שבהן נפתחת ב-07:00</b>. ההחזרה היא ״מחנים, נועלים, מכניסים מפתח לתיבה״.</p>
 
-    <div class="note"><div class="nh">✅ <b>תיבת מפתחות היא ברירת המחדל אצל Goldcar</b></div>
+    <details class="note"><summary class="nh">✅ <b>תיבת מפתחות היא ברירת המחדל אצל Goldcar</b></summary>
       זה כתוב אצלם במפורש, בשני מקומות:
       <ul class="qlist">
         <li><b>״ניתן להחזיר את הרכב ברוב המשרדים שלנו בכל שעה, פשוט על ידי הפקדת המפתחות
@@ -1838,19 +1855,19 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       <div class="links" style="margin-top:8px">
         <a href="https://www.goldcarhelp.com/en/faqs/39-can-i-book-a-vehicle-and-return-it-out-of-the-office-opening-hours" target="_blank" rel="noopener">הנוסח הראשון ↖</a>
         <a href="https://www.goldcarhelp.com/en/faqs/290-can-i-book-a-vehicle-and-return-it-out-of-the-office-opening-hours" target="_blank" rel="noopener">והשני ↖</a>
-      </div></div>
+      </div></details>
 
-    <div class="note warn"><div class="nh">📄 מידע</div>
+    <details class="note warn"><summary class="nh">📄 מידע</summary>
       <b>מייל עדיף על טלפון</b>, כי הוא משאיר עקבות:
       <b>fco@goldcar.com</b> · <a href="tel:+390665048104" dir="ltr">‎+39 06 65 048 104</a>.
 <br>&nbsp;⚠️ <b><span dir="ltr">+39 050 807 5174</span> שבאישור ההזמנה הוא המוקד הארצי, לא התחנה.</b>
       <ul class="qlist">
         <li><b>״האם בתחנת FCO יש תיבת מפתחות, והיכן היא בדיוק?״</b> — מיקום פיזי, לא ״כן״.</li>
-        <li><b>״האם ניתן להחזיר רכב ב-30.9.2026 ב-02:30, ומה העלות?״</b>&nbsp;</li></ul></div>
+        <li><b>״האם ניתן להחזיר רכב ב-30.9.2026 ב-02:30, ומה העלות?״</b>&nbsp;</li></ul></details>
 
 
 
-    <div class="note"><div class="nh">✅ הנוהל של Goldcar</div>
+    <details class="note"><summary class="nh">✅ הנוהל של Goldcar</summary>
       <ul class="qlist">
         <li><b>מחזירים לאותו אזור שממנו אספו</b> — כלומר <b>Parking B, קומה 4</b>, שם עמדת
           ה-Key’n Go. זה חוסך את החיפוש בין בניינים A/B/C שאר הכרטיס הזה מדבר עליו.</li>
@@ -1863,9 +1880,9 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
           לפני השדה היא ההזדמנות האחרונה. <b>לשמור את הקבלה.</b></li>
         <li><b>חלון הסובלנות לאיחור הוא 29 דקות</b> — לא רלוונטי למי שמחזיר שש שעות מוקדם,
           אבל כן רלוונטי אם משהו משתבש בדרך.</li>
-      </ul></div>
+      </ul></details>
 
-    <div class="note warn"><div class="nh">⚠️ החוזה לא נגמר כשמכניסים את המפתח</div>
+    <details class="note warn"><summary class="nh">⚠️ החוזה לא נגמר כשמכניסים את המפתח</summary>
       זה מופיע בתנאים של כל חברה:
       <b>האחריות על הרכב נשארת עלינו עד שהדלפק נפתח בבוקר</b> — כלומר 4.5 שעות שבהן
       שני רכבים עומדים לא-נעולים-מבחינת-אחריות בחניון.<br>
@@ -1874,7 +1891,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       <b>Hertz מרחיקה לכת יותר וכותבת שההוצאות מחושבות עד לפתיחת הסניף</b> — כלומר
       חיוב על שעות. Locauto מנסחת אותו דבר. Autovia גובה <b>€73.20</b> דמי טיפול בתביעה
       במקרה של החזרה בהיעדר הלקוח.<br>
-      <b>המשמעות המעשית: הצילומים והעתק החוזה הם לא ״נחמד שיהיה״ — הם ההגנה היחידה.</b></div>
+      <b>המשמעות המעשית: הצילומים והעתק החוזה הם לא ״נחמד שיהיה״ — הם ההגנה היחידה.</b></details>
 
 
     <table class="h">
@@ -1922,13 +1939,13 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
 
   <div class="card" id="gf"><h3>🌾 צליאק — מה אומרים, ובמה איטליה טובה <a class="anchor" href="#food/gf" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist">איטליה היא <b>אחת המדינות הטובות בעולם לצליאק</b>: המודעות גבוהה, ״senza glutine״ מוכר בכל מקום, ולאגודת הצליאק האיטלקית (<b>AIC</b>) יש רשת מסעדות מוסמכות שעוברות <b>ביקורת שנתית בשטח</b>. אבל בדיוק בגלל שזה נפוץ, קל להסתפק בתשובה שטחית.</p>
-    <div class="note warn"><div class="nh">⚠️ ״בלי גלוטן״ זו בקשה. ״צליאק״ זו אבחנה</div>
+    <details class="note warn"><summary class="nh">⚠️ ״בלי גלוטן״ זו בקשה. ״צליאק״ זו אבחנה</summary>
       לא להגיד רק <b>senza glutine</b> — זה נשמע כמו דיאטה, והמטבח יגיב בהתאם.
       להגיד <b>celiaco / celiaca</b> במפורש. גם <i>intollerante al glutine</i> לא מתאים —
-      הוא מתאר אי-סבילות, לא את המחלה.</div>
+      הוא מתאר אי-סבילות, לא את המחלה.</details>
 
     <p><b>נוסח האגודה עצמה.</b> אלה המשפטים ש-AIC מפרסמת לנוסעים — עדיף להשתמש בהם ולא בתרגום חופשי, כי מלצר איטלקי מזהה את הניסוח:</p>
-    <div class="note"><div class="nh">🇮🇹 להראות למלצר — הנוסח הרשמי של AIC</div>
+    <details class="note"><summary class="nh">🇮🇹 להראות למלצר — הנוסח הרשמי של AIC</summary>
       <div lang="it" dir="ltr" style="direction:ltr; text-align:left; font-size:15.5px">
         <p style="margin:0 0 6px"><b>Mia figlia è celiaca, deve seguire una dieta assolutamente priva di glutine.</b></p>
         <p style="margin:0 0 6px">Qualsiasi cibo contenente farina/amido di grano (frumento), segale, orzo, avena, farro, spelta, kamut e triticale può causarle gravi malori.</p>
@@ -1938,7 +1955,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
         <p style="margin:0">Grazie per il suo aiuto, è molto importante!</p>
       </div>
       <div style="margin-top:8px; font-size:14px"><b>בעברית, בקצרה:</b> ״הבת שלי חולת צליאק וחייבת דיאטה נטולת גלוטן לחלוטין. כל מזון עם קמח חיטה, שיפון, שעורה, שיבולת שועל, כוסמין או קמוט עלול לגרום לה לחולי חמור. האם המנה מכילה אחד מאלה? אם אינך בטוח — בבקשה לברר במטבח. היא <i>יכולה</i> לאכול אורז, תירס, תפוחי אדמה, ירקות, פירות, ביצים, גבינה, חלב, בשר ודגים — בתנאי שלא הוכנו עם קמח, פירורי לחם, בלילה, קרוטונים או רטבים מסומכים. גם עקבות קטנות מסוכנות: סירים נקיים, כפות שלא ערבבו איתן גלוטן, ו<b>לא להשתמש שוב במי בישול או בשמן טיגון של מנות עם גלוטן</b>.״</div>
-      <div style="margin-top:6px; font-size:13px; color:var(--ink-soft)">בזכר: <b dir="ltr">Mio figlio è celiaco</b> ואז <i>vietate→vietati</i>, <i>a lei→a lui</i>, <i>causarle→causargli</i>, <i>sua→sua</i> (נשאר).</div></div>
+      <div style="margin-top:6px; font-size:13px; color:var(--ink-soft)">בזכר: <b dir="ltr">Mio figlio è celiaco</b> ואז <i>vietate→vietati</i>, <i>a lei→a lui</i>, <i>causarle→causargli</i>, <i>sua→sua</i> (נשאר).</div></details>
 
     <details><summary>מלון המילים, ומה בדיוק אומרת הסמכה של AIC</summary>
       <table class="h">
@@ -1962,10 +1979,10 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <div class="card" id="aic"><h3>📱 האפליקציה של AIC — הדרך היחידה לקבל את הרשימה האמיתית <a class="anchor" href="#food/aic" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <div class="meta"><span class="pr">€3.99 ל-15 יום</span><span>🇬🇧 יש אנגלית</span><span>🍽️ יותר מ-4,000 מקומות</span></div>
     <p class="gist"><b>המדריך של המסעדות המוסמכות אינו פומבי.</b> החיפוש באתר AIC דורש מספר חבר, וכל רשימה שמסתובבת באינטרנט היא או צד-שלישי לא מאומת או מיושנת. הפתרון הוא <b>AIC Mobile WELCOME</b> — גרסת מבקרים בתשלום, €3.99 לחמישה-עשר יום, שנותנת את כל הרשת המוסמכת <b>ואת סורק הברקודים למוצרים בסופר</b>.</p>
-    <div class="note"><div class="nh">💡 מה לעשות בשבוע שלפני הטיסה</div>
+    <details class="note"><summary class="nh">💡 מה לעשות בשבוע שלפני הטיסה</summary>
       להוריד את האפליקציה, לפתוח את גרסת WELCOME, ו<b>לצלם מסך של המקומות המוסמכים
       בטווח 20 ק״מ מדרוטה ובפרוג׳ה</b> — כך הרשימה תהיה בטלפון גם בלי רשת ובלי לחפש בשטח.
-      זו ההוצאה הכי משתלמת בכל תכנון האוכל של הטיול.</div>
+      זו ההוצאה הכי משתלמת בכל תכנון האוכל של הטיול.</details>
     <div class="links">
       <a href="https://www.celiachia.it/dieta-senza-glutine/alimentazione-fuori-casa/" target="_blank" rel="noopener">AIC — Alimentazione Fuori Casa ↖</a>
       <a href="https://apps.apple.com/it/app/aic-mobile/id393650916" target="_blank" rel="noopener">AIC Mobile ↖</a>
@@ -1982,9 +1999,9 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <div class="tags"><span class="tag t-all">כולם</span></div>
     <div class="meta"><span>📍 אלרה די קורצ׳אנו · ~20 ק״מ / ~25 ד׳ מדרוטה</span><span class="done">🌾 הכל במקום ללא גלוטן</span></div>
     <p class="gist"><b>Sglù הוא מקום שכולו ללא גלוטן</b> — מאפייה, קונדיטוריה, ביסטרו לצהריים, פיצרייה לקחת בערב, ומיני-מרקט של מוצרים ללא גלוטן, הכול תחת קורת גג אחת. כשהכל במקום נטול גלוטן, <b>אין זיהום הצולב</b>.</p>
-    <div class="note"><div class="nh">🗓️ שווה לתכנן אליו נסיעה אחת מכוונת</div><b>מלאי</b>: לחם, מאפים, פסטה, פיצה, קינוחים — ליום־יומיים.
+    <details class="note"><summary class="nh">🗓️ שווה לתכנן אליו נסיעה אחת מכוונת</summary><b>מלאי</b>: לחם, מאפים, פסטה, פיצה, קינוחים — ליום־יומיים.
       זה הופך את ארוחות הבוקר ואת הפיקניקים לימי הטיול מבעיה לפרט.
-<br>&nbsp;אפשר לשלב עם <a href="#days/perugia">יום פרוג׳ה</a>.</div>
+<br>&nbsp;אפשר לשלב עם <a href="#days/perugia">יום פרוג׳ה</a>.</details>
     <table class="h">
       <tr><th>סניף</th><th>כתובת</th><th>שעות</th><th>טלפון</th></tr>
       <tr><td><b>אלרה די קורצ׳אנו</b><br>(הקרוב לדרוטה)</td><td dir="ltr">Via Sandro Pertini 1</td><td>ג׳–ש׳ 07:30–20:00 · א׳ 08:00–12:30<br><b>סגור בשני</b></td><td dir="ltr">+39 075 697 6131</td></tr>
@@ -2000,13 +2017,13 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
 
   <div class="card" id="peanut"><h3>🥜 אלרגיה לבוטנים באיטליה <a class="anchor" href="#food/peanut" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist">החדשות הטובות: בוטנים <b>אינם</b> חומר גלם במטבח האיטלקי המסורתי, ותקנת האלרגנים האירופית מחייבת גם מסעדות להצהיר עליהם. החדשות הפחות טובות: בדיוק בגלל שזה לא נפוץ, מלצר יכול לענות ״אין כאן בוטנים״ בכנות מלאה בלי לחשוב על שמן טיגון או קינוח.</p>
-    <div class="note warn"><div class="nh">⚠️ המילה הנכונה היא arachidi — ולא noci, ולא noccioline</div>
+    <details class="note warn"><summary class="nh">⚠️ המילה הנכונה היא arachidi — ולא noci, ולא noccioline</summary>
       <b>noci</b> = אגוזים (ובעיקר אגוזי מלך).<br><b>noccioline</b> היא מילת דיבור.
 <br>&nbsp;התקנה האירופית עצמה מפרטת <b dir="ltr">״Arachidi e prodotti a base di arachidi״</b>,
       וזה בדיוק הניסוח שמופיע בתפריטים ועל אריזות.<br>המילה לשאול בה:
       <b dir="ltr">«Mia figlia ha un'allergia alle arachidi. Questo piatto contiene arachidi
       o prodotti a base di arachidi?»</b>
-      ולציין <b>allergia</b>, לא ״היא לא אוהבת״.</div>
+      ולציין <b>allergia</b>, לא ״היא לא אוהבת״.</details>
     <details><summary>הסיכון האמיתי, ומה מחייב החוק</summary>
       <p style="margin:0"><b>⭐ הסיכון האמיתי היחיד שאומת באיטליה הוא שמן הטיגון.</b> <b><i dir="ltr">olio di semi di arachide</i> — שמן בוטנים — הוא אחד משמני הטיגון המומלצים באיטליה</b>, ומופיע ככזה גם בפרסומי אוכל מרכזיים.&nbsp;<b>החוק האירופי לא פוטר שמן בוטנים מעודן</b> — בניגוד לשמן סויה מעודן, שכן פטור במפורש. כלומר מסעדה שמטגנת בשמן בוטנים <b>חייבת להצהיר על arachidi</b>. אגודת האלרגיות האיטלקית אף אומרת למסעדות במפורש: ״להשתמש בשמן טרי לטיגון, <b>ולהימנע משמן זרעים מעורב ומשמן בוטנים</b>״. <b>זו השאלה שכדאי לשאול: <i dir="ltr">«In che olio friggete?»</i></b></p>
       <p style="margin:0"><b>עוד קטגוריות שבהן שואלים גם כשהמנה נראית תמימה:</b> קינוחים ומאפים · <b>גלידה</b> (אותה כף לכל הטעמים) · שוקולד · חטיפי אפריטיבו על הבר · פסטו ורטבים (בדרך כלל אורנים, אבל שווה לשאול).</p>
@@ -2073,11 +2090,11 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       <tr><td><b>Farmacia Perelli</b></td><td dir="ltr">Via dell'Arte 14/16, Deruta · +39 075 971 1193</td><td><b>בדרוטה</b></td></tr>
       <tr><td>La Bottega dell'Altro Sapore</td><td dir="ltr">Via Tiberina Sud 249, Deruta</td><td>בדרוטה · ⚠️ מקור מ-2015 — לאמת שקיים</td></tr>
     </table>
-    <div class="note"><div class="nh">💊 כלל שכדאי להכיר: לבית מרקחת אסור לסרב</div>
+    <details class="note"><summary class="nh">💊 כלל שכדאי להכיר: לבית מרקחת אסור לסרב</summary>
       לפי AIC אומבריה, <b>החוק מחייב כל בית מרקחת באיטליה להזמין מוצרים ללא גלוטן לבקשת
       חולה צליאק.</b> בית מרקחת הוא לא רק גיבוי — לפעמים המגוון שם טוב מהסופר, כי חולי צליאק
       איטלקים מקבלים הקצבה ממשלתית שנפדית שם. <b>Farmacia Menconi במרשיאנו</b> מופיעה ברשימה
-      הרשמית של AIC אומבריה כמי שמספקת מוצרים כאלה.</div>
+      הרשמית של AIC אומבריה כמי שמספקת מוצרים כאלה.</details>
     <details><summary>מה קונים, ומה מחפשים על האריזה</summary>
       <p style="margin:0"><b>מה לקנות בקנייה הגדולה:</b> פסטה ולחם ללא גלוטן · דגני בוקר או קרקרים בטוחים · פירות · יוגורט וגבינות · בשר או עוף לגריל · שמן זית מקומי · קפה · חטיפים לרכב · <b>ומים</b>. ולזכור שהפיקניקים נבנים מכאן — <a href="#days/marmore">יום מרמורה</a> ו<a href="#days/adventure">יום פארק החבלים</a> שניהם עובדים טוב יותר עם אוכל מהבית.</p>
       <p style="margin:0"><b>מה מחפשים על האריזה:</b> הסימון הרשמי הוא <b>שיבולת חתוכה בעיגול</b> (<i>spiga barrata</i>) או הכתובית <i>senza glutine</i>. על אלרגנים, החוק האירופי מחייב להדגיש אותם בתוך רשימת הרכיבים — <b><i>arachidi</i> יופיע מודגש</b> אם הוא שם.</p>
@@ -2090,11 +2107,11 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <p class="gist">מקומות כפריים ואותנטיים, לא מסעדות תיירים — מסודרים לפי עיירה. <b>סימון GF</b> = <span class="gfb g2">GF</span> מטבח ייעודי ללא גלוטן · <span class="gfb g1">GF</span> מנה או תפריט ללא גלוטן שאומת, או הכשרת AIC · בלי סימון = לשאול. ⚠️ הסימון הוא <b>נקודת פתיחה לשיחה, לא אישור</b>.</p>
     <p class="src">שעות שמסומנות ב-<b>≈</b> מגיעות מאגרגטור שמשקף את Google ולא מהאתר של המסעדה עצמה — אינדיקציה, לא הבטחה. <b>לאמת בטלפון ביום שלפני</b>, במיוחד לקבוצה של תשעה, ובמיוחד אם יש יום סגירה שבועי.</p>
     <div id="rest-list" class="board-empty">טוען את רשימת המסעדות…</div>
-    <div class="note" style="margin-top:14px"><div class="nh">💡 כדאי</div>
+    <details class="note" style="margin-top:14px"><summary class="nh">💡 כדאי</summary>
       <b>להזמין מקום מראש</b>, ובאותה שיחה להגיד שיש צליאק ואלרגיה לבוטנים. מסעדה כפרית
       באומבריה עם תשעה אנשים בלי הזמנה זה הימור בכל מקרה — ועם ההזמנה מקבלים גם שולחן
       וגם מטבח שהתכונן.<br><b>הרבה מקומות סוגרים אחר הצהריים בין הארוחות</b> ויש להם יום סגירה
-      שבועי, אז שיחה גם מונעת נסיעה לדלת נעולה.</div>
+      שבועי, אז שיחה גם מונעת נסיעה לדלת נעולה.</details>
     <iframe class="mapembed" data-src="map.html#food" title="המסעדות על המפה" loading="lazy"></iframe>
   </div>
 
@@ -2109,11 +2126,11 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
 
   <div class="card" id="ztl"><h3>🚫 ZTL — הטעות היקרה ביותר בנהיגה באיטליה <a class="anchor" href="#info/ztl" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist"><b>Zona a Traffico Limitato</b> — אזור תנועה מוגבלת במרכז כמעט כל עיירה היסטורית. הכניסה מותרת רק לתושבים ולבעלי היתר, והאכיפה היא <b>מצלמות</b>: אין שוטר ואין הודעה. הקנס פשוט מגיע — <b>ולפי החוק, לתושב חוץ יש לרשות עד 360 יום לשלוח אותו.</b></p>
-    <div class="note warn"><div class="nh">⚠️ הכלל</div>
+    <details class="note warn"><summary class="nh">⚠️ הכלל</summary>
       <b>חונים מחוץ לחומות והולכים.</b> בכל עיירה בתכנית יש חניון מתחת לעיר, ולעיתים
       מעלית או דרגנוע. זה זול, זה מה שכולם עושים, וזה מבטל את הסיכון.
       <br><b>GPS לא מציל</b> — Waze ו-Maps לא תמיד מסמנים ZTL ולפעמים ינווטו דרכו.
-      <b>השלט בשטח גובר על המסך.</b> אם אין ודאות — לא נכנסים.</div>
+      <b>השלט בשטח גובר על המסך.</b> אם אין ודאות — לא נכנסים.</details>
 
     <h4 style="margin-top:16px">השעות בפועל, לפי עיירה, לתאריכים שלנו</h4>
     <table class="h">
@@ -2131,7 +2148,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       <tr><td><b>ספלו</b></td><td>לא נמצא ZTL עם מצלמות, אבל יש אזורים בהיתר. המרכז להולכי רגל</td><td>חינם: Via della Liberazione, Via Circonvallazione, המתחם הספורטיבי לשעבר</td></tr>
       <tr><td><b>טרני</b><br><a href="https://www.accessibilitacentristorici.it/ztl/umbria/terni/mappa" target="_blank" rel="noopener" class="ztlmap">מפת ה-ZTL ↖</a></td><td>השערים פעילים <b>24 שעות</b>, וקיים אזור להולכי רגל 24/7. יש הקלה נסיונית בשישי-ראשון 09:00–21:00 — <b>לא לסמוך עליה</b></td><td>חניון מקורה <b>San Francesco</b> — ~500 מקומות, 24 שעות, מקסימום יומי €15</td></tr>
     </table>
-    <div class="note"><div class="nh">🗺️ מאיפה המפות — ואיפה אין</div>
+    <details class="note"><summary class="nh">🗺️ מאיפה המפות — ואיפה אין</summary>
       <p style="margin:0">הקישורים בטבלה מובילים ל-<a href="https://www.accessibilitacentristorici.it/" target="_blank" rel="noopener">accessibilitacentristorici.it</a>,
       אתר שמרכז את ה-ZTL של מאות ערים באיטליה — לכל עיירה מפת גוגל עם <b>גבולות ה-ZTL, מיקום המצלמות (varchi) והחניונים</b>,
       וגם השעות ומי מורשה להיכנס. זה האתר לפתוח בו לפני שנוסעים לעיירה שלא בטבלה.</p>
@@ -2139,13 +2156,13 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       צריך את הצו של העירייה עצמה, ראו למעלה), <b>פיינצה</b>, <b>קסטיליונה דל לאגו</b>, וגם <b>דרוטה</b>
       ו<b>ספלו</b> — שתי האחרונות פשוט כי אין בהן ZTL עם מצלמות.</p>
       <p style="margin:0">האתר הוא צד שלישי ולא עירייה, והשעות שם יכולות לפגר אחרי צו חדש — <b>המפה והמצלמות
-      שימושיות, השעות בטבלה שלמעלה מאומתות מול העיריות. בשטח, השלט גובר על שניהם.</b> שווה לרענן שבוע לפני.</p></div>
+      שימושיות, השעות בטבלה שלמעלה מאומתות מול העיריות. בשטח, השלט גובר על שניהם.</b> שווה לרענן שבוע לפני.</p></details>
 
-    <div class="note warn" style="margin-top:14px"><div class="nh">⚠️ קורטונה — הדרגנועים לא עובדים</div>
+    <details class="note warn" style="margin-top:14px"><summary class="nh">⚠️ קורטונה — הדרגנועים לא עובדים</summary>
       הדרגנועים בין החניון של Spirito Santo לכיכר גריבלדי <b>מושבתים מ-28 באוגוסט 2026</b>
       (שלב אחרון בעבודות הגג), ואין תאריך פתיחה מפורסם. <b>כלומר עלייה ברגל</b> — מה שמשנה
       את החישוב עם בן 3 ועם עגלה. לבדוק שוב בשבוע שלפני.
-      <a href="#days/tuscany">היום בטוסקנה ←</a></div>
+      <a href="#days/tuscany">היום בטוסקנה ←</a></details>
 
     <details><summary>איך הקנס עובד באמת, ומה עושים אם נכנסנו</summary>
       <p style="margin:0"><b>⭐ החדשות הטובות: קנס אחד ליום, לא לכל כניסה.</b> החוק (סעיף 198 c.2-bis) קובע סנקציה אחת <b>לכל יום קלנדרי</b> על כניסות חוזרות שנקלטו במצלמה באותו ZTL. כלומר: שלוש כניסות למונטפולצ׳אנו באחר צהריים אחד = <b>קנס אחד</b>. אבל מונטפולצ׳אנו + קורטונה + פיינצה באותו יום = <b>שלושה קנסות</b>, כי אלה שלושה ZTL שונים.</p>
@@ -2172,10 +2189,10 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
         <li><b>״grattini״:</b> פתק מגורד — מגרדים <b>שנה, חודש, יום, שעה ודקה</b> של תחילת החניה. גירוד חלקי הוא עבירה</li>
       </ul></div>
     </div>
-    <div class="note warn"><div class="nh">⚠️ ״בראשון החניה הכחולה חינם״ — זה לא כלל ארצי</div>
+    <details class="note warn"><summary class="nh">⚠️ ״בראשון החניה הכחולה חינם״ — זה לא כלל ארצי</summary>
       אין שום הוראה בחוק שפוטרת חניה כחולה בימי ראשון או בחגים. הימים, השעות והתעריפים
       נקבעים <b>בכל עירייה בנפרד</b>, ובאזורי תיירות ובמרכזים היסטוריים גובים לא מעט
-      שבעה ימים בשבוע. <b>השלט ליד המקום הוא הסמכות היחידה.</b></div>
+      שבעה ימים בשבוע. <b>השלט ליד המקום הוא הסמכות היחידה.</b></details>
     <details><summary>הדיסק שעה, ומה עושים כשאין אחד ברכב</summary>
       <p style="margin:0"><b>דיסק שעה</b> (<i>disco orario</i>) נדרש בחניה לבנה שיש עליה הגבלת זמן: החוק מחייב ״לסמן, באופן נראה בבירור, את השעה שבה החלה החניה״. הקנס €42–€173. <b>ברכב שכור לרוב אין דיסק</b> — קונים אחד בכל <i>tabaccheria</i> בכמה אירו, או כותבים את שעת ההגעה בבירור על פתק ומניחים על הדשבורד (זה הנוהג המקובל).</p>
       <p style="margin:0">נקודה מנחמת: החוק מחייב עירייה שמקימה חניה בתשלום להקצות בסמוך גם <b>אזור חניה חינם</b> סביר. כלומר כמעט בכל עיירה יש אפשרות חינם — היא פשוט רחוקה יותר.</p>
@@ -2185,19 +2202,19 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <div class="card" id="driving"><h3>🚗 נהיגה, כבישי אגרה ודלק <a class="anchor" href="#info/driving" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist">הנהיגה באומבריה נוחה — כבישים טובים, תנועה דלילה, מרחקים קצרים. שלושה דברים שווה לסגור מראש: הרישיון הבינלאומי, איפה יורדים מכביש האגרה, ואיפה מתדלקים.</p>
 
-    <div class="note warn"><div class="nh">⚠️ רישיון בינלאומי — חובה לפי החוק האיטלקי, לכל נהג</div>
+    <details class="note warn"><summary class="nh">⚠️ רישיון בינלאומי — חובה לפי החוק האיטלקי, לכל נהג</summary>
       סעיף 135 לחוקי התעבורה האיטלקיים מתיר לבעל רישיון שאינו אירופי לנהוג
       <b>רק אם יש לו רישיון בינלאומי או תרגום רשמי לאיטלקית</b>. גם חברות ההשכרה חלוקות:
       Hertz פוטרת ישראל, אבל <b>Avis דורשת רישיון בינלאומי לכל רישיון לא-אירופי</b>,
       ומציינת בנפרד שרישיון בכתב שאינו לטיני מחייב רישיון בינלאומי או תרגום נוטריוני.
       <b>להוציא לשני הנהגים.</b><br><b>רישיון דיגיטלי לא מתקבל באיטליה</b> —
-      להביא את הכרטיס הפיזי ואת חוברת הרישיון הבינלאומי.</div>
+      להביא את הכרטיס הפיזי ואת חוברת הרישיון הבינלאומי.</details>
 
-    <div class="note"><div class="nh">💶 חיסכון קל: לרדת מה-A1 בְּאוֹרְטֶה</div>
+    <details class="note"><summary class="nh">💶 חיסכון קל: לרדת מה-A1 בְּאוֹרְטֶה</summary>
       מנתב האגרה של Autostrade עצמו: <b>Roma Nord ← Orte = €4.90</b> (62 ק״מ) לעומת
       <b>Roma Nord ← Valdichiana = €13.30</b> (169 ק״מ). באורטה יורדים ל-<b>E45 / SS3bis</b>
       שהוא <b>ללא אגרה</b> ועובר ממש ליד דרוטה. <b>הפרש של ~€8.40 לרכב לכל כיוון —
-      כלומר ~€34 לשני רכבים על שני הכיוונים.</b> בין FCO לשער Roma Nord אין בכלל תחנת אגרה.</div>
+      כלומר ~€34 לשני רכבים על שני הכיוונים.</b> בין FCO לשער Roma Nord אין בכלל תחנת אגרה.</details>
 
     <details><summary>אגרה, דלק, ומה שחייב להיות ברכב</summary>
       <p style="margin:0"><b>איך משלמים אגרה:</b> לוקחים כרטיס בכניסה, משלמים ביציאה. <b>מסלול צהוב עם ״T״ ודגל אירופי = Telepass בלבד — לא להיכנס.</b> <b>מסלול כחול עם שלושה סמלי כרטיס = כרטיסים בלבד</b>, ויזה/מאסטרקארד/אמקס <b>בלי קוד</b>, בלי עמלה — וכל מסלולי היציאה האוטומטיים מצוידים בקוראי קונטקטלס. מסלול לבן = מזומן (סמל יד = מאויש, סמל מטבע = אוטומטי עם עודף). <b>לבחור את המסלול מהשילוט בכניסה, לא ליד המחסום.</b></p>
@@ -2217,7 +2234,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
   <div class="card" id="seats"><h3>👶 כיסאות בטיחות — ושני דברים שהחוק דורש <a class="anchor" href="#info/seats" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist">חמישה ילדים בשני רכבים, כולל אחד בן 3. באיטליה יש חובת התאמה, יש אכיפה, ויש דרישה נוספת שכמעט אף אחד לא יודע עליה.</p>
 
-    <div class="note"><div class="nh">✅ הוחלט: <b>מביאים כיסאות מהבית</b></div>
+    <details class="note"><summary class="nh">✅ הוחלט: <b>מביאים כיסאות מהבית</b></summary>
       לא שוכרים כיסאות מ-Goldcar. זו ההחלטה הנכונה — הכיסא מוכר לילד, הוא תקין בוודאות,
       והוא לא תלוי במלאי של חברת השכרה בשעה 09:00 בחניון.<br>
       <b>וההרכב עוזר: רוב הילדים צריכים רק מושב הגבהה, ורק אחד צריך כיסא מלא</b> — כלומר
@@ -2249,20 +2266,20 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
         <li><b>🧳 ומה זה עושה למטען:</b> תא המטען הוא ~3 מזוודות לרכב. <b>המגביהים
           כמעט לא נספרים</b>; הכיסא המלא כן. <b>לתכנן אותו לרכב שנושא פחות מזוודות.</b>
           <a href="#arrival/cars">פרטי ההשכרה ←</a></li>
-      </ul></div>
+      </ul></details>
 
-    <div class="note warn"><div class="nh">🔴 מה שכיסא מהבית <b>לא</b> פותר: התקן ההתראה לבת ה-3</div>
+    <details class="note warn"><summary class="nh">🔴 מה שכיסא מהבית <b>לא</b> פותר: התקן ההתראה לבת ה-3</summary>
       זו חובה חוקית נפרדת (ראו למטה), והיא <b>לא מגיעה עם הכיסא</b> — לא עם שלנו ולא עם
       אחד שכור. <b>צריך לקנות אותו בארץ ולהביא.</b> הוא זול, קטן, ואין שום ערובה
-      שחברת השכרה תספק אחד.</div>
+      שחברת השכרה תספק אחד.</details>
 
-    <div class="note warn"><div class="nh">⚠️ הקריטריון הוא <b>גובה 150 ס״מ</b>, לא גיל</div>
+    <details class="note warn"><summary class="nh">⚠️ הקריטריון הוא <b>גובה 150 ס״מ</b>, לא גיל</summary>
       סעיף 172 קובע שילד <b>מתחת ל-150 ס״מ</b> חייב אמצעי ריסון מותאם למשקלו.
       ״עד גיל 12״ הוא רק הגיל שבו רוב הילדים מגיעים לגובה הזה — <b>אין לו תוקף חוקי.</b>
       כלומר: מי מהחמישה מתחת ל-150 ס״מ צריך כיסא או מגביה, גם אם הוא גדול.
-      קנס: €83–€332.</div>
+      קנס: €83–€332.</details>
 
-    <div class="note warn"><div class="nh">⚠️ התקן נגד שכחת ילד — <b>חובה חוקית לילד מתחת לגיל 4</b>, כלומר חל על בן ה-3</div>
+    <details class="note warn"><summary class="nh">⚠️ התקן נגד שכחת ילד — <b>חובה חוקית לילד מתחת לגיל 4</b>, כלומר חל על בן ה-3</summary>
       חוק 117/2018 הוסיף לסעיף 172 חובה: נהג שמסיע ילד <b>מתחת לגיל 4</b> חייב
       ״התקן התראה שנועד למנוע שכחת ילד״. האכיפה החלה במרץ 2020, והקנס €83–€333.
       <b>החובה חלה על הנהג שמסיע ילד כזה — לא על רישום הרכב</b>, ואין בחוק שום פטור
@@ -2271,7 +2288,7 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
       כלומר <b>כרית לחץ או מזרן Bluetooth ב-20–30 שקל/אירו שנקנה בארץ עונה על הדרישה.</b>
       Avis מציינת שכיסאות התינוק שלה ״יכולים להיות מצוידים״ בהתקן — ״יכולים״, לא מובטח.
       ⚠️ <b>לא מצאנו שום הצהרה רשמית שמתייחסת במפורש לתיירים ברכב שכור או זר.
-      להניח שזה חל, ולהביא התקן.</b></div>
+      להניח שזה חל, ולהביא התקן.</b></details>
 
     <details><summary>להביא או להשכיר, ומה תקין ומה לא</summary>
       <p style="margin:0"><b>⭐ כיסא שהובא מהארץ חוקי לגמרי</b> — החוק דורש רק ״מסוג מאושר״, ולא אכפת לו איפה נקנה. התקנים שמותרים לפי משטרת איטליה: <b>R44/03, R44/04, R129/1, R129/2</b>. וחשוב: <b>כיסאות R44/04 עדיין חוקיים לשימוש</b> — השינוי של 2023/24 חל על <b>המכירה</b>, לא על השימוש. ⚠️ אבל <b>R44/01 ו-R44/02 אינם מותרים</b> — לבדוק את התווית הכתומה על כל כיסא שאורזים.</p>
@@ -2284,9 +2301,9 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
 
   <div class="card" id="money"><h3>💶 כסף <a class="anchor" href="#info/money" title="קישור ישיר לכרטיס הזה">🔗</a></h3>
     <p class="gist">איטליה היא אירו וכרטיסי אשראי עובדים כמעט בכל מקום — כולל בעיירות. אבל <b>שתי ההסעות בליל הנחיתה משולמות במזומן</b>, וזה כסף שחייב להיות ביד לפני שיוצאים מהבית.</p>
-    <div class="note"><div class="nh">מזומן שצריך להיות בכיס ביום הראשון</div>
+    <details class="note"><summary class="nh">מזומן שצריך להיות בכיס ביום הראשון</summary>
       <b>€40</b> להסעה מהשדה + <b>€20</b> להסעה של הבוקר = <b>€60</b>, בשטרות קטנים.
-      להוסיף מזומן לחניונים, לפרקומטרים (חלקם לא מקבלים כרטיס) ולדוכנים קטנים.</div>
+      להוסיף מזומן לחניונים, לפרקומטרים (חלקם לא מקבלים כרטיס) ולדוכנים קטנים.</details>
     <!-- Filled from open.er-api.com at load; both stay hidden if the call fails. -->
     <div class="fx" id="fx" style="display:none"></div>
     <p class="src" id="fx-src" style="display:none"></p>
@@ -2304,21 +2321,21 @@ Le Case Coloniche, Deruta        43.0007180, 12.4219840
     <div class="meta"><span>🚨 <b>112</b> — חירום, בכל אירופה</span><span>🚑 <b>118</b> — אמבולנס</span><span>🚗 <b>803.116</b> — גרירה</span></div>
     <p class="gist">אין דרישת חיסונים לאיטליה, והרפואה טובה וזמינה. שני דברים כן דורשים הכנה: <b>הביטוח</b>, ו<b>האלרגיה</b>.</p>
 
-    <div class="note warn"><div class="nh">⚠️ הכרטיס האירופי לא חל עלינו — כל טיפול מחויב במלואו</div>
+    <details class="note warn"><summary class="nh">⚠️ הכרטיס האירופי לא חל עלינו — כל טיפול מחויב במלואו</summary>
       ה-EHIC מונפק רק למי שמכוסה בביטוח בריאות של מדינה אירופית, ואין לישראל הסכם חלופי.
       <br><b>ביקור במיון, ייעוץ ילדים, צילום או אשפוז — מחויבים פרטית, במחיר מלא.</b>
       <br><b>ביטוח נסיעות לכל המשתתפים אינו המלצה כאן אלא התשתית</b> — ולוודא שהוא מכסה
       במפורש <b>אלרגיה קיימת</b>, וגם <b>פארק חבלים ורפטינג</b>, שחלק מהפוליסות מחריגות.
-      <a href="#days/adventure">היום האתגרי ←</a></div>
+      <a href="#days/adventure">היום האתגרי ←</a></details>
 
-    <div class="note warn"><div class="nh">🥜 מזרק אדרנלין — <b>אי אפשר לקנות אחד באיטליה בלי מרשם</b></div>
+    <details class="note warn"><summary class="nh">🥜 מזרק אדרנלין — <b>אי אפשר לקנות אחד באיטליה בלי מרשם</b></summary>
       המזרקים שמשווקים באיטליה הם <b>Fastjekt</b> ו-<b>Jext</b> (מחסנית) ו-<b>Chenpen</b> (מזרק),
       במינונים 150 ו-300 מק״ג. <b>EpiPen לא משווק באיטליה.</b> וכולם <b>במרשם רופא</b> —
       אין קנייה מעל הדלפק.<br>
       <b>כלומר: להביא לפחות שניים משלנו, בכבודה היד ולא במטען</b>
       (״לא להניח בתא העליון״ — זו ההנחיה של אגודת האלרגיות האיטלקית),
       עם מכתב רופא וצילום המרשם, ועם <b>השם הגנרי</b> — שם מסחרי ישראלי לא בהכרח קיים שם.
-      <a href="#food/peanut">אלרגיה לבוטנים ←</a></div>
+      <a href="#food/peanut">אלרגיה לבוטנים ←</a></details>
 
     <details><summary>מה אומרים ב-112, איפה בית החולים, ואיך עובד בית מרקחת</summary>
       <p style="margin:0"><b>מה אומרים — הנוסח שמופיע בעלון התרופה עצמו</b> (כלומר מה שמוקד איטלקי מצפה לשמוע): <b dir="ltr">״Chiami il 112, richieda un'ambulanza, dichiari uno stato di anafilassi״</b> — ״התקשרו ל-112, בקשו אמבולנס, הצהירו על מצב של אנפילקסיס״. <b>וגם אם הסימפטומים נראים כמשתפרים.</b> בהמתנה לאמבולנס: <b>לשכב עם רגליים מורמות</b>, אלא אם זה מקשה על הנשימה — ואז לשבת. ולא לסגור את השיחה, ולא לתת שום דבר לשתות.</p>

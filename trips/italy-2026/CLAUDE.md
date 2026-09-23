@@ -1266,6 +1266,32 @@ the edge scroll. ⚠️ One test artefact worth knowing: read a grip's coordinat
 smooth scroll settles — `html{scroll-behavior:smooth}` moves the page under a synthetic touch
 that was aimed a frame too early, and the drag "fails" for a reason that is not in the code.
 
+## Fourth pass (Sep 2026) — user's requests in the session
+
+- **FlightAware links were tracking the wrong airline.** `WZZ` is Wizz Air *Hungary*; W4 is
+  Wizz Air **Malta**, ICAO **`WMT`**. All three links are `/live/flight/WMT6044|WMT6041` now —
+  FlightAware's own page titles read "W46044 (WMT6044) Wizz Air Malta".
+- **The flights table ran off the card on a phone.** The resting chip `לפי לוח הזמנים` does not
+  wrap; under 600px it renders `עתידי` (both spans are in the chip, CSS picks one). That alone
+  was **not enough** — measured, the table still overflowed by ~85px at 390px — so under 600px
+  `#flights` / `#flighttbl` also tighten (13px, 6px 4px cells, `overflow-wrap:anywhere` on `td`
+  only). **Not on `th` and not on the chip**: with it there, `עתידי` and `סטטוס` broke
+  letter by letter. Measured 0px overflow at 320/360/375/390/430.
+- **Every note box with a body is now a `<details class="note">`, page-wide** (45 converted by a
+  tag walk that matches each `</div>` and ignores comments — not a regex replace; see the `>`
+  lesson above, and a first attempt that counted `<details` inside comments reverted all 67). This **reverses** the
+  earlier rule that kept the split-return warning and the other blocking notes open: the user
+  asked for exactly that one. Two stay as they are: **`#first-thing`** (the 02:00 instruction,
+  the one thing on the page that must be read without a tap) and the heading-only "flight leaves
+  Thursday" box, which has no body to collapse. And **a note nested inside another `<details>` stays a
+  `<div>`** — the Marmore booking phone script: a `<details>` inside a `<details>` makes the
+  outer one a hazard for `edit-server.mjs` (`NEVER_INSIDE`), which then splits every `<b>` into
+  its own field; `edit-server.test.mjs` caught it. The router now also opens a target that *is* a
+  `<details>` (`#home/open`), not only the ones inside it.
+- **The eSIM view shows the list first.** Inside `#esims`: toolbar (count · archive toggle ·
+  refresh) → list → the `#esimhow` explanation card → the add form. `initEsims` moves the card in
+  from the HTML, so with no JS it stays above the (empty) board where it is written.
+
 ## Live flight status (`#flighttbl`) — and why it is the IAA's open data
 
 The flights table gained a status column, filled from **data.gov.il's CKAN `datastore_search`**
@@ -1291,7 +1317,7 @@ proxy option either: GitHub Pages is static. **Do not "improve" this by adding a
 held today−1 … today+3, last day partial. So the resting state is "no row", which the UI renders
 as a muted `לפי לוח הזמנים` chip — an answer, not a spinner and not an error. Three states:
 no row / offline / throw → scheduled times stand · row → chip + actual time + terminal ·
-always → the FlightAware deep-link (`/live/flight/WZZ6044`), which is what covers the FCO gate
+always → the FlightAware deep-link (`/live/flight/WMT6044` — **WMT, not WZZ**: W4 is Wizz Air *Malta*, ICAO `WMT`; `WZZ` is Wizz Air Hungary and tracks a different flight), which is what covers the FCO gate
 and belt, since **no free CORS-open Fiumicino source exists**.
 
 Two traps, both hit for real while building this:

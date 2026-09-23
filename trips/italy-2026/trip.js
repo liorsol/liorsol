@@ -77,6 +77,7 @@
     var el = anchor && document.getElementById(anchor);
     if(el){
       el.querySelectorAll('details').forEach(function(d){ d.open = true; });
+      if(el.tagName === 'DETAILS') el.open = true;   // a note box that is itself the target (#home/open)
       el.classList.add('flash'); flashed = el;
     }
     if(typeof restoreY === 'number'){        // going back — the remembered spot wins
@@ -579,7 +580,8 @@
     if(!rec){                                       // the normal state, most of the year
       var q = document.createElement('span');
       q.className = 'fchip sched';
-      q.textContent = 'לפי לוח הזמנים';
+      q.title = 'לפי לוח הזמנים';
+      q.innerHTML = '<span class="long">לפי לוח הזמנים</span><span class="short">עתידי</span>';   // fixed text, no data
       cell.appendChild(q);
       return;
     }
@@ -1380,6 +1382,22 @@
     refreshBtn.textContent = '↻ רענון הנתונים';
     refreshBtn.addEventListener('click', function(){ loadUsage(true); });
     ui.foot.appendChild(refreshBtn);
+
+    /* The list first, then how to add one, then the form (user's request, Sep 2026):
+       during the trip this view is opened to look at the bars, not to add an eSIM, so
+       the bars sit directly under the title. The count, the archive toggle and the
+       refresh button belong to the list, so they leave the form's footer for a bar
+       above it; only the submit button and its message stay with the form. The
+       explanation card is moved in from the HTML — with no JS it simply stays where
+       it is written, above an empty board. */
+    var tools = document.createElement('div'); tools.className = 'esim-tools';
+    tools.appendChild(ui.count);
+    tools.appendChild(ui.foot.querySelector('.arch-toggle'));
+    tools.appendChild(refreshBtn);
+    el.insertBefore(tools, el.firstChild);
+    el.insertBefore(ui.list, tools.nextSibling);
+    var how = document.getElementById('esimhow');
+    if(how) el.insertBefore(how, ui.form);
 
     /* One POST for every live ICCID on the board. A 403 here is the proxy's
        allowlist, not a dead network, and it is the likeliest thing to go wrong

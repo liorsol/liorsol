@@ -40,7 +40,7 @@ off-canvas drawer below it — and seven routes, each a `.view` section in `<mai
 ```
 #/status     the default: the tariff window, the connector, the live charge, start/stop,
              and the charge limit ("stop by itself after N kWh")
-#/history    the charging sessions table, filterable by period, with month and total rows
+#/history    the charging sessions table, filterable by period, with one sum for the period
 #/invoices   the charger, and one card per billed period with a link to the operator's PDF
 #/comments   the notes board
 #/sessions   this dashboard's own sign-ins, and revoking one

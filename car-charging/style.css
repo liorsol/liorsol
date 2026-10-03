@@ -411,9 +411,17 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .stat-grid__head .stat__label { margin-top: 0; }
 .stat-grid__head .stat__label:first-child { font-weight: 650; }
 
-/* #/history's four period buttons: one row on a phone, not four stacked full-width buttons. */
-.btn-row.period-filter { flex-wrap: nowrap; gap: var(--sp-2); }
-.btn-row.period-filter > .btn { flex: 1 1 0; min-width: 0; padding-inline: var(--sp-2); }
+/* #/history's five period buttons: three then two on a phone. One nowrap row of them was wider
+   than a narrow phone and pushed the whole panel into a sideways scroll. */
+.btn-row.period-filter { flex-wrap: wrap; gap: var(--sp-2); }
+.btn-row.period-filter > .btn { flex: 1 1 calc(33% - var(--sp-2)); min-width: 0; padding-inline: var(--sp-2); }
+
+/* #/history's table header wraps to two lines, so the table fits its panel instead of scrolling
+   sideways. Every theme sets `.table { min-width: 620-680px }` below 900px and `th` nowrap, which
+   on a phone held sideways (or anything 620-900px) pushed the panel into a horizontal scroll -- the
+   owner's report. The id outranks every theme; below 620px the table is cards and has no header. */
+#history .table-wrap table.table { min-width: 0; }
+#history .table-wrap table.table th { white-space: normal; }
 
 /* #/status limit panel and #/log filter: a field and its button on one line. */
 .inline-form { display: flex; flex-wrap: wrap; align-items: end; gap: var(--sp-3); }

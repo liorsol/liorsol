@@ -155,6 +155,7 @@ function tile(value, unit, label) {
 const PERIODS = [
   ['all', 'הכל'],
   ['month', 'החודש'],
+  ['prev', 'חודש קודם'],
   ['half', 'חצי שנה'],
   ['year', 'שנה'],
 ];
@@ -162,20 +163,27 @@ let period = 'all';
 
 /**
  * Epoch ms a period starts at, or -Infinity for "all". "month" is the 1st of the current month,
- * not thirty days back -- the owner's words.
+ * not thirty days back -- the owner's words. "prev" is the whole previous calendar month.
  * @param {string} p a PERIODS key
  * @param {Date} now
  */
 export function periodStart(p, now) {
   const y = now.getFullYear(), m = now.getMonth();
   if (p === 'month') return new Date(y, m, 1).getTime();
+  if (p === 'prev') return new Date(y, m - 1, 1).getTime();
   if (p === 'half') return new Date(y, m - 6, now.getDate()).getTime();
   if (p === 'year') return new Date(y - 1, m, now.getDate()).getTime();
   return -Infinity;
 }
 
+/** Epoch ms a period ends at (exclusive): only "prev" has an end, the 1st of this month. */
+export function periodEnd(p, now) {
+  return p === 'prev' ? new Date(now.getFullYear(), now.getMonth(), 1).getTime() : Infinity;
+}
+
 // A row with no readable start is in "all" and in no bounded period.
-const inPeriod = (row, from) => from === -Infinity || startMs(row) >= from;
+const inPeriod = (row, from, to) =>
+  from === -Infinity || (startMs(row) >= from && startMs(row) < to);
 
 // True UTC first: the period edges are the viewer's own clock.
 const startMs = (row) => {
@@ -193,8 +201,8 @@ function totals(rows) {
   return { count: rows.length, kwh, paid: paidInc || paidEx, inc: !!paidInc || !paidEx };
 }
 
-// One line per period, on a phone too: the label carries the count small, and the two tiles that
-// matter sit beside it. `.stat-grid--period` (style.css) fixes the three columns.
+// One line on a phone too: the label carries the count small, and the two tiles that matter sit
+// beside it. `.stat-grid--period` (style.css) fixes the three columns.
 function periodRow(label, t) {
   const grid = h('div', 'stat-grid stat-grid--period');
   const head = h('div', 'stat-grid__head');
@@ -227,9 +235,7 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   }
 
   const now = new Date();
-  const from = periodStart(period, now);
-  const rows = all.filter((row) => inPeriod(row, from));
-  const monthFrom = periodStart('month', now);
+  const rows = all.filter((row) => inPeriod(row, periodStart(period, now), periodEnd(period, now)));
 
   const filter = h('div', 'btn-row period-filter');
   filter.setAttribute('role', 'group');
@@ -246,15 +252,13 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   }
   el.appendChild(inset(el, filter, true));
 
-  // Current month always; the total follows the filter, and says which period it is.
-  const stats = spaced(h('div'), 3);
-  stats.appendChild(periodRow('החודש', totals(all.filter((row) => inPeriod(row, monthFrom)))));
+  // One sum, for whatever the filter shows -- the owner dropped the fixed "this month" row.
   const periodName = PERIODS.find(([k]) => k === period)[1];
-  stats.appendChild(spaced(periodRow(period === 'all' ? 'סה״כ' : 'סה״כ · ' + periodName, totals(rows)), 2));
+  const stats = spaced(periodRow(period === 'all' ? 'סה״כ' : 'סה״כ · ' + periodName, totals(rows)), 3);
   el.appendChild(inset(el, stats, false));
 
   if (!rows.length) {
-    el.appendChild(inset(el, spaced(emptyBlock('אין טעינות בתקופה הזו', 'בחרו תקופה ארוכה יותר.')), false));
+    el.appendChild(inset(el, spaced(emptyBlock('אין טעינות בתקופה הזו', 'בחרו תקופה אחרת.')), false));
     return;
   }
 

@@ -215,10 +215,12 @@ invented here — read that file before changing this one.
   invocation budget, not an optimisation, and `test/nav.test.mjs` asserts it by counting `fetch`.
 - Signed out, the menu is hidden and the views are detached as a set: the sign-in card *is* the
   page. A rail leading to seven blank views is worse than no rail.
-- **`#/history` filters client-side** (all / this month from the 1st / half a year / a year) over
-  the year of sessions the private half now sends, and shows two stat rows — this month always,
-  and the total for the chosen period — each held on one line on a phone by
-  `.stat-grid--period` in `style.css`. A filter press fetches nothing, same as a menu press.
+- **`#/history` filters client-side** (all / this month from the 1st / the previous calendar
+  month / half a year / a year) over the year of sessions the private half now sends, and shows
+  **one** sum row for whatever the filter shows, held on one line on a phone by
+  `.stat-grid--period` in `style.css`. A filter press fetches nothing, same as a menu press. Its
+  table header wraps to two lines and the themes' 620–680px table minimum is overridden there, so
+  between 620px and 900px (a phone held sideways) the table fits instead of scrolling sideways.
 
 **The charge limit (`#/status`, `views/limit.js`) writes a number and nothing else.** "Stop by
 itself after N kWh" is enforced by a **cron on the private Worker** (every ten minutes), which

@@ -92,6 +92,7 @@
     <a class="nav__link" id="nav-comments" href="#/comments">💬 הערות</a>
     <a class="nav__link" id="nav-sessions" href="#/sessions">🔑 חיבורים פעילים</a>
     <a class="nav__link" id="nav-contact"  href="#/contact">📞 יצירת קשר</a>
+    <a class="nav__link" id="nav-log"      href="#/log">📜 יומן פעולות</a>
   </div>
 </nav>
 <div class="navscrim" id="navscrim"></div>
@@ -164,6 +165,14 @@
         <div class="panel__head"><h2 class="panel__title">שליטה</h2></div>
         <div class="panel__body" id="controls"></div>
       </section>
+
+      <!-- The charge limit. Its own panel and its own module, not part of #controls: it writes a
+           number, and the stop it causes is fired server-side, so it must never sit inside the
+           one module that owns the commands. -->
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">הגבלת טעינה</h2></div>
+        <div class="panel__body" id="limit"></div>
+      </section>
     </section>
 
     <section class="view" id="view-history">
@@ -213,6 +222,15 @@
       <section class="panel">
         <div class="panel__head"><h2 class="panel__title">יצירת קשר</h2></div>
         <div class="panel__body" id="contact"></div>
+      </section>
+    </section>
+
+    <!-- What the system did: starts, stops, automatic stops, limits, sign-ins, revokes. Rows come
+         from the private service's own D1 log; nothing here is read from the charger. -->
+    <section class="view" id="view-log">
+      <section class="panel">
+        <div class="panel__head"><h2 class="panel__title">יומן פעולות</h2></div>
+        <div class="panel__body" id="log"></div>
       </section>
     </section>
 

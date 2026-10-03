@@ -230,6 +230,13 @@ export function refresh() {
   return request('/api/refresh', { method: 'POST' });
 }
 
+// The same forcing, for the state payload alone -- the start poll's sample. Two upstream calls
+// instead of five, which is what makes a one-second sample affordable. Reached from pollStart and
+// from nothing else, so it is still only ever a press.
+function refreshState() {
+  return request('/api/refresh/state', { method: 'POST' });
+}
+
 // ── Charge control ──
 
 // Arms the confirmation poll below, the same way stop() arms the settle poll. Module memory only:
@@ -292,6 +299,26 @@ export async function requestSignInLink() {
 // ── Comments ──
 
 const COMMENT_MODES = ['exclude', 'include', 'only'];
+
+// ── Charge limit and action log ──
+// Both are this dashboard's own D1 rows on the private service; neither goes upstream. The limit
+// is only a number: the stop it causes is fired server-side by the private service's cron.
+
+export function getLimit() {
+  return request('/api/limit');
+}
+
+export function setLimit(kwh) {
+  return request('/api/limit', { method: 'PUT', ...jsonBody({ kwh }) });
+}
+
+export function clearLimit() {
+  return request('/api/limit', { method: 'DELETE' });
+}
+
+export function getEvents() {
+  return request('/api/events');
+}
 
 export function getComments(mode) {
   const archived = COMMENT_MODES.includes(mode) ? mode : 'exclude';
@@ -370,9 +397,11 @@ export async function pollSettle(sessionId, onSample) {
 // The server's age rule is untouched -- a page load still forces nothing, which is the free-tier
 // invocation budget requirement, and `test/start-confirm.test.mjs` asserts that first.
 //
-// The cap is lower than the settle poll's and the interval longer, because a sample here is three
-// upstream fetches rather than one. Worst case START_MAX_ATTEMPTS forced rounds over roughly half
-// a minute, then it gives up and SAYS it gave up -- see the caller. Running out is not a failure
+// Once a second, by the owner's request (2026-10-03): the old 3 s x 10 cap ran out before a real
+// charger reported, and the panel then sat on the pre-start state until refresh was pressed. The
+// sample is the state-only forced fetch (two upstream calls), and the cap is two minutes -- the
+// vendor's own app polls once a second while a command settles. Then it gives up and SAYS it gave
+// up -- see the caller. Running out is not a failure
 // and must never be reported as one: the command was accepted, the charger has not confirmed yet.
 //
 // `took` is the caller's, not this module's: what counts as "charging" is the same judgement the
@@ -380,15 +409,15 @@ export async function pollSettle(sessionId, onSample) {
 // refresh body nests the three routes, so the state half is unwrapped here -- the wire shape is
 // this module's and does not leak into a view.
 
-export const START_MAX_ATTEMPTS = 10;
-export const START_INTERVAL_MS = 3000;
+export const START_MAX_ATTEMPTS = 120;
+export const START_INTERVAL_MS = 1000;
 
 export async function pollStart(took, onSample) {
   if (!startPressedThisPageSession) return { ...fail('start_not_armed'), confirmed: false };
 
   let last = fail('start_not_armed');
   for (let attempt = 1; attempt <= START_MAX_ATTEMPTS; attempt++) {
-    last = await refresh();
+    last = await refreshState();
     if (onSample) onSample(last, attempt);
     if (last.ok && took(last.data?.state ?? last.data)) return { ...last, confirmed: true };
     // Neither of these mends itself by being asked again, and asking costs a forced round each

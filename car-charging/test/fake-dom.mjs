@@ -200,12 +200,13 @@ export function installDocument() {
   // thing that matters, which is that the sections come back with their subtrees intact.
   const main = get('.shell__main');
   const LAYOUT = {
-    status: ['tariff', 'controls'],
+    status: ['tariff', 'controls', 'limit'],
     history: ['history'],
     invoices: ['account'],
     comments: ['comments'],
     sessions: ['sessions'],
     contact: ['contact'],
+    log: ['log'],
   };
   for (const [view, ids] of Object.entries(LAYOUT)) {
     const section = get('#view-' + view, 'section');

@@ -25,7 +25,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { installDocument, all, text, button } from './fake-dom.mjs';
-import { START_MAX_ATTEMPTS } from '../api.js';
+import { START_MAX_ATTEMPTS, START_INTERVAL_MS } from '../api.js';
 
 const dom = installDocument();
 
@@ -65,6 +65,8 @@ let flipAfter = Infinity; // the charger reports the session only from this forc
 let row = { fetchedAt: AT, stale: false, ...idle() }; // the D1 row
 
 const count = (route) => (calls[route] = (calls[route] || 0) + 1);
+// Every forced round, whichever of the two forcing routes made it.
+const forced = () => (calls['/api/refresh'] || 0) + (calls['/api/refresh/state'] || 0);
 
 globalThis.fetch = async (path) => {
   const route = String(path).split('?')[0];
@@ -77,7 +79,8 @@ globalThis.fetch = async (path) => {
   if (route === '/api/invoices') return Response.json({ fetchedAt: AT, stale: false, invoices: [] });
 
   // The forcing call: upstream regardless of age, and it rewrites the row.
-  if (route === '/api/refresh') {
+  // The start poll samples the state-only twin, which forces exactly the same way.
+  if (route === '/api/refresh' || route === '/api/refresh/state') {
     upstreamFetches++;
     row = { fetchedAt: Date.now(), stale: false, ...(upstreamFetches >= flipAfter ? charging() : idle()) };
     return Response.json({ fetchedAt: row.fetchedAt, stale: false, state: row, history: { sessions: [] }, invoices: { invoices: [] } });
@@ -133,7 +136,7 @@ const notes = () =>
 test('an ordinary page load forces nothing upstream', async () => {
   await until(() => all(panel('comments')).some((n) => n.className === 'empty__hint'), 'the first round');
 
-  assert.equal(calls['/api/refresh'] || 0, 0, 'a page load forced an upstream fetch');
+  assert.equal(forced(), 0, 'a page load forced an upstream fetch');
   assert.equal(upstreamFetches, 0, 'a page load went upstream');
   assert.equal(calls['/api/state'], 1, 'a page load read the state route more than once');
   assert.equal(startBtn().disabled, false, 'precondition: nothing is charging and Start is live');
@@ -149,7 +152,7 @@ test('a start that the charger takes a few samples to report still repaints as c
   await press(t, startBtn());
 
   assert.equal(calls['/api/charge/start'], 1, 'the press sent no start command, or sent two');
-  assert.ok((calls['/api/refresh'] || 0) >= 3, 'the command reload read the cache instead of forcing');
+  assert.ok(forced() >= 3, 'the command reload read the cache instead of forcing');
 
   assert.match(text(controls()), /בטעינה/, 'the panel repainted the pre-command state');
   assert.equal(stopBtn().disabled, false, 'Stop stayed dead against a charge that had started');
@@ -168,11 +171,11 @@ test('a charger that never reports says so, claiming neither success nor failure
   await dom.get('#refresh').handlers.click();
   await until(() => startBtn() && startBtn().disabled === false, 'the controls to come back live');
 
-  const before = calls['/api/refresh'];
+  const before = calls['/api/refresh/state'] || 0;
   await press(t, startBtn());
 
   assert.equal(
-    calls['/api/refresh'] - before,
+    calls['/api/refresh/state'] - before,
     START_MAX_ATTEMPTS,
     'the confirmation poll is not capped at its stated number of samples'
   );
@@ -193,7 +196,15 @@ test('a charger that never reports says so, claiming neither success nor failure
 // ── And the rule again, after all of it ──
 
 test('nothing kept forcing once the command was over', async () => {
-  const settled = calls['/api/refresh'];
+  const settled = forced();
   await until(() => true, 'a tick');
-  assert.equal(calls['/api/refresh'], settled, 'something went on forcing upstream after the press');
+  assert.equal(forced(), settled, 'something went on forcing upstream after the press');
+});
+
+// The owner's words (board, 2026-10-03): after a start press the page should refresh every
+// second until the state turns to charging. The old 3 s x 10 cap ran out before a real charger
+// reported. One second, and a cap of at least a minute and a half of samples.
+test('the start poll samples once a second, for long enough to see a real charger report', () => {
+  assert.equal(START_INTERVAL_MS, 1000);
+  assert.ok(START_MAX_ATTEMPTS * START_INTERVAL_MS >= 90000, 'the cap gives up before a charger reports');
 });

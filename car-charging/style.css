@@ -399,6 +399,26 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .stat { container-type: inline-size; }
 .stat__value { overflow-wrap: normal; }
 
+/* #/history: one period per row -- a small label cell (the period and its count) and two tiles --
+   on ONE line at every width, phone included (the owner's ask). Two classes so it outranks every
+   theme's `.stat-grid` columns, media queries included; geometry only, the tiles keep the theme's
+   paint. At 375px the tiles are ~120px, which 19cqi sizes without a break. */
+.stat-grid.stat-grid--period {
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+}
+.stat-grid__head { display: grid; gap: 2px; min-width: 0; }
+.stat-grid__head .stat__label { margin-top: 0; }
+.stat-grid__head .stat__label:first-child { font-weight: 650; }
+
+/* #/history's four period buttons: one row on a phone, not four stacked full-width buttons. */
+.btn-row.period-filter { flex-wrap: nowrap; gap: var(--sp-2); }
+.btn-row.period-filter > .btn { flex: 1 1 0; min-width: 0; padding-inline: var(--sp-2); }
+
+/* #/status limit panel and #/log filter: a field and its button on one line. */
+.inline-form { display: flex; flex-wrap: wrap; align-items: end; gap: var(--sp-3); }
+.inline-form .field { flex: 1 1 140px; min-width: 0; }
+
 /* The one legal break in a stat value, and the reason it is in CSS: there is no
    character between the figure and its unit in the DOM, so "12,345.67₪" is a
    single word. U+200B is a soft-wrap opportunity and nothing else — zero width,
@@ -459,12 +479,14 @@ button, input, textarea, select { font: inherit; color: inherit; }
    the half a stylesheet cannot check. */
 @media (max-width: 619.98px) {
   #history .table-wrap,
-  #account .table-wrap {
+  #account .table-wrap,
+  #log .table-wrap {
     overflow-x: visible;
   }
 
   #history .table-wrap table.table,
-  #account .table-wrap table.table {
+  #account .table-wrap table.table,
+  #log .table-wrap table.table {
     display: block;
     min-width: 0;
     width: 100%;
@@ -475,7 +497,8 @@ button, input, textarea, select { font: inherit; color: inherit; }
      here. A screen reader still gets the real column headers once; a sighted reader gets the
      per-row label generated below instead of a sideways scroll. */
   #history .table-wrap table.table thead,
-  #account .table-wrap table.table thead {
+  #account .table-wrap table.table thead,
+  #log .table-wrap table.table thead {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -487,14 +510,16 @@ button, input, textarea, select { font: inherit; color: inherit; }
   }
 
   #history .table-wrap table.table tbody,
-  #account .table-wrap table.table tbody {
+  #account .table-wrap table.table tbody,
+  #log .table-wrap table.table tbody {
     display: flex;
     flex-direction: column;
     gap: var(--sp-3);
   }
 
   #history .table-wrap table.table tr,
-  #account .table-wrap table.table tr {
+  #account .table-wrap table.table tr,
+  #log .table-wrap table.table tr {
     display: block;
     border: 1px solid var(--line, currentColor);
     border-radius: var(--r-md, 4px);
@@ -503,7 +528,8 @@ button, input, textarea, select { font: inherit; color: inherit; }
   }
 
   #history .table-wrap table.table td,
-  #account .table-wrap table.table td {
+  #account .table-wrap table.table td,
+  #log .table-wrap table.table td {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -514,7 +540,8 @@ button, input, textarea, select { font: inherit; color: inherit; }
   }
 
   #history .table-wrap table.table td:last-child,
-  #account .table-wrap table.table td:last-child {
+  #account .table-wrap table.table td:last-child,
+  #log .table-wrap table.table td:last-child {
     border-block-end: 0;
   }
 
@@ -524,7 +551,8 @@ button, input, textarea, select { font: inherit; color: inherit; }
      A cell with no `data-label` renders an empty ::before rather than a stray colon, so a future
      table that forgets to stamp one degrades to the plain value. */
   #history .table-wrap table.table td[data-label]::before,
-  #account .table-wrap table.table td[data-label]::before {
+  #account .table-wrap table.table td[data-label]::before,
+  #log .table-wrap table.table td[data-label]::before {
     content: attr(data-label);
     font-weight: 600;
   }

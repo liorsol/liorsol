@@ -40,6 +40,8 @@ import {
   getInvoices,
   getSessions,
   getContact,
+  getLimit,
+  getEvents,
   refresh,
   TOKEN_EXPIRED,
   isChargerError,
@@ -86,6 +88,8 @@ const shared = {
   // press must fetch nothing, and these two views are behind menu items.
   signIns: null,
   contact: null,
+  limit: null,
+  events: null,
   expired: false,
   // The third flag of the mount contract (PLAN §7.10), and it is on the shared object rather
   // than local to this file for one reason: views/controls.js cannot gate a control it has no
@@ -116,7 +120,7 @@ const ctx = { reload: (force) => load(force) };
 // than the freshest. Only a successful call updates one.
 // The two live routes are here for shape only: neither reports a fetchedAt, so neither can
 // move the age in the header. Filtered out below with everything else that is not a number.
-const fetchedAt = { state: null, history: null, invoices: null, signIns: null, contact: null };
+const fetchedAt = { state: null, history: null, invoices: null, signIns: null, contact: null, limit: null, events: null };
 
 // ── The views ──
 //
@@ -137,6 +141,8 @@ const views = [
   // reason the comment board above is exempt -- it just gets there through `needs: null`.
   { id: 'sessions', src: './views/sessions.js', needs: 'signIns', live: true, skel: '160px', fail: 'לא ניתן לטעון את החיבורים' },
   { id: 'contact', src: './views/contact.js', needs: 'contact', live: true, skel: '120px', fail: 'לא ניתן לטעון את פרטי הקשר' },
+  { id: 'limit', src: './views/limit.js', needs: 'limit', live: true, skel: '88px', fail: 'לא ניתן לטעון את הגבלת הטעינה' },
+  { id: 'log', src: './views/log.js', needs: 'events', live: true, skel: '160px', fail: 'לא ניתן לטעון את יומן הפעולות' },
 ];
 
 const controls = views[1];
@@ -431,14 +437,16 @@ async function load(force) {
   // One round fills every view, the two new ones included. They are not added to `refresh()`
   // above and must not be: that call is what forces an upstream fetch, and neither of these
   // routes has an upstream to reach past.
-  const [state, history, invoices, signIns, contact] = await Promise.all([
+  const [state, history, invoices, signIns, contact, limit, events] = await Promise.all([
     getState(),
     getHistory(),
     getInvoices(),
     getSessions(),
     getContact(),
+    getLimit(),
+    getEvents(),
   ]);
-  const results = { state, history, invoices, signIns, contact };
+  const results = { state, history, invoices, signIns, contact, limit, events };
 
   let stale = false;
   let expired = false;
@@ -525,7 +533,7 @@ async function load(force) {
 // Every destination the MARKUP has. The class toggle below walks this list rather than the
 // reachable one, so a view that has just been taken away has its `.is-active` cleared on the
 // way out and cannot come back still wearing it.
-const VIEWS = ['status', 'history', 'invoices', 'comments', 'sessions', 'contact'];
+const VIEWS = ['status', 'history', 'invoices', 'comments', 'sessions', 'contact', 'log'];
 // The section and the menu item for every destination, captured ONCE, while everything the
 // markup ships is still in the document.
 //

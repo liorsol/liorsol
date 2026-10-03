@@ -67,6 +67,9 @@ const BODIES = {
   // `{"contact": null}` is the five-item one, and the round that flips it is a test below.
   // The value is a placeholder -- nothing real is written into a fixture in this repository.
   '/api/contact': { contact: { name: 'PLACEHOLDER' } },
+  // The limit and the action log: two more D1-only reads in the same round.
+  '/api/limit': { fetchedAt: AT, stale: false, limit: null },
+  '/api/events': { fetchedAt: AT, stale: false, events: [{ id: 1, ts: AT, type: 'start', ok: true, detail: null }] },
 };
 
 /** Put the contact route into one of its two states for the next round. */
@@ -93,7 +96,7 @@ async function until(predicate, what) {
 
 await import('../app.js');
 
-const VIEWS = ['status', 'history', 'invoices', 'comments', 'sessions', 'contact'];
+const VIEWS = ['status', 'history', 'invoices', 'comments', 'sessions', 'contact', 'log'];
 const view = (name) => dom.get('#view-' + name);
 const link = (name) => dom.get('#nav-' + name);
 const nav = () => dom.get('#nav');
@@ -178,13 +181,14 @@ test('the default view is the current status and nothing else', async () => {
   assert.match(text(view('invoices')), /\S/, 'the invoices view was never filled');
   assert.match(text(view('sessions')), /\S/, 'the sessions view was never filled');
   assert.match(text(view('contact')), /\S/, 'the contact view was never filled');
+  assert.match(text(view('log')), /התחלת טעינה/, 'the log view was never filled');
 });
 
 // ── The budget assertion ──
 
 test('walking the whole menu makes no request', () => {
   const before = calls;
-  for (const name of ['history', 'invoices', 'comments', 'sessions', 'contact', 'status', 'history']) {
+  for (const name of ['history', 'invoices', 'comments', 'sessions', 'contact', 'log', 'status', 'history']) {
     dom.navigate('#/' + name);
   }
   assert.equal(calls, before, 'a menu press reached upstream');

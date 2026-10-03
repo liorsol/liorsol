@@ -147,6 +147,65 @@ function tile(value, unit, label) {
   return t;
 }
 
+// ── period filter ───────────────────────────────────────────────────────────
+// Client-side over the rows the load round already holds (the private service sends a year), so
+// a filter press fetches nothing -- the same rule as a menu press. Module memory: survives a
+// repaint, resets on a reload.
+
+const PERIODS = [
+  ['all', 'הכל'],
+  ['month', 'החודש'],
+  ['half', 'חצי שנה'],
+  ['year', 'שנה'],
+];
+let period = 'all';
+
+/**
+ * Epoch ms a period starts at, or -Infinity for "all". "month" is the 1st of the current month,
+ * not thirty days back -- the owner's words.
+ * @param {string} p a PERIODS key
+ * @param {Date} now
+ */
+export function periodStart(p, now) {
+  const y = now.getFullYear(), m = now.getMonth();
+  if (p === 'month') return new Date(y, m, 1).getTime();
+  if (p === 'half') return new Date(y, m - 6, now.getDate()).getTime();
+  if (p === 'year') return new Date(y - 1, m, now.getDate()).getTime();
+  return -Infinity;
+}
+
+// A row with no readable start is in "all" and in no bounded period.
+const inPeriod = (row, from) => from === -Infinity || startMs(row) >= from;
+
+// True UTC first: the period edges are the viewer's own clock.
+const startMs = (row) => {
+  const ms = toMs(row.startedAt || row.deviceStartDate);
+  return Number.isFinite(ms) ? ms : toMs(row.startedLocal || row.deviceLocalStartDate);
+};
+
+function totals(rows) {
+  let kwh = 0, paidInc = 0, paidEx = 0;
+  for (const row of rows) {
+    kwh += num(row.totalEnergy) || 0;
+    paidInc += num(row.totalPaymentCostIncVat) || 0;
+    paidEx += num(row.totalPaymentCostExcVat) || 0;
+  }
+  return { count: rows.length, kwh, paid: paidInc || paidEx, inc: !!paidInc || !paidEx };
+}
+
+// One line per period, on a phone too: the label carries the count small, and the two tiles that
+// matter sit beside it. `.stat-grid--period` (style.css) fixes the three columns.
+function periodRow(label, t) {
+  const grid = h('div', 'stat-grid stat-grid--period');
+  const head = h('div', 'stat-grid__head');
+  head.appendChild(h('div', 'stat__label', label));
+  head.appendChild(h('div', 'stat__label', n(t.count, 0) + ' טעינות'));
+  grid.appendChild(head);
+  grid.appendChild(tile(n(t.kwh, 1), 'kWh', 'אנרגיה'));
+  grid.appendChild(tile(n(t.paid), '₪', t.inc ? 'כולל מע״מ' : 'לפני מע״מ'));
+  return grid;
+}
+
 // ── render ──────────────────────────────────────────────────────────────────
 
 export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
@@ -160,28 +219,44 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
     return;
   }
 
-  const rows = (Array.isArray(hist.sessions) && hist.sessions)
+  const all = (Array.isArray(hist.sessions) && hist.sessions)
     || (Array.isArray(hist.rows) && hist.rows) || [];
-  if (!rows.length) {
+  if (!all.length) {
     el.appendChild(emptyBlock('אין עדיין טעינות', 'לא נרשם דבר בתקופה הזו.'));
     return;
   }
 
-  // Period totals, computed from exactly the rows shown below.
-  let kwh = 0, paidInc = 0, paidEx = 0;
-  for (const row of rows) {
-    kwh += num(row.totalEnergy) || 0;
-    paidInc += num(row.totalPaymentCostIncVat) || 0;
-    paidEx += num(row.totalPaymentCostExcVat) || 0;
-  }
+  const now = new Date();
+  const from = periodStart(period, now);
+  const rows = all.filter((row) => inPeriod(row, from));
+  const monthFrom = periodStart('month', now);
 
-  const grid = h('div', 'stat-grid');
-  grid.appendChild(tile(n(rows.length, 0), null, 'טעינות'));
-  grid.appendChild(tile(n(kwh, 1), 'kWh', 'אנרגיה שנמסרה'));
-  grid.appendChild(tile(
-    n(paidInc || paidEx), '₪',
-    paidInc ? 'שולם — כולל מע״מ' : 'שולם — לפני מע״מ'));
-  el.appendChild(inset(el, grid, true));
+  const filter = h('div', 'btn-row period-filter');
+  filter.setAttribute('role', 'group');
+  filter.setAttribute('aria-label', 'תקופה');
+  for (const [key, label] of PERIODS) {
+    const b = h('button', key === period ? 'btn btn--primary' : 'btn', label);
+    b.type = 'button';
+    b.setAttribute('aria-pressed', String(key === period));
+    b.addEventListener('click', () => {
+      period = key;
+      render(el, state, ctx);
+    });
+    filter.appendChild(b);
+  }
+  el.appendChild(inset(el, filter, true));
+
+  // Current month always; the total follows the filter, and says which period it is.
+  const stats = spaced(h('div'), 3);
+  stats.appendChild(periodRow('החודש', totals(all.filter((row) => inPeriod(row, monthFrom)))));
+  const periodName = PERIODS.find(([k]) => k === period)[1];
+  stats.appendChild(spaced(periodRow(period === 'all' ? 'סה״כ' : 'סה״כ · ' + periodName, totals(rows)), 2));
+  el.appendChild(inset(el, stats, false));
+
+  if (!rows.length) {
+    el.appendChild(inset(el, spaced(emptyBlock('אין טעינות בתקופה הזו', 'בחרו תקופה ארוכה יותר.')), false));
+    return;
+  }
 
   const wrap = spaced(h('div', 'table-wrap'));
   const table = h('table', 'table');

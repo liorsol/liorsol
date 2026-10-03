@@ -6,6 +6,8 @@
 --                   cookie is a binding on that service, so nothing else can write it
 --   `login_tokens`  likewise
 --   `contact`       likewise -- GET/PUT /api/contact are routes on that same service
+--   `charge_limit`  likewise -- the cron that enforces it runs on that service
+--   `events`        likewise -- it logs the actions that service performs
 --   `comments`      is written only by the Pages Function in this repo
 -- None of them ever writes another's table.
 
@@ -82,3 +84,29 @@ CREATE TABLE IF NOT EXISTS contact (
   address  TEXT,
   blurb    TEXT
 );
+
+-- The charge limit: stop the charge by itself once the live session has delivered `kwh`.
+-- One row or none, pinned like `contact`. The private service's cron reads it every ten minutes
+-- and makes NO upstream call while the table is empty, so an unarmed system costs nothing.
+-- `session_id` is null until the first tick sees a live session and binds the limit to it; once
+-- that session ends the row is deleted, so a limit never leaks onto the next charge.
+CREATE TABLE IF NOT EXISTS charge_limit (
+  id         INTEGER PRIMARY KEY CHECK (id = 1),
+  kwh        REAL NOT NULL,         -- target energy for the session, kWh
+  session_id TEXT,                  -- the charging session it is bound to, or null = the next one
+  set_at     INTEGER NOT NULL       -- epoch ms
+);
+
+-- The action log behind #/log: one row per thing the private service DID (start, stop, an
+-- automatic stop, a limit set or cleared, a sign-in, a revoke, a contact edit, a credential
+-- install). Reads and refreshes are not actions and are not logged. `detail` is a number or an
+-- error name this service chose -- never upstream bytes, never an address.
+CREATE TABLE IF NOT EXISTS events (
+  id     INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts     INTEGER NOT NULL,          -- epoch ms
+  type   TEXT NOT NULL,             -- start|stop|auto_stop|limit_set|limit_clear|sign_in|revoke|contact|token
+  ok     INTEGER NOT NULL,          -- 1 it worked, 0 it failed
+  detail TEXT
+);
+
+CREATE INDEX IF NOT EXISTS events_ts ON events (ts);

@@ -374,6 +374,38 @@ question.
   instead of none — it stops on the first sample that shows the charge. **An idle page is still zero**, which is the requirement that actually binds, and
   `test/start-confirm.test.mjs` asserts that first.
 
+## Edge restrictions (Cloudflare WAF) — read if you get a 403
+
+**Edge restrictions on the `liorsolomon.com` zone (Cloudflare WAF, added 2026-10-08).** These
+rules apply to `kidsbank.liorsolomon.com` and `charging.liorsolomon.com`. The apex/`www` LinkedIn
+redirect stays open worldwide.
+
+1. **Geo block:** custom rule `ee2a19ea9b9e4b169cc8712e8fa088a6` (ruleset
+   `89874b01757041239b26c9b547bf9ffe`, "kidsbank+charging: Israel + Europe only") **blocks
+   (403)** any request to those two hosts from outside Israel or Europe:
+   `ip.src.country ne "IL" and ip.src.continent ne "EU"`. Europe is allowed because the owner's
+   VPN/ZTA was seen exiting in Milan (`loc=IT`): Israel-only blocked the owner on day one.
+2. **Rate limit:** rule `9355ce79eeb544fbb16205572205b646` (ruleset
+   `2eedccc0859e4c53bba8b5d400090cf5`, the zone's one free rate-limit rule). More than 10
+   requests per 10 s per IP to `/api/v1/auth/login`, `/api/v1/pair/start`, `/api/auth/request` or
+   `/api/auth/callback` blocks that IP for 10 s.
+
+**If an app suddenly answers 403 / "Sorry, you have been blocked"**, suspect the geo rule first,
+especially on a VPN or abroad (e.g. a trip outside Europe).
+- Check where Cloudflare places you: `curl -s https://charging.liorsolomon.com/cdn-cgi/trace | grep loc=`.
+- Then disable the rule for the trip and re-enable it after (owner-approved API calls; token in
+  `~/.cloudflare-token`):
+  ```bash
+  set -a; . ~/.cloudflare-token; set +a
+  curl -s -X PATCH -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H 'Content-Type: application/json' \
+    https://api.cloudflare.com/client/v4/zones/ccaf53e886f8e1a6ab614c3cc6959a26/rulesets/89874b01757041239b26c9b547bf9ffe/rules/ee2a19ea9b9e4b169cc8712e8fa088a6 \
+    --data '{"enabled":false,"action":"block","expression":"(http.host in {\"kidsbank.liorsolomon.com\" \"charging.liorsolomon.com\"} and ip.src.country ne \"IL\" and ip.src.continent ne \"EU\")","description":"kidsbank+charging: Israel + Europe only"}'
+  ```
+  Use `"enabled":true` to re-enable. Or use the dashboard: Security → WAF → Custom rules.
+
+The geo rule never affects outbound Web Push, Email Routing, crons, service bindings, or GitHub
+Actions deploys (those use `api.cloudflare.com`, not these hosts).
+
 ## Deploying
 
 Two independent deploys. Neither touches the other.

@@ -9,6 +9,10 @@
 //   A read-only token is enough: Account Analytics Read, Workers Scripts Read,
 //   D1 Read, Workers KV Storage Read, Cloudflare Pages Read.
 //   Without them the Cloudflare block from the previous data.json is kept.
+//   From the keychain (~/.secret-helpers.zsh convention):
+//     CLOUDFLARE_ACCOUNT_ID="$(security find-generic-password -a "$USER" -s CLOUDFLARE_ACCOUNT_ID -w)" \
+//     CLOUDFLARE_API_TOKEN="$(security find-generic-password -a "$USER" -s CLOUDFLARE_CI_TOKEN -w)" \
+//     node free-usage/update.mjs
 //
 // This repo is public, so data.json never holds account ids, emails or the names
 // of private GitHub repos.
@@ -136,12 +140,19 @@ async function cloudflare(token, account) {
     return j.result ?? j.data;
   };
 
+  // Fail with a reason, not a bare "Authentication error" from GraphQL.
+  // User tokens verify at /user, account-owned tokens at /accounts/<id>.
+  const verify = async (p) => (await fetch(`https://api.cloudflare.com/client/v4${p}/tokens/verify`, { headers: { Authorization: `Bearer ${token}` } })).json();
+  const v = (await verify('/user')).success ? null : await verify(`/accounts/${account}`);
+  if (v && !v.success) throw new Error(`Cloudflare rejected the token for account ${account.slice(0, 6)}…: ${JSON.stringify(v.errors)}. Check the token is current and belongs to this account.`);
+
   const today = ymd(now);
   const from = ymd(new Date(now - 29 * 864e5));
   const q = `query($a: String!, $s: Date!, $e: Date!) { viewer { accounts(filter: {accountTag: $a}) {
     workers: workersInvocationsAdaptive(limit: 10000, filter: {date_geq: $s, date_leq: $e}) { sum { requests errors } dimensions { date scriptName } }
     d1: d1AnalyticsAdaptiveGroups(limit: 10000, filter: {date_geq: $s, date_leq: $e}) { sum { rowsRead rowsWritten } dimensions { date } }
     kv: kvOperationsAdaptiveGroups(limit: 10000, filter: {date_geq: $s, date_leq: $e}) { sum { requests } dimensions { date actionType } }
+    pagesFn: pagesFunctionsInvocationsAdaptiveGroups(limit: 10000, filter: {date_geq: $s, date_leq: $e}) { sum { requests } dimensions { date } }
     dobj: durableObjectsInvocationsAdaptiveGroups(limit: 10000, filter: {date_geq: $s, date_leq: $e}) { sum { requests } dimensions { date } }
   } } }`;
   const [acct] = (await api('/graphql', { method: 'POST', body: JSON.stringify({ query: q, variables: { a: account, s: from, e: today } }) })).viewer.accounts;
@@ -149,7 +160,8 @@ async function cloudflare(token, account) {
   const dates = [];
   for (let t = new Date(from + 'T00:00:00Z'); ymd(t) <= today; t = new Date(+t + 864e5)) dates.push(ymd(t));
   const byDay = (rows, f, pred = () => true) => Object.fromEntries(dates.map((d) => [d, sum(rows.filter((r) => r.dimensions.date === d && pred(r)), f)]));
-  const workers = byDay(acct.workers, (r) => r.sum.requests);
+  // Pages Functions requests count toward the same 100,000 a day.
+  const workers = byDay([...acct.workers, ...acct.pagesFn], (r) => r.sum.requests);
   const d1Read = byDay(acct.d1, (r) => r.sum.rowsRead);
   const d1Write = byDay(acct.d1, (r) => r.sum.rowsWritten);
   const kvRead = byDay(acct.kv, (r) => r.sum.requests, (r) => r.dimensions.actionType === 'read');
@@ -158,10 +170,11 @@ async function cloudflare(token, account) {
   const daily = dates.map((d) => ({ date: d, workers: workers[d], d1Read: d1Read[d], d1Write: d1Write[d], kvRead: kvRead[d], kvWrite: kvWrite[d], doRequests: doReq[d] }));
 
   const d1 = await api(`/accounts/${account}/d1/database`);
-  const projects = await api(`/accounts/${account}/pages/projects`);
+  // A token without Cloudflare Pages Read still gets the rest of the page.
+  const projects = await api(`/accounts/${account}/pages/projects`).catch((e) => (console.warn(`Skipping Pages: ${e.message}`), null));
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
   const pages = [];
-  for (const p of projects) {
+  for (const p of projects ?? []) {
     let builds = 0;
     for (let page = 1; page < 40; page++) {
       const deps = await api(`/accounts/${account}/pages/projects/${p.name}/deployments?per_page=25&page=${page}`);
@@ -182,22 +195,24 @@ async function cloudflare(token, account) {
     kv_reads: ['kvRead', last.kvRead],
     kv_writes: ['kvWrite', last.kvWrite],
     do_requests: ['doRequests', last.doRequests],
-    pages_builds: [null, sum(pages, (p) => p.buildsThisMonth)],
+    pages_builds: [null, projects ? sum(pages, (p) => p.buildsThisMonth) : null],
   };
 
-  const perScript = {};
+  const perScript = { 'Pages Functions': sum(acct.pagesFn, (r) => r.sum.requests) };
   for (const r of acct.workers) perScript[r.dimensions.scriptName] = (perScript[r.dimensions.scriptName] || 0) + r.sum.requests;
 
   return {
     updatedAt: now.toISOString(),
     today,
     from,
-    allowances: Object.entries(CF_INCLUDED).map(([id, a]) => {
-      const [key, used] = meters[id];
-      return { id, ...a, used, peak30d: key ? peak(key) : null };
-    }),
+    allowances: Object.entries(CF_INCLUDED)
+      .map(([id, a]) => {
+        const [key, used] = meters[id];
+        return { id, ...a, used, peak30d: key ? peak(key) : null };
+      })
+      .filter((a) => a.used != null),
     daily,
-    workers: Object.entries(perScript).map(([name, requests30d]) => ({ name, requests30d })).sort((a, b) => b.requests30d - a.requests30d),
+    workers: Object.entries(perScript).filter(([, n]) => n).map(([name, requests30d]) => ({ name, requests30d })).sort((a, b) => b.requests30d - a.requests30d),
     d1: d1.map((x) => ({ name: x.name, sizeMb: round(x.file_size / MB, 2) })),
     pages,
   };

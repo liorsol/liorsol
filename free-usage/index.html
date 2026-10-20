@@ -345,7 +345,7 @@ function render(data) {
       card('Workers', 'Requests in the last 30 days.', h('div', { class: 'tablewrap' }, h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Worker'), h('th', { class: 'n' }, 'Requests'))),
         h('tbody', {}, cf.workers.map((w) => h('tr', {}, h('td', {}, w.name), h('td', { class: 'n' }, fmt(w.requests30d)))))))),
-      card('D1 databases and Pages', null, h('div', { class: 'tablewrap' }, h('table', {},
+      card(cf.pages.length ? 'D1 databases and Pages' : 'D1 databases', null, h('div', { class: 'tablewrap' }, h('table', {},
         h('thead', {}, h('tr', {}, h('th', {}, 'Resource'), h('th', { class: 'n' }, 'Size / builds'))),
         h('tbody', {},
           cf.d1.map((d) => h('tr', {}, h('td', {}, 'D1 · ' + d.name), h('td', { class: 'n' }, fmt(d.sizeMb) + ' MB'))),

@@ -1,10 +1,10 @@
 {
   "github": {
-    "updatedAt": "2026-10-20T18:38:42.085Z",
+    "updatedAt": "2026-10-20T19:37:19.967Z",
     "login": "liorsol",
     "period": "2026-10",
     "billedUsd": 0,
-    "publicActionsMinutes": 12,
+    "publicActionsMinutes": 15,
     "allowances": [
       {
         "id": "actions_minutes",
@@ -97,7 +97,7 @@
       {
         "month": "2026-10",
         "actionsPrivate": 9,
-        "actionsPublic": 12,
+        "actionsPublic": 15,
         "billedUsd": 0
       }
     ],
@@ -106,7 +106,7 @@
         "name": "liorsol",
         "private": false,
         "sizeMb": 28.8,
-        "pushed": "2026-10-08"
+        "pushed": "2026-10-20"
       },
       {
         "name": "assets",
@@ -127,7 +127,7 @@
         "pushed": "2022-12-21"
       },
       {
-        "name": "private repo 2",
+        "name": "private repo 1",
         "private": true,
         "sizeMb": 5.6,
         "pushed": "2026-10-10"
@@ -175,7 +175,7 @@
         "pushed": "2026-04-20"
       },
       {
-        "name": "private repo 1",
+        "name": "private repo 2",
         "private": true,
         "sizeMb": 0,
         "pushed": "2026-04-16"
@@ -200,5 +200,382 @@
       }
     ]
   },
-  "cloudflare": null
+  "cloudflare": {
+    "updatedAt": "2026-10-20T19:37:19.967Z",
+    "today": "2026-10-20",
+    "from": "2026-09-21",
+    "allowances": [
+      {
+        "id": "workers_requests",
+        "name": "Workers requests",
+        "group": "Workers",
+        "included": 100000,
+        "unit": "requests / day",
+        "window": "day",
+        "used": 1294,
+        "peak30d": 1768
+      },
+      {
+        "id": "d1_rows_read",
+        "name": "D1 rows read",
+        "group": "D1",
+        "included": 5000000,
+        "unit": "rows / day",
+        "window": "day",
+        "used": 9753,
+        "peak30d": 12690
+      },
+      {
+        "id": "d1_rows_written",
+        "name": "D1 rows written",
+        "group": "D1",
+        "included": 100000,
+        "unit": "rows / day",
+        "window": "day",
+        "used": 54,
+        "peak30d": 412
+      },
+      {
+        "id": "d1_storage",
+        "name": "D1 storage",
+        "group": "D1",
+        "included": 5120,
+        "unit": "MB total",
+        "window": "total",
+        "used": 0.38,
+        "peak30d": null
+      },
+      {
+        "id": "kv_reads",
+        "name": "KV reads",
+        "group": "KV",
+        "included": 100000,
+        "unit": "reads / day",
+        "window": "day",
+        "used": 0,
+        "peak30d": 0
+      },
+      {
+        "id": "kv_writes",
+        "name": "KV writes",
+        "group": "KV",
+        "included": 1000,
+        "unit": "writes / day",
+        "window": "day",
+        "used": 0,
+        "peak30d": 0
+      },
+      {
+        "id": "do_requests",
+        "name": "Durable Objects requests",
+        "group": "Durable Objects",
+        "included": 100000,
+        "unit": "requests / day",
+        "window": "day",
+        "used": 0,
+        "peak30d": 0
+      }
+    ],
+    "daily": [
+      {
+        "date": "2026-09-21",
+        "workers": 116,
+        "d1Read": 109,
+        "d1Write": 16,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-09-22",
+        "workers": 21,
+        "d1Read": 0,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-09-23",
+        "workers": 131,
+        "d1Read": 72,
+        "d1Write": 9,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-09-24",
+        "workers": 44,
+        "d1Read": 25,
+        "d1Write": 5,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-09-25",
+        "workers": 22,
+        "d1Read": 0,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-09-26",
+        "workers": 31,
+        "d1Read": 0,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-09-27",
+        "workers": 8,
+        "d1Read": 0,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-09-28",
+        "workers": 17,
+        "d1Read": 0,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-09-29",
+        "workers": 11,
+        "d1Read": 0,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-09-30",
+        "workers": 6,
+        "d1Read": 0,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-01",
+        "workers": 0,
+        "d1Read": 0,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-02",
+        "workers": 345,
+        "d1Read": 683,
+        "d1Write": 105,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-03",
+        "workers": 308,
+        "d1Read": 574,
+        "d1Write": 48,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-04",
+        "workers": 183,
+        "d1Read": 193,
+        "d1Write": 10,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-05",
+        "workers": 142,
+        "d1Read": 311,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-06",
+        "workers": 144,
+        "d1Read": 145,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-07",
+        "workers": 146,
+        "d1Read": 144,
+        "d1Write": 0,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-08",
+        "workers": 200,
+        "d1Read": 238,
+        "d1Write": 16,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-09",
+        "workers": 208,
+        "d1Read": 248,
+        "d1Write": 12,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-10",
+        "workers": 584,
+        "d1Read": 4974,
+        "d1Write": 412,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-11",
+        "workers": 1666,
+        "d1Read": 12690,
+        "d1Write": 267,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-12",
+        "workers": 1642,
+        "d1Read": 11921,
+        "d1Write": 57,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-13",
+        "workers": 1736,
+        "d1Read": 12272,
+        "d1Write": 107,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-14",
+        "workers": 1629,
+        "d1Read": 12059,
+        "d1Write": 74,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-15",
+        "workers": 1768,
+        "d1Read": 12275,
+        "d1Write": 97,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-16",
+        "workers": 1624,
+        "d1Read": 11940,
+        "d1Write": 68,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-17",
+        "workers": 1740,
+        "d1Read": 12269,
+        "d1Write": 98,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-18",
+        "workers": 1690,
+        "d1Read": 12158,
+        "d1Write": 93,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-19",
+        "workers": 1620,
+        "d1Read": 11920,
+        "d1Write": 60,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-10-20",
+        "workers": 1294,
+        "d1Read": 9753,
+        "d1Write": 54,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      }
+    ],
+    "workers": [
+      {
+        "name": "kidsbank",
+        "requests30d": 14679
+      },
+      {
+        "name": "car-charging-proxy",
+        "requests30d": 3516
+      },
+      {
+        "name": "Pages Functions",
+        "requests30d": 608
+      },
+      {
+        "name": "esim-usage-proxy",
+        "requests30d": 273
+      }
+    ],
+    "d1": [
+      {
+        "name": "kidsbank",
+        "sizeMb": 0.29
+      },
+      {
+        "name": "car-charging",
+        "sizeMb": 0.09
+      }
+    ],
+    "pages": []
+  }
 }

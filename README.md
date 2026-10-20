@@ -71,6 +71,7 @@ A few things that live in it:
 - 📶 **[eSIM usage](esim-usage/)** — data-usage bars for the family's eSIMs, behind a Cloudflare Worker proxy.
 - 📈 **[Savings calculator](savings-calculator.html)** — monthly portfolio simulator with fees, capital-gains tax and inflation indexation.
 - 🔌 **[Car charging](car-charging/)** — EV charging dashboard on Cloudflare Workers + D1.
+- 🧮 **[Free plan meter](free-usage/)** — how much of the GitHub Free and Cloudflare Workers Free allowances I use, refreshed by one script.
 - ✏️ **[`edit-server.mjs`](edit-server.mjs)** — a dependency-free local server that makes a page's prose
   editable in the browser and writes each edit straight back into the HTML on disk.
 

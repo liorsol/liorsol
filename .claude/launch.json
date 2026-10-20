@@ -4,6 +4,7 @@
     { "name": "albania", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8811"], "port": 8811 },
     { "name": "italy", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8812"], "port": 8812 },
     { "name": "italy-edit", "runtimeExecutable": "node", "runtimeArgs": ["edit-server.mjs", "trips/italy-2026", "8814"], "port": 8814 },
+    { "name": "free-usage", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8815", "--directory", "free-usage"], "port": 8815 },
     { "name": "car-charging-page", "runtimeExecutable": "python3", "runtimeArgs": ["-m", "http.server", "8813", "--directory", "car-charging"], "port": 8813 }
   ]
 }

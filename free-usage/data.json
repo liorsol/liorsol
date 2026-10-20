@@ -1,0 +1,204 @@
+{
+  "github": {
+    "updatedAt": "2026-10-20T18:38:42.085Z",
+    "login": "liorsol",
+    "period": "2026-10",
+    "billedUsd": 0,
+    "publicActionsMinutes": 12,
+    "allowances": [
+      {
+        "id": "actions_minutes",
+        "name": "Actions minutes",
+        "included": 2000,
+        "unit": "min",
+        "used": 9
+      },
+      {
+        "id": "actions_storage",
+        "name": "Actions storage",
+        "included": 500,
+        "unit": "MB",
+        "used": 0
+      },
+      {
+        "id": "lfs_storage",
+        "name": "Git LFS storage",
+        "included": 10,
+        "unit": "GB",
+        "used": 0.04
+      },
+      {
+        "id": "lfs_bandwidth",
+        "name": "Git LFS bandwidth",
+        "included": 10,
+        "unit": "GB",
+        "used": 0
+      },
+      {
+        "id": "packages_storage",
+        "name": "Packages storage",
+        "included": 500,
+        "unit": "MB",
+        "used": 0
+      },
+      {
+        "id": "packages_transfer",
+        "name": "Packages transfer",
+        "included": 1,
+        "unit": "GB",
+        "used": 0
+      },
+      {
+        "id": "codespaces_compute",
+        "name": "Codespaces compute",
+        "included": 120,
+        "unit": "core-hours",
+        "used": 0
+      },
+      {
+        "id": "codespaces_storage",
+        "name": "Codespaces storage",
+        "included": 15,
+        "unit": "GB-month",
+        "used": 0
+      }
+    ],
+    "monthly": [
+      {
+        "month": "2026-05",
+        "actionsPrivate": 0,
+        "actionsPublic": 0,
+        "billedUsd": 0
+      },
+      {
+        "month": "2026-06",
+        "actionsPrivate": 0,
+        "actionsPublic": 55,
+        "billedUsd": 0
+      },
+      {
+        "month": "2026-07",
+        "actionsPrivate": 0,
+        "actionsPublic": 9,
+        "billedUsd": 0
+      },
+      {
+        "month": "2026-08",
+        "actionsPrivate": 0,
+        "actionsPublic": 87,
+        "billedUsd": 0
+      },
+      {
+        "month": "2026-09",
+        "actionsPrivate": 0,
+        "actionsPublic": 160,
+        "billedUsd": 0
+      },
+      {
+        "month": "2026-10",
+        "actionsPrivate": 9,
+        "actionsPublic": 12,
+        "billedUsd": 0
+      }
+    ],
+    "repos": [
+      {
+        "name": "liorsol",
+        "private": false,
+        "sizeMb": 28.8,
+        "pushed": "2026-10-08"
+      },
+      {
+        "name": "assets",
+        "private": false,
+        "sizeMb": 27.8,
+        "pushed": "2026-09-21"
+      },
+      {
+        "name": "react-bootstrap-webpack-starter",
+        "private": false,
+        "sizeMb": 9.2,
+        "pushed": "2018-11-29"
+      },
+      {
+        "name": "image-search",
+        "private": false,
+        "sizeMb": 6.8,
+        "pushed": "2022-12-21"
+      },
+      {
+        "name": "private repo 2",
+        "private": true,
+        "sizeMb": 5.6,
+        "pushed": "2026-10-10"
+      },
+      {
+        "name": "opticise",
+        "private": false,
+        "sizeMb": 0.8,
+        "pushed": "2018-12-05"
+      },
+      {
+        "name": "lior-gitlfs-test",
+        "private": false,
+        "sizeMb": 0.5,
+        "pushed": "2025-01-23"
+      },
+      {
+        "name": "nodetlv2020",
+        "private": false,
+        "sizeMb": 0.3,
+        "pushed": "2020-02-26"
+      },
+      {
+        "name": "g_react_test",
+        "private": false,
+        "sizeMb": 0.2,
+        "pushed": "2018-03-19"
+      },
+      {
+        "name": "Basic-FX",
+        "private": false,
+        "sizeMb": 0.1,
+        "pushed": "2018-08-18"
+      },
+      {
+        "name": "EmberLearn",
+        "private": false,
+        "sizeMb": 0.1,
+        "pushed": "2018-09-25"
+      },
+      {
+        "name": "one-time-password",
+        "private": false,
+        "sizeMb": 0.1,
+        "pushed": "2026-04-20"
+      },
+      {
+        "name": "private repo 1",
+        "private": true,
+        "sizeMb": 0,
+        "pushed": "2026-04-16"
+      },
+      {
+        "name": "google-web-app",
+        "private": false,
+        "sizeMb": 0,
+        "pushed": "2026-03-15"
+      },
+      {
+        "name": "PythonDownloader",
+        "private": false,
+        "sizeMb": 0,
+        "pushed": "2017-03-25"
+      },
+      {
+        "name": "server-client-task",
+        "private": false,
+        "sizeMb": 0,
+        "pushed": "2018-04-10"
+      }
+    ]
+  },
+  "cloudflare": null
+}

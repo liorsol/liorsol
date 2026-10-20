@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Free Plan Meter</title>
+<meta name="description" content="How much of the GitHub Free and Cloudflare Workers Free allowances my accounts use.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23e2e8f0' stroke-width='5'/%3E%3Cpath d='M16 4a12 12 0 0 1 11.4 8.3' fill='none' stroke='%23f38020' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Layout: a header verdict, two brand cards, then one section per provider — meters first, detail after. */
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --line: #e3e6ec; --fg: #1a1f2b; --muted: #5d6676; --faint: #8a93a3;
+    --track: #e9ecf1; --gh: #1f2328; --gh-tint: #eef0f3; --cf: #f38020; --cf-tint: #fff1e6;
+    --ok: #1a7f4b; --ok-bar: #2da66a; --warn: #a15c00; --warn-bar: #e09b2d; --bad: #b42318; --bad-bar: #e5484d;
+    --display: 'Bricolage Grotesque', 'Avenir Next', system-ui, sans-serif;
+    --body: 'IBM Plex Sans', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    --r: 14px; --shadow: 0 1px 2px rgb(20 25 40 / .04), 0 4px 16px rgb(20 25 40 / .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1218; --panel: #171b23; --line: #262c37; --fg: #e8ebf1; --muted: #a0a8b6; --faint: #6f7888;
+      --track: #232935; --gh: #e8ebf1; --gh-tint: #1f242e; --cf: #f6923f; --cf-tint: #2a1e14;
+      --ok: #4cc38a; --ok-bar: #3fb37b; --warn: #f0b354; --warn-bar: #e09b2d; --bad: #ff7b72; --bad-bar: #e5484d;
+      --shadow: none; color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--body); -webkit-font-smoothing: antialiased; }
+  main { max-width: 68rem; margin: 0 auto; padding-block: 2.5rem 4rem;
+         padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+         display: grid; gap: 2.5rem; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+  h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.05; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.05rem; font-weight: 500; }
+  .num, td.n, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .muted { color: var(--muted); }
+  .eyebrow { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+  a { color: inherit; }
+
+  header.top { display: grid; gap: .75rem; }
+  .verdict { font-size: 1.15rem; max-width: 46rem; color: var(--muted); margin: 0; }
+  .verdict b { color: var(--fg); font-weight: 600; }
+  .stamp { font-size: .8rem; color: var(--faint); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 1.25rem; box-shadow: var(--shadow); min-width: 0; }
+  .brand { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; position: relative; overflow: hidden; }
+  .brand .logo { width: 2.25rem; height: 2.25rem; }
+  .brand.gh .logo { color: var(--gh); }
+  .brand.cf .logo { color: var(--cf); }
+  .brand .who { display: flex; gap: .75rem; align-items: center; }
+  .brand .stats { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1rem; }
+  .brand .stat .num { font-size: 1.5rem; display: block; line-height: 1.2; }
+  .brand::after { content: ""; position: absolute; inset: auto -3rem -5rem auto; width: 12rem; height: 12rem; border-radius: 50%; opacity: .5; pointer-events: none; }
+  .brand.gh::after { background: radial-gradient(closest-side, var(--gh-tint), transparent); }
+  .brand.cf::after { background: radial-gradient(closest-side, var(--cf-tint), transparent); opacity: 1; }
+
+  .ring { width: 7.5rem; height: 7.5rem; position: relative; z-index: 1; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 10; }
+  .ring .trk { stroke: var(--track); }
+  .ring .val { stroke-linecap: round; }
+  .brand.gh .ring .val { stroke: var(--gh); }
+  .brand.cf .ring .val { stroke: var(--cf); }
+  .ring .lbl { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .ring .lbl .num { font-size: 1.15rem; }
+  .ring .lbl small { font-size: .68rem; color: var(--muted); max-width: 5.5rem; line-height: 1.2; }
+
+  section.provider { display: grid; gap: 1rem; }
+  .sechead { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+  .sechead svg { width: 1.6rem; height: 1.6rem; }
+  .sechead .pill { font-size: .75rem; padding: .15rem .6rem; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+  .gh-c { color: var(--gh); } .cf-c { color: var(--cf); }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: 1rem; align-items: start; }
+  .card > h3 + .note { margin: .2rem 0 1rem; font-size: .82rem; color: var(--muted); }
+
+  .meters { display: grid; gap: .9rem; }
+  .meter { display: grid; gap: .3rem; }
+  .meter .row { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+  .meter .name { font-weight: 500; }
+  .meter .val { font-size: .8rem; color: var(--muted); white-space: nowrap; }
+  .bar { position: relative; height: 8px; background: var(--track); border-radius: 99px; }
+  .bar > i { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--ok-bar); min-width: 4px; transform-origin: left; }
+  .bar > i.warn { background: var(--warn-bar); } .bar > i.bad { background: var(--bad-bar); }
+  .bar > b { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--fg); opacity: .45; border-radius: 1px; }
+  .meter .pct { font-size: .75rem; }
+  .pct.ok { color: var(--ok); } .pct.warn { color: var(--warn); } .pct.bad { color: var(--bad); }
+  .legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .75rem; color: var(--muted); margin-top: .75rem; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: .35rem; vertical-align: -1px; }
+
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart text { fill: var(--faint); font: 11px var(--mono); }
+  .chart .grid { stroke: var(--line); }
+  .tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+         padding: .35rem .6rem; font-size: .75rem; box-shadow: 0 6px 20px rgb(0 0 0 / .12); white-space: nowrap; z-index: 2; }
+  .tip .d { color: var(--muted); }
+
+  .tablewrap { overflow-x: auto; max-height: 26rem; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { position: sticky; top: 0; background: var(--panel); font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+  td.n, th.n { text-align: right; white-space: nowrap; }
+  td .bar { height: 6px; min-width: 6rem; margin-top: .15rem; }
+  .lock { font-size: .7rem; color: var(--faint); border: 1px solid var(--line); border-radius: 4px; padding: 0 .3rem; margin-left: .35rem; }
+  .empty { padding: 1.5rem; text-align: center; color: var(--muted); }
+  .empty code { font-family: var(--mono); font-size: .8rem; background: var(--track); padding: .15rem .4rem; border-radius: 4px; }
+  footer { font-size: .78rem; color: var(--faint); display: grid; gap: .3rem; }
+  footer a { color: var(--muted); }
+  .error { color: var(--bad); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rise { animation: rise .6s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
+    .bar > i { animation: grow .9s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(200ms + var(--i, 0) * 40ms); }
+    .ring .val { transition: stroke-dashoffset 1.4s cubic-bezier(.2, .8, .2, 1); }
+    .chart rect.b { animation: up .7s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(250ms + var(--i, 0) * 25ms); transform-box: fill-box; transform-origin: bottom; }
+    .brand .logo { animation: pop .8s cubic-bezier(.3, 1.6, .5, 1) backwards .15s; }
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+  @keyframes grow { from { transform: scaleX(0); } }
+  @keyframes up { from { transform: scaleY(0); } }
+  @keyframes pop { from { transform: scale(.4) rotate(-12deg); opacity: 0; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logo-gh" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
+  <symbol id="logo-cf" viewBox="0 0 24 24"><path fill="currentColor" d="M16.5088 16.8447c.1475-.5068.0908-.9707-.1553-1.3154-.2246-.3164-.6045-.499-1.0615-.5205l-8.6592-.1123a.1559.1559 0 0 1-.1333-.0713c-.0283-.042-.0351-.0986-.021-.1553.0278-.084.1123-.1484.2036-.1562l8.7359-.1123c1.0351-.0489 2.1601-.8868 2.5537-1.9136l.499-1.3013c.0215-.0561.0293-.1128.0147-.168-.5625-2.5463-2.835-4.4453-5.5499-4.4453-2.5039 0-4.6284 1.6177-5.3876 3.8614-.4927-.3658-1.1187-.5625-1.794-.499-1.2026.119-2.1665 1.083-2.2861 2.2856-.0283.31-.0069.6128.0635.894C1.5683 13.171 0 14.7754 0 16.752c0 .1748.0142.3515.0352.5273.0141.083.0844.1475.1689.1475h15.9814c.0909 0 .1758-.0645.2032-.1553l.12-.4268zm2.7568-5.5634c-.0771 0-.1611 0-.2383.0112-.0566 0-.1054.0415-.127.0976l-.3378 1.1744c-.1475.5068-.0918.9707.1543 1.3164.2256.3164.6055.498 1.0625.5195l1.8437.1133c.0557 0 .1055.0263.1329.0703.0283.043.0351.1074.0214.1562-.0283.084-.1132.1485-.204.1553l-1.921.1123c-1.041.0488-2.1582.8867-2.5527 1.914l-.1406.3585c-.0283.0713.0215.1416.0986.1416h6.5977c.0771 0 .1474-.0489.169-.126.1122-.4082.1757-.837.1757-1.2803 0-2.6025-2.125-4.727-4.7344-4.727"/></symbol>
+</svg>
+
+<main>
+  <header class="top rise">
+    <span class="eyebrow">Free plan meter</span>
+    <h1>How close am I to the free limits?</h1>
+    <p class="verdict" id="verdict">Loading usage…</p>
+    <span class="stamp" id="stamp"></span>
+  </header>
+
+  <div class="cards" id="brands"></div>
+  <section class="provider" id="github"></section>
+  <section class="provider" id="cloudflare"></section>
+
+  <footer>
+    <span>Data in <a href="data.json">data.json</a>, refreshed by <code>node free-usage/update.mjs</code>.</span>
+    <span>Allowances: <a href="https://docs.github.com/en/billing/reference/product-usage-included">GitHub Free</a> ·
+      <a href="https://developers.cloudflare.com/workers/platform/limits/">Workers</a> ·
+      <a href="https://developers.cloudflare.com/d1/platform/pricing/">D1</a> ·
+      <a href="https://developers.cloudflare.com/kv/platform/pricing/">KV</a> ·
+      <a href="https://developers.cloudflare.com/durable-objects/platform/pricing/">Durable Objects</a> ·
+      <a href="https://developers.cloudflare.com/pages/platform/limits/">Pages</a></span>
+  </footer>
+</main>
+
+<script>
+const $ = (sel) => document.querySelector(sel);
+const h = (tag, attrs = {}, ...kids) => {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) k === 'class' ? (el.className = v) : k === 'style' ? (el.style.cssText = v) : el.setAttribute(k, v);
+  el.append(...kids.flat().filter((k) => k != null && k !== false));
+  return el;
+};
+const svgEl = (tag, attrs = {}) => {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+};
+const logo = (id, cls = 'logo') => { const s = svgEl('svg', { class: cls, 'aria-hidden': 'true' }); s.append(svgEl('use', { href: '#logo-' + id })); return s; };
+const nf = new Intl.NumberFormat('en');
+const fmt = (v) => (v == null ? '—' : v !== 0 && Math.abs(v) < 1 ? (+v.toPrecision(2)).toString() : nf.format(Math.round(v * 10) / 10));
+const compact = (v) => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(v);
+const pctTxt = (p) => (p === 0 ? '0%' : p < 0.001 ? '<0.1%' : (p * 100).toFixed(p < 0.1 ? 1 : 0) + '%');
+const level = (p) => (p >= 0.9 ? 'bad' : p >= 0.75 ? 'warn' : 'ok');
+const monthName = (ym) => new Date(ym + '-01T00:00:00Z').toLocaleString('en', { month: 'short', timeZone: 'UTC' });
+const dayName = (d) => new Date(d + 'T00:00:00Z').toLocaleString('en', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+const ago = (iso) => {
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  return m < 60 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+};
+
+// A bar with an optional marker (e.g. the 30-day peak) on one scale of 0..1.
+function bar(p, i = 0, marker) {
+  const fill = h('i', { class: level(p), style: `width:${Math.min(100, p * 100)}%;--i:${i}${p ? '' : ';min-width:0'}` });
+  return h('div', { class: 'bar' }, fill, marker != null && marker > p ? h('b', { style: `left:calc(${Math.min(100, marker * 100)}% - 1px)`, title: '30-day peak' }) : null);
+}
+
+function meterList(items) {
+  return h('div', { class: 'meters' }, items.map((a, i) => {
+    const p = a.used / a.included;
+    const peak = a.peak30d != null ? a.peak30d / a.included : null;
+    return h('div', { class: 'meter' },
+      h('div', { class: 'row' },
+        h('span', { class: 'name' }, a.name),
+        h('span', { class: 'val num' }, `${fmt(a.used)} / ${fmt(a.included)} ${a.unit}`)),
+      bar(p, i, peak),
+      h('div', { class: 'row' },
+        h('span', { class: `pct num ${level(p)}` }, pctTxt(p) + (a.window === 'day' ? ' today' : '')),
+        peak != null ? h('span', { class: 'pct num muted' }, `peak ${pctTxt(peak)} (${fmt(a.peak30d)})`) : null));
+  }));
+}
+
+function ring(p, label) {
+  const r = 52, c = 2 * Math.PI * r;
+  const s = svgEl('svg', { viewBox: '0 0 120 120' });
+  s.append(svgEl('circle', { class: 'trk', cx: 60, cy: 60, r }));
+  const v = svgEl('circle', { class: 'val', cx: 60, cy: 60, r, 'stroke-dasharray': c, 'stroke-dashoffset': c });
+  s.append(v);
+  // Keep a visible sliver for tiny values; animate from empty on the next frame.
+  requestAnimationFrame(() => requestAnimationFrame(() => v.setAttribute('stroke-dashoffset', c * (1 - Math.max(0.015, Math.min(1, p))))));
+  return h('div', { class: 'ring' }, s, h('div', { class: 'lbl' }, h('span', { class: 'num' }, pctTxt(p)), h('small', {}, label)));
+}
+
+// Bars by category, optionally stacked from several keys. Draws to the container's width.
+function barChart(box, rows, { keys, colors, label, valueFmt = fmt, tipLabel }) {
+  const W = Math.max(280, box.clientWidth), H = 190, m = { t: 8, r: 4, b: 22, l: 40 };
+  const max = Math.max(1, ...rows.map((r) => keys.reduce((s, k) => s + r[k], 0)));
+  const nice = (() => { const e = 10 ** Math.floor(Math.log10(max)); return Math.ceil(max / e) * e; })();
+  const y = (v) => H - m.b - (v / nice) * (H - m.t - m.b);
+  const bw = (W - m.l - m.r) / rows.length;
+  const s = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' });
+  for (const t of [0, nice / 2, nice]) {
+    s.append(svgEl('line', { class: 'grid', x1: m.l, x2: W - m.r, y1: y(t), y2: y(t) }));
+    const tx = svgEl('text', { x: m.l - 6, y: y(t) + 4, 'text-anchor': 'end' }); tx.textContent = compact(t); s.append(tx);
+  }
+  const step = Math.ceil(rows.length / Math.floor((W - m.l) / 48));
+  rows.forEach((r, i) => {
+    let acc = 0;
+    const w = Math.min(28, bw * 0.7), x = m.l + i * bw + (bw - w) / 2;
+    keys.forEach((k, j) => {
+      const v = r[k]; if (!v) return;
+      s.append(svgEl('rect', { class: 'b', x, width: w, y: y(acc + v), height: Math.max(1, y(acc) - y(acc + v)), rx: 3, fill: colors[j], style: `--i:${i}` }));
+      acc += v;
+    });
+    if (i % step === 0) { const tx = svgEl('text', { x: x + w / 2, y: H - 6, 'text-anchor': 'middle' }); tx.textContent = label(r); s.append(tx); }
+    const hit = svgEl('rect', { x: m.l + i * bw, y: m.t, width: bw, height: H - m.t - m.b, fill: 'transparent' });
+    hit.addEventListener('pointermove', (ev) => {
+      tip.replaceChildren(h('div', { class: 'd' }, tipLabel(r)), ...keys.map((k, j) => h('div', {}, h('span', { style: `color:${colors[j]}` }, '■ '), `${tipNames[j] ?? k}: ${valueFmt(r[k])}`)));
+      tip.hidden = false;
+      const bx = box.getBoundingClientRect();
+      tip.style.left = Math.max(0, Math.min(bx.width - tip.offsetWidth, ev.clientX - bx.left + 12)) + 'px';
+      tip.style.top = Math.max(0, ev.clientY - bx.top - 50) + 'px';
+    });
+    hit.addEventListener('pointerleave', () => (tip.hidden = true));
+    s.append(hit);
+  });
+  const tipNames = box.dataset.names ? box.dataset.names.split('|') : [];
+  const tip = h('div', { class: 'tip' }); tip.hidden = true;
+  box.replaceChildren(s, tip);
+}
+
+function legend(names, colors) {
+  return h('div', { class: 'legend' }, names.map((n, i) => h('span', {}, h('i', { style: `background:${colors[i]}` }), n)));
+}
+
+function card(title, note, ...body) {
+  return h('div', { class: 'card rise' }, h('h3', {}, title), note ? h('p', { class: 'note' }, note) : null, ...body);
+}
+
+function render(data) {
+  const gh = data.github, cf = data.cloudflare;
+  const css = getComputedStyle(document.documentElement);
+  const C = (v) => css.getPropertyValue(v).trim();
+
+  // Verdict: the single highest share across both accounts.
+  const all = [
+    ...(gh?.allowances || []).map((a) => ({ ...a, who: 'GitHub' })),
+    ...(cf?.allowances || []).map((a) => ({ ...a, who: 'Cloudflare' })),
+  ].map((a) => ({ ...a, p: a.used / a.included, pk: (a.peak30d ?? a.used) / a.included }));
+  const top = all.reduce((a, b) => (b.p > a.p ? b : a), all[0]);
+  const topPeak = all.reduce((a, b) => (b.pk > a.pk ? b : a), all[0]);
+  const over = all.filter((a) => a.p >= 0.75);
+  $('#verdict').replaceChildren(
+    over.length ? h('b', {}, `${over.length} allowance${over.length > 1 ? 's are' : ' is'} above 75%. `) : h('b', {}, 'Nothing is close to a limit. '),
+    `The busiest meter is ${top.who} ${top.name} at ${pctTxt(top.p)}`,
+    topPeak && topPeak.peak30d != null ? `, and the highest daily peak in 30 days was ${topPeak.name} at ${pctTxt(topPeak.pk)}.` : '.');
+  $('#stamp').textContent = [gh && `GitHub updated ${ago(gh.updatedAt)}`, cf && `Cloudflare updated ${ago(cf.updatedAt)}`].filter(Boolean).join(' · ');
+
+  // Brand cards
+  const ghTop = gh.allowances.reduce((a, b) => (b.used / b.included > a.used / a.included ? b : a));
+  const brands = [
+    h('div', { class: 'card brand gh rise', style: '--i:1' },
+      h('div', {},
+        h('div', { class: 'who' }, logo('gh'), h('div', {}, h('h2', {}, 'GitHub'), h('span', { class: 'muted' }, `@${gh.login} · Free plan`))),
+        h('div', { class: 'stats' },
+          h('div', { class: 'stat' }, h('span', { class: 'num' }, '$' + gh.billedUsd.toFixed(2)), h('span', { class: 'muted' }, `billed in ${monthName(gh.period)}`)),
+          h('div', { class: 'stat' }, h('span', { class: 'num' }, fmt(gh.repos.reduce((s, r) => s + r.sizeMb, 0)) + ' MB'), h('span', { class: 'muted' }, `in ${gh.repos.length} repos`)))),
+      ring(ghTop.used / ghTop.included, ghTop.name)),
+  ];
+  if (cf) {
+    const cfTop = cf.allowances.reduce((a, b) => (b.used / b.included > a.used / a.included ? b : a));
+    const req30 = cf.daily.reduce((s, d) => s + d.workers, 0);
+    brands.push(h('div', { class: 'card brand cf rise', style: '--i:2' },
+      h('div', {},
+        h('div', { class: 'who' }, logo('cf'), h('div', {}, h('h2', {}, 'Cloudflare'), h('span', { class: 'muted' }, 'Workers Free plan'))),
+        h('div', { class: 'stats' },
+          h('div', { class: 'stat' }, h('span', { class: 'num' }, compact(req30)), h('span', { class: 'muted' }, 'requests, 30 days')),
+          h('div', { class: 'stat' }, h('span', { class: 'num' }, String(cf.workers.length)), h('span', { class: 'muted' }, 'Workers with traffic')))),
+      ring(cfTop.used / cfTop.included, cfTop.name + ' today')));
+  }
+  $('#brands').replaceChildren(...brands);
+
+  // GitHub section
+  const ghColors = [C('--gh'), C('--track')];
+  const months = h('div', { class: 'chart', 'data-names': 'Private (counts)|Public (free)' });
+  const repoMax = 1024; // GitHub recommends repos stay under 1 GB (strongly under 5 GB)
+  $('#github').replaceChildren(
+    h('div', { class: 'sechead rise' }, logo('gh', 'gh-c'), h('h2', {}, 'GitHub'), h('span', { class: 'pill' }, `${monthName(gh.period)} billing cycle`)),
+    h('div', { class: 'grid2' },
+      card('Allowances', 'Used this month against what GitHub Free includes. Only private repos use Actions minutes.', meterList(gh.allowances)),
+      h('div', { style: 'display:grid;gap:1rem' },
+        card('Actions minutes by month', `${fmt(gh.publicActionsMinutes)} public-repo minutes this month ran free.`, months, legend(['Private (counts)', 'Public (free)'], ghColors)),
+        card('Repo storage', 'Git data per repo. No quota on Free; GitHub recommends under 1 GB and strongly under 5 GB.',
+          h('div', { class: 'tablewrap' }, h('table', {},
+            h('thead', {}, h('tr', {}, h('th', {}, 'Repo'), h('th', { class: 'n' }, 'MB'), h('th', {}, 'of 1 GB'))),
+            h('tbody', {}, gh.repos.map((r, i) => h('tr', {},
+              h('td', {}, r.name, r.private ? h('span', { class: 'lock' }, 'private') : null),
+              h('td', { class: 'n' }, fmt(r.sizeMb)),
+              h('td', {}, h('span', { class: 'num muted', style: 'font-size:.75rem' }, pctTxt(r.sizeMb / repoMax)), bar(r.sizeMb / repoMax, i)))))))))));
+  barChart(months, gh.monthly, { keys: ['actionsPrivate', 'actionsPublic'], colors: ghColors, label: (r) => monthName(r.month), tipLabel: (r) => monthName(r.month) + ' ' + r.month.slice(0, 4), valueFmt: (v) => fmt(v) + ' min' });
+
+  // Cloudflare section
+  const cfHead = h('div', { class: 'sechead rise' }, logo('cf', 'cf-c'), h('h2', {}, 'Cloudflare'));
+  if (!cf) {
+    $('#cloudflare').replaceChildren(cfHead, h('div', { class: 'card empty' },
+      'No Cloudflare data yet. Run ', h('code', {}, 'CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=… node free-usage/update.mjs')));
+    return;
+  }
+  cfHead.append(h('span', { class: 'pill' }, `Daily limits reset 00:00 UTC · ${dayName(cf.from)} – ${dayName(cf.today)}`));
+  const cfColors = [C('--cf'), C('--faint')];
+  const daily = h('div', { class: 'chart', 'data-names': 'Workers requests' });
+  const d1chart = h('div', { class: 'chart', 'data-names': 'Rows read' });
+  $('#cloudflare').replaceChildren(
+    cfHead,
+    h('div', { class: 'grid2' },
+      card('Allowances', 'Daily meters show today so far (UTC). The tick marks the busiest day in the last 30.', meterList(cf.allowances)),
+      h('div', { style: 'display:grid;gap:1rem' },
+        card('Workers requests per day', 'All Workers and Pages Functions together, against 100,000 a day.', daily),
+        card('D1 rows read per day', 'Against 5,000,000 a day.', d1chart))),
+    h('div', { class: 'grid2' },
+      card('Workers', 'Requests in the last 30 days.', h('div', { class: 'tablewrap' }, h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'Worker'), h('th', { class: 'n' }, 'Requests'))),
+        h('tbody', {}, cf.workers.map((w) => h('tr', {}, h('td', {}, w.name), h('td', { class: 'n' }, fmt(w.requests30d)))))))),
+      card('D1 databases and Pages', null, h('div', { class: 'tablewrap' }, h('table', {},
+        h('thead', {}, h('tr', {}, h('th', {}, 'Resource'), h('th', { class: 'n' }, 'Size / builds'))),
+        h('tbody', {},
+          cf.d1.map((d) => h('tr', {}, h('td', {}, 'D1 · ' + d.name), h('td', { class: 'n' }, fmt(d.sizeMb) + ' MB'))),
+          cf.pages.map((p) => h('tr', {}, h('td', {}, 'Pages · ' + p.name), h('td', { class: 'n' }, `${fmt(p.buildsThisMonth)} this month`)))))))));
+  barChart(daily, cf.daily, { keys: ['workers'], colors: cfColors, label: (r) => dayName(r.date), tipLabel: (r) => dayName(r.date) });
+  barChart(d1chart, cf.daily, { keys: ['d1Read'], colors: [C('--cf')], label: (r) => dayName(r.date), tipLabel: (r) => dayName(r.date) });
+
+  document.querySelectorAll('.rise').forEach((el, i) => el.style.setProperty('--i', el.style.getPropertyValue('--i') || i));
+}
+
+let data;
+fetch('data.json', { cache: 'no-cache' })
+  .then((r) => { if (!r.ok) throw new Error(`data.json: HTTP ${r.status}`); return r.json(); })
+  .then((d) => { data = d; render(d); })
+  .catch((e) => { $('#verdict').replaceChildren(h('span', { class: 'error' }, `Couldn't load usage data (${e.message}). Run node free-usage/update.mjs.`)); });
+
+// Charts draw to their width; redraw on resize without replaying the entrance.
+let t;
+addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => data && (document.body.classList.add('settled'), render(data)), 200); });
+</script>
+<style>.settled .rise, .settled .bar > i, .settled .chart rect.b, .settled .brand .logo { animation: none !important; }</style>
+</body>
+</html>

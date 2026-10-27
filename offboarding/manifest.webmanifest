@@ -1,0 +1,19 @@
+{
+  "name": "סיום העסקה 18.11.2026 — רשימת ביצוע",
+  "short_name": "סיום העסקה",
+  "description": "מה עושים, מול מי ועד מתי: מעסיק, שירות התעסוקה, ביטוח לאומי, מס, פנסיה.",
+  "lang": "he",
+  "dir": "rtl",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#eef2f6",
+  "theme_color": "#0f6b6b",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

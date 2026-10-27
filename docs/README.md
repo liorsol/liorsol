@@ -23,6 +23,7 @@ free host broke (Releases, Git LFS, Cloudflare Pages, R2), all measured rather t
 | [`restaurants.html`](../restaurants.html) | HTZone restaurant list, sortable/filterable (`app.js` + `rest_combined.json`). |
 | [`car-checklist.html`](../car-checklist.html) | Road-trip car checklist, synced across devices via Firebase Realtime Database. |
 | [`esim-usage/`](../esim-usage/) | Data-usage bars for the family's esim.dog eSIMs, one refresh button, per-eSIM details. Needs the Cloudflare Worker in [`esim-usage/proxy.js`](../esim-usage/proxy.js). |
+| [`offboarding/`](../offboarding/) | Hebrew RTL checklist for an employment ending (employer, employment service, National Insurance, tax, pension). Installable PWA with its own small network-first worker (`offboarding/sw.js`, scope `offboarding/` only); ticks live in `localStorage`. Deliberately not linked from the profile README. |
 | [`trips/albania-2026/`](../trips/albania-2026/) | Family trip page (SPA, deep links, shared comment/link boards), Leaflet map, reveal.js slide deck, and the raw research the plan was built from. |
 | [`trips/jerusalem-2026/`](../trips/jerusalem-2026/) | Family weekend trip page (SPA with map, trivia, media). |
 | [`trips/italy-2026/`](../trips/italy-2026/) | Two-family trip to Umbria and Rome — same shape as the Albania page (SPA, deep links, offline PWA, shared boards, looping hero clip), an eSIM tracker board, 51 day-card shots, plus a Leaflet map and the two raw research reports it was merged from. |

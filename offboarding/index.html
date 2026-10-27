@@ -7,7 +7,8 @@
 <title>סיום העסקה 18.11.2026 — רשימת ביצוע</title>
 <meta name="description" content="רשימת ביצוע לסיום העסקה: מעסיק, שירות התעסוקה, ביטוח לאומי, מס הכנסה, פנסיה וביטוחים.">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0f6b6b">
+<meta name="theme-color" content="#0f6b6b" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f151d" media="(prefers-color-scheme: dark)">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <!-- iOS ignores the manifest's icons for the home screen; this is the one it uses. -->
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -17,21 +18,22 @@
 <meta name="apple-mobile-web-app-title" content="סיום העסקה">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet" crossorigin>
 <style>
   :root {
     --bg: #eef2f6;
     --surface: #ffffff;
     --ink: #16202e;
     --ink-2: #4e5a69;
-    --ink-3: #8a94a3;
+    --ink-3: #6b7583;
     --line: #d9e0e8;
     --primary: #0f6b6b;
     --primary-soft: #d8efee;
-    --deadline: #c7780f;
+    --deadline: #9a5a00;
     --deadline-soft: #fbead1;
     --done: #2f8a4a;
     --focus: #1a8fe3;
+    --on-done: #ffffff;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
@@ -47,6 +49,7 @@
       --deadline: #f0a33a;
       --deadline-soft: #3d2c10;
       --done: #5ccb79;
+      --on-done: #0f151d;
       color-scheme: dark;
     }
   }
@@ -102,8 +105,8 @@
     background: var(--surface); border: 3px solid var(--primary); z-index: 1;
   }
   .timeline li.hard::before { border-color: var(--deadline); }
-  .timeline time { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .timeline li.hard time { color: var(--deadline); }
+  .timeline .t { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .timeline li.hard .t { color: var(--deadline); }
   .timeline span { color: var(--ink-2); }
   @media (max-width: 480px) { .timeline li { grid-template-columns: 1fr; gap: 0; } }
 
@@ -121,15 +124,16 @@
   section .when { color: var(--ink-2); font-size: 15px; margin: 0 0 14px; }
 
   .items { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-  details { border-top: 1px solid var(--line); }
-  details:first-child { border-top: 0; }
+  .row { border-top: 1px solid var(--line); position: relative; }
+  .row:first-child { border-top: 0; }
   summary {
-    list-style: none; cursor: pointer; display: grid; grid-template-columns: 26px 1fr auto 22px; gap: 12px; align-items: center;
+    list-style: none; cursor: pointer; display: grid; grid-template-columns: 26px 1fr auto 22px; gap: 12px; align-items: start;
     padding: 14px 16px; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
   }
   summary::-webkit-details-marker { display: none; }
   summary:hover { background: color-mix(in srgb, var(--primary-soft) 45%, transparent); }
   summary .title { font-weight: 500; font-size: 16px; }
+  summary .due, summary .chev { margin-top: 2px; }
   details.done summary .title { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--ink-3); }
   summary .due {
     font-size: 13px; font-weight: 500; color: var(--deadline); background: var(--deadline-soft);
@@ -142,11 +146,11 @@
   .check {
     width: 26px; height: 26px; border: 2px solid var(--ink-3); border-radius: 7px; background: transparent;
     display: grid; place-items: center; padding: 0; cursor: pointer; transition: background .2s, border-color .2s;
-    position: relative;
+    position: absolute; top: 14px; right: 16px; z-index: 1;
   }
   /* 44px hit area without changing the visual box */
   .check::after { content: ""; position: absolute; inset: -9px; }
-  .check svg { width: 15px; height: 15px; stroke: #fff; stroke-width: 3; fill: none; stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset .3s ease .05s; }
+  .check svg { width: 15px; height: 15px; stroke: var(--on-done); stroke-width: 3; fill: none; stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset .3s ease .05s; }
   .check[aria-checked="true"] { background: var(--done); border-color: var(--done); }
   .check[aria-checked="true"] svg { stroke-dashoffset: 0; }
 
@@ -159,13 +163,14 @@
   .body .src { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 14px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
   .body .src span { color: var(--ink-3); }
   .body table { border-collapse: collapse; font-size: 14px; margin: 8px 0; width: 100%; }
-  .body td { padding: 3px 0; }
+  .body td, .body th { padding: 3px 0; text-align: right; }
+  .body th { font-weight: 400; color: var(--ink-3); }
   .body tr.head td { color: var(--ink-3); }
 
   /* open/close animation */
   details[open] .body { animation: open .35s ease; }
   @keyframes open { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-  @media (max-width: 520px) { summary { grid-template-columns: 26px 1fr 22px; } summary .due { grid-column: 2; justify-self: start; margin-top: -4px; } .body { margin-right: 0; } }
+  @media (max-width: 520px) { summary { grid-template-columns: 26px 1fr 22px; } summary .due { grid-column: 2; justify-self: start; margin-top: -4px; } summary .chev { grid-row: 1; grid-column: 3; } .body { margin-right: 0; } }
 
   .tools { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 24px; }
   .tools button {
@@ -196,16 +201,16 @@
   <p class="lede">רשימת ביצוע לפיטורים עם מענק פרישה, כשגיל 45 נכנס ב‑1.12, שבועיים אחרי סיום העבודה. כל שורה נפתחת להסבר, להחלטות ולמקורות. הסימונים נשמרים במכשיר הזה.</p>
 
   <ol class="timeline">
-    <li style="--i:0"><time>עד 12.11</time><span>אישורים מהמעסיק: הודעה מוקדמת, הסכם פרישה, מכתבי שחרור</span></li>
-    <li style="--i:1" class="hard"><time>18.11</time><span>יום עבודה אחרון. סיום יחסי עובד–מעסיק</span></li>
-    <li style="--i:2" class="hard"><time>19.11</time><span>רישום לשירות התעסוקה ותביעת אבטלה. כל יום דחייה הוא יום שלא נספר</span></li>
-    <li style="--i:3"><time>20.11</time><span>קרן הפנסיה: בקשה ל"ריסק זמני"</span></li>
-    <li style="--i:4"><time>1.12</time><span>גיל 45. מכסת ימי האבטלה עולה ל‑175 מהחודש הזה</span></li>
-    <li style="--i:5" class="hard"><time>עד 3.12</time><span>התייצבות ראשונה בלשכה (14 ימים מהרישום)</span></li>
-    <li style="--i:6"><time>~10.12</time><span>טופס 161 חלק ב', אחרי ייעוץ פרישה/מס</span></li>
-    <li style="--i:7"><time>~15.12</time><span>בדיקה בהחלטת הביטוח הלאומי שהמכסה היא 175 ימים</span></li>
-    <li style="--i:8"><time>פברואר 2027</time><span>טופס 106 ואישור שנתי מהביטוח הלאומי, ואז בקשה להחזר מס</span></li>
-    <li style="--i:9"><time>~יוני 2027</time><span>תום 175 ימי האבטלה</span></li>
+    <li style="--i:0"><b class="t">עד 12.11</b><span>אישורים מהמעסיק: הודעה מוקדמת, הסכם פרישה, מכתבי שחרור</span></li>
+    <li style="--i:1" class="hard"><b class="t">18.11</b><span>יום עבודה אחרון. סיום יחסי עובד–מעסיק</span></li>
+    <li style="--i:2" class="hard"><b class="t">19.11</b><span>רישום לשירות התעסוקה ותביעת אבטלה. כל יום דחייה הוא יום שלא נספר</span></li>
+    <li style="--i:3"><b class="t">20.11</b><span>קרן הפנסיה: בקשה ל"ריסק זמני"</span></li>
+    <li style="--i:4"><b class="t">1.12</b><span>גיל 45. מכסת ימי האבטלה עולה ל‑175 מהחודש הזה</span></li>
+    <li style="--i:5" class="hard"><b class="t">עד 3.12</b><span>התייצבות ראשונה בלשכה (14 ימים מהרישום)</span></li>
+    <li style="--i:6"><b class="t">כ‑10.12</b><span>טופס 161 חלק ב', אחרי ייעוץ פרישה/מס</span></li>
+    <li style="--i:7"><b class="t">כ‑15.12</b><span>בדיקה בהחלטת הביטוח הלאומי שהמכסה היא 175 ימים</span></li>
+    <li style="--i:8"><b class="t">פברואר 2027</b><span>טופס 106 ואישור שנתי מהביטוח הלאומי, ואז בקשה להחזר מס</span></li>
+    <li style="--i:9"><b class="t">כ‑יוני 2027</b><span>תום 175 ימי האבטלה</span></li>
   </ol>
 
   <div class="progress" aria-live="polite">
@@ -226,27 +231,27 @@
   <p class="when">אחרי יום העבודה האחרון קשה הרבה יותר להשיג חתימות. כל מה שכאן נסגר בכתב לפני שעוזבים.</p>
   <div class="items">
 
-    <details data-id="emp-notice">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">אישור בכתב: האם 18.11 הוא תום ההודעה המוקדמת או שולם חלף הודעה</span><span class="due">עד 12.11</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="emp-notice">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">אישור בכתב: האם 18.11 הוא תום ההודעה המוקדמת או שולם חלף הודעה</span><span class="due">עד 12.11</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
-        <p>זה הפרט היחיד שיכול להזיז את תחילת תשלום דמי האבטלה. אחרי יותר משנת עבודה מגיע חודש הודעה מוקדמת. אם עבדת את החודש הזה ו‑18.11 הוא סופו, הזכאות מתחילה מיום הרישום. אם המעסיק שחרר אותך מוקדם ושילם <strong>חלף הודעה מוקדמת</strong>, הביטוח הלאומי בודק את הזכאות רק מתום התקופה ששולמה (או 30 יום מתחילת ההודעה, המוקדם מביניהם). פיצויים ומענק פרישה לא דוחים ולא מקטינים את דמי האבטלה.</p>
+        <p>זה הפרט היחיד שיכול להזיז את תחילת תשלום דמי האבטלה. אחרי יותר משנת עבודה מגיע חודש הודעה מוקדמת. אם עבדת את החודש הזה ו‑18.11 (או 19.11) הוא סופו, הזכאות מתחילה מיום הרישום. אם המעסיק שחרר אותך מוקדם ושילם <strong>חלף הודעה מוקדמת</strong>, הביטוח הלאומי בודק את הזכאות רק מתום התקופה ששולמה (או 30 יום מתחילת ההודעה, המוקדם מביניהם). פיצויים ומענק פרישה לא דוחים ולא מקטינים את דמי האבטלה.</p>
         <ul>
           <li>לבקש מ‑HR משפט אחד בכתב: תאריך מסירת ההודעה המוקדמת, האם עבדת בה בפועל, והאם שולם חלף הודעה ועל אילו ימים.</li>
           <li>אם שולם חלף הודעה על תקופה שאחרי 18.11, לרשום את תאריך הסיום האמיתי לצורך הרישום בלשכה.</li>
         </ul>
         <div class="src"><span>מקורות</span><a href="https://www.btl.gov.il/benefits/Unemployment/Pages/nesibothafsakatavoda.aspx">ביטוח לאומי: סיבות הפסקת עבודה</a><a href="https://www.kolzchut.org.il/he/הודעה_מוקדמת_לפיטורים">כל זכות: הודעה מוקדמת</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="emp-letter">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">מכתב פיטורים חתום: "ביוזמת החברה"</span><span class="due soft">קיים</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="emp-letter">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">מכתב פיטורים חתום: "ביוזמת החברה"</span><span class="due soft">קיים</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>המכתב מ‑20.10.2026 כבר קיים. הוא הבסיס לזכאות המיידית לדמי אבטלה (בלי 90 ימי ההמתנה של מתפטר). לשמור עותק PDF מחוץ למערכות החברה, ולוודא שהניסוח לא משתנה בהסכם הפרישה.</p>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="emp-agreement">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">הסכם פרישה: לקרוא לפני חתימה. המענק מוגדר "מענק פרישה"</span><span class="due">לפני חתימה</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="emp-agreement">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">הסכם פרישה: לקרוא לפני חתימה. המענק מוגדר "מענק פרישה"</span><span class="due">לפני חתימה</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>מה לוודא בטיוטה:</p>
         <ul>
@@ -258,18 +263,18 @@
         <div class="warn">לענייני מס אין הבדל בין "פיצויים" ל"מענק פרישה": סעיף 9(7א) לפקודה מכניס את שניהם לאותו סל פטור. ההבדל הוא רק בדיווח ובביטוח הלאומי. ראה בחלק מס הכנסה.</div>
         <div class="src"><span>מקורות</span><a href="https://www.kolzchut.org.il/he/פטור_ממס_הכנסה_על_פיצויי_פיטורים_וכספים_אחרים_המשולמים_לעובד_בסיום_העסקתו">כל זכות: פטור ממס על פיצויים ומענקי פרישה</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="emp-100">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">טופס 100 ישודר לביטוח הלאומי אחרי התלוש האחרון; בל/1514 חתום כגיבוי</span><span class="due soft">עד 1.12</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="emp-100">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">טופס 100 ישודר לביטוח הלאומי אחרי התלוש האחרון; בל/1514 חתום כגיבוי</span><span class="due soft">אמצע דצמבר</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>הביטוח הלאומי מחשב את דמי האבטלה מנתוני השכר שהמעסיק משדר (טופס 100). בלי זה התביעה נתקעת או דורשת תלושים ידניים. לבקש מהנהלת החשבונות אישור שהשידור בוצע אחרי תלוש נובמבר, ולקבל במקביל טופס <strong>בל/1514</strong> (אישור מעסיק על תקופת העסקה ושכר) חתום. את 1514 לא שולחים לבד, הוא נספח לתביעה.</p>
         <div class="src"><span>מקורות</span><a href="https://www.btl.gov.il/benefits/Unemployment/Pages/submit.aspx">ביטוח לאומי: איך מגישים תביעה</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="emp-final">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">תלוש אחרון וגמר חשבון: פדיון חופשה, הבראה, השלמת פיצויים</span><span class="due soft">תלוש נובמבר</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="emp-final">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">תלוש אחרון וגמר חשבון: פדיון חופשה, הבראה, השלמת פיצויים</span><span class="due soft">תלוש נובמבר</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <ul>
           <li><strong>פדיון חופשה</strong> על כל יתרת הימים. חייב במס מלא, אין פטור.</li>
@@ -280,29 +285,29 @@
         <p>פדיון חופשה אינו דוחה דמי אבטלה למפוטר (בית הדין הארצי, עב"ל 129/07 סבג). הדחייה בגין "ימי חופשה" חלה על חל"ת.</p>
         <div class="src"><span>מקורות</span><a href="https://www.kolzchut.org.il/he/מדריך_בנושא_פיטורים">כל זכות: מדריך בנושא פיטורים</a><a href="https://www.psakdin.co.il/Document/%D7%9E%D7%93%D7%A8%D7%99%D7%9A-%22%D7%A4%D7%A1%D7%A7%D7%93%D7%99%D7%9F%22-%D7%9C%D7%91%D7%99%D7%98%D7%95%D7%97-%D7%94%D7%9C%D7%90%D7%95%D7%9E%D7%99--%D7%97%D7%9C%D7%A7-%D7%90'-%D7%90%D7%91%D7%98%D7%9C%D7%94">פסקדין: סיכום עב"ל 129/07</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="emp-161a">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">טופס 161 חלק א' (דיווח המעסיק לרשות המסים) + קישור למילוי חלק ב'</span><span class="due soft">אחרי 18.11</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="emp-161a">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">טופס 161 חלק א' (דיווח המעסיק לרשות המסים) + קישור למילוי חלק ב'</span><span class="due soft">אחרי 18.11</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>מאז 1.1.2024 המעסיק מדווח על סיום עבודה בטופס 161 החדש ישירות לרשות המסים. אתה אמור לקבל הודעה/קישור למילוי חלק ב' (הבחירות שלך). אם לא הגיע, נכנסים לאזור האישי של רשות המסים ומחפשים "161" או "דיווח על סיומי עבודה". לוודא שבחלק א' מופיעים: שכר אחרון, משכורת מבוטחת, הסכום בקופות, והמענק כמענק פרישה.</p>
         <div class="src"><span>מקורות</span><a href="https://pensuni.com/?p=14213">פנסיוני: הנחיות למילוי חלק העובד</a><a href="https://www.chamber.org.il/serviceslobby/legal/1856/140481/">לשכת המסחר: טופס 161 החדש</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="emp-release">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">מכתבי שחרור לקרן הפנסיה ולקרן ההשתלמות</span><span class="due soft">עם הסיום</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="emp-release">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">מכתבי שחרור לקרן הפנסיה ולקרן ההשתלמות</span><span class="due soft">עם הסיום</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>המעסיק שולח לגוף המוסדי הודעה על סיום העסקה ושחרור כספי התגמולים והפיצויים לטובתך. בלי זה הפיצויים נשארים "בבעלות המעסיק" ברישומי הקרן ואי אפשר לבחור מה לעשות איתם. לבקש עותק של המכתב ולאמת מול הקרן שנקלט (ראה חלק פנסיה).</p>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="emp-106">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">מייל פרטי מעודכן ב‑HR; טופס 106 לשנת 2026</span><span class="due soft">סוף פברואר 2027</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="emp-106">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">מייל פרטי מעודכן ב‑HR; טופס 106 לשנת 2026</span><span class="due soft">סוף פברואר 2027</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>המעסיק חייב להנפיק את טופס 106 עד סוף פברואר של השנה העוקבת. צריך אותו לבקשת החזר המס. לוודא שכתובת המייל הפרטית מעודכנת אצלם לפני 18.11, כי הגישה למערכות החברה תיסגר.</p>
       </div>
-    </details>
+    </details></div>
 
   </div>
 </section>
@@ -313,35 +318,35 @@
   <p class="when">הימים נספרים מיום הרישום, לא מיום הפיטורים. התשלום תלוי בהתייצבות.</p>
   <div class="items">
 
-    <details data-id="ta-register">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">רישום מקוון בטופס המשולב (רישום ללשכה + תביעה לביטוח לאומי)</span><span class="due">19.11</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="ta-register">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">רישום מקוון בטופס המשולב (רישום ללשכה + תביעה לביטוח לאומי)</span><span class="due">19.11</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>באזור האישי הממשלתי (gov.il) יש טופס אחד שמהווה גם רישום ראשוני לשירות התעסוקה וגם תביעה לדמי אבטלה. ימי האבטלה וימי ההתייצבות נספרים רטרואקטיבית ממועד הרישום המקוון.</p>
         <ul>
           <li><strong>למה לא לדחות ל‑1.12 (גיל 45):</strong> לפי סעיף 171(א) לחוק הביטוח הלאומי התקרה נבדקת "בחודש פלוני" לפי הגיל באותו חודש, והביטוח הלאומי כותב שהתקופה המרבית "יכולה להשתנות בהתאם לשינויים שחלים בגילך". מדצמבר תהיה ב‑175 ימים בכל מקרה. דחייה רק מוחקת כ‑10 ימי תשלום בנובמבר, ופותחת שאלה אם נובמבר החלקי ייכנס לבסיס השכר.</li>
-          <li><strong>בן/בת זוג כתלוי/ה:</strong> בן/בת זוג שהכנסתו/ה עד 7,848 ₪ לחודש (2026), כשיש ילד משותף, נחשב/ת תלוי/ה. ב‑3 תלויים ומעלה המכסה היא 175 ימים כבר מנובמבר, בלי קשר לגיל. למלא את פרטי ההכנסה בתביעה.</li>
+          <li><strong>בן/בת זוג כתלוי/ה:</strong> בן/בת זוג שהכנסתו/ה עד 7,848 ₪ לחודש (2026), כשיש ילד משותף, נחשב/ת תלוי/ה. ב‑3 תלויים ומעלה המכסה היא 175 ימים כבר מנובמבר, בלי קשר לגיל. אם רלוונטי, ממלאים את פרטי ההכנסה בתביעה.</li>
           <li>להכין: ת.ז, מכתב הפיטורים, פרטי חשבון בנק, ותלושים של 12 מתוך 18 החודשים האחרונים למקרה שטופס 100 לא נקלט.</li>
         </ul>
         <div class="src"><span>מקורות</span><a href="https://www.btl.gov.il/benefits/Unemployment/Pages/tkufat_zakaut.aspx">ביטוח לאומי: כמה זמן אפשר לקבל</a><a href="https://www.kalir.co.il/articles/1499">לשון החוק: פרק ז' ביטוח אבטלה</a><a href="https://www.kolzchut.org.il/he/רישום_ראשוני_ללשכת_התעסוקה">כל זכות: רישום ראשוני</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="ta-first">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">התייצבות ראשונה בלשכה הקרובה למגורים</span><span class="due">עד 3.12</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="ta-first">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">התייצבות ראשונה בלשכה הקרובה למגורים</span><span class="due">עד 3.12</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>תוך 14 ימים קלנדריים מהרישום המקוון חובה להגיע פיזית להשלמת הרישום ולריאיון. מאחרים מפסידים את הימים שבין הרישום להתייצבות. להביא ת.ז ומכתב פיטורים.</p>
         <div class="src"><span>מקורות</span><a href="https://www.btl.gov.il/benefits/Unemployment/Pages/Avtala_att.aspx">ביטוח לאומי: רישום והתייצבות</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="ta-weekly">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">ימי ההתייצבות הקבועים ביומן</span><span class="due soft">שוטף</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="ta-weekly">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">ימי ההתייצבות הקבועים ביומן</span><span class="due soft">שוטף</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>הלשכה קובעת את התדירות (לרוב שבועית, לחלק מדורשי העבודה מקוון). אי‑התייצבות ביום שנקבע = אין תשלום על הימים שמההתייצבות הקודמת עד הבאה. נסיעה לחו"ל: אין תשלום על הימים, ויש לדווח מראש ללשכה ולביטוח הלאומי.</p>
         <p><strong>הצעות עבודה:</strong> מעל גיל 35 חלים מבחני "עבודה מתאימה" (אותו תחום כמו ב‑3 השנים האחרונות, שכר לפחות כדמי האבטלה, עד 60 ק"מ). סירוב לעבודה מתאימה = 90 יום בלי תשלום והפחתת 30 ימים מהמכסה.</p>
         <div class="src"><span>מקורות</span><a href="https://www.kolzchut.org.il/he/התייצבות_בשירות_התעסוקה">כל זכות: התייצבות</a></div>
       </div>
-    </details>
+    </details></div>
 
   </div>
 </section>
@@ -352,44 +357,44 @@
   <p class="when">הזכאות: 175 ימים, עד 550.76 ₪ ליום ב‑125 הימים הראשונים ואז 367.17 ₪ (תקרות 2026).</p>
   <div class="items">
 
-    <details data-id="btl-claim">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">תביעה בל/1500 (רק אם לא הוגשה דרך הטופס המשולב)</span><span class="due soft">אחרי הרישום</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="btl-claim">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">תביעה בל/1500 (רק אם לא הוגשה דרך הטופס המשולב)</span><span class="due soft">אחרי הרישום</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>מגישים מקוון באתר הביטוח הלאומי. מועד אחרון: 12 חודשים מההתייצבות הראשונה. תביעה מאוחרת משולמת רק על 12 החודשים שקדמו לה. תקופת האכשרה (12 חודשי עבודה מתוך 18) מתקיימת.</p>
         <p><strong>איך מחשבים:</strong> סך השכר ב‑6 החודשים המלאים שלפני חודש הרישום ÷ 150 = שכר יומי. ברישום בנובמבר אלה מאי–אוקטובר 2026. מהשכר היומי: 80% עד 207.5 ₪, 50% עד 311, 45% עד 415, 30% עד 2,075, ותקרה של 550.76 ₪ ליום. בשכר של כ‑34,000 ₪ ומעלה מגיעים לתקרה. 5 ימי המתנה בתחילת כל 4 חודשים (לא מופחתים מהמכסה). ימי תשלום: כל השבוע חוץ משבת.</p>
         <div class="src"><span>מקורות</span><a href="https://www.btl.gov.il/benefits/Unemployment/Pages/sum.aspx">ביטוח לאומי: סכום הקצבה</a><a href="https://www.btl.gov.il/benefits/Unemployment/Pages/hisuv.aspx">ביטוח לאומי: איך מחשבים</a><a href="https://www.btl.gov.il/טפסים%20ואישורים/Documents/T1500.pdf">טופס בל/1500 (PDF)</a><a href="https://www.kolzchut.org.il/he/דמי_אבטלה">כל זכות: דמי אבטלה</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="btl-days">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">לבדוק בהחלטה שמכסת הימים היא 175</span><span class="due">אמצע דצמבר</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="btl-days">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">לבדוק בהחלטה שמכסת הימים היא 175</span><span class="due">אמצע דצמבר</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>באזור האישי אחרי אישור התביעה. אם מופיע 138: פנייה בכתב לסניף עם ציטוט סעיף 171(א) ("175 אם מלאו לו 45 שנים... בחודש פלוני") והמשפט מאתר הביטוח הלאומי על שינוי התקופה עם הגיל. אם נדחית: ועדת תביעות, ואחריה ערעור לבית הדין לעבודה תוך 12 חודשים.</p>
         <p>שנת האבטלה: 1.11.2026–31.10.2027. 175 ימים הם כ‑7 חודשים, כך שנכנסים בחלון.</p>
         <table>
-          <tr class="head"><td>גיל</td><td>עד 2 תלויים</td><td>3+ תלויים</td></tr>
+          <tr class="head"><th scope="col">גיל</th><th scope="col">עד 2 תלויים</th><th scope="col">3+ תלויים</th></tr>
           <tr><td>35–45</td><td>138</td><td>175</td></tr>
           <tr><td><strong>45+</strong></td><td><strong>175</strong></td><td><strong>175</strong></td></tr>
         </table>
         <div class="src"><span>מקורות</span><a href="https://www.btl.gov.il/benefits/Unemployment/Pages/tkufat_zakaut.aspx">ביטוח לאומי: תקופת הזכאות</a><a href="https://www.kolzchut.org.il/he/מספר_הימים_המירבי_לקבלת_דמי_אבטלה">כל זכות: מספר הימים</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="btl-pay">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">תשלומים: סביב ה‑12 בחודש על החודש הקודם</span><span class="due soft">מדצמבר</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="btl-pay">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">תשלומים: סביב ה‑12 בחודש על החודש הקודם</span><span class="due soft">מדצמבר</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>התשלום הראשון מגיע בסמוך לסיום הטיפול בתביעה, ואחריו ב‑12 לחודש או בסמוך. מנוכים מס הכנסה, דמי ביטוח בריאות ודמי ביטוח לאומי מינימליים. לשמור את האישורים: צריך אישור שנתי להחזר המס.</p>
         <div class="src"><span>מקורות</span><a href="https://www.btl.gov.il/benefits/Unemployment/Pages/pay.aspx">ביטוח לאומי: תשלום הקצבה</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="btl-end">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">כשהימים נגמרים (אם עדיין ללא עבודה): לעדכן סטטוס ולשלם דמי ביטוח</span><span class="due soft">~יוני 2027</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="btl-end">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">כשהימים נגמרים (אם עדיין ללא עבודה): לעדכן סטטוס ולשלם דמי ביטוח</span><span class="due soft">כ‑יוני 2027</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>175 ימים ≈ 7 חודשים. אחריהם, מי שלא עובד חייב לדווח "לא עובד" ולשלם דמי ביטוח לאומי ובריאות מינימליים בעצמו, אחרת נצבר חוב. לבדוק גם זכאות להבטחת הכנסה (מבחן הכנסה משפחתי).</p>
         <div class="src"><span>מקורות</span><a href="https://www.btl.gov.il/benefits/Unemployment/Pages/default.aspx">ביטוח לאומי: אבטלה</a></div>
       </div>
-    </details>
+    </details></div>
 
   </div>
 </section>
@@ -400,8 +405,8 @@
   <p class="when">תקרת הפטור 2026: הנמוך מבין 13,750 ₪ × שנות עבודה או משכורת וחצי × שנות עבודה. סל אחד למענק ולפיצויים יחד.</p>
   <div class="items">
 
-    <details data-id="tax-advice">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">ייעוץ פרישה/מס חד‑פעמי לפני מילוי 161 חלק ב'</span><span class="due">לפני 10.12</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="tax-advice">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">ייעוץ פרישה/מס חד‑פעמי לפני מילוי 161 חלק ב'</span><span class="due">לפני 10.12</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>הנתונים לפגישה: שכר אחרון, משכורת מבוטחת, הצבור ברכיב הפיצויים בקרן, השלמת הפיצויים, המענק, והאם יש סעיף 14. שלוש השאלות שצריך לצאת איתן:</p>
         <ul>
@@ -413,22 +418,22 @@
         <div class="warn">נוסחת הקיזוז: כל שקל מענק פטור שנמשך ב‑32 השנים שלפני גיל הזכאות גורע כ‑1.35 ₪ מסל הפטור על קצבת הפנסיה (976,005 ₪ ב‑2026). משיכה פטורה עכשיו היא לא "בחינם".</div>
         <div class="src"><span>מקורות</span><a href="https://www.kolzchut.org.il/he/פטור_ממס_הכנסה_על_פיצויי_פיטורים_וכספים_אחרים_המשולמים_לעובד_בסיום_העסקתו">כל זכות: פטור ממס על פיצויים ומענקים</a><a href="https://www.supermarker.themarker.com/Gemel/MaximumDepositsAndAmounts.aspx">תקרות וסכומים 2026</a><a href="https://www.gov.il/BlobFolder/guide/2026-filling-out-form-161d/he/Guides_IncomeTax_filling-out-form-161d-2026.pdf">רשות המסים: מדריך 161ד 2026 (PDF)</a><a href="https://www.bizportal.co.il/guides/news/article/20042297">ביזפורטל: 161ד ונוסחת הקיזוז</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="tax-161b">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">טופס 161 חלק ב' באזור האישי של רשות המסים</span><span class="due">~10.12</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="tax-161b">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">טופס 161 חלק ב' באזור האישי של רשות המסים</span><span class="due">כ‑10.12</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>בחלק ב' מסמנים לכל רכיב (מענק מהמעסיק, פיצויים בקופות, השלמה): פטור / חייב / רצף קצבה / רצף פיצויים, ובקשת פריסה. המועד המחייב הוא זה שמופיע בטופס. מי שלא ממלא, וכל הפיצויים שלו בקופות לקצבה, נחשב כמי שבחר רצף קצבה (וההשלמה מהמעסיק תשולם במס). לפי הנחיות רשות המסים, בחירות מעבר לרצף קצבה (למשל פריסה) יכולות לדרוש פנייה מקוונת למשרד השומה.</p>
         <div class="src"><span>מקורות</span><a href="https://pensuni.com/?page_id=7950">פנסיוני: איך ממלאים את חלק העובד</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="tax-refund">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">בקשה להחזר מס לשנת 2026</span><span class="due soft">מרץ 2027</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="tax-refund">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">בקשה להחזר מס לשנת 2026</span><span class="due soft">מרץ 2027</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>שנה עם 10.5 חודשי עבודה ואז אבטלה כמעט תמיד מניבה החזר, כי המס נוכה כאילו השכר נמשך 12 חודשים. צריך: טופס 106, אישור שנתי על דמי אבטלה מהביטוח הלאומי, אישורים על הפקדות עצמאיות/ביטוחים אם יש. מגישים באזור האישי של רשות המסים (דוח מקוצר להחזר) עד 6 שנים אחורה.</p>
       </div>
-    </details>
+    </details></div>
 
   </div>
 </section>
@@ -439,27 +444,27 @@
   <p class="when">הכיסוי הביטוחי בקרן נופל בלי הפקדות. זו הפעולה הדחופה ביותר אחרי הרישום לאבטלה.</p>
   <div class="items">
 
-    <details data-id="pen-risk">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">לבקש מקרן הפנסיה "ריסק זמני"</span><span class="due">20.11</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="pen-risk">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">לבקש מקרן הפנסיה "ריסק זמני"</span><span class="due">20.11</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>כשנפסקות ההפקדות, הקרן שומרת על ביטוח הנכות והשארים לתקופת ארכה (לרוב עד 5 חודשים, ללא עלות). אחר כך הכיסוי נופל, ובחזרה לעבודה מצטרפים מחדש עם חיתום רפואי ותקופת אכשרה. "ריסק זמני" מאריך את הכיסוי בתשלום חודשי קטן, עד 24 חודשים. לבקש בכתב, ולוודא שזה מתועד.</p>
         <p>במקביל: שההפקדה על תלוש נובמבר נכנסה, ושמכתב השחרור מהמעסיק נקלט (הסטטוס של הפיצויים בקרן "משוחרר").</p>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="pen-keren">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">קרן השתלמות: נשארת, לבדוק ותק ונזילות</span><span class="due soft">לא דחוף</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="pen-keren">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">קרן השתלמות: נשארת, לבדוק ותק ונזילות</span><span class="due soft">לא דחוף</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>הקרן ממשיכה להתנהל ולצבור תשואה בלי הפקדות. אחרי 6 שנות ותק היא נזילה. אין צורך למשוך. אפשר להמשיך להפקיד כעצמאי (עם הטבת מס) אם יהיו הכנסות עצמאיות.</p>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="pen-ins">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">ביטוחים קולקטיביים דרך המעסיק: מועד פקיעה וזכות המשכיות</span><span class="due soft">דצמבר</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="pen-ins">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">ביטוחים קולקטיביים דרך המעסיק: מועד פקיעה וזכות המשכיות</span><span class="due soft">דצמבר</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>ביטוח בריאות/חיים קבוצתי נגמר עם סיום ההעסקה (לפעמים עם תקופת חסד). בפוליסות קולקטיביות יש בדרך כלל זכות לעבור לפוליסה פרטית בלי חיתום תוך חלון זמן מוגדר. לבקש מ‑HR את פרטי הסוכן ואת מועד הפקיעה.</p>
       </div>
-    </details>
+    </details></div>
 
   </div>
 </section>
@@ -470,20 +475,20 @@
   <p class="when">לא דחוף, אבל שווה כסף.</p>
   <div class="items">
 
-    <details data-id="oth-arnona">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">הנחה בארנונה לפי מבחן הכנסה (הרשות המקומית)</span><span class="due soft">דצמבר</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="oth-arnona">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">הנחה בארנונה לפי מבחן הכנסה (הרשות המקומית)</span><span class="due soft">דצמבר</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
         <p>תקנות ההסדרים מאפשרות הנחה לפי הכנסה ממוצעת לנפש בשלושת החודשים האחרונים. דמי אבטלה נחשבים הכנסה, אבל ירידה חדה מהשכר הקודם יכולה להכניס למדרגה. להגיש במחלקת הגבייה של העירייה עם אישורי הביטוח הלאומי.</p>
         <div class="src"><span>מקורות</span><a href="https://www.kolzchut.org.il/he/הנחה_בארנונה_לבעלי_הכנסה_נמוכה">כל זכות: הנחה בארנונה לבעלי הכנסה נמוכה</a></div>
       </div>
-    </details>
+    </details></div>
 
-    <details data-id="oth-health">
-      <summary><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><span class="title">קופת חולים: אין פעולה</span><span class="due soft">—</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
+    <div class="row"><button class="check" type="button" role="checkbox" aria-checked="false" aria-label="סמן כבוצע"><svg aria-hidden="true" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7-7"/></svg></button><details data-id="oth-health">
+      <summary><span class="slot" aria-hidden="true"></span><span class="title">קופת חולים: אין פעולה</span><span class="due soft">—</span><svg class="chev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="body">
-        <p>דמי ביטוח בריאות מנוכים מדמי האבטלה, הכיסוי הבסיסי נמשך. ביטוח משלים (שב"ן) ממשיך דרך הוראת הקבע הפרטית.</p>
+        <p>דמי ביטוח בריאות מנוכים מדמי האבטלה, הכיסוי הבסיסי נמשך. ביטוח משלים (שב"ן) ממשיך אם הוא משולם בהוראת קבע פרטית.</p>
       </div>
-    </details>
+    </details></div>
 
   </div>
 </section>
@@ -513,7 +518,8 @@
 (function(){
   var KEY = 'offboarding-2026';
   var state = {};
-  try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { state = {}; }
+  if (!state || typeof state !== 'object') state = {};
 
   var items = Array.prototype.slice.call(document.querySelectorAll('details[data-id]'));
   var bar = document.getElementById('bar'), count = document.getElementById('count');
@@ -524,20 +530,19 @@
     items.forEach(function(d){
       var id = d.getAttribute('data-id'), on = !!state[id];
       d.classList.toggle('done', on);
-      d.querySelector('.check').setAttribute('aria-checked', on ? 'true' : 'false');
+      d.parentNode.querySelector('.check').setAttribute('aria-checked', on ? 'true' : 'false');
       if (on) done++;
     });
     count.textContent = done + ' / ' + items.length;
     bar.style.width = (items.length ? (done / items.length * 100) : 0) + '%';
   }
   items.forEach(function(d){
-    var btn = d.querySelector('.check');
+    var btn = d.parentNode.querySelector('.check');
+    btn.setAttribute('aria-label', 'בוצע: ' + d.querySelector('.title').textContent);
     btn.addEventListener('click', function(ev){
-      ev.preventDefault(); ev.stopPropagation();
       var id = d.getAttribute('data-id');
       state[id] = !state[id]; save(); render();
     });
-    btn.addEventListener('keydown', function(ev){ if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); ev.stopPropagation(); btn.click(); } });
   });
   document.getElementById('openAll').addEventListener('click', function(){ items.forEach(function(d){ d.open = true; }); });
   document.getElementById('closeAll').addEventListener('click', function(){ items.forEach(function(d){ d.open = false; }); });

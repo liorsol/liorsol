@@ -562,6 +562,10 @@ html { touch-action: pan-x pan-y; }
     border-block-end: 0;
   }
 
+  /* Most sessions had no limit: no dangling label, and the cell above it is then the card's last. */
+  #history .table-wrap table.table td:empty { display: none; }
+  #history .table-wrap table.table td:has(+ td:empty) { border-block-end: 0; }
+
   /* The label is generated content, not a second row of markup, so it carries no meaning of its
      own the way the ⚠/✓ prefixes above do not — it repeats a string the view already rendered
      once, in the one header row this rule hides. font-weight only: colour is a theme's.

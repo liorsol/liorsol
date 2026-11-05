@@ -239,6 +239,13 @@ never carry over onto the next charge. An unarmed cron tick is one D1 read and *
 calls**. Ten-minute resolution means a stop can land up to ~0.6 kWh past the target; that was
 accepted rather than sampling faster.
 
+**The `הגבלה` column on `#/history` is derived, not stored.** `views/session-limits.js` replays
+the `events` rows the round already holds through one armed slot and attributes each closing row
+to a session, plus `/api/limit` for the one in progress. No fetch and no backend change, but
+events are capped at 300, so older sessions read as having had no limit. A `limit_clear` of
+`ended` matches only a session already stopped by that tick, so if the cached history still shows
+that session live the cell stays empty until history catches up.
+
 **`#/log` is the action log**: one D1 `events` row per thing the private Worker *did* — start,
 stop, automatic stop, limit set/cleared, sign-in, revoke, contact edit, credential install —
 filterable by type, client-side. Reads and refreshes are not actions and are not logged. It is

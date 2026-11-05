@@ -220,6 +220,28 @@ export function isLiveSession(session) {
   );
 }
 
+// Some upstream stamps carry no zone designator at all. Every one of them is UTC, but
+// JS parses a naked date-time as *viewer-local*, which silently shifts it by the whole
+// UTC offset. Pin the zone before parsing.
+export function toMs(iso) {
+  if (typeof iso !== 'string' || !iso) return NaN;
+  return Date.parse(/(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : iso + 'Z');
+}
+
+// True UTC first: the period edges are the viewer's own clock.
+export const startMs = (row) => {
+  const ms = toMs(row.startedAt || row.deviceStartDate);
+  return Number.isFinite(ms) ? ms : toMs(row.startedLocal || row.deviceLocalStartDate);
+};
+
+// Infinity while live. The local stop stamps are wall-clock, so they are no use against a true
+// instant: with no UTC stamp the duration is the better answer, and NaN means nobody knows.
+export function stopMs(row) {
+  if (isLiveSession(row)) return Infinity;
+  const ms = toMs(row.stoppedAt || row.deviceStopDate);
+  return Number.isFinite(ms) ? ms : startMs(row) + Number(row.durationInSeconds ?? NaN) * 1000;
+}
+
 // ── Refresh — user-pressed only ──
 // The only call that forces an upstream fetch regardless of cache age, and the only mechanism
 // there is: nothing else in this file may grow a way to bypass the server's age rule. Wire it to

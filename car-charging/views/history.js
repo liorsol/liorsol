@@ -17,8 +17,9 @@
 // The one definition of a live session, shared with views/tariff.js and views/controls.js —
 // this table used to carry its own, a third spelling of the same judgement. See the comment on
 // the predicate in api.js for why a row that has ended is a normal thing to find.
-import { isLiveSession } from '../api.js';
+import { isLiveSession, startMs, toMs } from '../api.js';
 import { costPerKwh, duration, ils, n, numeric, numericUtc, stopReasonKey, stopReasonLabel } from './he.js';
+import { limitCell, sessionLimits } from './session-limits.js';
 
 // ── pure metrics ────────────────────────────────────────────────────────────
 
@@ -93,14 +94,6 @@ function inset(root, node, top) {
   return node;
 }
 
-// Some upstream stamps carry no zone designator at all. Every one of them is UTC, but
-// JS parses a naked date-time as *viewer-local*, which silently shifts it by the whole
-// UTC offset. Pin the zone before parsing.
-function toMs(iso) {
-  if (typeof iso !== 'string' || !iso) return NaN;
-  return Date.parse(/(Z|[+-]\d{2}:?\d{2})$/.test(iso) ? iso : iso + 'Z');
-}
-
 // The payload's *local* stamps are wall-clock stamped as if UTC (API-NOTES §5), so they
 // are formatted in UTC to read back as the charger's local time. A true-UTC stamp falls
 // back to the viewer's own zone.
@@ -129,6 +122,7 @@ const COLUMNS = [
   ['ממוצע (₪/kWh)', true],
   ['הספק ממוצע (kW)', true],
   ['סיבת עצירה', false],
+  ['הגבלה', false],
 ];
 
 function emptyBlock(title, hint, isError) {
@@ -185,12 +179,6 @@ export function periodEnd(p, now) {
 // A row with no readable start is in "all" and in no bounded period.
 const inPeriod = (row, from, to) =>
   from === -Infinity || (startMs(row) >= from && startMs(row) < to);
-
-// True UTC first: the period edges are the viewer's own clock.
-const startMs = (row) => {
-  const ms = toMs(row.startedAt || row.deviceStartDate);
-  return Number.isFinite(ms) ? ms : toMs(row.startedLocal || row.deviceLocalStartDate);
-};
 
 function totals(rows) {
   let kwh = 0, paidInc = 0, paidEx = 0;
@@ -273,6 +261,8 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
   thead.appendChild(hrow);
   table.appendChild(thead);
 
+  // From every row, not the filtered ones: a filter must not change which session a limit lands on.
+  const limits = sessionLimits(app.events?.events, all, app.limit?.limit);
   const tbody = h('tbody');
   for (const row of rows) {
     const tr = h('tr');
@@ -293,6 +283,7 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
     if (reason) chip.title = String(reason);
     td.appendChild(chip);
     tr.appendChild(td);
+    tr.appendChild(limitCell(limits.get(row)));
     // The card layout's labels, from the same list the header came from. One loop after the
     // row is built beats threading a label through six append calls.
     for (let i = 0; i < tr.children.length; i++) tr.children[i].dataset.label = COLUMNS[i][0];

@@ -78,8 +78,8 @@ test('every figure the card shows came out of the payload under the name the pay
   assert.doesNotMatch(painted, /\b80\b/, 'the card re-added the parts instead of printing the total it was sent');
 
   assert.match(painted, /40/, 'the energy figure is missing');
-  assert.match(painted, /30/, 'the energy cost is missing');
-  assert.match(painted, /20/, 'the standing charge is missing -- it is why the total is not the energy cost');
+  assert.match(painted, /35\.40/, 'the energy cost is missing (30 ex-VAT at 18%)');
+  assert.match(painted, /23\.60/, 'the standing charge is missing -- it is why the total is not the energy cost');
   assert.match(painted, /RN-0001/, 'the operator’s document number is missing');
   assert.match(painted, /18%/, 'the VAT rate is missing');
 });

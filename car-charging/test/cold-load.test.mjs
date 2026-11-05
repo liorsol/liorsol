@@ -141,7 +141,7 @@ test('the cached row rides out with the 503 and is painted under the banner', as
   }
 
   // The data itself, not merely "something painted".
-  assert.match(text(panel('tariff')), /0\.4500/, 'the cached tariff did not reach the panel');
+  assert.match(text(panel('tariff')), /0\.5310/, 'the cached tariff did not reach the panel');
   assert.match(text(panel('history')), /31\.4/, 'the cached session list did not reach the panel');
 
   // The age is the ROW's, not the round's: a page that printed "now" here would claim data is
@@ -190,7 +190,7 @@ test('an unreachable charger is not reported to the owner as a dead credential',
     assert.equal(hasClass(panel(id), 'empty empty--error'), false, `#${id} threw away the cached row`);
     assert.ok(hasClass(panel(id), 'stale__flag'), `#${id} shows cached data without marking it stale`);
   }
-  assert.match(text(panel('tariff')), /0\.4500/, 'the cached tariff did not survive a link fault');
+  assert.match(text(panel('tariff')), /0\.5310/, 'the cached tariff did not survive a link fault');
 
   // Locked, for a reason that names this state and neither of the other two.
   assert.equal(button(panel('controls'), 'עצירה').disabled, true);

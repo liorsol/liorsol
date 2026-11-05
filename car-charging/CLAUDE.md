@@ -144,6 +144,7 @@ In this directory — the whole public half, a Cloudflare Pages project, no buil
 ```
 car-charging/index.html                  the markup shell: the menu and seven empty view sections
 car-charging/{app.js,api.js,style.css}   app shell + hash router, transport, the BASE sheet
+car-charging/manifest.webmanifest        installable-app manifest; icons/ holds the PNGs it and index.html link
 car-charging/theme.js                    which stylesheet the page wears; loaded before app.js
 car-charging/themes/<slug>.{css,js}      the six designs; classic is the default and the way back
 car-charging/THEMES.md                   the contract a theme is written against
@@ -221,6 +222,12 @@ invented here — read that file before changing this one.
   `.stat-grid--period` in `style.css`. A filter press fetches nothing, same as a menu press. Its
   table header wraps to two lines and the themes' 620–680px table minimum is overridden there, so
   between 620px and 900px (a phone held sideways) the table fits instead of scrolling sideways.
+
+**It is an installable app (manifest + icons) and deliberately has no service worker, no offline
+mode.** Zoom is off (viewport meta, root `touch-action`, and `gesturestart` in `theme.js` for iOS),
+form controls are 16px below 900px so iOS does not zoom on focus. Every price shown is
+VAT-inclusive via `inclVat()` in `views/tariff.js`; with no rate in the data it stays labelled
+`לפני מע״מ`. Invoices are newest first; history and invoices show average ₪ per kWh (`costPerKwh`).
 
 **The charge limit (`#/status`, `views/limit.js`) writes a number and nothing else.** "Stop by
 itself after N kWh" is enforced by a **cron on the private Worker** (every ten minutes), which

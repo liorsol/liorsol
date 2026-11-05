@@ -121,6 +121,10 @@ function formatter(digits, currency) {
 export const n = (value, digits = 2) =>
   (Number.isFinite(value) ? formatter(digits, false).format(value) : '—');
 
+/** Average cost per kWh, or null when either figure is missing or the energy is not positive. */
+export const costPerKwh = (cost, kwh) =>
+  (Number.isFinite(cost) && Number.isFinite(kwh) && kwh > 0 ? cost / kwh : null);
+
 /**
  * ₪ in prose. Intl's he-IL currency output is self-fencing — it carries its own directional
  * marks — so it survives being dropped into a Hebrew sentence without a wrapper. Table cells and

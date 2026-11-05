@@ -91,6 +91,15 @@ body {
 img, svg { max-width: 100%; display: block; }
 button, input, textarea, select { font: inherit; color: inherit; }
 
+/* App-like: no pinch or double-tap zoom, scrolling untouched. Inherited by every descendant. */
+html { touch-action: pan-x pan-y; }
+
+/* iOS zooms the page on focus of any control under 16px. The :root prefix outranks the
+   themes' single-class sizes (.input, .themeswitch__select) without !important. */
+@media (max-width: 899px) {
+  :root :is(input, select, textarea) { font-size: 16px; }
+}
+
 /* app.js hides real destinations with `el.hidden` — the contact menu item when
    the card is unconfigured, and the whole rail plus its handle on a signed-out
    page. ANY author declaration of `display` beats the UA sheet's `[hidden]`,

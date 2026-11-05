@@ -24,7 +24,7 @@
 // style="…" attribute, silently — the same way the base views set --start/--end/--at/--pct.
 
 import { isLiveSession } from '../api.js';
-import { classifySuspension, liveSlice, nextSlice, priceTier, tierLead } from '../views/tariff.js';
+import { classifySuspension, inclVat, liveSlice, nextSlice, priceTier, tierLead } from '../views/tariff.js';
 import { STANDING_NOTE } from '../views/controls.js';
 import { connection, duration, ils, n, relative, statusClass, statusLabel, time } from '../views/he.js';
 
@@ -255,17 +255,18 @@ function sessionStart(session, nowMs) {
 
 // ── the hero: what a kWh costs this minute ──
 
-function hero(slice, top, low, vat) {
+function hero(slice, top, low, slices) {
   const box = h('div', 'tariff__hero');
 
   const window = h('div', 'tariff__window');
   if (slice.name) window.appendChild(h('span', 'tariff__window-name', String(slice.name)));
   box.appendChild(window);
-  box.appendChild(h('span', 'tariff__lbl', 'לפני מע״מ'));
-
   const price = num(slice.price);
+  const shown = inclVat(slice, slices);
+  box.appendChild(h('span', 'tariff__lbl', shown.label));
+
   const figure = h('div', 'tariff__figure');
-  figure.appendChild(h('span', 'tariff__figure-n', price === null ? '—' : n(price, 4)));
+  figure.appendChild(h('span', 'tariff__figure-n', shown.price === null ? '—' : n(shown.price, 4)));
   figure.appendChild(h('span', 'tariff__figure-u', '₪ / kWh'));
   box.appendChild(figure);
 
@@ -277,13 +278,7 @@ function hero(slice, top, low, vat) {
     cells.appendChild(c);
   };
 
-  // Every figure below is derived from the payload and nothing is assumed: no VAT rate in the
-  // data means the cell says so rather than quietly showing the pre-VAT price twice.
-  if (price !== null && vat !== null) {
-    cell('כולל מע״מ (' + n(vat, 0) + '%)', n(price * (1 + vat / 100), 4) + ' ₪/kWh');
-  } else {
-    cell('כולל מע״מ', 'אין שיעור מע״מ בנתונים');
-  }
+  if (shown.inc) cell('לפני מע״מ', n(price, 4) + ' ₪/kWh');
   // Nothing to compare against with a single flat rate, so the comparison is simply absent
   // rather than a ×1.00 that implies a spread the calendar never published.
   if (price !== null && top !== null && top > 0) {
@@ -315,10 +310,11 @@ function flipLine(slices, nowMs) {
     return line;
   }
   const price = num(live.price);
+  const shown = inclVat(live, slices);
   line.appendChild(document.createTextNode(
     tierLead(price, slices)
     + (live.name ? ' (' + String(live.name) + ')' : '')
-    + (price === null ? '' : ', ' + ils(price, 4) + ' ל־kWh לפני מע״מ')
+    + (price === null ? '' : ', ' + ils(shown.price, 4) + ' ל־kWh ' + shown.label)
     + ' — '));
   if (next) {
     const at = toMs(next.from);
@@ -348,7 +344,7 @@ function strip(slices, nowMs, session) {
   // out. There is no current price to put in the hero, so there is no hero: inventing one is the
   // single thing this panel must never do. The plot still shows what WAS published, and the
   // sentence at the foot says the rest.
-  if (live) box.appendChild(hero(live, top, low, vatOf(slices)));
+  if (live) box.appendChild(hero(live, top, low, slices));
   if (slices.length) box.appendChild(stepProfile(slices, nowMs, top, session));
 
   // One key per distinct price, with the real number and its VAT basis.
@@ -358,12 +354,13 @@ function strip(slices, nowMs, session) {
     const p = num(s.price);
     if (p === null || seen.has(p)) continue;
     seen.add(p);
+    const shown = inclVat(s, slices);
     const name = s.name ? ' — ' + String(s.name) : '';
     // ils() is Intl's he-IL currency output, which carries its own directional marks, so the
     // figure survives sitting in front of Hebrew. "kWh" stays the Latin SI symbol, here and in
     // every table header and tile.
     legend.appendChild(h('span', 'tariff__key tariff__key--' + tier(p, slices),
-      ils(p, 4) + ' ל־kWh, לפני מע״מ' + name));
+      ils(shown.price, 4) + ' ל־kWh, ' + shown.label + name));
   }
   if (legend.childNodes.length) box.appendChild(legend);
 

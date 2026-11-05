@@ -235,3 +235,9 @@ export function mountSwitcher(el, repaint) {
 // Runs on import, before app.js has evaluated. Everything above is pure; this line is the only
 // side effect, and it is the one that has to happen as early as the CSP allows.
 apply(stored());
+
+// iOS Safari ignores user-scalable=no and touch-action for pinch; these gesture events are the
+// only thing that stops it. Not a revalidation event: nothing here fetches.
+for (const type of ['gesturestart', 'gesturechange']) {
+  document.addEventListener(type, (event) => event.preventDefault());
+}

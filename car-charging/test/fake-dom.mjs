@@ -172,6 +172,7 @@ export function installDocument() {
     },
     head,
     documentElement,
+    addEventListener() {},
     // A node that has been taken OUT of the tree is not one this can find, exactly as in a
     // browser. That is not a detail: signed out cold, app.js detaches all seven `.view` sections
     // from <main>, and any hash change then asks for one of them by id -- a bookmarked

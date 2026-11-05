@@ -32,7 +32,7 @@
 
 import { isLiveSession } from '../api.js';
 import { connection, ils, n, relative, statusClass, statusKey, statusLabel, time } from '../views/he.js';
-import { liveSlice, nextSlice, priceTier, render as renderTariff } from '../views/tariff.js';
+import { inclVat, liveSlice, nextSlice, priceTier, render as renderTariff } from '../views/tariff.js';
 import { STANDING_NOTE } from '../views/controls.js';
 
 // ── DOM helpers: textContent and classList only ──
@@ -74,12 +74,12 @@ const hasClass = (node, name) => String(node?.className || '').split(/\s+/).incl
 const money = (value) => bdi('ed-money', ils(value, 4));
 const clock = (ms) => bdi('ed-clock', time(ms));
 const unit = (text) => bdi('ed-unit', text);
-const vat = () => h('span', 'ed-lead__vat', ' לפני מע״מ');
+const vat = (label) => h('span', 'ed-lead__vat', ' ' + label);
 
 // "kWh", not a second Hebrew spelling of the unit: views/he.js keeps one spelling of it across
 // the page -- every table header and every tile -- and a prose-only variant here would be a
 // second thing to keep in step. It is also the correct symbol: the price is per kilowatt HOUR.
-const perKwh = (price) => [' ב־', money(price), ' ל־', unit('kWh'), vat()];
+const perKwh = (shown) => [' ב־', money(shown.price), ' ל־', unit('kWh'), vat(shown.label)];
 
 /** The cable, in he.js's own words. `Available` uses the title: its note points at the tariff
  *  strip "above", which is true where the base renders it and would not be true up here. */
@@ -134,13 +134,14 @@ function leadOf(view, slices, nowMs) {
 
   const live = liveSlice(slices, nowMs);
   const price = live ? number(live.price) : null;
+  const shown = live ? inclVat(live, slices) : null;
 
   const head = [];
   const deck = [];
 
   if (running && charging) {
     // The one sentence this whole design was drawn around.
-    head.push('הרכב נטען כרגע', ...(price === null ? [] : perKwh(price)), '.');
+    head.push('הרכב נטען כרגע', ...(price === null ? [] : perKwh(shown)), '.');
   } else if (running) {
     // A charge is open but the connector is not reporting `Charging`: it may be withholding, or
     // it may not have said. Both facts get said, in that order, neither standing in for the other.
@@ -151,7 +152,7 @@ function leadOf(view, slices, nowMs) {
   }
 
   if (!(running && charging) && price !== null) {
-    deck.push(['החשמל עכשיו ', money(price), ' ל־', unit('kWh'), ' לפני מע״מ.']);
+    deck.push(['החשמל עכשיו ', money(shown.price), ' ל־', unit('kWh'), ' ' + shown.label + '.']);
   }
 
   const when = flip(slices, live, price, nowMs);
@@ -198,7 +199,7 @@ function timetable(strip, slices, nowMs, dropFlip) {
   if (rows.length) {
     const rate = vatRate(rows);
     box.append(put(h('p', 'ed-sched__kicker'), [
-      'מדרגות התעריף. המחירים לפני מע״מ',
+      'מדרגות התעריף. המחירים ' + inclVat(rows[0], rows).label,
       ...(rate === null ? [] : [' בשיעור ', bdi(null, n(rate, 0) + '%')]),
       '.',
     ]));
@@ -229,12 +230,12 @@ function timetable(strip, slices, nowMs, dropFlip) {
       row.append(first);
       if (named) row.append(put(h('td'), [hours]));
 
-      const price = number(slice.price);
+      const price = inclVat(slice, rows).price;
       // The tier, in this theme's own language: a weight ladder on the rate itself rather than
       // a coloured band. The base strip's third modifier (`--mid`) has no timetable to live in,
       // but the third rate is real and this table is where this theme shows it — and the figure
       // beside it is the non-colour half of the difference, permanently.
-      row.append(h('td', 'num ed-rate ed-rate--' + rankOf(rows, price), price === null ? '' : n(price, 4)));
+      row.append(h('td', 'num ed-rate ed-rate--' + rankOf(rows, number(slice.price)), price === null ? '' : n(price, 4)));
       body.append(row);
     }
 

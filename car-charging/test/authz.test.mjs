@@ -484,7 +484,7 @@ const DIR = new URL('../', import.meta.url);
 
 // The site itself. Anything else on the hostname is a file someone reads to learn how this
 // is wired. Widen this only for something the page genuinely fetches.
-const IS_PAGE = /\.(html|css|js)$/;
+const IS_PAGE = /\.(html|css|js|webmanifest|png)$/;
 
 // Withheld by the uploader's own fixed ignore list, so they never become assets.
 const NOT_UPLOADED = new Set(['_headers', '_redirects', '_routes.json', '_worker.js', 'functions', '.wrangler', '.git', 'node_modules']);

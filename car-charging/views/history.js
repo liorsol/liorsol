@@ -18,7 +18,7 @@
 // this table used to carry its own, a third spelling of the same judgement. See the comment on
 // the predicate in api.js for why a row that has ended is a normal thing to find.
 import { isLiveSession } from '../api.js';
-import { duration, n, numeric, numericUtc, stopReasonKey, stopReasonLabel } from './he.js';
+import { costPerKwh, duration, ils, n, numeric, numericUtc, stopReasonKey, stopReasonLabel } from './he.js';
 
 // ── pure metrics ────────────────────────────────────────────────────────────
 
@@ -126,6 +126,7 @@ const COLUMNS = [
   ['משך', false],
   ['אנרגיה (kWh)', true],
   ['עלות ₪', true],
+  ['ממוצע (₪/kWh)', true],
   ['הספק ממוצע (kW)', true],
   ['סיבת עצירה', false],
 ];
@@ -208,6 +209,8 @@ function periodRow(label, t) {
   const head = h('div', 'stat-grid__head');
   head.appendChild(h('div', 'stat__label', label));
   head.appendChild(h('div', 'stat__label', n(t.count, 0) + ' טעינות'));
+  const avg = costPerKwh(t.paid, t.kwh);
+  if (avg !== null) head.appendChild(h('div', 'stat__label', 'ממוצע ' + ils(avg) + ' ל־kWh'));
   grid.appendChild(head);
   grid.appendChild(tile(n(t.kwh, 1), 'kWh', 'אנרגיה'));
   grid.appendChild(tile(n(t.paid), '₪', t.inc ? 'כולל מע״מ' : 'לפני מע״מ'));
@@ -278,6 +281,7 @@ export function render(el, state, ctx) {   // eslint-disable-line no-unused-vars
     tr.appendChild(cell('td', duration(num(row.durationInSeconds))));
     tr.appendChild(cell('td', n(num(row.totalEnergy) || 0), true));
     tr.appendChild(cell('td', n(num(row.totalPaymentCostIncVat)), true));
+    tr.appendChild(cell('td', n(costPerKwh(num(row.totalPaymentCostIncVat), num(row.totalEnergy))), true));
     tr.appendChild(cell('td', n(effectiveKw(row)), true));
 
     const td = h('td');

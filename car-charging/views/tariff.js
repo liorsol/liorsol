@@ -323,13 +323,14 @@ function tariffStrip(slices, nowMs) {
     const p = num(s.price);
     if (p === null || seen.has(p)) continue;
     seen.add(p);
+    const shown = inclVat(s, slices);
     const name = s.name ? ' — ' + String(s.name) : '';
     // ils() is Intl's he-IL currency output, which carries its own directional marks, so the
     // figure survives sitting in front of Hebrew without a wrapper of its own. "kWh" stays the
     // Latin SI symbol here and in every table header and tile: one spelling of the unit across
     // the page beats a second Hebrew one that has to be kept in step with it.
     legend.appendChild(h('span', 'tariff__key tariff__key--' + modifier(p),
-      ils(p, 4) + ' ל־kWh, לפני מע״מ' + name));
+      ils(shown.price, 4) + ' ל־kWh, ' + shown.label + name));
   }
   if (legend.childNodes.length) box.appendChild(legend);
 
@@ -352,10 +353,11 @@ function flipLine(slices, nowMs) {
     return line;
   }
   const price = num(live.price);
+  const shown = inclVat(live, slices);
   line.appendChild(document.createTextNode(
     tierLead(price, slices)
     + (live.name ? ' (' + String(live.name) + ')' : '')
-    + (price === null ? '' : ', ' + ils(price, 4) + ' ל־kWh לפני מע״מ')
+    + (price === null ? '' : ', ' + ils(shown.price, 4) + ' ל־kWh ' + shown.label)
     + ' — '));
   if (next) {
     const at = toMs(next.from);
@@ -459,12 +461,27 @@ function explainer(session, slices, nowMs) {
   return box;
 }
 
-function vatOf(slices) {
+export function vatOf(slices) {
   for (const s of slices || []) {
     const v = num(s && s.vat);
     if (v !== null && v >= 0) return v;
   }
   return null;
+}
+
+/**
+ * A slice's price as the owner pays it. Uses the slice's own rate, else the calendar's first.
+ * With no rate anywhere the ex-VAT figure comes back labelled as such, never as inclusive.
+ * Display only: tiers are classified on the raw price, which a uniform multiplier cannot reorder.
+ * @returns {{price: number|null, inc: boolean, label: string}}
+ */
+export function inclVat(slice, slices) {
+  const price = num(slice && slice.price);
+  const own = num(slice && slice.vat);
+  const rate = own !== null && own >= 0 ? own : vatOf(slices);
+  return price === null || rate === null
+    ? { price, inc: false, label: 'לפני מע״מ' }
+    : { price: price * (1 + rate / 100), inc: true, label: 'כולל מע״מ' };
 }
 
 function sessionBlock(session, slices, nowMs) {

@@ -699,7 +699,7 @@ test('gauge: three rates are three inks on the ring, and the legend agrees with 
   // The live price is on the hub, from the slice that actually covers now.
   const hub = withClass(el, 'gauge__hub-fig')[0];
   assert.ok(hub, 'the hub printed no figure over a calendar that covers this moment');
-  assert.match(hub.textContent, /0\.9273/, 'the hub is not showing the slice that is running');
+  assert.match(hub.textContent, /1\.0942/, 'the hub is not showing the slice that is running (0.9273 plus 18% VAT)');
   assert.equal(withClass(el, 'gauge__hub-tier')[0]?.textContent, 'גבע',
     'the hub did not name the window from the calendar\'s own word for it');
 });

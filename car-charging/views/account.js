@@ -9,7 +9,7 @@
 // Mount contract (PLAN §7.10): render(el, state, ctx) with
 //   { state, history, invoices, expired, fetchedAt, stale }; any payload may be null.
 
-import { date, dayTime, n, statusClass, statusLabel } from './he.js';
+import { costPerKwh, date, dayTime, n, statusClass, statusLabel } from './he.js';
 
 function num(v) {
   if (v === null || v === undefined || v === '') return null;
@@ -166,6 +166,9 @@ function chargerBlock(charger) {
 // the owner goes to find out what they were actually charged. `energy + fees + VAT` is not
 // re-added here either; the operator's own `totalIncVat` is what a card shows.
 //
+// The owner asked for three derived figures since: the tiles scaled to VAT-inclusive by the
+// operator's own rate, the per-kWh average, and newest-first order. The total stays the operator's.
+//
 // THE DOCUMENT IS THE OPERATOR'S TOO. `receiptUrl` is a link to a PDF they issued, and the page
 // links to it rather than rendering an invoice of its own — a generated one would be a document
 // that looks official and answers to nobody. It opens in a new tab: `download` is ignored on a
@@ -210,15 +213,21 @@ function figures(r) {
   const grid = h('div', 'stat-grid');
   const total = num(r.totalIncVat);
   const kwh = num(r.energyKwh);
+  // The operator's rate when it sent one; otherwise the ex-VAT figure keeps its honest label.
+  const rate = num(r.vatRate);
+  const gross = rate === null || rate < 0 ? 1 : 1 + rate / 100;
+  const basis = gross === 1 ? 'לפני מע״מ' : 'כולל מע״מ';
   const fees = num(r.feesExcVat);
   const energy = num(r.energyExcVat);
 
   if (total !== null) grid.appendChild(tile(n(total), '₪', 'סה״כ חויב — כולל מע״מ'));
   if (kwh !== null) grid.appendChild(tile(n(kwh, 1), 'kWh', 'אנרגיה בתקופה'));
-  if (energy !== null) grid.appendChild(tile(n(energy), '₪', 'עלות אנרגיה — לפני מע״מ'));
+  if (energy !== null) grid.appendChild(tile(n(energy * gross), '₪', 'עלות אנרגיה — ' + basis));
   // The standing charge is why the total is not the energy cost, and it is the figure most
   // likely to be the surprise on the bill, so it is a tile rather than a footnote.
-  if (fees !== null) grid.appendChild(tile(n(fees), '₪', 'דמי מנוי — לפני מע״מ'));
+  if (fees !== null) grid.appendChild(tile(n(fees * gross), '₪', 'דמי מנוי — ' + basis));
+  const avg = costPerKwh(total, kwh);
+  if (avg !== null) grid.appendChild(tile(n(avg), '₪', 'ממוצע בתקופה ל־kWh — כולל מע״מ'));
   return grid.children.length ? grid : null;
 }
 
@@ -230,7 +239,7 @@ function footnote(r) {
   const rate = num(r.vatRate);
   if (vat !== null) parts.push('מע״מ ' + n(vat) + ' ₪' + (rate === null ? '' : ' (' + n(rate, 0) + '%)'));
   const excl = num(r.totalExcVat);
-  if (excl !== null) parts.push('לפני מע״מ ' + n(excl) + ' ₪');
+  if (excl !== null && (vat === null || num(r.totalIncVat) === null)) parts.push('לפני מע״מ ' + n(excl) + ' ₪');
   if (r.receiptNumber) parts.push('חשבונית ' + String(r.receiptNumber));
   return parts.length ? h('p', 'btn-note', parts.join(' · ')) : null;
 }
@@ -289,7 +298,12 @@ function invoiceBlock(invoices) {
   }
 
   const box = h('div');
-  for (const r of rows) box.appendChild(spaced(invoiceCard(r), 5));
+  // Newest period first, by its end boundary; a period with no readable end goes last.
+  const endOf = (r) => {
+    const ms = toMs(r.toDate ?? r.accountToDate);
+    return Number.isFinite(ms) ? ms : -Infinity;
+  };
+  for (const r of rows.slice().sort((a, b) => endOf(b) - endOf(a))) box.appendChild(spaced(invoiceCard(r), 5));
   return box;
 }
 

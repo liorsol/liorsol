@@ -34,7 +34,7 @@
 //
 // Nothing here fetches, nothing here sets a timer, nothing here touches `ctx`.
 
-import { render as baseTariff, liveSlice, priceTier } from '../views/tariff.js';
+import { render as baseTariff, inclVat, liveSlice, priceTier } from '../views/tariff.js';
 import { STANDING_NOTE } from '../views/controls.js';
 import { isLiveSession } from '../api.js';
 import { n, statusClass, statusLabel } from '../views/he.js';
@@ -287,10 +287,11 @@ function dial(slices, sessions, nowMs) {
     if (price === null) {
       face.append(svgText('gauge__hub-none', C, C + 4 + drop, 'הפרוסה הזו לא נקבה במחיר'));
     } else {
+      const shown = inclVat(live, slices);
       face.append(
-        svgText('gauge__hub-fig', C, C + 4 + drop, n(price, 4)),
+        svgText('gauge__hub-fig', C, C + 4 + drop, n(shown.price, 4)),
         svgText('gauge__hub-unit', C, C + 28 + drop, '₪ ל־kWh'),
-        svgText('gauge__hub-vat', C, C + 48 + drop, 'לפני מע״מ')
+        svgText('gauge__hub-vat', C, C + 48 + drop, shown.label)
       );
     }
   }

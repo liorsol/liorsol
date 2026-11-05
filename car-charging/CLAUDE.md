@@ -81,6 +81,11 @@ it, or has to change when it changes again.
   login route takes **no address and cannot be made to** — it never reads its request body, and
   the platform binding refuses any other recipient. It always answers `200 {"ok":true}`,
   whatever happened, so nothing is enumerable.
+- **The same mail carries a 10-digit code**, for an installed iOS web app: its cookies are kept apart
+  from Safari's, so a link opened from the mail client signs in the wrong jar. `POST` to the callback
+  route with `{code}` sets the same cookie. The code is derived from the link's row, so it shares the
+  ten-minute expiry and burning either burns both, and five wrong codes an hour from all callers
+  together close that door (the link still works).
 - A followed link sets **`__Host-session`**: an HS256 JWT in an
   `HttpOnly; Secure; SameSite=Lax; Path=/` cookie. `HttpOnly` and not `localStorage`
   specifically because this page closes a contactor — an XSS that can read a token is physical

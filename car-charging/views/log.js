@@ -30,6 +30,7 @@ const DETAILS = {
   owner: 'בוטלה ידנית',
   self: 'הדפדפן הנוכחי',
   no_live_session: 'אין טעינה פעילה',
+  bad_code: 'קוד כניסה שגוי',
 };
 function detailText(e) {
   if (e.detail == null) return '';

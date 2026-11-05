@@ -89,6 +89,10 @@ question about the session cookie, and answers `401 {"error":"auth_required"}` i
 answer is no. There is no edge access policy on this account, and code here must never read an
 edge identity header — see `CLAUDE.md` for why that model is retired and must not be restored.
 
+**Signing in from the installed app.** The sign-in mail also carries a one-time code, because an
+installed iOS app keeps its cookies apart from Safari's and a mailed link cannot reach it. The
+card's `כבר יש לי קוד` button shows the field even after a reload. `CLAUDE.md` has the rules.
+
 ### The private upstream service
 
 The service behind the `PROXY` binding is **not in this repository and never will be**. It

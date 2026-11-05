@@ -27,7 +27,7 @@
 // server just gave.
 //
 // NO AUTOMATIC ANYTHING. No timer, no poll for the link being clicked, no retry after a failed
-// request, and one listener — the click on the one button. A signed-out page left open
+// request, and only press listeners. A signed-out page left open
 // overnight makes zero further calls. Retrying is a press or a reload, both of them the
 // viewer's.
 //
@@ -36,9 +36,14 @@
 // an address that is never sent and never used — and, if it ever were sent, somewhere for a
 // visitor to aim the mail.
 //
+// THE ONE FIELD HERE TAKES THE CODE FROM THE MAIL, and only once a mail can exist. An installed
+// iOS app keeps its cookies apart from Safari's, so a link opened from the mail client signs in
+// Safari and leaves the app signed out. Nothing about the address changes: it is still never
+// asked for, held or sent.
+//
 // textContent only. Nothing in this file builds markup from a string.
 
-import { requestSignInLink } from '../api.js';
+import { requestSignInLink, signInWithCode } from '../api.js';
 
 // ── The four cards ──
 //
@@ -57,6 +62,7 @@ const CARDS = {
       'אין כאן שדה כתובת בכוונה — הדף לא מבקש כתובת ולא שולח אחת.',
     ],
     action: 'שלחו לי קישור כניסה',
+    haveCode: true,
   },
 
   sent: {
@@ -65,9 +71,11 @@ const CARDS = {
     hints: [
       'ביקשנו מהשרת לשלוח קישור כניסה. חפשו אותו בתיבת הדוא״ל, וגם בתיקיית הספאם.',
       'הקישור מחבר את הדפדפן שבו תפתחו אותו, ולכן פתחו אותו במכשיר שבו אתם רוצים לראות את הלוח.',
+      'באפליקציה המותקנת הקישור לא יעזור: הקלידו כאן את הקוד שבמייל.',
       'אם לא הגיע כלום, טענו את הדף מחדש ובקשו שוב.',
     ],
     action: null, // a second press is a reload away; nothing here presses by itself
+    code: true,
   },
 
   // The two failures, and the whole difference between them is whether another press can help.
@@ -106,6 +114,8 @@ const RETRYABLE = new Set([0, 408, 425, 429, 502, 503, 504]);
 // survive into another browser.
 let phase = 'idle';
 let painted = null;
+let codeNote = null; // why the last code was refused; cleared by the next press
+let checking = false;
 
 function make(tag, cls, text) {
   const el = document.createElement(tag);
@@ -127,6 +137,16 @@ function paint(el) {
     press.addEventListener('click', () => onPress(el, press));
     box.append(press);
   }
+  if (card.haveCode) {
+    const have = make('button', 'btn', 'כבר יש לי קוד');
+    have.type = 'button';
+    have.addEventListener('click', () => {
+      phase = 'sent';
+      paint(el);
+    });
+    box.append(have);
+  }
+  if (card.code) box.append(codeForm(el));
 
   const body = make('div', 'panel__body');
   body.append(box);
@@ -135,6 +155,43 @@ function paint(el) {
 
   el.replaceChildren(panel);
   painted = phase;
+}
+
+function codeForm(el) {
+  const form = make('div', 'inline-form');
+  const field = make('div', 'field');
+  const label = make('label', 'field__label', 'קוד מהמייל');
+  const input = make('input', 'input');
+  input.id = 'signin-code';
+  label.htmlFor = input.id;
+  input.inputMode = 'numeric';
+  input.autocomplete = 'one-time-code';
+  input.dir = 'ltr';
+  field.append(label, input);
+  const send = make('button', 'btn btn--primary', 'כניסה עם קוד');
+  send.type = 'button';
+  send.addEventListener('click', () => onCode(el, input, send));
+  form.append(field, send);
+  if (codeNote) form.append(make('p', 'form-error', codeNote));
+  return form;
+}
+
+async function onCode(el, input, send) {
+  if (checking) return;
+  if (!input.value.trim()) return;
+  checking = true;
+  send.disabled = true;
+  send.setAttribute('aria-busy', 'true');
+  const result = await signInWithCode(input.value);
+  checking = false;
+  if (result.ok) {
+    location.reload(); // the session is in the cookie now; a fresh load is the signed-in path
+    return;
+  }
+  codeNote = result.status === 0
+    ? 'הבקשה לא יצאה. בדקו את החיבור ונסו שוב.'
+    : 'הקוד לא התקבל. בדקו אותו, או טענו את הדף ובקשו מייל חדש.';
+  paint(el);
 }
 
 async function onPress(el, press) {
@@ -164,6 +221,7 @@ export function render(el, state) {
       el.replaceChildren();
       phase = 'idle';
       painted = null;
+      codeNote = null;
     }
     return;
   }

@@ -55,6 +55,41 @@ function reset(el) {
   calls.length = 0;
 }
 
+// ── The typed code ──
+
+test('the code field appears only with a mail on its way, and the idle card still reaches it', () => {
+  const el = mount();
+  assert.ok(button(el, 'כבר יש לי קוד'));
+  button(el, 'כבר יש לי קוד').handlers.click();
+  const field = all(el).find((n) => n.tagName === 'input');
+  assert.ok(field, 'no code field after the press');
+  assert.equal(field.autocomplete, 'one-time-code');
+  assert.ok(button(el, 'כניסה עם קוד'));
+  assert.equal(calls.length, 0, 'showing the field sent something');
+  reset(el);
+});
+
+test('a code is posted as JSON; a refusal says so, and a success loads the page signed in', async () => {
+  const el = mount();
+  button(el, 'כבר יש לי קוד').handlers.click();
+  calls.length = 0;
+  all(el).find((n) => n.tagName === 'input').value = '12345 67890';
+  answer = () => Response.json({ ok: false }, { status: 400 });
+  await press(el, 'כניסה עם קוד');
+  assert.equal(calls[0].path, '/api/auth/callback');
+  assert.equal(calls[0].init.method, 'POST');
+  assert.deepEqual(JSON.parse(calls[0].init.body), { code: '12345 67890' });
+  assert.match(text(el), /הקוד לא התקבל/);
+
+  let reloads = 0;
+  globalThis.location = { reload: () => { reloads += 1; } };
+  all(el).find((n) => n.tagName === 'input').value = '1234567890';
+  answer = () => Response.json({ ok: true });
+  await press(el, 'כניסה עם קוד');
+  assert.equal(reloads, 1);
+  reset(el);
+});
+
 // ── The signed-out card ──
 
 test('the signed-out card is a message and a button, with no field of any kind', () => {
@@ -108,7 +143,7 @@ test('the request carries no body, and the card then claims only what it knows',
   // And it was never given an address to reveal.
   assert.doesNotMatch(painted, /@/);
   // Nothing presses again on the viewer's behalf.
-  assert.equal(all(el).some((n) => n.tagName === 'button'), false, 'the sent card kept a button');
+  assert.equal(button(el, 'שלחו לי קישור כניסה'), undefined, 'the sent card kept the send button');
 
   reset(el);
 });

@@ -318,6 +318,12 @@ export async function requestSignInLink() {
   return { ok: sent, status: result.status, error: sent ? null : result.error };
 }
 
+// The same sign-in as a typed code, for an installed app whose cookies a mailed link cannot reach.
+// The session arrives as a cookie on this response, so the caller only has to load the page.
+export async function signInWithCode(code) {
+  return request('/api/auth/callback', { method: 'POST', ...jsonBody({ code }) });
+}
+
 // ── Comments ──
 
 const COMMENT_MODES = ['exclude', 'include', 'only'];

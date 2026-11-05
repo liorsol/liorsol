@@ -278,7 +278,6 @@ function hero(slice, top, low, slices) {
     cells.appendChild(c);
   };
 
-  if (shown.inc) cell('לפני מע״מ', n(price, 4) + ' ₪/kWh');
   // Nothing to compare against with a single flat rate, so the comparison is simply absent
   // rather than a ×1.00 that implies a spread the calendar never published.
   if (price !== null && top !== null && top > 0) {

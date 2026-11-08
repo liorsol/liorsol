@@ -14,6 +14,7 @@
   :root {
     --bg: #f5f6f8; --panel: #ffffff; --line: #e3e6ec; --fg: #1a1f2b; --muted: #5d6676; --faint: #8a93a3;
     --track: #e9ecf1; --gh: #1f2328; --gh-tint: #eef0f3; --cf: #f38020; --cf-tint: #fff1e6;
+    --cl-opus: var(--cl); --cl: #c4623f; --cl-tint: #fbece6; --cl-sonnet: #4f7cc1; --cl-haiku: #2f8f83; --cl-other: #8a93a3;
     --ok: #1a7f4b; --ok-bar: #2da66a; --warn: #a15c00; --warn-bar: #e09b2d; --bad: #b42318; --bad-bar: #e5484d;
     --display: 'Bricolage Grotesque', 'Avenir Next', system-ui, sans-serif;
     --body: 'IBM Plex Sans', system-ui, sans-serif;
@@ -24,6 +25,7 @@
     :root {
       --bg: #0f1218; --panel: #171b23; --line: #262c37; --fg: #e8ebf1; --muted: #a0a8b6; --faint: #6f7888;
       --track: #232935; --gh: #e8ebf1; --gh-tint: #1f242e; --cf: #f6923f; --cf-tint: #2a1e14;
+      --cl: #e08a68; --cl-tint: #2c1d17; --cl-sonnet: #7ba3e0; --cl-haiku: #4cc0b0; --cl-other: #6f7888;
       --ok: #4cc38a; --ok-bar: #3fb37b; --warn: #f0b354; --warn-bar: #e09b2d; --bad: #ff7b72; --bad-bar: #e5484d;
       --shadow: none; color-scheme: dark;
     }
@@ -53,12 +55,14 @@
   .brand .logo { width: 2.25rem; height: 2.25rem; }
   .brand.gh .logo { color: var(--gh); }
   .brand.cf .logo { color: var(--cf); }
+  .brand.cl .logo { color: var(--cl); }
   .brand .who { display: flex; gap: .75rem; align-items: center; }
   .brand .stats { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1rem; }
   .brand .stat .num { font-size: 1.5rem; display: block; line-height: 1.2; }
   .brand::after { content: ""; position: absolute; inset: auto -3rem -5rem auto; width: 12rem; height: 12rem; border-radius: 50%; opacity: .5; pointer-events: none; }
   .brand.gh::after { background: radial-gradient(closest-side, var(--gh-tint), transparent); }
   .brand.cf::after { background: radial-gradient(closest-side, var(--cf-tint), transparent); opacity: 1; }
+  .brand.cl::after { background: radial-gradient(closest-side, var(--cl-tint), transparent); opacity: 1; }
 
   .ring { width: 7.5rem; height: 7.5rem; position: relative; z-index: 1; }
   .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -67,6 +71,7 @@
   .ring .val { stroke-linecap: round; }
   .brand.gh .ring .val { stroke: var(--gh); }
   .brand.cf .ring .val { stroke: var(--cf); }
+  .brand.cl .ring .val { stroke: var(--cl); }
   .ring .lbl { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
   .ring .lbl .num { font-size: 1.15rem; }
   .ring .lbl small { font-size: .68rem; color: var(--muted); max-width: 5.5rem; line-height: 1.2; }
@@ -75,7 +80,11 @@
   .sechead { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
   .sechead svg { width: 1.6rem; height: 1.6rem; }
   .sechead .pill { font-size: .75rem; padding: .15rem .6rem; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
-  .gh-c { color: var(--gh); } .cf-c { color: var(--cf); }
+  .gh-c { color: var(--gh); } .cf-c { color: var(--cf); } .cl-c { color: var(--cl); }
+  .cl-note { margin: 0; font-size: .82rem; color: var(--muted); max-width: 52rem; }
+  .cl-note .warn { color: var(--warn); }
+  .legend i.est { background: repeating-linear-gradient(135deg, var(--cl) 0 2px, var(--cl-tint) 2px 5px); border: 1px solid var(--cl); }
+  .chart rect.est { stroke: var(--cl); stroke-width: 1; }
 
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: 1rem; align-items: start; }
   .card > h3 + .note { margin: .2rem 0 1rem; font-size: .82rem; color: var(--muted); }
@@ -132,6 +141,8 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="logo-gh" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
   <symbol id="logo-cf" viewBox="0 0 24 24"><path fill="currentColor" d="M16.5088 16.8447c.1475-.5068.0908-.9707-.1553-1.3154-.2246-.3164-.6045-.499-1.0615-.5205l-8.6592-.1123a.1559.1559 0 0 1-.1333-.0713c-.0283-.042-.0351-.0986-.021-.1553.0278-.084.1123-.1484.2036-.1562l8.7359-.1123c1.0351-.0489 2.1601-.8868 2.5537-1.9136l.499-1.3013c.0215-.0561.0293-.1128.0147-.168-.5625-2.5463-2.835-4.4453-5.5499-4.4453-2.5039 0-4.6284 1.6177-5.3876 3.8614-.4927-.3658-1.1187-.5625-1.794-.499-1.2026.119-2.1665 1.083-2.2861 2.2856-.0283.31-.0069.6128.0635.894C1.5683 13.171 0 14.7754 0 16.752c0 .1748.0142.3515.0352.5273.0141.083.0844.1475.1689.1475h15.9814c.0909 0 .1758-.0645.2032-.1553l.12-.4268zm2.7568-5.5634c-.0771 0-.1611 0-.2383.0112-.0566 0-.1054.0415-.127.0976l-.3378 1.1744c-.1475.5068-.0918.9707.1543 1.3164.2256.3164.6055.498 1.0625.5195l1.8437.1133c.0557 0 .1055.0263.1329.0703.0283.043.0351.1074.0214.1562-.0283.084-.1132.1485-.204.1553l-1.921.1123c-1.041.0488-2.1582.8867-2.5527 1.914l-.1406.3585c-.0283.0713.0215.1416.0986.1416h6.5977c.0771 0 .1474-.0489.169-.126.1122-.4082.1757-.837.1757-1.2803 0-2.6025-2.125-4.727-4.7344-4.727"/></symbol>
+  <symbol id="logo-cl" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M12 2.5v5.5M12 16v5.5M2.5 12H8M16 12h5.5M5.3 5.3l3.9 3.9M14.8 14.8l3.9 3.9M18.7 5.3l-3.9 3.9M9.2 14.8l-3.9 3.9"/></symbol>
+  <pattern id="hatch-cl" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" style="fill:var(--cl-tint)"/><rect width="2.5" height="6" style="fill:var(--cl)"/></pattern>
 </svg>
 
 <main>
@@ -145,6 +156,7 @@
   <div class="cards" id="brands"></div>
   <section class="provider" id="github"></section>
   <section class="provider" id="cloudflare"></section>
+  <section class="provider" id="claude"></section>
 
   <footer>
     <span>Data in <a href="data.json">data.json</a>, refreshed by <code>node free-usage/update.mjs</code>.</span>
@@ -216,16 +228,16 @@ function ring(p, label) {
 }
 
 // Bars by category, optionally stacked from several keys. Draws to the container's width.
-function barChart(box, rows, { keys, colors, label, valueFmt = fmt, tipLabel }) {
+function barChart(box, rows, { keys, colors, label, valueFmt = fmt, tipLabel, axisFmt = compact, tipBody, attrs, alt, aria, yMax = 1 }) {
   const W = Math.max(280, box.clientWidth), H = 190, m = { t: 8, r: 4, b: 22, l: 40 };
-  const max = Math.max(1, ...rows.map((r) => keys.reduce((s, k) => s + r[k], 0)));
+  const max = Math.max(yMax, ...rows.map((r) => keys.reduce((s, k) => s + r[k], 0)));
   const nice = (() => { const e = 10 ** Math.floor(Math.log10(max)); return Math.ceil(max / e) * e; })();
   const y = (v) => H - m.b - (v / nice) * (H - m.t - m.b);
   const bw = (W - m.l - m.r) / rows.length;
-  const s = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' });
+  const s = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', ...(aria && { 'aria-label': aria }) });
   for (const t of [0, nice / 2, nice]) {
     s.append(svgEl('line', { class: 'grid', x1: m.l, x2: W - m.r, y1: y(t), y2: y(t) }));
-    const tx = svgEl('text', { x: m.l - 6, y: y(t) + 4, 'text-anchor': 'end' }); tx.textContent = compact(t); s.append(tx);
+    const tx = svgEl('text', { x: m.l - 6, y: y(t) + 4, 'text-anchor': 'end' }); tx.textContent = axisFmt(t); s.append(tx);
   }
   const step = Math.ceil(rows.length / Math.floor((W - m.l) / 48));
   rows.forEach((r, i) => {
@@ -233,19 +245,20 @@ function barChart(box, rows, { keys, colors, label, valueFmt = fmt, tipLabel }) 
     const w = Math.min(28, bw * 0.7), x = m.l + i * bw + (bw - w) / 2;
     keys.forEach((k, j) => {
       const v = r[k]; if (!v) return;
-      s.append(svgEl('rect', { class: 'b', x, width: w, y: y(acc + v), height: Math.max(1, y(acc) - y(acc + v)), rx: 3, fill: colors[j], style: `--i:${i}` }));
+      s.append(svgEl('rect', { class: 'b', x, width: w, y: y(acc + v), height: Math.max(1, y(acc) - y(acc + v)), rx: 3, fill: colors[j], style: `--i:${i}`, ...attrs?.(r, j) }));
       acc += v;
     });
     if (i % step === 0) { const tx = svgEl('text', { x: x + w / 2, y: H - 6, 'text-anchor': 'middle' }); tx.textContent = label(r); s.append(tx); }
     const hit = svgEl('rect', { x: m.l + i * bw, y: m.t, width: bw, height: H - m.t - m.b, fill: 'transparent' });
     hit.addEventListener('pointermove', (ev) => {
-      tip.replaceChildren(h('div', { class: 'd' }, tipLabel(r)), ...keys.map((k, j) => h('div', {}, h('span', { style: `color:${colors[j]}` }, '■ '), `${tipNames[j] ?? k}: ${valueFmt(r[k])}`)));
+      tip.replaceChildren(h('div', { class: 'd' }, tipLabel(r)), ...(tipBody ? tipBody(r) : keys.map((k, j) => h('div', {}, h('span', { style: `color:${colors[j]}` }, '■ '), `${tipNames[j] ?? k}: ${valueFmt(r[k])}`))));
       tip.hidden = false;
       const bx = box.getBoundingClientRect();
       tip.style.left = Math.max(0, Math.min(bx.width - tip.offsetWidth, ev.clientX - bx.left + 12)) + 'px';
       tip.style.top = Math.max(0, ev.clientY - bx.top - 50) + 'px';
     });
     hit.addEventListener('pointerleave', () => (tip.hidden = true));
+    if (alt) { const t = svgEl('title'); t.textContent = alt(r); hit.append(t); }
     s.append(hit);
   });
   const tipNames = box.dataset.names ? box.dataset.names.split('|') : [];
@@ -261,8 +274,79 @@ function card(title, note, ...body) {
   return h('div', { class: 'card rise' }, h('h3', {}, title), note ? h('p', { class: 'note' }, note) : null, ...body);
 }
 
+// Claude: model names, stable colours per family (newer versions solid, older ones fade toward the panel).
+const FAMILIES = ['opus', 'sonnet', 'haiku'];
+const family = (id) => FAMILIES.find((f) => id.includes(f)) || 'other';
+const modelVer = (id) => parseFloat(id.replace(/^claude-/, '').replace(/-\d{8}$/, '').split('-').filter((x) => /^\d+$/.test(x)).join('.')) || 0;
+const prettyModel = (id) => {
+  const p = id.replace(/^claude-/, '').replace(/-\d{8}$/, '').split('-'), w = p.find((x) => /^[a-z]/i.test(x)), v = p.filter((x) => /^\d+$/.test(x)).join('.');
+  return w ? w[0].toUpperCase() + w.slice(1) + (v ? ' ' + v : '') : id;
+};
+function modelColors(ids) {
+  // Shade comes from a hash of the id so it stays put as other models appear; clashes within a family move to the next free shade.
+  const order = [...ids].sort((a, b) => FAMILIES.concat('other').indexOf(family(a)) - FAMILIES.concat('other').indexOf(family(b)) || modelVer(b) - modelVer(a));
+  const taken = {};
+  return order.map((id) => {
+    const f = family(id), used = (taken[f] ??= new Set());
+    let k = [...id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % 3;
+    while (used.has(k) && used.size < 3) k = (k + 1) % 3;
+    used.add(k);
+    return { id, name: prettyModel(id), color: k ? `color-mix(in srgb, var(--cl-${f}) ${100 - k * 20}%, var(--panel))` : `var(--cl-${f})` };
+  });
+}
+const usd = (v) => '$' + (v >= 100 ? nf.format(Math.round(v)) : v.toFixed(2));
+const utc = (iso) => new Date(iso).toLocaleString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }) + ' UTC';
+const safeUrl = (u) => (/^https:\/\//.test(u || '') ? u : null);
+
+// Utilisation bars: solid when the real % is known, hatched when it is only an estimate vs the busiest window.
+function utilChart(box, rows, label, tipLabel, aria) {
+  const items = rows.map((w) => ({ ...w, est: w.utilPct == null, pct: w.utilPct ?? w.estPctOfPeak ?? 0 }));
+  if (!items.length) { box.replaceChildren(h('div', { class: 'empty' }, 'No windows yet.')); return; }
+  const kind = (r) => (r.est ? 'estimated, relative to your busiest window' : 'real, of your subscription limit');
+  barChart(box, items, {
+    keys: ['pct'], colors: ['var(--cl)'], label, tipLabel, yMax: 100, axisFmt: (t) => t + '%', aria,
+    attrs: (r) => (r.est ? { fill: 'url(#hatch-cl)', class: 'b est' } : {}),
+    tipBody: (r) => [h('div', {}, `${fmt(r.pct)}% ${kind(r)}`), h('div', { class: 'd' }, `API-equivalent ${usd(r.estCostUsd ?? 0)}`)],
+    alt: (r) => `${tipLabel(r)}: ${fmt(r.pct)}% ${kind(r)}, API-equivalent ${usd(r.estCostUsd ?? 0)}`,
+  });
+}
+const utilLegend = (rows) => h('div', { class: 'legend' },
+  rows.some((w) => w.utilPct != null) ? h('span', {}, h('i', { style: 'background:var(--cl)' }), 'Real % of your limit') : null,
+  rows.some((w) => w.utilPct == null) ? h('span', {}, h('i', { class: 'est' }), 'Estimated relative to your busiest window; real % is collected going forward') : null);
+
+function claudeSection(cl) {
+  const days = (cl.dailyCost || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+  const w5 = cl.windows5h || [], wk = cl.weekly || [];
+  const cutoff = (rows, ms) => { const last = rows.length ? Math.max(...rows.map((w) => +new Date(w.end || w.start))) : 0; return rows.filter((w) => +new Date(w.start) >= last - ms); };
+  const recent5 = cutoff(w5, 14 * 864e5);
+  const ids = [...new Set(days.flatMap((d) => Object.keys(d.models || {})))];
+  const models = modelColors(ids);
+  const rows = days.map((d) => ({ ...Object.fromEntries(ids.map((i) => [i, 0])), ...d.models, date: d.date, total: d.total ?? Object.values(d.models || {}).reduce((s, v) => s + v, 0) }));
+  const daily = h('div', { class: 'chart' }), five = h('div', { class: 'chart' }), week = h('div', { class: 'chart' });
+  const unpriced = cl.unpriced || [], src = safeUrl(cl.pricingSource);
+  $('#claude').replaceChildren(
+    h('div', { class: 'sechead rise' }, logo('cl', 'cl-c'), h('h2', {}, 'Claude'), h('span', { class: 'pill' }, `API-equivalent estimate · updated ${ago(cl.updatedAt)}`)),
+    h('p', { class: 'cl-note rise' },
+      'Dollar figures are what this usage would cost at API prices, from local Claude Code logs. Nothing is billed. Subscription limit percentages cannot be backfilled, so past windows show an estimate and real percentages are collected from now on. ',
+      src ? h('a', { href: src }, 'Prices used') : null,
+      unpriced.length ? h('span', { class: 'warn' }, ` Not priced: ${unpriced.join(', ')}.`) : null),
+    card('Daily cost per model', days.length ? 'What each day would cost at API prices, in USD.' : null,
+      days.length ? [daily, h('div', { class: 'legend' }, models.map((m) => h('span', {}, h('i', { style: `background:${m.color}` }), m.name)))] : h('div', { class: 'empty' }, 'No usage yet.')),
+    h('div', { class: 'grid2' },
+      card('5-hour windows', 'Last 14 days, one bar per window. Hatched bars are estimates.', five, utilLegend(recent5)),
+      card('Weekly utilization', 'One bar per week. Hatched bars are estimates.', week, utilLegend(wk))));
+  if (days.length) barChart(daily, rows, {
+    keys: models.map((m) => m.id), colors: models.map((m) => m.color), label: (r) => dayName(r.date), tipLabel: (r) => dayName(r.date),
+    axisFmt: (t) => '$' + compact(t), aria: 'Daily API-equivalent cost per model, in US dollars',
+    tipBody: (r) => [...models.filter((m) => r[m.id]).map((m) => h('div', {}, h('span', { style: `color:${m.color}` }, '■ '), `${m.name}: ${usd(r[m.id])}`)), h('div', {}, `Total: ${usd(r.total)}`)],
+    alt: (r) => `${dayName(r.date)}: total ${usd(r.total)}`,
+  });
+  utilChart(five, recent5, (w) => dayName(w.start.slice(0, 10)), (w) => utc(w.start), 'Utilization of each 5-hour window, last 14 days');
+  utilChart(week, wk, (w) => dayName(w.start.slice(0, 10)), (w) => 'Week of ' + dayName(w.start.slice(0, 10)), 'Utilization per week');
+}
+
 function render(data) {
-  const gh = data.github, cf = data.cloudflare;
+  const gh = data.github, cf = data.cloudflare, cl = data.claude;
   const css = getComputedStyle(document.documentElement);
   const C = (v) => css.getPropertyValue(v).trim();
 
@@ -278,7 +362,7 @@ function render(data) {
     over.length ? h('b', {}, `${over.length} allowance${over.length > 1 ? 's are' : ' is'} above 75%. `) : h('b', {}, 'Nothing is close to a limit. '),
     `The busiest meter is ${top.who} ${top.name} at ${pctTxt(top.p)}`,
     topPeak && topPeak.peak30d != null ? `, and the highest daily peak in 30 days was ${topPeak.name} at ${pctTxt(topPeak.pk)}.` : '.');
-  $('#stamp').textContent = [gh && `GitHub updated ${ago(gh.updatedAt)}`, cf && `Cloudflare updated ${ago(cf.updatedAt)}`].filter(Boolean).join(' · ');
+  $('#stamp').textContent = [gh && `GitHub updated ${ago(gh.updatedAt)}`, cf && `Cloudflare updated ${ago(cf.updatedAt)}`, cl && `Claude updated ${ago(cl.updatedAt)}`].filter(Boolean).join(' · ');
 
   // Brand cards
   const ghTop = gh.allowances.reduce((a, b) => (b.used / b.included > a.used / a.included ? b : a));
@@ -302,7 +386,21 @@ function render(data) {
           h('div', { class: 'stat' }, h('span', { class: 'num' }, String(cf.workers.length)), h('span', { class: 'muted' }, 'Workers with traffic')))),
       ring(cfTop.used / cfTop.included, cfTop.name + ' today')));
   }
+  if (cl) {
+    const w = (cl.windows5h || []).slice(-1)[0];
+    const real = w && w.utilPct != null, p = w ? (real ? w.utilPct : w.estPctOfPeak ?? 0) / 100 : null;
+    const ds = (cl.dailyCost || []).map((d) => d.date).sort(), from = ds.length ? new Date(Date.parse(ds.at(-1)) - 29 * 864e5).toISOString().slice(0, 10) : '';
+    const cost30 = (cl.dailyCost || []).filter((d) => d.date >= from).reduce((s, d) => s + (d.total || 0), 0);
+    brands.push(h('div', { class: 'card brand cl rise', style: '--i:3' },
+      h('div', {},
+        h('div', { class: 'who' }, logo('cl'), h('div', {}, h('h2', {}, 'Claude'), h('span', { class: 'muted' }, 'API-equivalent estimate'))),
+        h('div', { class: 'stats' },
+          h('div', { class: 'stat' }, h('span', { class: 'num' }, usd(cost30)), h('span', { class: 'muted' }, 'last 30 days')),
+          p != null ? h('div', { class: 'stat' }, h('span', { class: 'num' }, (real ? '' : '~') + pctTxt(p)), h('span', { class: 'muted' }, real ? 'latest 5-hour window' : 'latest window, estimated')) : null)),
+      p != null ? ring(p, real ? '5-hour window' : 'est. vs busiest') : null));
+  }
   $('#brands').replaceChildren(...brands);
+  if (cl) claudeSection(cl); else $('#claude')?.remove();
 
   // GitHub section
   const ghColors = [C('--gh'), C('--track')];

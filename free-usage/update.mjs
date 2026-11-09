@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Refreshes data.json for the free-plan usage page.
 //
-//   node free-usage/update.mjs
+//   node free-usage/update.mjs [--strict]   (--strict: exit 1 instead of skipping a section; used in CI)
 //
 // GitHub: uses the `gh` CLI's login, which needs the `user` scope for billing
 //   (gh auth refresh -h github.com -s user).
@@ -22,6 +22,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 const OUT = new URL('./data.json', import.meta.url);
 const MB = 1024 * 1024;
+const strict = process.argv.includes('--strict'); // CI: a skipped section fails the run
+const skipped = [];
 const now = new Date();
 const ymd = (d) => d.toISOString().slice(0, 10);
 const round = (n, p = 2) => Math.round(n * 10 ** p) / 10 ** p;
@@ -171,7 +173,7 @@ async function cloudflare(token, account) {
 
   const d1 = await api(`/accounts/${account}/d1/database`);
   // A token without Cloudflare Pages Read still gets the rest of the page.
-  const projects = await api(`/accounts/${account}/pages/projects`).catch((e) => (console.warn(`Skipping Pages: ${e.message}`), null));
+  const projects = await api(`/accounts/${account}/pages/projects`).catch((e) => (skipped.push('Pages'), console.warn(`Skipping Pages: ${e.message}`), null));
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
   const pages = [];
   for (const p of projects ?? []) {
@@ -226,7 +228,12 @@ try { prev = JSON.parse(readFileSync(OUT, 'utf8')); } catch {}
 const out = { ...prev, github: github(), cloudflare: prev.cloudflare ?? null };
 const { CLOUDFLARE_API_TOKEN: token, CLOUDFLARE_ACCOUNT_ID: account } = process.env;
 if (token && account) out.cloudflare = await cloudflare(token, account);
-else console.warn('CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set: keeping the previous Cloudflare data.');
+else (skipped.push('Cloudflare'), console.warn('CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set: keeping the previous Cloudflare data.'));
+
+if (strict && skipped.length) {
+  console.error(`--strict: skipped ${skipped.join(', ')}; not writing data.json.`);
+  process.exit(1);
+}
 
 writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');
 console.log(`Wrote ${OUT.pathname}`);

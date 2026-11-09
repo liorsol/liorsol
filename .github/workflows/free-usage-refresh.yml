@@ -30,7 +30,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - run: node free-usage/update.mjs
+      - run: node free-usage/update.mjs --strict
         env:
           GH_TOKEN: ${{ secrets.FREE_USAGE_GH_TOKEN }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

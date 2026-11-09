@@ -1,0 +1,44 @@
+# Refreshes free-usage/data.json (GitHub and Cloudflare blocks) once a day and commits it.
+# The Claude block is not refreshed here: it is built from local Claude Code transcripts,
+# which only exist on the owner's Mac (node free-usage/claude-usage.mjs).
+#
+# Required GitHub Actions secrets (the owner adds these by hand):
+#   FREE_USAGE_GH_TOKEN     classic PAT with the `user` scope (GitHub billing usage needs it;
+#                           the built-in GITHUB_TOKEN cannot read it)
+#   CLOUDFLARE_API_TOKEN    read-only: Account Analytics Read, Workers Scripts Read, D1 Read,
+#                           Workers KV Storage Read, Cloudflare Pages Read
+#   CLOUDFLARE_ACCOUNT_ID
+
+name: Refresh free-usage data
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: free-usage-refresh
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node free-usage/update.mjs
+        env:
+          GH_TOKEN: ${{ secrets.FREE_USAGE_GH_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Commit if changed
+        run: |
+          git diff --quiet free-usage/data.json && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Free plan meter: daily data refresh' free-usage/data.json
+          git push

@@ -223,7 +223,7 @@ async function cloudflare(token, account) {
 let prev = {};
 try { prev = JSON.parse(readFileSync(OUT, 'utf8')); } catch {}
 
-const out = { github: github(), cloudflare: prev.cloudflare ?? null };
+const out = { ...prev, github: github(), cloudflare: prev.cloudflare ?? null };
 const { CLOUDFLARE_API_TOKEN: token, CLOUDFLARE_ACCOUNT_ID: account } = process.env;
 if (token && account) out.cloudflare = await cloudflare(token, account);
 else console.warn('CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set: keeping the previous Cloudflare data.');

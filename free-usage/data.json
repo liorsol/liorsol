@@ -1,10 +1,10 @@
 {
   "github": {
-    "updatedAt": "2026-11-09T08:26:40.238Z",
+    "updatedAt": "2026-11-09T08:44:24.062Z",
     "login": "liorsol",
     "period": "2026-11",
     "billedUsd": 0,
-    "publicActionsMinutes": 14,
+    "publicActionsMinutes": 21,
     "allowances": [
       {
         "id": "actions_minutes",
@@ -97,7 +97,7 @@
       {
         "month": "2026-11",
         "actionsPrivate": 0,
-        "actionsPublic": 14,
+        "actionsPublic": 21,
         "billedUsd": 0
       }
     ],
@@ -189,7 +189,7 @@
     ]
   },
   "cloudflare": {
-    "updatedAt": "2026-11-09T08:26:40.238Z",
+    "updatedAt": "2026-11-09T08:44:24.062Z",
     "today": "2026-11-09",
     "from": "2026-10-11",
     "allowances": [
@@ -200,7 +200,7 @@
         "included": 100000,
         "unit": "requests / day",
         "window": "day",
-        "used": 554,
+        "used": 574,
         "peak30d": 2036
       },
       {
@@ -210,7 +210,7 @@
         "included": 5000000,
         "unit": "rows / day",
         "window": "day",
-        "used": 4127,
+        "used": 4273,
         "peak30d": 13154
       },
       {
@@ -538,8 +538,8 @@
       },
       {
         "date": "2026-11-09",
-        "workers": 554,
-        "d1Read": 4127,
+        "workers": 574,
+        "d1Read": 4273,
         "d1Write": 0,
         "kvRead": 0,
         "kvWrite": 0,
@@ -549,11 +549,11 @@
     "workers": [
       {
         "name": "kidsbank",
-        "requests30d": 42420
+        "requests30d": 42438
       },
       {
         "name": "car-charging-proxy",
-        "requests30d": 6070
+        "requests30d": 6072
       },
       {
         "name": "Pages Functions",

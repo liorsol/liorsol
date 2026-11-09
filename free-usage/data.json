@@ -1,10 +1,10 @@
 {
   "github": {
-    "updatedAt": "2026-11-05T11:05:05.245Z",
+    "updatedAt": "2026-11-09T08:26:40.238Z",
     "login": "liorsol",
     "period": "2026-11",
     "billedUsd": 0,
-    "publicActionsMinutes": 4,
+    "publicActionsMinutes": 14,
     "allowances": [
       {
         "id": "actions_minutes",
@@ -25,7 +25,7 @@
         "name": "Git LFS storage",
         "included": 10,
         "unit": "GB",
-        "used": 0.036
+        "used": 0.038
       },
       {
         "id": "lfs_bandwidth",
@@ -90,14 +90,14 @@
       },
       {
         "month": "2026-10",
-        "actionsPrivate": 9,
-        "actionsPublic": 21,
+        "actionsPrivate": 0,
+        "actionsPublic": 30,
         "billedUsd": 0
       },
       {
         "month": "2026-11",
         "actionsPrivate": 0,
-        "actionsPublic": 4,
+        "actionsPublic": 14,
         "billedUsd": 0
       }
     ],
@@ -105,8 +105,8 @@
       {
         "name": "liorsol",
         "private": false,
-        "sizeMb": 28.9,
-        "pushed": "2026-11-05"
+        "sizeMb": 29,
+        "pushed": "2026-11-09"
       },
       {
         "name": "assets",
@@ -125,12 +125,6 @@
         "private": false,
         "sizeMb": 6.8,
         "pushed": "2022-12-21"
-      },
-      {
-        "name": "private repo 1",
-        "private": true,
-        "sizeMb": 5.6,
-        "pushed": "2026-10-10"
       },
       {
         "name": "opticise",
@@ -175,12 +169,6 @@
         "pushed": "2026-04-20"
       },
       {
-        "name": "private repo 2",
-        "private": true,
-        "sizeMb": 0,
-        "pushed": "2026-04-16"
-      },
-      {
         "name": "google-web-app",
         "private": false,
         "sizeMb": 0,
@@ -201,9 +189,9 @@
     ]
   },
   "cloudflare": {
-    "updatedAt": "2026-11-05T11:05:05.245Z",
-    "today": "2026-11-05",
-    "from": "2026-10-07",
+    "updatedAt": "2026-11-09T08:26:40.238Z",
+    "today": "2026-11-09",
+    "from": "2026-10-11",
     "allowances": [
       {
         "id": "workers_requests",
@@ -212,8 +200,8 @@
         "included": 100000,
         "unit": "requests / day",
         "window": "day",
-        "used": 839,
-        "peak30d": 1889
+        "used": 554,
+        "peak30d": 2036
       },
       {
         "id": "d1_rows_read",
@@ -222,8 +210,8 @@
         "included": 5000000,
         "unit": "rows / day",
         "window": "day",
-        "used": 5745,
-        "peak30d": 12690
+        "used": 4127,
+        "peak30d": 13154
       },
       {
         "id": "d1_rows_written",
@@ -232,8 +220,8 @@
         "included": 100000,
         "unit": "rows / day",
         "window": "day",
-        "used": 38,
-        "peak30d": 412
+        "used": 0,
+        "peak30d": 267
       },
       {
         "id": "d1_storage",
@@ -242,7 +230,7 @@
         "included": 5120,
         "unit": "MB total",
         "window": "total",
-        "used": 0.4,
+        "used": 0.41,
         "peak30d": null
       },
       {
@@ -274,45 +262,19 @@
         "window": "day",
         "used": 0,
         "peak30d": 0
+      },
+      {
+        "id": "pages_builds",
+        "name": "Pages builds",
+        "group": "Pages",
+        "included": 500,
+        "unit": "builds / month",
+        "window": "month",
+        "used": 2,
+        "peak30d": null
       }
     ],
     "daily": [
-      {
-        "date": "2026-10-07",
-        "workers": 146,
-        "d1Read": 144,
-        "d1Write": 0,
-        "kvRead": 0,
-        "kvWrite": 0,
-        "doRequests": 0
-      },
-      {
-        "date": "2026-10-08",
-        "workers": 200,
-        "d1Read": 238,
-        "d1Write": 16,
-        "kvRead": 0,
-        "kvWrite": 0,
-        "doRequests": 0
-      },
-      {
-        "date": "2026-10-09",
-        "workers": 208,
-        "d1Read": 248,
-        "d1Write": 12,
-        "kvRead": 0,
-        "kvWrite": 0,
-        "doRequests": 0
-      },
-      {
-        "date": "2026-10-10",
-        "workers": 584,
-        "d1Read": 4974,
-        "d1Write": 412,
-        "kvRead": 0,
-        "kvWrite": 0,
-        "doRequests": 0
-      },
       {
         "date": "2026-10-11",
         "workers": 1666,
@@ -352,7 +314,7 @@
       {
         "date": "2026-10-15",
         "workers": 1768,
-        "d1Read": 12275,
+        "d1Read": 12259,
         "d1Write": 97,
         "kvRead": 0,
         "kvWrite": 0,
@@ -540,9 +502,45 @@
       },
       {
         "date": "2026-11-05",
-        "workers": 839,
-        "d1Read": 5745,
-        "d1Write": 38,
+        "workers": 2036,
+        "d1Read": 13154,
+        "d1Write": 177,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-11-06",
+        "workers": 1891,
+        "d1Read": 12870,
+        "d1Write": 155,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-11-07",
+        "workers": 1569,
+        "d1Read": 11907,
+        "d1Write": 51,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-11-08",
+        "workers": 1694,
+        "d1Read": 12291,
+        "d1Write": 92,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-11-09",
+        "workers": 554,
+        "d1Read": 4127,
+        "d1Write": 0,
         "kvRead": 0,
         "kvWrite": 0,
         "doRequests": 0
@@ -551,15 +549,19 @@
     "workers": [
       {
         "name": "kidsbank",
-        "requests30d": 37224
+        "requests30d": 42420
       },
       {
         "name": "car-charging-proxy",
-        "requests30d": 5717
+        "requests30d": 6070
       },
       {
         "name": "Pages Functions",
-        "requests30d": 870
+        "requests30d": 1084
+      },
+      {
+        "name": "small-poetry-de09",
+        "requests30d": 4
       },
       {
         "name": "esim-usage-proxy",
@@ -569,14 +571,23 @@
     "d1": [
       {
         "name": "kidsbank",
-        "sizeMb": 0.3
+        "sizeMb": 0.31
       },
       {
         "name": "car-charging",
         "sizeMb": 0.1
       }
     ],
-    "pages": []
+    "pages": [
+      {
+        "name": "car-charging",
+        "domains": [
+          "car-charging.pages.dev",
+          "charging.liorsolomon.com"
+        ],
+        "buildsThisMonth": 2
+      }
+    ]
   },
   "claude": {
     "updatedAt": "2026-11-05T11:43:12.674Z",

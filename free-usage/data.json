@@ -1,10 +1,10 @@
 {
   "github": {
-    "updatedAt": "2026-11-13T11:04:33.707Z",
+    "updatedAt": "2026-11-14T10:31:21.715Z",
     "login": "liorsol",
     "period": "2026-11",
     "billedUsd": 0,
-    "publicActionsMinutes": 46,
+    "publicActionsMinutes": 50,
     "allowances": [
       {
         "id": "actions_minutes",
@@ -97,7 +97,7 @@
       {
         "month": "2026-11",
         "actionsPrivate": 0,
-        "actionsPublic": 46,
+        "actionsPublic": 50,
         "billedUsd": 0
       }
     ],
@@ -106,7 +106,7 @@
         "name": "liorsol",
         "private": false,
         "sizeMb": 29.1,
-        "pushed": "2026-11-12"
+        "pushed": "2026-11-13"
       },
       {
         "name": "assets",
@@ -189,9 +189,9 @@
     ]
   },
   "cloudflare": {
-    "updatedAt": "2026-11-13T11:04:33.707Z",
-    "today": "2026-11-13",
-    "from": "2026-10-15",
+    "updatedAt": "2026-11-14T10:31:21.715Z",
+    "today": "2026-11-14",
+    "from": "2026-10-16",
     "allowances": [
       {
         "id": "workers_requests",
@@ -200,7 +200,7 @@
         "included": 100000,
         "unit": "requests / day",
         "window": "day",
-        "used": 735,
+        "used": 715,
         "peak30d": 2241
       },
       {
@@ -210,7 +210,7 @@
         "included": 5000000,
         "unit": "rows / day",
         "window": "day",
-        "used": 5407,
+        "used": 5243,
         "peak30d": 14246
       },
       {
@@ -220,7 +220,7 @@
         "included": 100000,
         "unit": "rows / day",
         "window": "day",
-        "used": 0,
+        "used": 11,
         "peak30d": 189
       },
       {
@@ -275,15 +275,6 @@
       }
     ],
     "daily": [
-      {
-        "date": "2026-10-15",
-        "workers": 1768,
-        "d1Read": 12259,
-        "d1Write": 97,
-        "kvRead": 0,
-        "kvWrite": 0,
-        "doRequests": 0
-      },
       {
         "date": "2026-10-16",
         "workers": 1624,
@@ -538,9 +529,18 @@
       },
       {
         "date": "2026-11-13",
-        "workers": 735,
-        "d1Read": 5407,
-        "d1Write": 0,
+        "workers": 1666,
+        "d1Read": 12237,
+        "d1Write": 90,
+        "kvRead": 0,
+        "kvWrite": 0,
+        "doRequests": 0
+      },
+      {
+        "date": "2026-11-14",
+        "workers": 715,
+        "d1Read": 5243,
+        "d1Write": 11,
         "kvRead": 0,
         "kvWrite": 0,
         "doRequests": 0
@@ -549,15 +549,15 @@
     "workers": [
       {
         "name": "kidsbank",
-        "requests30d": 42517
+        "requests30d": 42497
       },
       {
         "name": "car-charging-proxy",
-        "requests30d": 6349
+        "requests30d": 6289
       },
       {
         "name": "Pages Functions",
-        "requests30d": 1295
+        "requests30d": 1253
       },
       {
         "name": "auth",
